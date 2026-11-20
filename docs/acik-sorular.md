@@ -58,6 +58,7 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-16 | Personelin iki şubedeki saatleri çakışırsa hata kodu | 🟡 Yeni kod yok: `validation_failed` + alan hatası |
 | T-17 | Yabancı telefon numaraları (turist, yurt dışı müşteri) | 🟡 v1'de yalnız +90 numaraları kabul edilir (`PhoneNumber`); SMS maliyeti ve doğrulama Türkiye için. Gerekirse genel E.164 desteği eklenir |
 | T-18 | Sözleşmede genel sunucu hatası kodu yok; 500'de hangi `code` döner? | 🟡 Çerçevenin ürettiği 5xx yanıtları `try_again` kodunu taşır (istemci bir kez tekrar dener). Ayrı bir `internal_error` kodu gerekirse sözleşmeye eklenir |
+| T-19 | ADR-0007: rol jetona yazılmaz gibi sunucudan çözülür, değişiklik 60 sn önbellekle etkili olur. Üyelik tablosu henüz yok | 🟡 PR-6a'da rol jetondaki `role` iddiasından çözülür; değişiklik jeton yenilenince (en geç 15 dk) etkili olur. Üyelik tablosu (PR-12) gelince rol ve üyelik durumu veritabanından 60 sn önbellekle okunur |
 
 ## Hukuk (kod beklemez, metin bekler)
 - H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.

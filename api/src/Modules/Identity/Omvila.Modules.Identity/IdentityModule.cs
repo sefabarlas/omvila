@@ -1,0 +1,70 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using NodaTime;
+using Omvila.Infrastructure.Security;
+using Omvila.Modules.Identity.Security;
+
+namespace Omvila.Modules.Identity;
+
+/// <summary>Identity modülü girişi (ADR-0007): yüzey başına JWT şeması, izin çözümleyici, jeton üretici.</summary>
+public static class IdentityModule
+{
+    private static readonly string[] AllAudiences = [Audiences.Manage, Audiences.Admin, Audiences.Me, Audiences.PublicBooking];
+
+    public static IServiceCollection AddIdentityModule(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<AuthOptions>()
+            .Bind(configuration.GetSection(AuthOptions.Section))
+            .Validate(o => o.IsValid(), "Auth ayarları eksik veya geçersiz (appsettings \"Auth\").");
+        services.AddSingleton<SigningKeyStore>();
+        services.AddSingleton<AccessTokenIssuer>();
+        services.AddSingleton<IPermissionResolver, RolePermissionResolver>();
+
+        // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.
+        var authentication = services.AddAuthentication();
+        foreach (var audience in AllAudiences)
+        {
+            authentication.AddJwtBearer(audience, _ => { });
+            services.AddOptions<JwtBearerOptions>(audience)
+                .Configure<SigningKeyStore, IClock, IOptions<AuthOptions>>((options, keys, clock, auth) =>
+                    Configure(options, audience, keys, clock, auth.Value));
+        }
+
+        return services;
+    }
+
+    private static void Configure(JwtBearerOptions options, string audience, SigningKeyStore keys, IClock clock, AuthOptions auth)
+    {
+        options.MapInboundClaims = false;
+        options.Events = JwtProblemEvents.Create();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = auth.Issuer,
+            ValidAudience = audience,
+            IssuerSigningKeys = keys.Keys,
+            ValidAlgorithms = [SecurityAlgorithms.EcdsaSha256],
+            NameClaimType = OmvilaClaims.Subject,
+            RoleClaimType = OmvilaClaims.Role,
+            ClockSkew = TimeSpan.Zero,
+            // "Şimdi" yalnız IClock'tan (ADR-0003); testte FakeClock ile süre dolumu sınanır.
+            LifetimeValidator = (notBefore, expires, _, _) =>
+            {
+                var now = clock.GetCurrentInstant().ToDateTimeUtc();
+                if (expires is null || expires <= now)
+                {
+                    throw new SecurityTokenExpiredException("Erişim jetonunun süresi doldu.") { Expires = expires ?? default };
+                }
+
+                if (notBefore > now)
+                {
+                    throw new SecurityTokenNotYetValidException("Erişim jetonu henüz geçerli değil.") { NotBefore = notBefore.Value };
+                }
+
+                return true;
+            },
+        };
+    }
+}

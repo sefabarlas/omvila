@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -10,6 +11,7 @@ using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Infrastructure.Security;
 
 namespace Omvila.Infrastructure;
 
@@ -36,6 +38,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<DbSession>());
         services.AddScoped<TransactionEndpointFilter>();
         services.AddExceptionHandler<DatabaseExceptionHandler>();
+        services.AddAuthorization();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddModuleDbContext<InfraDbContext>(InfraDbContext.Schema);
         services.AddTransient<MigrationRunner>();
 
@@ -61,12 +65,18 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddHostedService<JobHostedService>();
 
     /// <summary>
-    /// API yüzeyi grubu (ör. "/api/v1/manage"). Gruptaki her uç tek transaction'da çalışır.
+    /// API yüzeyi grubu (ör. "/api/v1/manage", Audiences.Manage). Gruptaki her uç tek transaction'da çalışır.
+    /// Yüzey verilirse uçlar o yüzeyin jetonunu ister; açık uç <c>.AllowAnonymous()</c> + gerekçe taşır.
     /// </summary>
-    public static RouteGroupBuilder MapApiGroup(this IEndpointRouteBuilder endpoints, string prefix)
+    public static RouteGroupBuilder MapApiGroup(this IEndpointRouteBuilder endpoints, string prefix, string? audience = null)
     {
         var group = endpoints.MapGroup(prefix);
         group.AddEndpointFilter<TransactionEndpointFilter>();
+        if (audience is not null)
+        {
+            group.RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = audience });
+        }
+
         return group;
     }
 }

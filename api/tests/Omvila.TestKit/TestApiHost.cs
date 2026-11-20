@@ -2,23 +2,26 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
+using Xunit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
+using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.SharedKernel;
-using Omvila.TestKit;
 
-namespace Omvila.Infrastructure.IntegrationTests;
+namespace Omvila.TestKit;
 
 /// <summary>Altyapıyı Host'taki sırayla kuran küçük TestServer uygulaması; deneme uçları "/api/test" grubunda.</summary>
-internal static class TestApiHost
+public static class TestApiHost
 {
     public static async Task<WebApplication> StartAsync(
         PostgresFixture db,
         Action<RouteGroupBuilder> mapEndpoints,
-        Action<IServiceCollection>? configureServices = null)
+        Action<IServiceCollection>? configureServices = null,
+        Action<WebApplication>? configurePipeline = null,
+        string? audience = null)
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
@@ -33,7 +36,8 @@ internal static class TestApiHost
         app.UseExceptionHandler();
         app.UseStatusCodePages();
         app.UseIdempotencyRequestBuffering();
-        mapEndpoints(app.MapApiGroup("/api/test"));
+        configurePipeline?.Invoke(app);
+        mapEndpoints(app.MapApiGroup("/api/test", audience));
         await app.StartAsync(TestContext.Current.CancellationToken);
         return app;
     }
