@@ -11,22 +11,12 @@ namespace Omvila.Modules.Tenancy.Features;
 /// <summary>Tenancy panel uçlarının ortak yardımcıları: marka bağlamı, If-Match/ETag, telefon ve e-posta biçimi.</summary>
 internal static partial class ManageEndpointSupport
 {
-    public static Guid BrandOf(ITenantContext tenant) =>
-        tenant.Scope.BrandId ?? throw new DomainException("Manage isteğinde marka bağlamı yok.");
+    public static Guid BrandOf(ITenantContext tenant) => tenant.RequireBrandId();
 
-    /// <summary>If-Match sürümü güncel mi (değilse 412). Kaydetmede xmin denetimi için özgün değer de atanır.</summary>
     public static bool Matches<TEntity>(DbContext db, TEntity entity, uint current, uint expected)
-        where TEntity : class
-    {
-        db.Entry(entity).Property<uint>("Version").OriginalValue = expected;
-        return current == expected;
-    }
+        where TEntity : class => db.MatchesVersion(entity, current, expected);
 
-    public static Ok<T> Versioned<T>(HttpContext http, uint version, T body)
-    {
-        http.Response.Headers.ETag = ETagVersion.Format(version);
-        return TypedResults.Ok(body);
-    }
+    public static Ok<T> Versioned<T>(HttpContext http, uint version, T body) => VersionedResults.Versioned(http, version, body);
 
     /// <summary>Telefonu E.164'e çevirir; geçersizse alan hatası yazar ve değeri olduğu gibi döner.</summary>
     public static string? NormalizePhone(string? phone, string field, Dictionary<string, string[]> errors)

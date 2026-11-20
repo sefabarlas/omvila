@@ -30,6 +30,7 @@
     <Project Path="tests/Omvila.Host.Tests/Omvila.Host.Tests.csproj" />
     <Project Path="tests/Omvila.Infrastructure.IntegrationTests/Omvila.Infrastructure.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Infrastructure.Tests/Omvila.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Omvila.Modules.Catalog.IntegrationTests/Omvila.Modules.Catalog.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Catalog.Tests/Omvila.Modules.Catalog.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Identity.IntegrationTests/Omvila.Modules.Identity.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Identity.Tests/Omvila.Modules.Identity.Tests.csproj" />

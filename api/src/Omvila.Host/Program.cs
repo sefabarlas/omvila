@@ -6,6 +6,7 @@ using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Catalog;
 using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
 using Omvila.Modules.Platform;
@@ -32,6 +33,7 @@ builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddTenancyModule(builder.Configuration);
 builder.Services.AddPlatformModule(builder.Configuration);
+builder.Services.AddCatalogModule();
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
@@ -76,6 +78,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapOpenApi("/openapi/{documentName}.json");
     app.MapIdentityEndpoints();
     app.MapTenancyEndpoints();
+    app.MapCatalogEndpoints();
 }
 
 HostLog.Started(app.Logger, role);
