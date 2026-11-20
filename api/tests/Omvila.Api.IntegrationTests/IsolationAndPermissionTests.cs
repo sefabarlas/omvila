@@ -166,7 +166,8 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         return (result.Status, result.Body.ValueKind == System.Text.Json.JsonValueKind.Undefined ? string.Empty : result.Body.GetRawText());
     }
 
-    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin.
+    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı.
+    // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
         var session = (await _api.GetAsync("/api/v1/manage/session", token)).Body;
@@ -189,9 +190,11 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         var overrideId = await PostIdAsync(token, $"/api/v1/manage/branches/{branchId}/overrides", new { fromDate = "2027-01-01", kind = "Holiday", isClosed = true });
         var timeOff = await _api.SendAsync(HttpMethod.Post, $"/api/v1/manage/staff/{staffId}/time-off",
             new { type = "Leave", isAllDay = true, fromDate = "2026-12-02" }, token);
+        var brandCustomerId = await PostIdAsync(token, "/api/v1/manage/customers", new { fullName = "Selin Öztürk", phone = "+905550004418" });
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["branchId"] = branchId,
+            ["brandCustomerId"] = brandCustomerId,
             ["categoryId"] = categoryId,
             ["serviceId"] = serviceId,
             ["staffId"] = staffId,
