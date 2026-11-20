@@ -6,6 +6,7 @@ import {
   formatPhone,
   formatTime,
   maskPhone,
+  parseMobilePhone,
 } from './index';
 
 // Kural: docs/urun/urun-kurallari.md § Biçimler — örnekler birebir.
@@ -68,5 +69,18 @@ describe('telefon', () => {
   it('gösterim ve maske', () => {
     expect(formatPhone('+905321234567')).toBe('0532 123 45 67');
     expect(maskPhone('+905321234567')).toBe('0532 *** ** 67');
+  });
+});
+
+describe('parseMobilePhone', () => {
+  it.each(['0532 418 77 05', '532 418 77 05', '+90 532 418 77 05', '(0532) 418-77-05'])(
+    '%s → E.164',
+    (input) => {
+      expect(parseMobilePhone(input)).toBe('+905324187705');
+    },
+  );
+
+  it.each(['0212 555 12 34', '0532 418 77', 'abc'])('%s → null', (input) => {
+    expect(parseMobilePhone(input)).toBeNull();
   });
 });

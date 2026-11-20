@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hookform/resolvers": "^7.0.8",
     "@omvila/api-client-ts": "workspace:*",
     "@omvila/design-tokens": "workspace:*",
     "@omvila/ui-web": "workspace:*",
@@ -20,7 +21,9 @@
     "@tanstack/react-router": "^1.170.46",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.92.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tanstack/router-plugin": "^1.169.0",

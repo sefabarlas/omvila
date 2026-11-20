@@ -43,9 +43,18 @@ export interface FakeApiOptions {
   /** Yenileme çerezi var mı (sayfa yenilendiğinde oturum sürer mi). */
   signedIn?: boolean;
   session?: ManageSession;
+  /** Doğrulama sonucu: kayıtlı numara (SignedIn), kayıtsız (SignupRequired) veya hata kodu. */
+  verify?: 'SignedIn' | 'SignupRequired' | 'otp_invalid' | 'otp_attempts_exceeded';
+  /** İstek gövdeleri (yol → gövde listesi). */
+  calls?: Record<string, unknown[]>;
 }
 
-export function fakeFetch({ signedIn = true, session = sessionFixture() }: FakeApiOptions = {}) {
+export function fakeFetch({
+  signedIn = true,
+  session = sessionFixture(),
+  verify = 'SignedIn',
+  calls = {},
+}: FakeApiOptions = {}) {
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -53,8 +62,43 @@ export function fakeFetch({ signedIn = true, session = sessionFixture() }: FakeA
         headers: { 'Content-Type': 'application/json' },
       }),
     );
-  return (request: Request): Promise<Response> => {
+  return async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
+    if (request.method === 'POST') {
+      (calls[path] ??= []).push(
+        await request
+          .clone()
+          .json()
+          .catch(() => null),
+      );
+    }
+
+    if (path === '/api/v1/manage/auth/otp/request') {
+      return json(202, {
+        otpId: '0193a8f0-0000-7000-8000-0000000000f1',
+        expiresInSeconds: 180,
+        resendAfterSeconds: 60,
+        phoneMasked: '0532 *** ** 05',
+      });
+    }
+
+    if (path === '/api/v1/manage/auth/otp/verify') {
+      switch (verify) {
+        case 'SignedIn':
+          return json(200, { result: 'SignedIn', accessToken: 'jeton', expiresInSeconds: 900 });
+        case 'SignupRequired':
+          return json(200, { result: 'SignupRequired', signupToken: 'kayit-jetonu' });
+        case 'otp_invalid':
+          return json(422, { code: 'otp_invalid', meta: { attemptsLeft: 4 } });
+        case 'otp_attempts_exceeded':
+          return json(429, { code: 'otp_attempts_exceeded', meta: { retryAfterSeconds: 300 } });
+      }
+    }
+
+    if (path === '/api/v1/manage/auth/signup') {
+      return json(201, { result: 'SignedIn', accessToken: 'jeton', expiresInSeconds: 900 });
+    }
+
     if (path === '/api/v1/manage/auth/refresh') {
       return signedIn
         ? json(200, { accessToken: 'jeton', expiresInSeconds: 900 })

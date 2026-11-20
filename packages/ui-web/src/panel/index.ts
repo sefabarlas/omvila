@@ -38,3 +38,5 @@ export { Bento, BentoBlock, StatCard } from './StatCard';
 export type { BentoBlockProps, BentoProps, StatCardProps } from './StatCard';
 export { Topbar } from './Topbar';
 export type { TopbarProps } from './Topbar';
+export { CodeInput } from './CodeInput';
+export type { CodeInputProps } from './CodeInput';
