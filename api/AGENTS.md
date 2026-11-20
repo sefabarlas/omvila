@@ -62,6 +62,8 @@ scripts/export-openapi.sh && oasdiff diff ../contracts/openapi.yaml artifacts/op
 - Kiracı bağlamı `IDbSession.SetTenantAsync(TenantScope...)` ile kurulur ve `set_config(..., true)` ile yalnız o transaction'a uygulanır.
 - Modül DbContext'i `services.AddModuleDbContext<T>("schema")` ile kaydedilir; ilk migration `GrantSchemaUsageToApp`, markaya ait her tablo `EnableTenantIsolation` çağırır. `RlsGuardTests` politikasız `brand_id` tablosunda düşer.
 - Testler: `Omvila.TestKit` (`PostgresFixture`, `TestClock`, `RlsGuard`). Veritabanı testleri `[Trait("Category", "Integration")]` ve `[Collection(PostgresTests.Name)]` taşır.
+- **Outbox (ADR-0005):** yan etkiler `IOutbox.EnqueueAsync(new XHappened(...))` ile iş transaction'ında yazılır. Olay `IIntegrationEvent` uygulayan bir record'dur (modülün Contracts projesinde) ve markaya aitse `BrandId` taşır. İşleyici `IIntegrationEventHandler<T>`, kayıt `services.AddIntegrationEventHandler<T, THandler>()`. İşleyici kendi transaction'ında çalışır ve kiracı bağlamını olaydan kurar; aynı olay için ikinci kez çağrılmaz. Hata olursa yalnız o işleyici geri çekilmeyle yeniden denenir (`Outbox` ayarları appsettings'te).
+- **Periyodik işler:** `IPeriodicJob` (`Key`, `Interval`, `RunAsync`), kayıt `services.AddPeriodicJob<T>()`. Yalnız worker rolünde zamanlanır; advisory lock ile tek örnekte çalışır, sonucu `infra.job_runs`'a yazılır. Testte `JobRunner.RunOnceAsync(typeof(T))` ile doğrudan çağrılır, saat `FakeClock` ile ilerletilir.
 - Yerelde 5432'de başka bir PostgreSQL çalışıyorsa `localhost` ona gider; `ConnectionStrings__Default/Migrator` ile portu değiştirin.
 
 ## Geliştirme verisi

@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using NodaTime;
 using Npgsql;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
+using Omvila.SharedKernel;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -41,8 +43,11 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     public ValueTask DisposeAsync() => _container.DisposeAsync();
 
-    /// <summary>Uygulama rolüne bağlı altyapı servisleri (DbSession, DbContext'ler). Her test kendi kapsamını açar.</summary>
-    public ServiceProvider CreateServices(int? maxPoolSize = null)
+    /// <summary>
+    /// Uygulama rolüne bağlı altyapı servisleri (DbSession, DbContext'ler, outbox, iş çalıştırıcısı).
+    /// Saat TestClock (FakeClock); testte çözülüp ilerletilebilir. Her test kendi kapsamını açar.
+    /// </summary>
+    public ServiceProvider CreateServices(int? maxPoolSize = null, Action<IServiceCollection>? configure = null)
     {
         var app = new NpgsqlConnectionStringBuilder(AppConnectionString);
         if (maxPoolSize is { } size)
@@ -55,14 +60,21 @@ public sealed class PostgresFixture : IAsyncLifetime
             {
                 [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.AppConnectionName}"] = app.ConnectionString,
                 [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.MigratorConnectionName}"] = MigratorConnectionString,
+                ["Outbox:BatchSize"] = "50",
+                ["Outbox:DispatchIntervalSeconds"] = "1",
+                ["Outbox:RetryBaseDelaySeconds"] = "30",
+                ["Outbox:RetryMaxDelaySeconds"] = "3600",
             })
             .Build();
 
-        return new ServiceCollection()
+        var services = new ServiceCollection()
             .AddSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(NullLoggerFactory.Instance)
             .AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>))
-            .AddOmvilaInfrastructure(configuration)
-            .BuildServiceProvider();
+            .AddSingleton<IClock>(TestClock.Create())
+            .AddSingleton<IIdGenerator, UuidV7IdGenerator>()
+            .AddOmvilaInfrastructure(configuration);
+        configure?.Invoke(services);
+        return services.BuildServiceProvider();
     }
 
     /// <summary>Migrator rolüyle (tablo sahibi, RLS'i atlar) açık bağlantı: test verisi ve şema kurulumu için.</summary>

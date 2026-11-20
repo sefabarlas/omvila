@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using NodaTime;
 using Omvila.Host;
@@ -20,6 +21,13 @@ builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
 builder.Services.AddOmvilaProblemDetails();
 builder.Services.AddOmvilaInfrastructure(builder.Configuration);
+// OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
+var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
+if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
+{
+    builder.Services.AddOmvilaWorker();
+}
+
 builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((document, _, _) =>
 {
     document.Info.Title = "OMVILA API";
