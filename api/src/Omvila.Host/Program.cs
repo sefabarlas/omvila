@@ -8,6 +8,7 @@ using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
+using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -27,6 +28,7 @@ builder.Services.AddOmvilaProblemDetails();
 builder.Services.AddOmvilaInfrastructure(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
+builder.Services.AddTenancyModule();
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)

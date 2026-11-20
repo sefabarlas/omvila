@@ -7,6 +7,7 @@ using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
+using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -44,7 +45,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         // Bütün modüllerin migration'ları (her modül kendi DbContext'ini AddModuleDbContext ile kaydeder).
         await using var services = CreateServices(configure: s => s
             .AddIdentityModule(configuration)
-            .AddNotificationsModule(configuration));
+            .AddNotificationsModule(configuration)
+            .AddTenancyModule());
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
     }
 

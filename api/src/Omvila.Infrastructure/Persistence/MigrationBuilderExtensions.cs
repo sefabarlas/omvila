@@ -19,15 +19,22 @@ public static class MigrationBuilderExtensions
     /// <paramref name="customerColumn"/> verilirse müşteri kendi satırlarını görür (me yüzeyi).
     /// <paramref name="allowPlatformRowInsert"/>: brand_id'si boş platform satırı (ör. OTP bildirimi) her bağlamdan
     /// eklenebilir ama yalnız platform bağlamı okuyabilir.
+    /// <paramref name="tenantColumn"/>: marka kimliğini taşıyan sütun (marka tablosunun kendisinde "id").
     /// </summary>
     public static void EnableTenantIsolation(
-        this MigrationBuilder migrationBuilder, string schema, string table, string? customerColumn = null, bool allowPlatformRowInsert = false)
+        this MigrationBuilder migrationBuilder,
+        string schema,
+        string table,
+        string? customerColumn = null,
+        bool allowPlatformRowInsert = false,
+        string tenantColumn = "brand_id")
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(TenantIsolationSql(schema, table, customerColumn, allowPlatformRowInsert));
+        migrationBuilder.Sql(TenantIsolationSql(schema, table, customerColumn, allowPlatformRowInsert, tenantColumn));
     }
 
-    internal static string TenantIsolationSql(string schema, string table, string? customerColumn = null, bool allowPlatformRowInsert = false)
+    internal static string TenantIsolationSql(
+        string schema, string table, string? customerColumn = null, bool allowPlatformRowInsert = false, string tenantColumn = "brand_id")
     {
         var qualified = $"{Quote(schema)}.{Quote(table)}";
         var customerClause = customerColumn is null
@@ -38,7 +45,7 @@ public static class MigrationBuilderExtensions
             ALTER TABLE {qualified} FORCE ROW LEVEL SECURITY;
             CREATE POLICY tenant_isolation ON {qualified}
               USING (
-                brand_id = nullif(current_setting('app.brand_id', true), '')::uuid
+                {Quote(tenantColumn)} = nullif(current_setting('app.brand_id', true), '')::uuid
                 OR current_setting('app.is_platform', true) = 'true'{customerClause}
               );
             {(allowPlatformRowInsert ? $"CREATE POLICY platform_row_insert ON {qualified} FOR INSERT WITH CHECK (brand_id IS NULL);" : string.Empty)}
