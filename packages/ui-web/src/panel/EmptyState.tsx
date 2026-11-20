@@ -11,7 +11,7 @@ export interface EmptyStateProps {
   /** Fiille başlayan buton(lar). */
   actions?: ReactNode;
   /** Başlık düzeyi (sayfadaki yerine göre). */
-  headingLevel?: 2 | 3 | 4;
+  headingLevel?: 1 | 2 | 3 | 4;
   className?: string;
 }
 
@@ -24,7 +24,7 @@ export function EmptyState({
   headingLevel = 3,
   className,
 }: EmptyStateProps) {
-  const Heading = `h${String(headingLevel)}` as 'h2' | 'h3' | 'h4';
+  const Heading = `h${String(headingLevel)}` as 'h1' | 'h2' | 'h3' | 'h4';
   return (
     <div className={classNames(styles.empty, className)}>
       {icon ? (

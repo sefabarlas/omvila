@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  background: var(--zemin);
+  color: var(--metin);
+  font-family: var(--yazi-aile-sans);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+  -webkit-font-smoothing: antialiased;
+}
