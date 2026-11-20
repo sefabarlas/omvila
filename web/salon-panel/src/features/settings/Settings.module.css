@@ -356,45 +356,6 @@
   border-top: 1px solid var(--cizgi);
 }
 
-.segmented {
-  display: inline-flex;
-  gap: var(--bosluk-1);
-  margin: 0;
-  padding: var(--bosluk-1);
-  border: 0;
-  border-radius: var(--kose-tam);
-  background: var(--zemin-ikincil);
-}
-
-.segment {
-  position: relative;
-  padding: var(--bosluk-1) var(--bosluk-3);
-  border-radius: var(--kose-tam);
-  color: var(--metin-ikincil);
-  font-size: var(--yazi-kucuk-boyut);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.segment:has(input:checked) {
-  background: var(--zemin-yukseltilmis);
-  color: var(--metin);
-  box-shadow: var(--golge-sm);
-}
-
-.segment:has(input:focus-visible) {
-  outline: 2px solid var(--odak);
-  outline-offset: 2px;
-}
-
-.segmentInput {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
 .staticValue {
   font-weight: 700;
 }

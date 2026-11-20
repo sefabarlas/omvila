@@ -26,3 +26,25 @@ export function formatMoney(value: MoneyValue): string {
   const amount = kurus === 0n ? group(lira) : `${group(lira)},${kurus.toString().padStart(2, '0')}`;
   return `${negative ? '-' : ''}${amount} ${symbols[value.currency] ?? value.currency}`;
 }
+
+/**
+ * Kullanıcının yazdığı tutarı kuruşa çevirir: "450" → 45000, "1.250" → 125000, "85,50" → 8550, "1.250,5 ₺" → 125050.
+ * Binlik ayırıcı nokta, kuruş ayırıcı virgüldür. Geçersiz veya negatifse null. Ondalıklı sayı ile hesap yapılmaz.
+ */
+export function parseMoneyInput(input: string): number | null {
+  const text = input.replace(/₺|TL|\s/gi, '');
+  const match = /^(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?$/.exec(text);
+  if (!match?.[1]) {
+    return null;
+  }
+
+  const lira = Number(match[1].replaceAll('.', ''));
+  const kurus = Number((match[2] ?? '').padEnd(2, '0'));
+  const minor = lira * 100 + kurus;
+  return Number.isSafeInteger(minor) ? minor : null;
+}
+
+/** Düzenleme alanına yazılacak tutar: 45000 → "450", 8550 → "85,50" (sembolsüz). */
+export function moneyInputValue(amountMinor: number): string {
+  return formatMoney({ amountMinor, currency: 'TRY' }).replace(/\s₺$/, '');
+}

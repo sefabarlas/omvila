@@ -8,6 +8,7 @@ import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
 import { useClock } from '@/app/clock';
 import { useSession } from '@/app/session';
+import { Segmented } from '@/shared/Segmented';
 import { AddBranchModal } from './AddBranchModal';
 import { brandSettingsQuery } from './api';
 import { branchQuery, useSaveBranchSettings, workingHoursQuery } from './branch-api';
@@ -155,37 +156,20 @@ function BranchSettings({ branchId }: { branchId: string }) {
             title="Randevu saat aralığı"
             description={`Müşteriye gösterilen saatlerin adımı. Seçilmezse marka ayarı (${String(settings.slotIntervalMinutes)} dk) kullanılır.`}
           >
-            <fieldset className={styles.segmented} aria-describedby="aralik-aciklama">
-              <legend className={styles.visuallyHidden}>Randevu saat aralığı</legend>
-              <label className={styles.segment}>
-                <input
-                  type="radio"
-                  form={formId}
-                  className={styles.segmentInput}
-                  name="slot"
-                  checked={slot === null}
-                  onChange={() => {
-                    setSlot(null);
-                  }}
-                />
-                Marka ayarı
-              </label>
-              {slotOptions.map((value) => (
-                <label key={value} className={styles.segment}>
-                  <input
-                    type="radio"
-                    form={formId}
-                    className={styles.segmentInput}
-                    name="slot"
-                    checked={slot === value}
-                    onChange={() => {
-                      setSlot(value);
-                    }}
-                  />
-                  {value} dk
-                </label>
-              ))}
-            </fieldset>
+            <Segmented<SlotInterval | 'marka'>
+              legend="Randevu saat aralığı"
+              name="slot"
+              form={formId}
+              describedBy="aralik-aciklama"
+              options={[
+                { value: 'marka', label: 'Marka ayarı' },
+                ...slotOptions.map((v) => ({ value: v, label: `${String(v)} dk` })),
+              ]}
+              value={slot ?? 'marka'}
+              onChange={(v) => {
+                setSlot(v === 'marka' ? null : v);
+              }}
+            />
           </SettingRow>
           {multiBranch ? (
             <SettingRow
