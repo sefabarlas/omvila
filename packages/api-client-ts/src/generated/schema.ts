@@ -211,7 +211,7 @@ export interface paths {
         get: operations["manageGetBookingPageSettings"];
         /**
          * Rezervasyon sayfası ayarlarını kaydet
-         * @description Bağlantı adı (slug) değişirse eski bağlantı 30 gün yönlendirilir. İzin: settings.manage
+         * @description AyarlarRezervasyon ekranı. Bağlantı adı (slug) değişirse eski bağlantı 30 gün yönlendirilir. Ad başka bir işletmede kullanılıyorsa veya başka bir işletmenin yönlendirmesi süren eski bağlantısıysa ya da ayrılmış bir adsa (r, b, d, api, giris, kayit, admin, panel, www…) 409 slug_unavailable. İzin: settings.manage
          */
         put: operations["manageUpdateBookingPageSettings"];
         post?: never;
@@ -1090,7 +1090,7 @@ export interface components {
          * @description docs/sozlesme/api-kurallari.md § Hata kodu kataloğu. İstemciler bilinmeyen değeri genel hata olarak ele alır.
          * @enum {string}
          */
-        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "deposit_unavailable_no_iban" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again";
+        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "slug_unavailable" | "deposit_unavailable_no_iban" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again";
         /** @description Kuruş cinsinden tutar */
         Money: {
             /**
@@ -2380,7 +2380,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, phone_already_exists, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban) */
+        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban) */
         Conflict: {
             headers: {
                 [name: string]: unknown;

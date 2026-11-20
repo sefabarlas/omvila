@@ -251,7 +251,7 @@ _responseData = rawData == null ? null : deserialize<BrandSettings, BrandSetting
   }
 
   /// Rezervasyon sayfası ayarlarını kaydet
-  /// Bağlantı adı (slug) değişirse eski bağlantı 30 gün yönlendirilir. İzin: settings.manage
+  /// AyarlarRezervasyon ekranı. Bağlantı adı (slug) değişirse eski bağlantı 30 gün yönlendirilir. Ad başka bir işletmede kullanılıyorsa veya başka bir işletmenin yönlendirmesi süren eski bağlantısıysa ya da ayrılmış bir adsa (r, b, d, api, giris, kayit, admin, panel, www…) 409 slug_unavailable. İzin: settings.manage
   ///
   /// Parameters:
   /// * [ifMatch] - GET yanıtındaki ETag değeri

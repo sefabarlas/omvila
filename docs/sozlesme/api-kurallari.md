@@ -82,6 +82,7 @@ RFC 9457 `application/problem+json`:
 | 409 | `hold_expired` | Bekleme teklifi veya tutma süresi doldu | "Bu saatin süresi doldu" |
 | 409 | `already_reviewed` | Randevu zaten değerlendirildi | |
 | 409 | `phone_already_exists` | Bu numara markada kayıtlı | "Bu numara zaten kayıtlı" + `meta.brandCustomerId` |
+| 409 | `slug_unavailable` | Bağlantı adı başka işletmede, başka işletmenin yönlendirmesi süren eski bağlantısı veya ayrılmış ad | Alan altında "Bu bağlantı adı kullanılamıyor" |
 | 409 | `deposit_unavailable_no_iban` | IBAN yokken kapora ayarı | "Kapora alınamaz" |
 | 409 | `outside_working_hours` | Panelde çalışma saati dışı (onaysız) | Uyarı + "Yine de ekle" |
 | 409 | `staff_on_time_off` | Personel izinli (onaysız) | Uyarı |
