@@ -34,4 +34,51 @@ internal sealed class JsonBody(JsonElement root)
                 return current;
         }
     }
+
+    /// <summary>Gelmediyse <paramref name="current"/>; null geldiyse null; sayı değilse hata.</summary>
+    public decimal? Decimal(string name, decimal? current) =>
+        Read(name, current, v => v.ValueKind == JsonValueKind.Number && v.TryGetDecimal(out var d) ? d : null);
+
+    public int? Int(string name, int? current) =>
+        Read(name, current, v => v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out var i) ? i : null);
+
+    /// <summary>Boolean alan: null kabul edilmez (gelmediyse <paramref name="current"/>).</summary>
+    public bool Bool(string name, bool current)
+    {
+        if (!IsObject || !root.TryGetProperty(name, out var value))
+        {
+            return current;
+        }
+
+        if (value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+        {
+            return value.GetBoolean();
+        }
+
+        Errors[name] = ["invalid_format"];
+        return current;
+    }
+
+    private T? Read<T>(string name, T? current, Func<JsonElement, T?> parse)
+        where T : struct
+    {
+        if (!IsObject || !root.TryGetProperty(name, out var value))
+        {
+            return current;
+        }
+
+        if (value.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        var parsed = parse(value);
+        if (parsed is null)
+        {
+            Errors[name] = ["invalid_format"];
+            return current;
+        }
+
+        return parsed;
+    }
 }

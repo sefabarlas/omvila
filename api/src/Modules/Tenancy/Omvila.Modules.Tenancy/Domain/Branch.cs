@@ -43,6 +43,32 @@ internal sealed class Branch
 
     public Instant CreatedUtc { get; private set; }
 
+    /// <summary>"Şube ekle": ad ve adres zorunlu; saat dilimi markanın varsayılanı (Europe/Istanbul).</summary>
+    public static Branch Create(Guid id, Guid brandId, BranchDetails details, string slug, string timeZoneId, Instant now)
+    {
+        ArgumentNullException.ThrowIfNull(details);
+        var branch = new Branch { Id = id, BrandId = brandId, Slug = slug, TimeZoneId = timeZoneId, IsActive = true, CreatedUtc = now };
+        branch.Update(details);
+        return branch;
+    }
+
+    /// <summary>Doğrulanmış değerleri uygular (AyarlarSube).</summary>
+    public void Update(BranchDetails details)
+    {
+        ArgumentNullException.ThrowIfNull(details);
+        Name = details.Name;
+        AddressLine = details.AddressLine;
+        District = details.District;
+        City = details.City;
+        PostalCode = details.PostalCode;
+        Latitude = details.Latitude;
+        Longitude = details.Longitude;
+        Phone = details.Phone;
+        Email = details.Email;
+        SlotIntervalMinutes = details.SlotIntervalMinutes;
+        IsActive = details.IsActive;
+    }
+
     /// <summary>Kayıttaki ilk şube: ad "Merkez", saat dilimi Europe/Istanbul, adres sonra girilir (dilim-01).</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }

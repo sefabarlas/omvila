@@ -50,6 +50,30 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         return signup.Body.GetProperty("accessToken").GetString()!;
     }
 
+    /// <summary>Markaya üye ekler (personel uçları PR-16'da) ve o numarayla giriş yapar; erişim jetonunu döner.</summary>
+    public async Task<string> AddMemberAndSignInAsync(string ownerToken, string phone, string role, string branchId)
+    {
+        var brandId = (await GetAsync("/api/v1/manage/session", ownerToken)).Body.GetProperty("brand").GetProperty("id").GetGuid();
+        await using (var connection = await db.OpenMigratorConnectionAsync(Ct))
+        {
+            await using var command = new NpgsqlCommand($"""
+                INSERT INTO identity.users (id, phone_e164, full_name, language_code, is_active, created_utc)
+                  VALUES (gen_random_uuid(), '{phone}', 'Deniz Kara', 'tr', true, now());
+                INSERT INTO identity.user_memberships (id, user_id, brand_id, role, branch_ids, staff_id, status, created_utc)
+                  SELECT gen_random_uuid(), id, '{brandId}', '{role}', ARRAY['{branchId}']::uuid[], null, 'Invited', now()
+                  FROM identity.users WHERE phone_e164 = '{phone}';
+                """, connection);
+            await command.ExecuteNonQueryAsync(Ct);
+        }
+
+        factory.Clock.Advance(NodaTime.Duration.FromMinutes(2));
+        var otp = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/request", new { phone, purpose = "Login" });
+        var code = await ScalarAsync<string>(
+            "SELECT payload->>'kod' FROM notifications.notification_outbox ORDER BY created_utc DESC, id DESC LIMIT 1");
+        var verified = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/verify", new { otpId = otp.Body.GetProperty("otpId").GetGuid(), code });
+        return verified.Body.GetProperty("accessToken").GetString()!;
+    }
+
     public Task<Response> GetAsync(string path, string token) => SendAsync(HttpMethod.Get, path, null, token);
 
     public Task<Response> WriteAsync(HttpMethod method, string path, object body, string token, string? ifMatch) =>

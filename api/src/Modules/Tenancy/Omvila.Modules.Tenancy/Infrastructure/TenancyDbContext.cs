@@ -23,6 +23,10 @@ internal sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> option
 
     public DbSet<BrandOnboarding> Onboarding => Set<BrandOnboarding>();
 
+    public DbSet<BranchWorkingHours> BranchHours => Set<BranchWorkingHours>();
+
+    public DbSet<WorkingHoursOverride> Overrides => Set<WorkingHoursOverride>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

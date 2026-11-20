@@ -5,6 +5,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.Modules.Tenancy.Features.Brand;
+using Omvila.Modules.Tenancy.Features.Branches;
 using Omvila.Modules.Tenancy.Features.Onboarding;
 using Omvila.SharedKernel;
 using Omvila.Modules.Tenancy.Infrastructure;
@@ -27,16 +28,18 @@ public static class TenancyModule
         services.AddScoped<ITenantQueries, TenantQueries>();
         services.AddScoped<OnboardingService>();
         services.AddScoped<IOnboardingStepProvider, BusinessCreatedStep>();
+        services.AddScoped<IOnboardingStepProvider, WorkingHoursStep>();
         services.AddScoped<IOnboardingStepProvider, StaffStep>();
         services.AddScoped<IOnboardingStepProvider, ShareBookingLinkStep>();
         return services;
     }
 
-    /// <summary>Tenancy uçlarını eşler (kurulum, marka).</summary>
+    /// <summary>Tenancy uçlarını eşler (kurulum, marka, şube).</summary>
     public static IEndpointRouteBuilder MapTenancyEndpoints(this IEndpointRouteBuilder app)
     {
         OnboardingEndpoints.Map(app);
         BrandEndpoints.Map(app);
+        BranchEndpoints.Map(app);
         return app;
     }
 }
