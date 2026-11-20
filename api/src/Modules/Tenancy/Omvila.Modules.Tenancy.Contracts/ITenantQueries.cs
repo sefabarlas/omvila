@@ -19,4 +19,9 @@ public interface ITenantQueries
     /// <param name="branchId">Şube.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<bool> BranchExistsAsync(Guid brandId, Guid branchId, CancellationToken ct);
+
+    /// <summary>Müşteri modülünün kullandığı marka ayarları; marka yoksa null.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<BrandCustomerSettings?> GetCustomerSettingsAsync(Guid brandId, CancellationToken ct);
 }

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Omvila.Modules.Tenancy.Contracts;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Tenancy.Infrastructure;
 
@@ -29,4 +30,21 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
 
     public Task<bool> BranchExistsAsync(Guid brandId, Guid branchId, CancellationToken ct) =>
         db.Branches.AnyAsync(b => b.BrandId == brandId && b.Id == branchId, ct);
+
+    public async Task<BrandCustomerSettings?> GetCustomerSettingsAsync(Guid brandId, CancellationToken ct)
+    {
+        var row = await (from b in db.Brands.AsNoTracking()
+                         join s in db.BrandSettings.AsNoTracking() on b.Id equals s.BrandId
+                         where b.Id == brandId
+                         select new { s.MaskCustomerPhoneFromStaff, s.RiskyCustomerNoShowThreshold, b.DefaultCurrencyCode }).SingleOrDefaultAsync(ct);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var timeZoneId = await db.Branches.AsNoTracking().Where(b => b.BrandId == brandId && b.IsActive)
+            .OrderBy(b => b.CreatedUtc).Select(b => b.TimeZoneId).FirstOrDefaultAsync(ct);
+        return new BrandCustomerSettings(
+            row.MaskCustomerPhoneFromStaff, row.RiskyCustomerNoShowThreshold, row.DefaultCurrencyCode, timeZoneId ?? PlatformDefaults.DefaultTimeZoneId);
+    }
 }

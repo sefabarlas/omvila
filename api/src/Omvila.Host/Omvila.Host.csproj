@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Modules\Tenancy\Omvila.Modules.Tenancy\Omvila.Modules.Tenancy.csproj" />
     <ProjectReference Include="..\Modules\Platform\Omvila.Modules.Platform\Omvila.Modules.Platform.csproj" />
     <ProjectReference Include="..\Modules\Catalog\Omvila.Modules.Catalog\Omvila.Modules.Catalog.csproj" />
+    <ProjectReference Include="..\Modules\Customers\Omvila.Modules.Customers\Omvila.Modules.Customers.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Omvila.Host.Tests" />
