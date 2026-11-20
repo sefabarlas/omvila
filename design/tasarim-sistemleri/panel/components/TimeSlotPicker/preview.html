@@ -1,0 +1,12 @@
+<!-- @dsCard group="Randevu" height=230 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>TimeSlotPicker — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'20px',maxWidth:'560px'}},h(P.TimeSlotPicker,{value:'14:30',groups:[{label:'Öğleden önce',slots:[{time:'09:00',available:false},{time:'09:45',available:true},{time:'10:30',available:true},{time:'11:15',available:false}]},{label:'Öğleden sonra',slots:[{time:'13:00',available:true},{time:'13:45',available:false},{time:'14:30',available:true},{time:'15:15',available:true},{time:'16:00',available:true},{time:'16:45',available:false}]}]})));
+</script>
+</body>
+</html>

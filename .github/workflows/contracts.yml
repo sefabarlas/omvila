@@ -1,0 +1,35 @@
+name: contracts
+
+on:
+  pull_request:
+    paths: ["contracts/**", "docs/sozlesme/**"]
+  push:
+    branches: [main]
+    paths: ["contracts/**", "docs/sozlesme/**"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sözleşme kuralları
+        run: |
+          pip install pyyaml "jsonschema>=4.18"
+          python3 contracts/scripts/check_conventions.py contracts/openapi.yaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Redocly lint
+        run: npx --yes @redocly/cli@1 lint contracts/openapi.yaml --config contracts/redocly.yaml
+      - name: Kırıcı değişiklik (oasdiff)
+        if: github.event_name == 'pull_request'
+        run: |
+          git show origin/${{ github.base_ref }}:contracts/openapi.yaml > /tmp/base.yaml || exit 0
+          docker run --rm -v /tmp:/base -v "$PWD/contracts":/head tufin/oasdiff breaking /base/base.yaml /head/openapi.yaml --fail-on ERR
+
+# Not: api, web ve flutter iş akışları Dilim 1 "Teknik temel" kapsamında eklenecek (docs/dilimler/dilim-01-giris-ve-kurulum.md).

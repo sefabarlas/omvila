@@ -1,0 +1,12 @@
+<!-- @dsCard group="Temel" height=100 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Icon — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens',style:{color:'var(--metin-ikincil)',gap:'18px'}},['house','calendar','calendar-check','users','bell','package','receipt','history','star','map-pin','phone','clock','user-check','store','settings','search'].map(function(n){return h(P.Icon,{key:n,name:n,size:24})})));
+</script>
+</body>
+</html>

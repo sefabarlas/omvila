@@ -1,0 +1,22 @@
+{
+  "name": "@omvila/contracts",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OMVILA HTTP API sözleşmesi (tek doğru kaynak)",
+  "scripts": {
+    "lint": "redocly lint openapi.yaml && spectral lint openapi.yaml --ruleset .spectral.yaml && python3 scripts/check_conventions.py openapi.yaml",
+    "breaking": "git show origin/main:contracts/openapi.yaml > /tmp/openapi.base.yaml && oasdiff breaking /tmp/openapi.base.yaml openapi.yaml --fail-on ERR",
+    "bundle": "redocly bundle openapi.yaml -o dist/openapi.json",
+    "mock": "prism mock openapi.yaml --port 4010 --dynamic false",
+    "generate": "pnpm generate:ts && pnpm generate:dart",
+    "generate:ts": "openapi-typescript openapi.yaml -o ../packages/api-client-ts/src/generated/schema.ts",
+    "generate:dart": "openapi-generator-cli generate -i openapi.yaml -g dart-dio -o ../packages/api-client-dart --additional-properties=pubName=omvila_api,serializationLibrary=json_serializable,enumUnknownDefaultCase=true"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.0",
+    "@redocly/cli": "^1.25.0",
+    "@stoplight/prism-cli": "^5.12.0",
+    "@stoplight/spectral-cli": "^6.14.0",
+    "openapi-typescript": "^7.4.0"
+  }
+}

@@ -1,0 +1,3085 @@
+openapi: 3.1.0
+info:
+  title: OMVILA API
+  version: 0.1.0
+  summary: Randevu ve salon yönetimi platformu
+  description: |
+    OMVILA'nın tek HTTP sözleşmesi. Kurallar: docs/sozlesme/api-kurallari.md.
+
+    Kapsam (v0.1): Dilim 1 (giriş + salon kurulumu) ve Dilim 2 (müsaitlik + rezervasyon sayfası + panel takvimi).
+    Sonraki dilimlerin uçları contracts/yol-haritasi.md içinde listelidir; eklenince bu dosyaya girer.
+
+    Yüzeyler:
+    - /api/v1/manage — salon paneli ve işletme uygulaması (JWT aud=manage)
+    - /api/v1/public — rezervasyon sayfası ve müşteri uygulamasının randevu alma akışı
+    - /api/v1/me — müşteri uygulaması (JWT aud=me) — Dilim 5
+    - /api/v1/admin — platform paneli (JWT aud=admin) — Dilim 6
+
+    Zaman: anlık zaman UTC RFC 3339; yerel tarih/saat şubenin timeZone alanına göredir.
+    Para: kuruş cinsinden tamsayı (amountMinor) + currency.
+servers:
+  - url: http://localhost:5080
+    description: Yerel backend
+  - url: http://localhost:4010
+    description: Prism mock (pnpm --filter contracts mock)
+tags:
+  - name: manage-auth
+    description: Salon kullanıcısı girişi ve kaydı (telefon + SMS kodu)
+  - name: manage-session
+    description: Oturum bilgisi ve kurulum adımları
+  - name: manage-brand
+    description: İşletme bilgileri, ayarlar, rezervasyon sayfası
+  - name: manage-branches
+    description: Şubeler, çalışma saatleri, özel günler
+  - name: manage-catalog
+    description: Hizmet kategorileri ve hizmetler
+  - name: manage-staff
+    description: Personel, çalışma saatleri, izinler
+  - name: manage-customers
+    description: Salonun müşterileri (Dilim 2 için asgari kapsam)
+  - name: manage-calendar
+    description: Takvim ve randevular
+  - name: public-booking
+    description: Rezervasyon sayfası (üyeliksiz randevu)
+  - name: public-appointment-link
+    description: SMS bağlantısıyla açılan randevu yönetimi
+
+security: []
+
+paths:
+  # ───────────────────────────── manage-auth ─────────────────────────────
+  /api/v1/manage/auth/otp/request:
+    post:
+      tags: [manage-auth]
+      operationId: manageRequestOtp
+      summary: SMS kodu iste (giriş veya kayıt)
+      description: |
+        "Panele giriş" ve "İşletmenizi oluşturun" ekranlarındaki "SMS kodu gönder".
+        Numaranın kayıtlı olup olmadığı yanıtta açık edilmez (her durumda 202).
+      parameters:
+        - $ref: '#/components/parameters/ClientType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageOtpRequest'
+      responses:
+        '202':
+          description: Kod gönderildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/manage/auth/otp/verify:
+    post:
+      tags: [manage-auth]
+      operationId: manageVerifyOtp
+      summary: SMS kodunu doğrula
+      description: |
+        Kullanıcı varsa oturum açar (result = SignedIn). Yoksa kayıt için kısa ömürlü signupToken döner (result = SignupRequired).
+        Web istemcisinde (X-Client-Type: web) yenileme jetonu HttpOnly çerez olarak döner, gövdede yer almaz.
+      parameters:
+        - $ref: '#/components/parameters/ClientType'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: Doğrulandı
+          headers:
+            Set-Cookie:
+              description: Yalnız web istemcisinde; omvila_rt yenileme çerezi
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageAuthResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/manage/auth/signup:
+    post:
+      tags: [manage-auth]
+      operationId: manageSignup
+      summary: İşletmeyi oluştur
+      description: Marka, ilk şube, Owner üyeliği ve deneme aboneliği tek transaction'da oluşur.
+      parameters:
+        - $ref: '#/components/parameters/ClientType'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: İşletme oluşturuldu, oturum açıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageAuthResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/manage/auth/refresh:
+    post:
+      tags: [manage-auth]
+      operationId: manageRefreshToken
+      summary: Erişim jetonunu yenile
+      description: |
+        Web: yenileme çerezi otomatik gönderilir; X-Requested-With başlığı zorunludur. Mobil: gövdede refreshToken.
+        Yenileme jetonu her kullanımda döndürülür.
+      parameters:
+        - $ref: '#/components/parameters/ClientType'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Yeni jetonlar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/manage/auth/logout:
+    post:
+      tags: [manage-auth]
+      operationId: manageLogout
+      summary: Oturumu kapat
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Kapatıldı }
+
+  # ───────────────────────────── manage-session ─────────────────────────────
+  /api/v1/manage/session:
+    get:
+      tags: [manage-session]
+      operationId: manageGetSession
+      summary: Oturumdaki kullanıcı, işletme, rol, izinler ve şubeler
+      description: Panel açılışında bir kez çağrılır; menü görünürlüğü permissions listesine göre kurulur.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Oturum
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageSession'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/manage/onboarding:
+    get:
+      tags: [manage-session]
+      operationId: manageGetOnboarding
+      summary: Kurulum adımları ("İlk randevunuza 4 adım")
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Adımlar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingChecklist'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/manage/onboarding/events:
+    post:
+      tags: [manage-session]
+      operationId: manageRecordOnboardingEvent
+      summary: Kurulum olayı bildir (bağlantı kopyalandı, QR indirildi, tek başıma çalışıyorum)
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event]
+              properties:
+                event: { type: string, enum: [BookingLinkCopied, QrDownloaded, StoryImageDownloaded, SoloConfirmed] }
+      responses:
+        '204': { description: Kaydedildi }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────────── manage-brand ─────────────────────────────
+  /api/v1/manage/brand:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetBrand
+      summary: İşletme bilgileri
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: İşletme
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [manage-brand]
+      operationId: manageUpdateBrand
+      summary: İşletme bilgilerini güncelle
+      description: "İzin: settings.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandUpdate'
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/brand/settings:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetBrandSettings
+      summary: Randevu kuralları ve kapora ayarları
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Ayarlar
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandSettings'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [manage-brand]
+      operationId: manageUpdateBrandSettings
+      summary: Ayarları kaydet ("Değişiklikleri kaydet")
+      description: "İzin: settings.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandSettings'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandSettings'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/brand/booking-page:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetBookingPageSettings
+      summary: Rezervasyon sayfası ayarları ve bağlantısı
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Ayarlar
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPageSettings'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [manage-brand]
+      operationId: manageUpdateBookingPageSettings
+      summary: Rezervasyon sayfası ayarlarını kaydet
+      description: "Bağlantı adı (slug) değişirse eski bağlantı 30 gün yönlendirilir. İzin: settings.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingPageSettingsUpdate'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPageSettings'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── manage-branches ─────────────────────────────
+  /api/v1/manage/branches:
+    get:
+      tags: [manage-branches]
+      operationId: manageListBranches
+      summary: Şubeler (kullanıcının kapsamındakiler)
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Şubeler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Branch' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [manage-branches]
+      operationId: manageCreateBranch
+      summary: Şube ekle
+      description: "Plan sınırı aşılırsa 403 forbidden + meta.planLimit. İzin: settings.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchCreate'
+      responses:
+        '201':
+          description: Oluşturuldu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/branches/{branchId}:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    get:
+      tags: [manage-branches]
+      operationId: manageGetBranch
+      summary: Şube
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Şube
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [manage-branches]
+      operationId: manageUpdateBranch
+      summary: Şubeyi güncelle
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchUpdate'
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/branches/{branchId}/working-hours:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    get:
+      tags: [manage-branches]
+      operationId: manageGetBranchWorkingHours
+      summary: Şubenin haftalık çalışma saatleri
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Haftalık saatler
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyHours'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [manage-branches]
+      operationId: manageSetBranchWorkingHours
+      summary: Haftalık saatleri kaydet
+      description: Günde birden çok aralık olabilir; aralıklar örtüşemez, gece yarısını aşamaz.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeeklyHours'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyHours'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/branches/{branchId}/overrides:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    get:
+      tags: [manage-branches]
+      operationId: manageListBranchOverrides
+      summary: Özel günler ve tatiller
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Özel günler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/WorkingHoursOverride' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [manage-branches]
+      operationId: manageCreateBranchOverride
+      summary: Özel gün ekle ("Kapalı gün ekle", "Yalnızca bu gün için aç")
+      description: Kapalı güne denk gelen randevu varsa yanıt meta.affectedAppointmentCount döner; randevular otomatik iptal edilmez.
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkingHoursOverrideCreate'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkingHoursOverride'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/branches/{branchId}/overrides/{overrideId}:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+      - { name: overrideId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [manage-branches]
+      operationId: manageDeleteBranchOverride
+      summary: Özel günü kaldır
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Kaldırıldı }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-catalog ─────────────────────────────
+  /api/v1/manage/industries/{industryCode}/service-templates:
+    get:
+      tags: [manage-catalog]
+      operationId: manageListServiceTemplates
+      summary: Sektör hazır hizmet listesi
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - name: industryCode
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/IndustryCode' }
+      responses:
+        '200':
+          description: Şablonlar
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceTemplate' }
+
+  /api/v1/manage/services/from-templates:
+    post:
+      tags: [manage-catalog]
+      operationId: manageCreateServicesFromTemplates
+      summary: Hazır listeden hizmet ekle
+      description: "Kategoriler yoksa oluşturulur. İzin: service.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: object
+                    required: [templateId]
+                    properties:
+                      templateId: { type: string, format: uuid }
+                      price: { $ref: '#/components/schemas/Money' }
+                      durationMinutes: { type: integer, minimum: 5, maximum: 720 }
+      responses:
+        '201':
+          description: Hizmetler eklendi
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Service' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/service-categories:
+    get:
+      tags: [manage-catalog]
+      operationId: manageListServiceCategories
+      summary: Hizmet kategorileri
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Kategoriler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/ServiceCategory' }
+    post:
+      tags: [manage-catalog]
+      operationId: manageCreateServiceCategory
+      summary: Kategori ekle
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryWrite'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/service-categories/{categoryId}:
+    parameters:
+      - { name: categoryId, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      tags: [manage-catalog]
+      operationId: manageUpdateServiceCategory
+      summary: Kategoriyi güncelle (ad, sıra, pasif)
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCategoryWrite'
+      responses:
+        '200':
+          description: Güncellendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceCategory'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/services:
+    get:
+      tags: [manage-catalog]
+      operationId: manageListServices
+      summary: Hizmetler
+      description: branchId verilirse fiyat ve süre o şubeye göre çözülür ("Fiyatlar Kadıköy şubesi için").
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - { name: includeInactive, in: query, required: false, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Hizmetler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Service' }
+    post:
+      tags: [manage-catalog]
+      operationId: manageCreateService
+      summary: Hizmet ekle
+      description: "Kapora isteniyorsa ve aktif IBAN yoksa 409 deposit_unavailable_no_iban. İzin: service.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceWrite'
+      responses:
+        '201':
+          description: Eklendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/services/{serviceId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceIdPath'
+    get:
+      tags: [manage-catalog]
+      operationId: manageGetService
+      summary: Hizmet
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Hizmet
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [manage-catalog]
+      operationId: manageUpdateService
+      summary: Hizmeti güncelle
+      description: Fiyat değişikliği var olan randevuları etkilemez (fiyat randevuya kopyalanmıştır).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceWrite'
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/services/{serviceId}/branch-prices/{branchId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+    put:
+      tags: [manage-catalog]
+      operationId: manageSetBranchServicePrice
+      summary: Şubeye özel fiyat veya süre
+      description: "İzin: service.manage (BranchManager yalnız kendi şubesi)"
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchServicePrice'
+      responses:
+        '200':
+          description: Kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BranchServicePrice'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [manage-catalog]
+      operationId: manageDeleteBranchServicePrice
+      summary: Şube fiyatını kaldır (genel fiyata dön)
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Kaldırıldı }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-staff ─────────────────────────────
+  /api/v1/manage/staff:
+    get:
+      tags: [manage-staff]
+      operationId: manageListStaff
+      summary: Personel
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - { name: includeInactive, in: query, required: false, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Personel listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/StaffSummary' }
+    post:
+      tags: [manage-staff]
+      operationId: manageCreateStaff
+      summary: Personel ekle
+      description: |
+        Telefon verilirse kullanıcı ve üyelik (Invited) oluşur; sendInvite true ise davet SMS'i gider.
+        Plan personel sınırı aşılırsa 403 forbidden + meta.planLimit. İzin: staff.manage
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffCreate'
+      responses:
+        '201':
+          description: Eklendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/staff/{staffId}:
+    parameters:
+      - $ref: '#/components/parameters/StaffIdPath'
+    get:
+      tags: [manage-staff]
+      operationId: manageGetStaff
+      summary: Personel ayrıntısı (saatler, hizmetler, prim oranları)
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Personel
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDetail'
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [manage-staff]
+      operationId: manageUpdateStaff
+      summary: Personeli güncelle
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffUpdate'
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/staff/{staffId}/services:
+    parameters:
+      - $ref: '#/components/parameters/StaffIdPath'
+    put:
+      tags: [manage-staff]
+      operationId: manageSetStaffServices
+      summary: Personelin verdiği hizmetler, özel süre ve ek ücret
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '#/components/schemas/StaffServiceAssignment' }
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/staff/{staffId}/branches/{branchId}/working-hours:
+    parameters:
+      - $ref: '#/components/parameters/StaffIdPath'
+      - $ref: '#/components/parameters/BranchIdPath'
+    put:
+      tags: [manage-staff]
+      operationId: manageSetStaffWorkingHours
+      summary: Personelin bir şubedeki haftalık saatleri
+      description: Başka şubedeki saatleriyle örtüşürse 400 validation_failed (errors.days[n].intervals = overlaps_other_branch).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeeklyHours'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyHours'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/staff/{staffId}/time-off:
+    parameters:
+      - $ref: '#/components/parameters/StaffIdPath'
+    get:
+      tags: [manage-staff]
+      operationId: manageListTimeOff
+      summary: İzinler
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - { name: from, in: query, required: false, schema: { type: string, format: date } }
+        - { name: to, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: İzinler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/TimeOff' }
+    post:
+      tags: [manage-staff]
+      operationId: manageCreateTimeOff
+      summary: İzin veya tatil ekle
+      description: Randevular iptal edilmez; yanıt etkilenen randevuları listeler ("İzni kaydet ve randevulara bak").
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeOffCreate'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeOffCreated'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/staff/{staffId}/time-off/{timeOffId}:
+    parameters:
+      - $ref: '#/components/parameters/StaffIdPath'
+      - { name: timeOffId, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      tags: [manage-staff]
+      operationId: manageDeleteTimeOff
+      summary: İzni kaldır
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Kaldırıldı }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-customers (asgari) ─────────────────────────────
+  /api/v1/manage/customers:
+    get:
+      tags: [manage-customers]
+      operationId: manageListCustomers
+      summary: Müşteri ara ve listele
+      description: q ad veya telefonla arar; telefonun son 4 hanesiyle de çalışır. Personel rolünde telefon maskeli döner.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 80 } }
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [All, Regular, New, WithPackage, NoShowRisk, Lapsed60]
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Müşteriler
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/CustomerSummary' }
+                  nextCursor: { type: [string, 'null'] }
+    post:
+      tags: [manage-customers]
+      operationId: manageCreateCustomer
+      summary: Müşteri ekle
+      description: Numara markada kayıtlıysa 409 phone_already_exists + meta.brandCustomerId ("Mevcut kartı aç").
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreate'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSummary'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/customers/{brandCustomerId}:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageGetCustomer
+      summary: Müşteri kartı (Dilim 2 kapsamı; paket, ödeme ve değerlendirme sekmeleri sonraki dilimlerde)
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Müşteri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSummary'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-calendar ─────────────────────────────
+  /api/v1/manage/calendar:
+    get:
+      tags: [manage-calendar]
+      operationId: manageGetCalendar
+      summary: Takvim (gün veya hafta)
+      description: |
+        Günlük görünüm: from = to, personel kolonları. Haftalık görünüm: 7 gün, staffIds tek personel.
+        Personel rolünde yalnız kendi kolonu döner. Aralık en fazla 31 gün.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQuery'
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+        - name: staffIds
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Takvim verisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/branches/{branchId}/availability/slots:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageSearchSlots
+      summary: Panel için boş saatler ("Elif için boş saatler")
+      description: Public motorun aynısıdır; MinNotice ve MaxAdvance sınırları panelde uygulanmaz, online kapalı personel ve hizmetler dahildir.
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotSearchRequest'
+      responses:
+        '200':
+          description: Saatler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotSearchResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/appointments:
+    post:
+      tags: [manage-calendar]
+      operationId: manageCreateAppointment
+      summary: Randevu oluştur ("Yeni randevu")
+      description: |
+        Panel/telefon kanalında randevu Confirmed oluşur, kapora istenmez.
+        Çalışma saati dışı veya izinli personel için önce 409 outside_working_hours / staff_on_time_off döner; kullanıcı onaylarsa allowOutsideWorkingHours = true ile tekrar gönderilir.
+        Çakışma asla geçilemez: 409 slot_taken.
+        recurrence verilirse ilk 3 aylık tekrarlar oluşur; çakışan tekrarlar skippedOccurrences içinde döner.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageAppointmentCreate'
+      responses:
+        '201':
+          description: Oluşturuldu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentCreated'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/TryAgain' }
+
+  /api/v1/manage/appointments/{appointmentId}:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    get:
+      tags: [manage-calendar]
+      operationId: manageGetAppointment
+      summary: Randevu ayrıntısı (yan panel)
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Randevu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/appointments/{appointmentId}/reschedule:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageRescheduleAppointment
+      summary: Saati veya personeli değiştir (sürükle-bırak dahil)
+      description: Salon son süreye tabi değildir. Tekrarlayan randevuda scope zorunludur.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageRescheduleRequest'
+      responses:
+        '200':
+          description: Değiştirildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageCancelAppointment
+      summary: Randevuyu iptal et
+      description: "Tekrarlayan randevuda scope zorunludur. notifyCustomer false ise müşteriye mesaj gitmez. İzin: appointment.cancel"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageCancelRequest'
+      responses:
+        '200':
+          description: İptal edildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/appointments/{appointmentId}/check-in:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageCheckInAppointment
+      summary: Geldi olarak işaretle
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: İşaretlendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/appointments/{appointmentId}/undo-no-show:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageUndoNoShow
+      summary: Geldiyse geri al
+      description: Yalnız aynı yerel gün içinde; randevu CheckedIn olur, gelmedi sayacı düşer.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Geri alındı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── public-booking ─────────────────────────────
+  /api/v1/public/brands/{brandSlug}:
+    get:
+      tags: [public-booking]
+      operationId: publicGetBrand
+      summary: Rezervasyon sayfası açılışı (salon kartı ve şubeler)
+      description: Salt okunur abonelikte veya online randevu kapalıysa bookingEnabled = false döner (sayfa "Online randevu kapalı" gösterir).
+      parameters:
+        - name: brandSlug
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[a-z0-9-]{3,60}$' }
+      responses:
+        '200':
+          description: Salon
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBrand'
+        '301':
+          description: Bağlantı adı değişti; Location yeni adrese yönlendirir
+          headers:
+            Location: { schema: { type: string } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/branches/{branchId}/catalog:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    get:
+      tags: [public-booking]
+      operationId: publicGetBranchCatalog
+      summary: Şubenin online hizmetleri, kategorileri ve personeli
+      responses:
+        '200':
+          description: Katalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicCatalog'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/branches/{branchId}/availability/days:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    post:
+      tags: [public-booking]
+      operationId: publicSearchDays
+      summary: Gün şeridi (hangi günlerde boş saat var)
+      description: Güvenli (yan etkisiz) bir sorgudur; gövde karmaşık olduğu için POST kullanılır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DaySearchRequest'
+      responses:
+        '200':
+          description: Günler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DaySearchResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/branches/{branchId}/availability/slots:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    post:
+      tags: [public-booking]
+      operationId: publicSearchSlots
+      summary: Bir günün boş saatleri
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotSearchRequest'
+      responses:
+        '200':
+          description: Saatler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotSearchResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/otp/request:
+    post:
+      tags: [public-booking]
+      operationId: publicRequestOtp
+      summary: Telefon doğrulama kodu iste
+      description: |
+        Tarayıcıda geçerli güvenilir cihaz çerezi (omvila_td) aynı telefona aitse kod gönderilmez,
+        status = AlreadyVerified ve bookingToken doğrudan döner.
+      parameters:
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicOtpRequest'
+      responses:
+        '200':
+          description: Kod gönderildi veya cihaz zaten doğrulanmış
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicOtpRequestResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/public/otp/verify:
+    post:
+      tags: [public-booking]
+      operationId: publicVerifyOtp
+      summary: Kodu doğrula, rezervasyon jetonu al
+      parameters:
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: Doğrulandı
+          headers:
+            Set-Cookie:
+              description: rememberDevice true ise omvila_td güvenilir cihaz çerezi (30 gün)
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingTokenResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/public/branches/{branchId}/my-packages:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    get:
+      tags: [public-booking]
+      operationId: publicListMyPackages
+      summary: Doğrulanmış telefonun bu salonda kullanabileceği paket seansları
+      description: Onay ekranındaki "Fön paketinizden düşülsün" anahtarı için.
+      security: [ { publicBookingBearer: [] }, { meBearer: [] } ]
+      responses:
+        '200':
+          description: Kullanılabilir paket kalemleri
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/UsablePackageItem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/public/branches/{branchId}/appointments:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    post:
+      tags: [public-booking]
+      operationId: publicCreateAppointment
+      summary: Randevuyu oluştur
+      description: |
+        Onay veya kapora gerekiyorsa randevu PendingApproval oluşur ve holdExpiresUtc döner.
+        Kapora gerekiyorsa yanıtta depositInstructions (alıcı, IBAN, tutar, açıklama kodu, son zaman) bulunur.
+        Saat dolmuşsa 409 slot_taken + meta.alternatives.
+      security: [ { publicBookingBearer: [] }, { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicAppointmentCreate'
+      responses:
+        '201':
+          description: Oluşturuldu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/TryAgain' }
+
+  # ───────────────────────────── public-appointment-link ─────────────────────────────
+  /api/v1/public/appointments/{accessCode}:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    get:
+      tags: [public-appointment-link]
+      operationId: publicGetAppointmentByCode
+      summary: SMS bağlantısından randevu ("Randevum")
+      responses:
+        '200':
+          description: Randevu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/appointments/{accessCode}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-appointment-link]
+      operationId: publicCancelAppointment
+      summary: Randevuyu iptal et (müşteri)
+      description: İptal nedeni zorunludur. Son süre geçtiyse 409 cutoff_passed.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCancelRequest'
+      responses:
+        '200':
+          description: İptal edildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/public/appointments/{accessCode}/availability/slots:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-appointment-link]
+      operationId: publicSearchRescheduleSlots
+      summary: Saat değişikliği için boş saatler (aynı hizmetler ve personel)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date]
+              properties:
+                date: { type: string, format: date }
+      responses:
+        '200':
+          description: Saatler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotSearchResult'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/public/appointments/{accessCode}/reschedule:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-appointment-link]
+      operationId: publicRescheduleAppointment
+      summary: Saati değiştir (müşteri)
+      description: |
+        Erteleme son süresi geçtiyse 409 cutoff_passed. Salon onaylı çalışıyorsa randevu yeniden PendingApproval olur.
+        Alınmış kapora yeni saate aktarılır.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startUtc]
+              properties:
+                startUtc: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Değiştirildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+components:
+  securitySchemes:
+    manageBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Salon kullanıcısı (aud=manage)
+    publicBookingBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Rezervasyon sayfası telefon doğrulama jetonu (aud=public-booking, 30 dk)
+    meBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Müşteri uygulaması (aud=me)
+    adminBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Platform kullanıcısı (aud=admin)
+
+  headers:
+    ETag:
+      description: Kaynağın sürümü; değiştiren isteklerde If-Match ile geri gönderilir
+      schema: { type: string, example: 'W/"8812"' }
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)
+      schema: { type: string, format: uuid }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: GET yanıtındaki ETag değeri
+      schema: { type: string }
+    ClientType:
+      name: X-Client-Type
+      in: header
+      required: true
+      description: web ise yenileme jetonu HttpOnly çerezde, mobile ise gövdede döner
+      schema: { type: string, enum: [web, mobile] }
+    ClientHeader:
+      name: X-Client
+      in: header
+      required: false
+      schema: { type: string, enum: [booking-page, customer-app] }
+    BranchIdPath:
+      name: branchId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    BranchIdQuery:
+      name: branchId
+      in: query
+      required: true
+      schema: { type: string, format: uuid }
+    BranchIdQueryOptional:
+      name: branchId
+      in: query
+      required: false
+      schema: { type: string, format: uuid }
+    ServiceIdPath:
+      name: serviceId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    StaffIdPath:
+      name: staffId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AppointmentIdPath:
+      name: appointmentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    AccessCodePath:
+      name: accessCode
+      in: path
+      required: true
+      description: SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+      schema: { type: string, pattern: '^[A-Za-z0-9]{8,10}$' }
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema: { type: string }
+
+  responses:
+    BadRequest:
+      description: Doğrulama hatası (validation_failed)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: Kimlik yok veya geçersiz (unauthorized, token_expired)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Forbidden:
+      description: Yetki yok (forbidden, booking_disabled, subscription_read_only, customer_blocked)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: Bulunamadı veya kapsam dışı (not_found, access_code_invalid)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, phone_already_exists, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+          example:
+            type: https://docs.omvila.com/errors/slot_taken
+            title: Slot is no longer available
+            status: 409
+            code: slot_taken
+            traceId: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+            meta:
+              alternatives: ['2026-11-25T11:45:00Z', '2026-11-25T12:15:00Z']
+    PreconditionFailed:
+      description: Kayıt başkası tarafından değiştirildi (concurrency_conflict)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unprocessable:
+      description: Kod hatalı veya süresi dolmuş (otp_invalid, otp_expired, idempotency_key_reused)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TooManyRequests:
+      description: Hız sınırı (otp_attempts_exceeded, otp_resend_too_soon, rate_limited)
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    TryAgain:
+      description: Geçici yoğunluk (try_again); istemci bir kez otomatik tekrar dener
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    # ───────── temel tipler ─────────
+    Problem:
+      type: object
+      description: RFC 9457 problem details. Kullanıcı metni istemcide code'a göre seçilir.
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        detail: { type: string }
+        traceId: { type: string }
+        errors:
+          type: object
+          description: Alan yolu → hata kodları
+          additionalProperties:
+            type: array
+            items: { type: string }
+        meta:
+          type: object
+          description: Koda özgü ek bilgi (alternatives, attemptsLeft, retryAfterSeconds, brandCustomerId, planLimit, changedBy…)
+          additionalProperties: true
+    ErrorCode:
+      type: string
+      description: docs/sozlesme/api-kurallari.md § Hata kodu kataloğu. İstemciler bilinmeyen değeri genel hata olarak ele alır.
+      enum:
+        - validation_failed
+        - unauthorized
+        - token_expired
+        - forbidden
+        - booking_disabled
+        - subscription_read_only
+        - customer_blocked
+        - not_found
+        - access_code_invalid
+        - slot_taken
+        - invalid_state_transition
+        - cutoff_passed
+        - hold_expired
+        - already_reviewed
+        - phone_already_exists
+        - deposit_unavailable_no_iban
+        - outside_working_hours
+        - staff_on_time_off
+        - insufficient_credits
+        - concurrency_conflict
+        - idempotency_key_reused
+        - otp_invalid
+        - otp_expired
+        - precondition_required
+        - otp_attempts_exceeded
+        - otp_resend_too_soon
+        - rate_limited
+        - try_again
+    Money:
+      type: object
+      description: Kuruş cinsinden tutar
+      required: [amountMinor, currency]
+      properties:
+        amountMinor: { type: integer, format: int64, minimum: 0, example: 45000 }
+        currency: { type: string, enum: [TRY], example: TRY }
+    LocalTime:
+      type: string
+      description: Yerel saat HH:mm (şubenin saat dilimine göre)
+      pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+      example: '14:30'
+    PhoneE164:
+      type: string
+      description: E.164 telefon
+      pattern: '^\+[1-9]\d{7,14}$'
+      example: '+905324187705'
+    PhoneInput:
+      type: string
+      description: Serbest biçimli telefon girişi; sunucu E.164'e çevirir ("0532 418 77 05", "5324187705", "+90 532 418 7705")
+      minLength: 10
+      maxLength: 20
+      example: '0532 418 77 05'
+    TimeZoneId:
+      type: string
+      description: IANA saat dilimi
+      example: Europe/Istanbul
+    DayOfWeek:
+      type: integer
+      description: ISO gün (1 = Pazartesi … 7 = Pazar)
+      minimum: 1
+      maximum: 7
+    IndustryCode:
+      type: string
+      enum: [barber, hair_salon, beauty, spa, nail, dietitian, other]
+    Version:
+      type: string
+      description: Kaynak sürümü (ETag ile aynı değer)
+
+    # ───────── kimlik ─────────
+    ManageOtpRequest:
+      type: object
+      required: [phone, purpose]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+        purpose: { type: string, enum: [Login, Signup] }
+    OtpChallengeResponse:
+      type: object
+      required: [otpId, expiresInSeconds, resendAfterSeconds, phoneMasked]
+      properties:
+        otpId: { type: string, format: uuid }
+        expiresInSeconds: { type: integer, example: 180 }
+        resendAfterSeconds: { type: integer, example: 60 }
+        phoneMasked: { type: string, example: '0532 *** ** 05' }
+    OtpVerifyRequest:
+      type: object
+      required: [otpId, code]
+      properties:
+        otpId: { type: string, format: uuid }
+        code: { type: string, pattern: '^\d{6}$', example: '482193' }
+        rememberDevice:
+          type: boolean
+          default: false
+          description: Panelde "Bu bilgisayarda 30 gün hatırla"; rezervasyon sayfasında güvenilir cihaz çerezi
+    ManageAuthResult:
+      type: object
+      required: [result]
+      properties:
+        result: { type: string, enum: [SignedIn, SignupRequired] }
+        accessToken: { type: string, description: result = SignedIn }
+        expiresInSeconds: { type: integer, example: 900 }
+        refreshToken: { type: string, description: Yalnız mobil istemcide }
+        signupToken: { type: string, description: result = SignupRequired; 15 dk geçerli }
+    SignupRequest:
+      type: object
+      required: [signupToken, businessName, industryCode, acceptedTerms, privacyNoticeVersion]
+      properties:
+        signupToken: { type: string }
+        businessName: { type: string, minLength: 2, maxLength: 160, example: Kuaför Elif }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        ownerFullName: { type: string, maxLength: 120, example: Elif Kaya }
+        acceptedTerms:
+          type: boolean
+          const: true
+          description: Kullanım koşulları ve aydınlatma metni okundu
+        privacyNoticeVersion: { type: string, example: '2026-11-01' }
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken: { type: string, description: Yalnız mobil; web çerezle gönderir }
+    TokenPair:
+      type: object
+      required: [accessToken, expiresInSeconds]
+      properties:
+        accessToken: { type: string }
+        expiresInSeconds: { type: integer, example: 900 }
+        refreshToken: { type: string, description: Yalnız mobil }
+
+    Permission:
+      type: string
+      description: docs/alan/roller-yetkiler.md izin kodları
+      example: appointment.approve
+    ManageSession:
+      type: object
+      required: [user, brand, membership, permissions, branches, subscription]
+      properties:
+        user:
+          type: object
+          required: [id, fullName, phoneMasked]
+          properties:
+            id: { type: string, format: uuid }
+            fullName: { type: string, example: Elif Kaya }
+            phoneMasked: { type: string }
+        brand:
+          type: object
+          required: [id, name, slug, status]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string, example: Kuaför Elif }
+            slug: { type: string, example: kuafor-elif }
+            logoUrl: { type: [string, 'null'] }
+            status: { type: string, enum: [Onboarding, Active, Suspended, Archived] }
+        membership:
+          type: object
+          required: [role, branchIds]
+          properties:
+            role: { type: string, enum: [Owner, BranchManager, Staff] }
+            branchIds:
+              type: array
+              description: Boş dizi = tüm şubeler (Owner)
+              items: { type: string, format: uuid }
+            staffId: { type: [string, 'null'], format: uuid }
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/Permission' }
+        branches:
+          type: array
+          items: { $ref: '#/components/schemas/BranchRef' }
+        subscription:
+          $ref: '#/components/schemas/SubscriptionBanner'
+    SubscriptionBanner:
+      type: object
+      description: Panel şeritleri için abonelik özeti
+      required: [status]
+      properties:
+        status: { type: string, enum: [Trialing, Active, PastDue, ReadOnly, Cancelled] }
+        trialEndsOn: { type: [string, 'null'], format: date }
+        pastDueSince: { type: [string, 'null'], format: date }
+        readOnlyOn: { type: [string, 'null'], format: date, description: PastDue ise salt okunura geçeceği gün }
+    OnboardingChecklist:
+      type: object
+      required: [steps, completedCount, totalCount]
+      properties:
+        completedCount: { type: integer, example: 1 }
+        totalCount: { type: integer, example: 5 }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [key, done]
+            properties:
+              key: { type: string, enum: [BusinessCreated, WorkingHours, Services, Staff, ShareBookingLink] }
+              done: { type: boolean }
+
+    # ───────── marka ─────────
+    Brand:
+      type: object
+      required: [id, name, slug, industryCode, status, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kuaför Elif }
+        slug: { type: string, example: kuafor-elif }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        status: { type: string, enum: [Onboarding, Active, Suspended, Archived] }
+        shortDescription: { type: [string, 'null'], maxLength: 160, example: 'Saç, bakım ve makyajda 12 yıllık deneyim.' }
+        logoUrl: { type: [string, 'null'] }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'], format: email }
+        instagram: { type: [string, 'null'] }
+        website: { type: [string, 'null'] }
+        legalName: { type: [string, 'null'] }
+        taxOffice: { type: [string, 'null'] }
+        taxNumber: { type: [string, 'null'] }
+        version: { $ref: '#/components/schemas/Version' }
+    BrandUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 160 }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        shortDescription: { type: [string, 'null'], maxLength: 160 }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'], format: email }
+        instagram: { type: [string, 'null'], maxLength: 60 }
+        website: { type: [string, 'null'], maxLength: 200 }
+        legalName: { type: [string, 'null'], maxLength: 200 }
+        taxOffice: { type: [string, 'null'], maxLength: 80 }
+        taxNumber: { type: [string, 'null'], maxLength: 20 }
+    BrandSettings:
+      type: object
+      description: docs/alan/sureler-ve-ayarlar.md
+      required:
+        - requiresApproval
+        - approvalTimeoutMinutes
+        - allowStaffSelection
+        - allowAnyStaffOption
+        - cancellationCutoffHours
+        - rescheduleCutoffHours
+        - noShowAfterMinutes
+        - minNoticeMinutes
+        - maxAdvanceDays
+        - slotIntervalMinutes
+        - defaultBranchTransferMinutes
+        - depositPolicy
+        - riskyCustomerNoShowThreshold
+        - maskCustomerPhoneFromStaff
+        - reminderOffsetsMinutes
+        - reviewInviteEnabled
+      properties:
+        requiresApproval: { type: boolean }
+        approvalTimeoutMinutes: { type: integer, enum: [30, 60, 120, 240] }
+        allowStaffSelection: { type: boolean }
+        allowAnyStaffOption: { type: boolean }
+        cancellationCutoffHours: { type: integer, minimum: 0, maximum: 168 }
+        rescheduleCutoffHours: { type: integer, minimum: 0, maximum: 168 }
+        noShowAfterMinutes: { type: integer, minimum: 5, maximum: 120 }
+        minNoticeMinutes: { type: integer, minimum: 0, maximum: 10080 }
+        maxAdvanceDays: { type: integer, minimum: 1, maximum: 365 }
+        slotIntervalMinutes: { type: integer, enum: [5, 10, 15] }
+        defaultBranchTransferMinutes: { type: integer, minimum: 0, maximum: 240 }
+        depositPolicy: { type: string, enum: [None, RiskyCustomersOnly, Always] }
+        riskyCustomerNoShowThreshold: { type: integer, minimum: 1, maximum: 10 }
+        maskCustomerPhoneFromStaff: { type: boolean }
+        reminderOffsetsMinutes:
+          type: array
+          maxItems: 3
+          items: { type: integer, minimum: 30, maximum: 4320 }
+          example: [1440, 120]
+        reviewInviteEnabled: { type: boolean }
+        depositAvailable:
+          type: boolean
+          readOnly: true
+          description: Aktif IBAN var mı (yoksa kapora ayarları kapalı gösterilir)
+        version: { $ref: '#/components/schemas/Version' }
+    BookingPageSettings:
+      type: object
+      required: [slug, url, coverColor, showReviews, showPrices, version]
+      properties:
+        slug: { type: string, example: kuafor-elif }
+        url: { type: string, format: uri, example: 'https://omvila.com/kuafor-elif' }
+        coverColor: { type: string, enum: [petrol, mercan, kum] }
+        showReviews: { type: boolean }
+        showPrices: { type: boolean }
+        preAppointmentNote: { type: [string, 'null'], maxLength: 200, example: 'Randevunuzdan 10 dakika önce gelmenizi rica ederiz.' }
+        version: { $ref: '#/components/schemas/Version' }
+    BookingPageSettingsUpdate:
+      type: object
+      required: [slug, coverColor, showReviews, showPrices]
+      properties:
+        slug: { type: string, pattern: '^[a-z0-9-]{3,60}$' }
+        coverColor: { type: string, enum: [petrol, mercan, kum] }
+        showReviews: { type: boolean }
+        showPrices: { type: boolean }
+        preAppointmentNote: { type: [string, 'null'], maxLength: 200 }
+
+    # ───────── şube ─────────
+    BranchRef:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kadıköy }
+    Branch:
+      type: object
+      required: [id, name, slug, addressLine, district, city, timeZone, isActive, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kadıköy }
+        slug: { type: string, example: kadikoy }
+        addressLine: { type: string, example: 'Moda Cad. 42' }
+        district: { type: string, example: Kadıköy }
+        city: { type: string, example: İstanbul }
+        postalCode: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        slotIntervalMinutes: { type: [integer, 'null'], enum: [5, 10, 15, null] }
+        isActive: { type: boolean }
+        version: { $ref: '#/components/schemas/Version' }
+    BranchCreate:
+      type: object
+      required: [name, addressLine, district, city]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        addressLine: { type: string, maxLength: 300 }
+        district: { type: string, maxLength: 80 }
+        city: { type: string, maxLength: 80 }
+        phone: { type: [string, 'null'] }
+        copyWorkingHoursFromBranchId:
+          type: [string, 'null']
+          format: uuid
+          description: '"Çalışma saatleri: İşletme saatleriyle aynı"'
+        copyServicePricesFromBranchId:
+          type: [string, 'null']
+          format: uuid
+          description: '"Hizmet ve fiyatlar: Kadıköy''den kopyala"'
+    BranchUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 2, maxLength: 120 }
+        addressLine: { type: string, maxLength: 300 }
+        district: { type: string, maxLength: 80 }
+        city: { type: string, maxLength: 80 }
+        postalCode: { type: [string, 'null'] }
+        latitude: { type: [number, 'null'] }
+        longitude: { type: [number, 'null'] }
+        phone: { type: [string, 'null'] }
+        email: { type: [string, 'null'] }
+        slotIntervalMinutes: { type: [integer, 'null'], enum: [5, 10, 15, null] }
+        isActive: { type: boolean }
+    TimeInterval:
+      type: object
+      required: [start, end]
+      properties:
+        start: { $ref: '#/components/schemas/LocalTime' }
+        end: { $ref: '#/components/schemas/LocalTime' }
+    WeeklyHours:
+      type: object
+      description: Haftalık saatler; listede olmayan gün kapalıdır. Mola iki aralık arasındaki boşluktur.
+      required: [days]
+      properties:
+        days:
+          type: array
+          maxItems: 7
+          items:
+            type: object
+            required: [dayOfWeek, intervals]
+            properties:
+              dayOfWeek: { $ref: '#/components/schemas/DayOfWeek' }
+              intervals:
+                type: array
+                minItems: 1
+                maxItems: 4
+                items: { $ref: '#/components/schemas/TimeInterval' }
+        version: { $ref: '#/components/schemas/Version' }
+      example:
+        days:
+          - dayOfWeek: 2
+            intervals: [{ start: '10:00', end: '13:00' }, { start: '13:45', end: '19:00' }]
+          - dayOfWeek: 6
+            intervals: [{ start: '09:00', end: '18:00' }]
+    WorkingHoursOverride:
+      type: object
+      required: [id, date, kind, isClosed]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        kind: { type: string, enum: [Holiday, Closure, ExtraOpening, ShortDay] }
+        isClosed: { type: boolean }
+        intervals:
+          type: array
+          items: { $ref: '#/components/schemas/TimeInterval' }
+        note: { type: [string, 'null'], example: Yılbaşı }
+    WorkingHoursOverrideCreate:
+      type: object
+      required: [fromDate, kind, isClosed]
+      properties:
+        fromDate: { type: string, format: date }
+        toDate: { type: string, format: date, description: Çok günlük kapanış için (Ramazan Bayramı · 3 gün) }
+        kind: { type: string, enum: [Holiday, Closure, ExtraOpening, ShortDay] }
+        isClosed: { type: boolean }
+        intervals:
+          type: array
+          items: { $ref: '#/components/schemas/TimeInterval' }
+        note: { type: [string, 'null'], maxLength: 200 }
+
+    # ───────── katalog ─────────
+    ServiceTemplate:
+      type: object
+      required: [id, categoryName, name, defaultDurationMinutes]
+      properties:
+        id: { type: string, format: uuid }
+        categoryName: { type: string, example: Saç }
+        name: { type: string, example: Saç kesimi }
+        defaultDurationMinutes: { type: integer, example: 45 }
+    ServiceCategory:
+      type: object
+      required: [id, name, sortOrder, isActive, serviceCount]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Saç }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+        serviceCount: { type: integer, example: 9 }
+    ServiceCategoryWrite:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        sortOrder: { type: integer }
+        isActive: { type: boolean }
+    ServiceStage:
+      type: object
+      required: [name, durationMinutes, staffBusy]
+      properties:
+        name: { type: string, maxLength: 60, example: Bekleme }
+        durationMinutes: { type: integer, minimum: 5, maximum: 600 }
+        staffBusy: { type: boolean, description: false = bekleme; personel başka müşteriye müsait }
+    DepositRule:
+      type: object
+      required: [mode]
+      properties:
+        mode: { type: string, enum: [Inherit, Always, Never] }
+        amount: { $ref: '#/components/schemas/Money' }
+        percent: { type: number, minimum: 1, maximum: 100 }
+      description: amount ve percent'ten en fazla biri dolu olur
+    Service:
+      type: object
+      required:
+        - id
+        - categoryId
+        - name
+        - durationMinutes
+        - price
+        - priceDisplay
+        - bufferBeforeMinutes
+        - bufferAfterMinutes
+        - deposit
+        - isOnlineBookable
+        - isActive
+        - stages
+        - staffIds
+        - version
+      properties:
+        id: { type: string, format: uuid }
+        categoryId: { type: string, format: uuid }
+        name: { type: string, example: Saç kesimi }
+        description: { type: [string, 'null'] }
+        durationMinutes: { type: integer, example: 45 }
+        price: { $ref: '#/components/schemas/Money' }
+        priceDisplay: { type: string, enum: [Fixed, StartingFrom] }
+        isBranchPrice: { type: boolean, description: Fiyat şubeye özel mi (branchId ile listelendiğinde) }
+        bufferBeforeMinutes: { type: integer }
+        bufferAfterMinutes: { type: integer }
+        deposit: { $ref: '#/components/schemas/DepositRule' }
+        requiresApproval: { type: [boolean, 'null'], description: null = marka ayarı }
+        minNoticeMinutes: { type: [integer, 'null'] }
+        maxAdvanceDays: { type: [integer, 'null'] }
+        resourceTypeId: { type: [string, 'null'], format: uuid, description: Oda veya cihaz }
+        isOnlineBookable: { type: boolean }
+        isActive: { type: boolean }
+        sortOrder: { type: integer }
+        stages:
+          type: array
+          items: { $ref: '#/components/schemas/ServiceStage' }
+        staffIds:
+          type: array
+          items: { type: string, format: uuid }
+        version: { $ref: '#/components/schemas/Version' }
+    ServiceWrite:
+      type: object
+      required: [categoryId, name, durationMinutes, price, priceDisplay, deposit, isOnlineBookable, staffIds]
+      properties:
+        categoryId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: [string, 'null'], maxLength: 1000 }
+        durationMinutes: { type: integer, minimum: 5, maximum: 720, description: Aşama varsa aşama toplamına eşit olmalı }
+        price: { $ref: '#/components/schemas/Money' }
+        priceDisplay: { type: string, enum: [Fixed, StartingFrom] }
+        bufferBeforeMinutes: { type: integer, minimum: 0, maximum: 120, default: 0 }
+        bufferAfterMinutes: { type: integer, minimum: 0, maximum: 120, default: 0 }
+        deposit: { $ref: '#/components/schemas/DepositRule' }
+        requiresApproval: { type: [boolean, 'null'] }
+        minNoticeMinutes: { type: [integer, 'null'], minimum: 0 }
+        maxAdvanceDays: { type: [integer, 'null'], minimum: 1, maximum: 365 }
+        resourceTypeId: { type: [string, 'null'], format: uuid }
+        isOnlineBookable: { type: boolean }
+        isActive: { type: boolean, default: true }
+        sortOrder: { type: integer }
+        stages:
+          type: array
+          maxItems: 6
+          items: { $ref: '#/components/schemas/ServiceStage' }
+        staffIds:
+          type: array
+          items: { type: string, format: uuid }
+    BranchServicePrice:
+      type: object
+      required: [price, isAvailable]
+      properties:
+        price: { $ref: '#/components/schemas/Money' }
+        durationOverrideMinutes: { type: [integer, 'null'], minimum: 5 }
+        isAvailable: { type: boolean, description: false = hizmet bu şubede verilmiyor }
+
+    # ───────── personel ─────────
+    StaffSummary:
+      type: object
+      required: [id, fullName, calendarColor, isBookableOnline, isActive, branchIds]
+      properties:
+        id: { type: string, format: uuid }
+        fullName: { type: string, example: Elif Kaya }
+        displayName: { type: [string, 'null'] }
+        title: { type: [string, 'null'], example: 'Kurucu · kuaför' }
+        photoUrl: { type: [string, 'null'] }
+        calendarColor: { type: string, pattern: '^#[0-9A-Fa-f]{6}$', example: '#0F6E5C' }
+        isBookableOnline: { type: boolean }
+        isActive: { type: boolean }
+        branchIds:
+          type: array
+          items: { type: string, format: uuid }
+        role: { type: [string, 'null'], enum: [Owner, BranchManager, Staff, null] }
+        membershipStatus: { type: [string, 'null'], enum: [Invited, Active, Disabled, null] }
+    StaffServiceAssignment:
+      type: object
+      required: [serviceId]
+      properties:
+        serviceId: { type: string, format: uuid }
+        durationOverrideMinutes: { type: [integer, 'null'], minimum: 5, example: 75 }
+        surcharge: { $ref: '#/components/schemas/Money' }
+        commissionPercentOverride: { type: [number, 'null'] }
+    StaffDetail:
+      allOf:
+        - $ref: '#/components/schemas/StaffSummary'
+        - type: object
+          required: [serviceCommissionPercent, saleCommissionPercent, services, workingHours, version]
+          properties:
+            phoneMasked: { type: [string, 'null'] }
+            bio: { type: [string, 'null'] }
+            serviceCommissionPercent: { type: number, example: 24 }
+            saleCommissionPercent: { type: number, example: 10 }
+            services:
+              type: array
+              items: { $ref: '#/components/schemas/StaffServiceAssignment' }
+            workingHours:
+              type: array
+              items:
+                type: object
+                required: [branchId, hours]
+                properties:
+                  branchId: { type: string, format: uuid }
+                  hours: { $ref: '#/components/schemas/WeeklyHours' }
+            googleCalendarStatus: { type: [string, 'null'], enum: [Active, TokenExpired, Revoked, null] }
+            version: { $ref: '#/components/schemas/Version' }
+    StaffCreate:
+      type: object
+      required: [fullName, branchIds, role, calendarColor]
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+        title: { type: [string, 'null'], maxLength: 60 }
+        role: { type: string, enum: [BranchManager, Staff] }
+        calendarColor: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        branchIds:
+          type: array
+          minItems: 1
+          items: { type: string, format: uuid }
+        services:
+          type: array
+          items: { $ref: '#/components/schemas/StaffServiceAssignment' }
+        copyBranchWorkingHours: { type: boolean, default: true, description: '"İşletme saatleriyle aynı"' }
+        serviceCommissionPercent: { type: number, minimum: 0, maximum: 100, default: 0 }
+        saleCommissionPercent: { type: number, minimum: 0, maximum: 100, default: 0 }
+        isBookableOnline: { type: boolean, default: true }
+        sendInvite: { type: boolean, default: true, description: '"Davet SMS''i gönder"' }
+    StaffUpdate:
+      type: object
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        displayName: { type: [string, 'null'], maxLength: 120 }
+        title: { type: [string, 'null'], maxLength: 60 }
+        bio: { type: [string, 'null'], maxLength: 1000 }
+        role: { type: string, enum: [BranchManager, Staff] }
+        calendarColor: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+        branchIds:
+          type: array
+          minItems: 1
+          items: { type: string, format: uuid }
+        serviceCommissionPercent: { type: number, minimum: 0, maximum: 100 }
+        saleCommissionPercent: { type: number, minimum: 0, maximum: 100 }
+        isBookableOnline: { type: boolean }
+        isActive: { type: boolean }
+    TimeOff:
+      type: object
+      required: [id, staffId, type, startUtc, endUtc, isAllDay]
+      properties:
+        id: { type: string, format: uuid }
+        staffId: { type: string, format: uuid }
+        type: { type: string, enum: [Leave, Break, Training, Sick, Other] }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        isAllDay: { type: boolean }
+        note: { type: [string, 'null'] }
+    TimeOffCreate:
+      type: object
+      required: [type, isAllDay]
+      properties:
+        type: { type: string, enum: [Leave, Break, Training, Sick, Other] }
+        isAllDay: { type: boolean }
+        fromDate: { type: string, format: date, description: isAllDay = true ise }
+        toDate: { type: string, format: date, description: isAllDay = true ise (dahil) }
+        startUtc: { type: string, format: date-time, description: isAllDay = false ise }
+        endUtc: { type: string, format: date-time, description: isAllDay = false ise }
+        note: { type: [string, 'null'], maxLength: 200 }
+    TimeOffCreated:
+      type: object
+      required: [timeOff, affectedAppointments]
+      properties:
+        timeOff: { $ref: '#/components/schemas/TimeOff' }
+        affectedAppointments:
+          type: array
+          items: { $ref: '#/components/schemas/CalendarAppointment' }
+
+    # ───────── müşteri (asgari) ─────────
+    CustomerSummary:
+      type: object
+      required: [id, fullName, visitCount, noShowCount, tags]
+      properties:
+        id: { type: string, format: uuid, description: BrandCustomer kimliği }
+        fullName: { type: string, example: Selin Öztürk }
+        phone: { $ref: '#/components/schemas/PhoneE164' }
+        phoneMasked: { type: string, example: '0532 *** ** 21' }
+        birthYear: { type: [integer, 'null'] }
+        visitCount: { type: integer, example: 12 }
+        noShowCount: { type: integer, example: 0 }
+        lastVisitOn: { type: [string, 'null'], format: date }
+        nextAppointmentUtc: { type: [string, 'null'], format: date-time }
+        totalSpent: { $ref: '#/components/schemas/Money' }
+        isNew: { type: boolean }
+        isNoShowRisk: { type: boolean }
+        tags:
+          type: array
+          items: { type: string, example: Düzenli }
+        notes: { type: [string, 'null'] }
+    CustomerCreate:
+      type: object
+      required: [fullName, phone]
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+        birthYear: { type: [integer, 'null'], minimum: 1900, maximum: 2026 }
+        notes:
+          type: [string, 'null']
+          maxLength: 2000
+          description: Sağlık bilgisi yazılmaz
+        sendAppointmentSms: { type: boolean, default: true, description: '"Randevu bilgilendirme SMS''leri gönderilsin"' }
+
+    # ───────── takvim ve randevu ─────────
+    AppointmentStatus:
+      type: string
+      enum: [Draft, PendingApproval, Confirmed, CheckedIn, Completed, Cancelled, NoShow]
+    DisplayStatus:
+      type: string
+      description: docs/alan/durum-makinesi.md § Arayüz gösterimi
+      enum: [PendingApproval, DepositPending, Confirmed, CheckedIn, Completed, Cancelled, NoShow]
+    AppointmentChannel:
+      type: string
+      enum: [Online, Panel, Phone, WalkIn]
+    CancellationReason:
+      type: string
+      enum:
+        - PlanChanged
+        - Sick
+        - WantsDifferentTime
+        - Other
+        - CustomerRequested
+        - StaffUnavailable
+        - DeclinedBySalon
+        - ApprovalExpired
+        - DepositNotReceived
+        - AccountDeleted
+        - BrandReadOnly
+    SegmentView:
+      type: object
+      description: Takvim bloğu içindeki dilim; staffBusy = false olan dilim taralı "Bekleme · müsait" şerididir
+      required: [startUtc, endUtc, staffBusy]
+      properties:
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        staffBusy: { type: boolean }
+    CalendarAppointment:
+      type: object
+      description: Takvim bloğu (bir kalem = bir blok)
+      required: [appointmentId, itemId, staffId, startUtc, endUtc, status, displayStatus, customerName, serviceName, isRecurring, segments]
+      properties:
+        appointmentId: { type: string, format: uuid }
+        itemId: { type: string, format: uuid }
+        staffId: { type: [string, 'null'], format: uuid }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        customerName: { type: string, example: Selin Öztürk }
+        serviceName: { type: string, example: Boya ve fön }
+        isNewCustomer: { type: boolean }
+        isRecurring: { type: boolean }
+        holdExpiresUtc: { type: [string, 'null'], format: date-time }
+        segments:
+          type: array
+          items: { $ref: '#/components/schemas/SegmentView' }
+    CalendarView:
+      type: object
+      required: [branchId, timeZone, from, to, staff, appointments, timeOffs, days]
+      properties:
+        branchId: { type: string, format: uuid }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        staff:
+          type: array
+          items:
+            type: object
+            required: [staffId, fullName, calendarColor, appointmentCount, hasGapAvailability]
+            properties:
+              staffId: { type: string, format: uuid }
+              fullName: { type: string }
+              calendarColor: { type: string }
+              photoUrl: { type: [string, 'null'] }
+              appointmentCount: { type: integer, example: 5 }
+              hasGapAvailability: { type: boolean, description: '"bekleyen var" / bekleme diliminde boşluk' }
+        days:
+          type: array
+          items:
+            type: object
+            required: [date, isClosed, staffHours]
+            properties:
+              date: { type: string, format: date }
+              isClosed: { type: boolean }
+              closureNote: { type: [string, 'null'], example: 'Pazar haftalık kapalı gün' }
+              branchIntervals:
+                type: array
+                items: { $ref: '#/components/schemas/TimeInterval' }
+              staffHours:
+                type: array
+                items:
+                  type: object
+                  required: [staffId, intervals]
+                  properties:
+                    staffId: { type: string, format: uuid }
+                    intervals:
+                      type: array
+                      items: { $ref: '#/components/schemas/TimeInterval' }
+        appointments:
+          type: array
+          items: { $ref: '#/components/schemas/CalendarAppointment' }
+        timeOffs:
+          type: array
+          items: { $ref: '#/components/schemas/TimeOff' }
+    AppointmentItemView:
+      type: object
+      required: [id, serviceId, serviceName, startUtc, endUtc, price, status, segments]
+      properties:
+        id: { type: string, format: uuid }
+        serviceId: { type: string, format: uuid }
+        serviceName: { type: string, example: Saç kesimi }
+        staffId: { type: [string, 'null'], format: uuid }
+        staffName: { type: [string, 'null'], example: Elif Kaya }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        price: { $ref: '#/components/schemas/Money' }
+        staffSurcharge: { $ref: '#/components/schemas/Money' }
+        discount: { $ref: '#/components/schemas/Money' }
+        paidFromPackage: { type: boolean }
+        status: { type: string, enum: [Active, Completed, Cancelled] }
+        segments:
+          type: array
+          items: { $ref: '#/components/schemas/SegmentView' }
+    DepositView:
+      type: object
+      required: [required, status]
+      properties:
+        required: { $ref: '#/components/schemas/Money' }
+        status: { type: string, enum: [Awaiting, CustomerReported, Received, Refunded] }
+        transferCode: { type: string, example: OMV-7K2X }
+        customerReportedUtc: { type: [string, 'null'], format: date-time }
+        receivedUtc: { type: [string, 'null'], format: date-time }
+    AppointmentHistoryEntry:
+      type: object
+      required: [occurredUtc, kind]
+      properties:
+        occurredUtc: { type: string, format: date-time }
+        kind:
+          type: string
+          enum: [Created, Approved, Declined, Rescheduled, Cancelled, CheckedIn, NoShow, NoShowUndone, Completed, DepositReported, DepositReceived, NotificationSent]
+        actorName: { type: [string, 'null'] }
+        detail: { type: [string, 'null'], example: 'Online talep oluşturuldu, SMS ile doğrulandı' }
+    AppointmentDetail:
+      type: object
+      required: [id, branchId, status, displayStatus, channel, startUtc, endUtc, timeZone, customer, items, total, amountDue, isRecurring, history, version]
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string, description: Kısa görünen numara, example: A-20481 }
+        branchId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        channel: { $ref: '#/components/schemas/AppointmentChannel' }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        holdExpiresUtc: { type: [string, 'null'], format: date-time }
+        customer:
+          type: object
+          required: [brandCustomerId, fullName, visitCount]
+          properties:
+            brandCustomerId: { type: string, format: uuid }
+            fullName: { type: string, example: Pınar Yalçın }
+            phone: { $ref: '#/components/schemas/PhoneE164' }
+            phoneMasked: { type: string }
+            visitCount: { type: integer, example: 4 }
+            lastVisitLabel: { type: [string, 'null'], description: 'Sunucu biçimlemez; istemci lastVisitOn''dan üretir' }
+            lastVisitOn: { type: [string, 'null'], format: date }
+            isNew: { type: boolean }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AppointmentItemView' }
+        deposit:
+          oneOf:
+            - $ref: '#/components/schemas/DepositView'
+            - type: 'null'
+        total: { $ref: '#/components/schemas/Money' }
+        amountDue: { $ref: '#/components/schemas/Money', description: '"Salonda ödenecek"' }
+        customerNote: { type: [string, 'null'] }
+        staffNote: { type: [string, 'null'] }
+        isRecurring: { type: boolean }
+        seriesId: { type: [string, 'null'], format: uuid }
+        noShowAtUtc: { type: [string, 'null'], format: date-time, description: '"Gelmezse 13:15''te otomatik Gelmedi olur"' }
+        cancellation:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [cancelledUtc, cancelledBy, reason]
+              properties:
+                cancelledUtc: { type: string, format: date-time }
+                cancelledBy: { type: string, enum: [Customer, Salon, System] }
+                reason: { $ref: '#/components/schemas/CancellationReason' }
+                note: { type: [string, 'null'] }
+        history:
+          type: array
+          items: { $ref: '#/components/schemas/AppointmentHistoryEntry' }
+        version: { $ref: '#/components/schemas/Version' }
+    AppointmentItemRequest:
+      type: object
+      required: [serviceId]
+      properties:
+        serviceId: { type: string, format: uuid }
+        staffId:
+          type: [string, 'null']
+          format: uuid
+          description: null = fark etmez (yalnız arama ve online oluşturmada; sunucu atar)
+    RecurrenceRequest:
+      type: object
+      required: [frequency, intervalWeeks]
+      properties:
+        frequency: { type: string, enum: [Weekly] }
+        intervalWeeks: { type: integer, enum: [1, 2, 4] }
+        endsOn: { type: [string, 'null'], format: date }
+    ManageAppointmentCreate:
+      type: object
+      required: [branchId, channel, startUtc, items]
+      properties:
+        branchId: { type: string, format: uuid }
+        brandCustomerId: { type: string, format: uuid, description: Var olan müşteri; newCustomer ile XOR }
+        newCustomer:
+          type: object
+          required: [fullName, phone]
+          properties:
+            fullName: { type: string, minLength: 2, maxLength: 120 }
+            phone: { $ref: '#/components/schemas/PhoneInput' }
+        channel: { type: string, enum: [Panel, Phone, WalkIn], description: '"Nasıl geldi?"' }
+        startUtc: { type: string, format: date-time, description: İlk kalemin başlangıcı; diğerleri zincirlenir }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            allOf:
+              - $ref: '#/components/schemas/AppointmentItemRequest'
+              - type: object
+                required: [staffId]
+        staffNote: { type: [string, 'null'], maxLength: 1000 }
+        recurrence: { $ref: '#/components/schemas/RecurrenceRequest' }
+        notifyCustomer: { type: boolean, default: true, description: '"Müşteriye SMS gönder"' }
+        allowOutsideWorkingHours: { type: boolean, default: false }
+    AppointmentCreated:
+      type: object
+      required: [appointment, skippedOccurrences]
+      properties:
+        appointment: { $ref: '#/components/schemas/AppointmentDetail' }
+        skippedOccurrences:
+          type: array
+          description: Tekrarlayan randevuda çakıştığı için oluşturulamayan tarihler
+          items: { type: string, format: date }
+    ManageRescheduleRequest:
+      type: object
+      required: [startUtc]
+      properties:
+        startUtc: { type: string, format: date-time }
+        items:
+          type: array
+          description: Personel değişikliği; verilmezse mevcut personel korunur
+          items:
+            type: object
+            required: [itemId, staffId]
+            properties:
+              itemId: { type: string, format: uuid }
+              staffId: { type: string, format: uuid }
+        scope: { type: string, enum: [ThisOnly, ThisAndFollowing], default: ThisOnly }
+        notifyCustomer: { type: boolean, default: true }
+        allowOutsideWorkingHours: { type: boolean, default: false }
+    ManageCancelRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, enum: [CustomerRequested, StaffUnavailable, Other] }
+        note: { type: [string, 'null'], maxLength: 300 }
+        scope: { type: string, enum: [ThisOnly, ThisAndFollowing], default: ThisOnly }
+        notifyCustomer: { type: boolean, default: true, description: '"Müşteriye bildir"' }
+        offerToWaitlist: { type: boolean, default: true, description: Boşalan saat bekleme listesine teklif edilsin (Dilim 5) }
+
+    # ───────── müsaitlik ─────────
+    DaySearchRequest:
+      type: object
+      required: [items, from, to]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: '#/components/schemas/AppointmentItemRequest' }
+        sameStaffForAll: { type: boolean, default: true, description: '"İki hizmet de aynı kişiden"' }
+        from: { type: string, format: date }
+        to: { type: string, format: date, description: En fazla 31 gün }
+    DaySearchResult:
+      type: object
+      required: [timeZone, days]
+      properties:
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        maxDate: { type: string, format: date, description: '"60 gün ileriye kadar"' }
+        days:
+          type: array
+          items:
+            type: object
+            required: [date, hasAvailability]
+            properties:
+              date: { type: string, format: date }
+              hasAvailability: { type: boolean }
+              isClosed: { type: boolean }
+              firstSlotUtc: { type: [string, 'null'], format: date-time }
+        nextAvailableUtc:
+          type: [string, 'null']
+          format: date-time
+          description: Aralıkta hiç boş gün yoksa ilk uygun saat ("en yakın uygun saat Cuma 10:30")
+    SlotSearchRequest:
+      type: object
+      required: [items, date]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: '#/components/schemas/AppointmentItemRequest' }
+        sameStaffForAll: { type: boolean, default: true }
+        date: { type: string, format: date }
+    Slot:
+      type: object
+      required: [startUtc, localTime, period, items, total]
+      properties:
+        startUtc: { type: string, format: date-time }
+        localTime: { $ref: '#/components/schemas/LocalTime' }
+        endLocalTime: { $ref: '#/components/schemas/LocalTime' }
+        period: { type: string, enum: [Morning, Afternoon, Evening], description: 'Sabah < 12:00 ≤ Öğleden sonra < 17:00 ≤ Akşam' }
+        items:
+          type: array
+          items:
+            type: object
+            required: [serviceId, staffId, startUtc, endUtc]
+            properties:
+              serviceId: { type: string, format: uuid }
+              staffId: { type: string, format: uuid }
+              staffName: { type: string }
+              startUtc: { type: string, format: date-time }
+              endUtc: { type: string, format: date-time }
+              price: { $ref: '#/components/schemas/Money' }
+        total: { $ref: '#/components/schemas/Money' }
+    SlotSearchResult:
+      type: object
+      required: [timeZone, date, slots, unavailableTimes]
+      properties:
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        date: { type: string, format: date }
+        slots:
+          type: array
+          items: { $ref: '#/components/schemas/Slot' }
+        unavailableTimes:
+          type: array
+          description: Izgarada dolu görünen saatler (üstü çizili gösterim için)
+          items: { $ref: '#/components/schemas/LocalTime' }
+
+    # ───────── public ─────────
+    PublicBrand:
+      type: object
+      required: [id, name, slug, bookingEnabled, coverColor, showPrices, branches]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kuaför Elif }
+        slug: { type: string, example: kuafor-elif }
+        shortDescription: { type: [string, 'null'] }
+        logoUrl: { type: [string, 'null'] }
+        industryLabel: { type: string, example: 'Saç, bakım, makyaj' }
+        coverColor: { type: string, enum: [petrol, mercan, kum] }
+        showPrices: { type: boolean }
+        bookingEnabled: { type: boolean }
+        rating:
+          description: Yalnız yayınlanmış değerlendirme sayısı eşiği geçtiyse ve salon gösteriyorsa
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [average, count]
+              properties:
+                average: { type: number, example: 4.9 }
+                count: { type: integer, example: 312 }
+        branches:
+          type: array
+          items:
+            type: object
+            required: [id, name, addressLine, district, city, timeZone, openNow]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string, example: Kadıköy }
+              addressLine: { type: string }
+              district: { type: string }
+              city: { type: string }
+              phone: { type: [string, 'null'] }
+              latitude: { type: [number, 'null'] }
+              longitude: { type: [number, 'null'] }
+              timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+              openNow: { type: boolean }
+              todayClosesAt: { oneOf: [ { $ref: '#/components/schemas/LocalTime' }, { type: 'null' } ] }
+              nextOpeningUtc:
+                type: [string, 'null']
+                format: date-time
+                description: Bugün kapalıysa ("Bugün kapalı · Yarın 10:00'da açılır")
+    PublicCatalog:
+      type: object
+      required: [branchId, timeZone, allowStaffSelection, allowAnyStaffOption, categories, services, staff]
+      properties:
+        branchId: { type: string, format: uuid }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        allowStaffSelection: { type: boolean }
+        allowAnyStaffOption: { type: boolean }
+        priceNote: { type: [string, 'null'], example: 'Fiyatlar ve personel şubeye göre değişebilir.' }
+        categories:
+          type: array
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+        services:
+          type: array
+          items:
+            type: object
+            required: [id, categoryId, name, durationMinutes, priceDisplay, staffIds, hasDeposit]
+            properties:
+              id: { type: string, format: uuid }
+              categoryId: { type: string, format: uuid }
+              name: { type: string, example: Balyaj }
+              description: { type: [string, 'null'], example: 'Uzunluğa göre değişir' }
+              durationMinutes: { type: integer, example: 180 }
+              price:
+                description: showPrices false ise null
+                oneOf:
+                  - $ref: '#/components/schemas/Money'
+                  - type: 'null'
+              priceDisplay: { type: string, enum: [Fixed, StartingFrom] }
+              hasDeposit: { type: boolean, description: Bilgi amaçlı ("Kapora 300 ₺"); kesin kapora oluşturmada müşteriye göre hesaplanır }
+              depositHint:
+                oneOf:
+                  - $ref: '#/components/schemas/Money'
+                  - type: 'null'
+              staffIds:
+                type: array
+                items: { type: string, format: uuid }
+        staff:
+          type: array
+          items:
+            type: object
+            required: [id, displayName]
+            properties:
+              id: { type: string, format: uuid }
+              displayName: { type: string, example: Elif Kaya }
+              title: { type: [string, 'null'], example: 'Kurucu · en çok randevu alan' }
+              photoUrl: { type: [string, 'null'] }
+              surcharges:
+                type: array
+                description: Hizmet bazında ek ücret ("+50 ₺")
+                items:
+                  type: object
+                  required: [serviceId, amount]
+                  properties:
+                    serviceId: { type: string, format: uuid }
+                    amount: { $ref: '#/components/schemas/Money' }
+    PublicOtpRequest:
+      type: object
+      required: [phone, branchId]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+        branchId: { type: string, format: uuid }
+    PublicOtpRequestResult:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [CodeSent, AlreadyVerified] }
+        challenge: { $ref: '#/components/schemas/OtpChallengeResponse' }
+        booking: { $ref: '#/components/schemas/BookingTokenResult' }
+    BookingTokenResult:
+      type: object
+      required: [bookingToken, expiresInSeconds, phoneMasked]
+      properties:
+        bookingToken: { type: string }
+        expiresInSeconds: { type: integer, example: 1800 }
+        phoneMasked: { type: string, example: '0532 *** ** 67' }
+        knownCustomerFirstName:
+          type: [string, 'null']
+          description: '"Tekrar hoş geldiniz, Ayşe"'
+          example: Ayşe
+    UsablePackageItem:
+      type: object
+      required: [customerPackageItemId, serviceId, packageName, remainingSessions, totalSessions]
+      properties:
+        customerPackageItemId: { type: string, format: uuid }
+        serviceId: { type: string, format: uuid }
+        packageName: { type: string, example: Fön paketi }
+        remainingSessions: { type: integer, example: 7 }
+        totalSessions: { type: integer, example: 10 }
+        expiresOn: { type: [string, 'null'], format: date }
+    PublicAppointmentCreate:
+      type: object
+      required: [items, startUtc, fullName, privacyNoticeAcknowledged, privacyNoticeVersion]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { $ref: '#/components/schemas/AppointmentItemRequest' }
+        sameStaffForAll: { type: boolean, default: true }
+        startUtc: { type: string, format: date-time }
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        customerNote: { type: [string, 'null'], maxLength: 500, description: '"Salona notunuz"' }
+        usePackageItems:
+          type: array
+          description: Paketten düşülecek kalemler
+          items:
+            type: object
+            required: [serviceId, customerPackageItemId]
+            properties:
+              serviceId: { type: string, format: uuid }
+              customerPackageItemId: { type: string, format: uuid }
+        privacyNoticeAcknowledged: { type: boolean, const: true, description: Aydınlatma metni okundu }
+        privacyNoticeVersion: { type: string }
+        marketingConsent: { type: boolean, default: false, description: Salonun kampanyalarından SMS ve e-posta (isteğe bağlı) }
+    DepositInstructions:
+      type: object
+      description: Havale ekranı; tüm alanlar kopyalanabilir
+      required: [accountHolderName, iban, amount, transferCode, dueUtc]
+      properties:
+        accountHolderName: { type: string, example: Elif Kaya }
+        bankName: { type: [string, 'null'], example: Ziraat Bankası }
+        iban: { type: string, description: Boşluklu biçimde, example: 'TR12 0006 4000 0011 2345 6789 01' }
+        amount: { $ref: '#/components/schemas/Money' }
+        transferCode: { type: string, example: OMV-7K2X }
+        dueUtc: { type: string, format: date-time }
+    PublicAppointment:
+      type: object
+      required: [id, accessCode, manageUrl, status, displayStatus, brand, branch, startUtc, endUtc, timeZone, items, total, amountDue, canCancel, canReschedule, version]
+      properties:
+        id: { type: string, format: uuid }
+        accessCode: { type: string, example: 7Kx2Pq9a }
+        manageUrl: { type: string, format: uri, example: 'https://omvila.com/r/7Kx2Pq9a' }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        brand:
+          type: object
+          required: [name, slug]
+          properties:
+            name: { type: string }
+            slug: { type: string }
+            logoUrl: { type: [string, 'null'] }
+        branch:
+          type: object
+          required: [id, name, addressLine, district]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            addressLine: { type: string }
+            district: { type: string }
+            phone: { type: [string, 'null'] }
+            latitude: { type: [number, 'null'] }
+            longitude: { type: [number, 'null'] }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        holdExpiresUtc: { type: [string, 'null'], format: date-time }
+        items:
+          type: array
+          items:
+            type: object
+            required: [serviceName, startUtc, endUtc, price, paidFromPackage]
+            properties:
+              serviceName: { type: string }
+              staffName: { type: [string, 'null'] }
+              startUtc: { type: string, format: date-time }
+              endUtc: { type: string, format: date-time }
+              price: { $ref: '#/components/schemas/Money' }
+              paidFromPackage: { type: boolean }
+        total: { $ref: '#/components/schemas/Money' }
+        amountDue: { $ref: '#/components/schemas/Money' }
+        deposit:
+          oneOf:
+            - type: 'null'
+            - allOf:
+                - $ref: '#/components/schemas/DepositView'
+                - type: object
+                  properties:
+                    instructions: { $ref: '#/components/schemas/DepositInstructions' }
+        canCancel: { type: boolean }
+        cancelDeadlineUtc: { type: [string, 'null'], format: date-time }
+        canReschedule: { type: boolean }
+        rescheduleDeadlineUtc: { type: [string, 'null'], format: date-time }
+        preAppointmentNote: { type: [string, 'null'] }
+        cancellation:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [cancelledUtc, cancelledBy, reason]
+              properties:
+                cancelledUtc: { type: string, format: date-time }
+                cancelledBy: { type: string, enum: [Customer, Salon, System] }
+                reason: { $ref: '#/components/schemas/CancellationReason' }
+        version: { $ref: '#/components/schemas/Version' }
+    CustomerCancelRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, enum: [PlanChanged, Sick, WantsDifferentTime, Other] }
+        note: { type: [string, 'null'], maxLength: 300, description: reason = Other ise zorunlu }

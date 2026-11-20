@@ -1,0 +1,12 @@
+<!-- @dsCard group="Form" height=110 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Switch — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row',style:{gap:'32px',alignItems:'flex-start'}},h(P.Switch,{label:'Online randevu açık',description:'Rezervasyon sayfanızda görünür',defaultChecked:true}),h(P.Switch,{label:'Aynı saate çift randevu'})));
+</script>
+</body>
+</html>

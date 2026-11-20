@@ -1,0 +1,12 @@
+<!-- @dsCard group="Durum" height=90 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Badge — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens'},h(P.Badge,null,'Geçmiş'),h(P.Badge,{tone:'marka'},'Paket'),h(P.Badge,{tone:'vurgu'},'Yeni'),h(P.Badge,{tone:'basari'},'Şu an açık'),h(P.Badge,{tone:'uyari'},'Az kaldı'),h(P.Badge,{tone:'hata'},'Ödenmedi')));
+</script>
+</body>
+</html>

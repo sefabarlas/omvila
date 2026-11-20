@@ -1,0 +1,40 @@
+# genel
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+coverage/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# node
+node_modules/
+dist/
+!packages/design-tokens/dist/
+.next/
+out/
+.turbo/
+playwright-report/
+test-results/
+
+# .NET
+bin/
+obj/
+api/artifacts/
+*.user
+TestResults/
+
+# Flutter / Dart
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.fvm/flutter_sdk
+**/ios/Pods/
+**/android/.gradle/
+*.g.dart.tmp
+
+# Claude
+.claude/settings.local.json

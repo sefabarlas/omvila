@@ -1,0 +1,12 @@
+<!-- @dsCard group="Veri" height=330 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>DataTable — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'20px'}},h(P.DataTable,{selectable:true,columns:[{key:'name',label:'Müşteri',render:function(r){return h('div',{className:'ov-cell-person'},h(P.Avatar,{name:r.name,size:'sm'}),h('div',null,h('strong',null,r.name),h('span',null,r.phone)))}},{key:'last',label:'Son ziyaret'},{key:'visits',label:'Ziyaret',align:'right',numeric:true},{key:'spent',label:'Toplam harcama',align:'right',numeric:true},{key:'tag',label:'Etiket',render:function(r){return r.tag?h(P.Badge,{tone:r.tone},r.tag):null}},{key:'a',label:'',align:'right',width:'40px',render:function(){return h(P.IconButton,{icon:'ellipsis',label:'İşlemler',size:'sm'})}}],rows:[{id:1,name:'Ayşe Yılmaz',phone:'0532 123 45 67',last:'18 Kasım',visits:14,spent:'6.300 ₺',tag:'VIP',tone:'bilgi'},{id:2,name:'Selin Öztürk',phone:'0541 987 65 43',last:'25 Kasım',visits:3,spent:'1.350 ₺',tag:'Yeni müşteri',tone:'vurgu',selected:true},{id:3,name:'Emre Koç',phone:'0505 222 33 44',last:'2 Ekim',visits:6,spent:'1.800 ₺',tag:'Borçlu',tone:'hata'},{id:4,name:'Melis Kurt',phone:'0533 444 55 66',last:'21 Kasım',visits:9,spent:'4.050 ₺'}],footer:[h('span',{key:1},'1.284 müşteriden 1–4'),h('div',{key:2,style:{display:'flex',gap:'8px'}},h(P.Button,{size:'sm'},'Önceki'),h(P.Button,{size:'sm'},'Sonraki'))]})));
+</script>
+</body>
+</html>

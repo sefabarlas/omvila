@@ -1,0 +1,12 @@
+<!-- @dsCard group="Gezinme" height=96 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Tabs — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'12px 20px'}},h(P.Tabs,{items:[{id:'gelecek',label:'Gelecek',count:12},{id:'gecmis',label:'Geçmiş',count:148},{id:'iptal',label:'İptal',count:3},{id:'notlar',label:'Notlar'}]})));
+</script>
+</body>
+</html>

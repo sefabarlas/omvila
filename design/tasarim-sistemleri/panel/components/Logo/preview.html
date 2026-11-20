@@ -1,0 +1,12 @@
+<!-- @dsCard group="Marka" height=112 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Logo — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row'},h(P.Logo,{tone:'acik',size:32}),h('div',{style:{background:'var(--sidebar-zemin)',padding:'12px 16px',borderRadius:'var(--kose-md)'}},h(P.Logo,{tone:'ters',size:32})),h(P.Logo,{tone:'acik',showWordmark:false,size:32})));
+</script>
+</body>
+</html>

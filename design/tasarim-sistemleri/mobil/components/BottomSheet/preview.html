@@ -1,0 +1,12 @@
+<!-- @dsCard group="Katmanlar" height=480 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>BottomSheet — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens'},h('div',{className:'om-screen',style:{height:'440px'}},h(P.BottomSheet,{title:'Randevuyu değiştir',footer:h(P.Button,{block:true,size:'lg'},'Yeni saati onayla')},h(P.DayStrip,{value:'26',days:[{id:'25',weekday:'Sal',day:25},{id:'26',weekday:'Çar',day:26,dot:true},{id:'27',weekday:'Per',day:27},{id:'28',weekday:'Cum',day:28,dot:true},{id:'29',weekday:'Cmt',day:29}]}),h(P.TimeSlotGrid,{value:'14:30',slots:[{time:'13:00',available:true},{time:'13:45',available:false},{time:'14:30',available:true},{time:'15:15',available:true}]})))));
+</script>
+</body>
+</html>

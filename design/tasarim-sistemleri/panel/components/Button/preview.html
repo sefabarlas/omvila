@@ -1,0 +1,12 @@
+<!-- @dsCard group="Eylemler" height=150 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Button — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',null,h('div',{className:'ov-row'},h(P.Button,{variant:'primary',icon:'plus'},'Randevu ekle'),h(P.Button,null,'Vazgeç'),h(P.Button,{variant:'ghost',icon:'filter'},'Filtrele'),h(P.Button,{variant:'danger'},'Randevuyu iptal et'),h(P.Button,{variant:'primary',loading:true},'Kaydediliyor…')),h('div',{className:'ov-row',style:{paddingTop:0}},h(P.Button,{variant:'primary',size:'lg'},'Kaydet'),h(P.Button,{size:'sm',icon:'user-check'},'Geldi'),h(P.Button,{size:'sm',disabled:true},'Devre dışı'))));
+</script>
+</body>
+</html>

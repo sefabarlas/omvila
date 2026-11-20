@@ -1,0 +1,6 @@
+packages:
+  - contracts
+  - web/*
+  - packages/api-client-ts
+  - packages/design-tokens
+  - packages/ui-web

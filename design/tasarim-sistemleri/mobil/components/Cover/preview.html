@@ -1,0 +1,56 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>OMVILA Mobil</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--zemin); color:var(--metin); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .phone { fill:var(--petrol-900); }
+  [data-theme="dark"] .phone { fill:var(--petrol-700); }
+  .screen { fill:var(--kum-50); }
+  .slot { fill:var(--kum-200); }
+  .slot.on { fill:var(--petrol-500); }
+  .ticket { fill:var(--kum-200); }
+  .bar { fill:var(--petrol-200); }
+  .dot { fill:var(--mercan-400); }
+  .words { position:absolute; left:var(--bosluk-8); bottom:var(--bosluk-8); max-width:440px; }
+  .name { margin:0; font-size:72px; line-height:.95; font-weight:600; letter-spacing:.12em; color:var(--petrol-900); }
+  [data-theme="dark"] .name { color:var(--metin); }
+  .tag { margin:var(--bosluk-4) 0 0 4px; font-size:14px; line-height:20px; color:var(--metin-ikincil); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      petrol-900 168x312 phone slab bled top and bottom (kose-xl corners) with a kum-50 screen · kum-200 ticket 176x152 beside it · mercan-400 badge disc r12 once on the slab's corner (the notification badge) — about two fifths of 960x288
+  arrangement one tall phone slab with a satellite ticket, the ticket's bottom bosluk-8 above the edge, bosluk-6 gutter
+  pattern     the time-slot grid from TimeSlotGrid: 4 columns of kose-sm slots at saat-dilimi proportions on the screen, a few booked in petrol-500; three petrol-200 package bars on the ticket from PackageCard
+  scales      sides in bosluk-2 multiples; slot gap bosluk-2; corners kose-xl on blocks, kose-sm on slots, kose-tam on bars
+-->
+<rect class="phone" x="24" y="-24" width="168" height="336" rx="24"/>
+<rect class="screen" x="36" y="-12" width="144" height="312" rx="16"/>
+<rect class="slot" x="48" y="40" width="26" height="20" rx="6"/><rect class="slot on" x="80" y="40" width="26" height="20" rx="6"/><rect class="slot" x="112" y="40" width="26" height="20" rx="6"/><rect class="slot" x="144" y="40" width="26" height="20" rx="6"/>
+<rect class="slot on" x="48" y="68" width="26" height="20" rx="6"/><rect class="slot" x="80" y="68" width="26" height="20" rx="6"/><rect class="slot on" x="112" y="68" width="26" height="20" rx="6"/><rect class="slot" x="144" y="68" width="26" height="20" rx="6"/>
+<rect class="slot" x="48" y="96" width="26" height="20" rx="6"/><rect class="slot" x="80" y="96" width="26" height="20" rx="6"/><rect class="slot" x="112" y="96" width="26" height="20" rx="6"/><rect class="slot on" x="144" y="96" width="26" height="20" rx="6"/>
+<rect class="slot on" x="48" y="124" width="26" height="20" rx="6"/><rect class="slot" x="80" y="124" width="26" height="20" rx="6"/><rect class="slot" x="112" y="124" width="26" height="20" rx="6"/><rect class="slot" x="144" y="124" width="26" height="20" rx="6"/>
+<rect class="phone" x="48" y="208" width="122" height="32" rx="10"/>
+<circle class="dot" cx="186" cy="24" r="12"/>
+<rect class="ticket" x="216" y="104" width="240" height="152" rx="24"/>
+<rect class="bar" x="240" y="200" width="56" height="10" rx="5"/><rect class="bar" x="304" y="200" width="56" height="10" rx="5"/><rect class="bar" x="368" y="200" width="56" height="10" rx="5"/>
+<rect class="slot on" x="240" y="128" width="96" height="16" rx="8"/><rect class="slot" x="240" y="152" width="144" height="16" rx="8" style="fill:var(--kum-50)"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">OMVILA<br>Mobil</h1>
+<p class="tag">İşim cebimde. Randevularım bir arada.</p>
+</div>
+</div>
+</body>
+</html>

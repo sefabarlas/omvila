@@ -1,0 +1,12 @@
+{
+  "name": "omvila",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "contracts:check": "python3 contracts/scripts/check_conventions.py contracts/openapi.yaml",
+    "inventory": "python3 scripts/gen_inventory.py design/ekranlar"
+  }
+}

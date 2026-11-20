@@ -1,0 +1,12 @@
+<!-- @dsCard group="Katmanlar" height=400 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Modal — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h(P.Modal,{inline:true,title:'Yeni randevu',description:'Salı, 25 Kasım · Kadıköy şubesi',footer:[h(P.Button,{key:1},'Vazgeç'),h(P.Button,{key:2,variant:'primary'},'Randevuyu oluştur')]},h(P.TextField,{label:'Müşteri',icon:'search',placeholder:'İsim veya telefon'}),h('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}},h(P.Select,{label:'Hizmet',options:['Saç kesimi · 45 dk','Boya · 2 sa']}),h(P.Select,{label:'Personel',options:['Elif Kaya','Mert Demir']})),h(P.Checkbox,{label:'Müşteriye SMS ile onay gönder',defaultChecked:true})));
+</script>
+</body>
+</html>

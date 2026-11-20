@@ -1,0 +1,503 @@
+// OMVILA Mobil — Flutter tema dosyası. tokens.json'dan üretilmiştir; elle düzenlemeyin.
+// pubspec.yaml: fonts → family: PlusJakartaSans (PlusJakartaSans[wght].ttf, Google Fonts / OFL).
+import 'package:flutter/material.dart';
+
+/// Semantik renkler. Kullanım: `Theme.of(context).extension<OmvilaRenkler>()!.marka`
+@immutable
+class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
+  const OmvilaRenkler({required this.zemin, required this.zeminYukseltilmis, required this.zeminIkincil, required this.zeminMarka, required this.zeminMarkaYumusak, required this.zeminVurguYumusak, required this.metinVurgu, required this.metin, required this.metinIkincil, required this.metinMarka, required this.metinTers, required this.marka, required this.markaHover, required this.markaUstu, required this.vurgu, required this.vurguUstu, required this.cizgi, required this.cizgiGuclu, required this.odak, required this.basari, required this.uyari, required this.hata, required this.bilgi, required this.zeminHover, required this.zeminSecili, required this.zeminDevreDisi, required this.metinDevreDisi, required this.basariZemin, required this.uyariZemin, required this.hataZemin, required this.bilgiZemin, required this.ustKatman, required this.durumOnayZemin, required this.durumOnayMetin, required this.durumOnayNokta, required this.durumKaporaZemin, required this.durumKaporaMetin, required this.durumKaporaNokta, required this.durumOnaylandiZemin, required this.durumOnaylandiMetin, required this.durumOnaylandiNokta, required this.durumGeldiZemin, required this.durumGeldiMetin, required this.durumGeldiNokta, required this.durumTamamlandiZemin, required this.durumTamamlandiMetin, required this.durumTamamlandiNokta, required this.durumGelmediZemin, required this.durumGelmediMetin, required this.durumGelmediNokta, required this.durumIptalZemin, required this.durumIptalMetin, required this.durumIptalNokta, required this.tabbarZemin, required this.tabbarPasif, required this.tabbarAktif, required this.tabbarAktifZemin, required this.blokMarka, required this.blokVurgu, required this.blokKum, required this.blokKumMetin, required this.iskelet, required this.tutamak, required this.yildiz});
+  /// Sayfa zemini. Marka materyallerinin ve rezervasyon sayfasının ana zemini.
+  final Color zemin;
+  /// Kart, panel ve modal yüzeyi; `zemin` üzerinde bir kat yukarıda.
+  final Color zeminYukseltilmis;
+  /// Bölüm ayırıcı bantlar, gruplanmış alanlar, giriş alanı zemini.
+  final Color zeminIkincil;
+  /// Koyu marka bloğu: kahraman alanları, işletme uygulaması ikonu, vurgu bantları.
+  final Color zeminMarka;
+  /// Seçili satır, bilgi kutusu, marka tonunda sakin vurgu.
+  final Color zeminMarkaYumusak;
+  /// Mercan rozet ve 'yeni' etiketi zemini.
+  final Color zeminVurguYumusak;
+  /// `zemin-vurgu-yumusak` üzerindeki metin ve ikon (koyu temada da 4.5:1 üstü).
+  final Color metinVurgu;
+  /// Gövde ve başlık metni; `zemin`, `zemin-yukseltilmis`, `zemin-ikincil` ve yumuşak zeminler üzerinde.
+  final Color metin;
+  /// Açıklama, yardımcı metin, meta bilgi; `zemin`, `zemin-yukseltilmis` ve `zemin-ikincil` üzerinde.
+  final Color metinIkincil;
+  /// Bağlantılar ve marka renginde metin; `zemin`, `zemin-yukseltilmis` ve `zemin-marka-yumusak` üzerinde.
+  final Color metinMarka;
+  /// `zemin-marka` üzerindeki metin.
+  final Color metinTers;
+  /// Ana eylem dolgusu (Randevu al), seçili saat, etkin sekme. Üzerindeki metin `marka-ustu`.
+  final Color marka;
+  /// `marka` dolgusunun üzerine gelme ve basılı hali.
+  final Color markaHover;
+  /// `marka` dolgusu üzerindeki metin ve ikon.
+  final Color markaUstu;
+  /// Amblemdeki takvim başlığı, bildirim noktası, 'yeni' rozeti. Metin taşıyan küçük dolgularda üstündeki metin `vurgu-ustu`.
+  final Color vurgu;
+  /// `vurgu` dolgusu üzerindeki metin. Beyaz kullanılmaz (kontrast yetmez).
+  final Color vurguUstu;
+  /// Kart kenarı, ayraç, tablo çizgisi. Dekoratiftir; anlam taşıyan sınır için `cizgi-guclu`.
+  final Color cizgi;
+  /// Giriş alanı kenarı ve anlam taşıyan sınırlar; zeminlerle en az 3:1.
+  final Color cizgiGuclu;
+  /// Klavye odak halkası: 2px boşluk + 2px düz halka. Tüm zeminlerde en az 3:1.
+  final Color odak;
+  /// Onaylandı, geldi, ödendi. Her zaman ikon veya kelimeyle birlikte.
+  final Color basari;
+  /// Kapora bekleniyor, yaklaşan randevu. Metin olarak; dolgu için `uyari-400`.
+  final Color uyari;
+  /// İptal, gelmedi, hata mesajı, silme. Mercan ile karıştırılmaz: daha koyu ve kırmızıdır.
+  final Color hata;
+  /// Bilgilendirme mesajı ve nötr durum etiketi.
+  final Color bilgi;
+  /// Satır, menü öğesi ve hayalet butonun üzerine gelme zemini.
+  final Color zeminHover;
+  /// Seçili satır, seçili menü öğesi, seçili takvim günü. Üzerindeki metin `metin` veya `metin-marka`.
+  final Color zeminSecili;
+  /// Devre dışı kontrol zemini.
+  final Color zeminDevreDisi;
+  /// Devre dışı etiket ve değer. Kontrast şartından muaftır; yanında her zaman açıklama bulunur.
+  final Color metinDevreDisi;
+  /// Başarı bildirimi ve bant zemini; üstündeki metin `basari`.
+  final Color basariZemin;
+  /// Uyarı bildirimi ve bant zemini; üstündeki metin `uyari`.
+  final Color uyariZemin;
+  /// Hata bildirimi ve bant zemini; üstündeki metin `hata`.
+  final Color hataZemin;
+  /// Bilgi bildirimi ve bant zemini; üstündeki metin `bilgi`.
+  final Color bilgiZemin;
+  /// Modal ve yan panel arkasındaki karartma.
+  final Color ustKatman;
+  /// Randevu durumu: Onay bekliyor. Takvim bloğu ve durum rozeti zemini.
+  final Color durumOnayZemin;
+  /// Randevu durumu: Onay bekliyor. `durum-onay-zemin` üzerindeki metin.
+  final Color durumOnayMetin;
+  /// Randevu durumu: Onay bekliyor. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumOnayNokta;
+  /// Randevu durumu: Kapora bekleniyor. Takvim bloğu ve durum rozeti zemini.
+  final Color durumKaporaZemin;
+  /// Randevu durumu: Kapora bekleniyor. `durum-kapora-zemin` üzerindeki metin.
+  final Color durumKaporaMetin;
+  /// Randevu durumu: Kapora bekleniyor. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumKaporaNokta;
+  /// Randevu durumu: Onaylandı. Takvim bloğu ve durum rozeti zemini.
+  final Color durumOnaylandiZemin;
+  /// Randevu durumu: Onaylandı. `durum-onaylandi-zemin` üzerindeki metin.
+  final Color durumOnaylandiMetin;
+  /// Randevu durumu: Onaylandı. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumOnaylandiNokta;
+  /// Randevu durumu: Geldi (check-in). Takvim bloğu ve durum rozeti zemini.
+  final Color durumGeldiZemin;
+  /// Randevu durumu: Geldi (check-in). `durum-geldi-zemin` üzerindeki metin.
+  final Color durumGeldiMetin;
+  /// Randevu durumu: Geldi (check-in). Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumGeldiNokta;
+  /// Randevu durumu: Tamamlandı. Takvim bloğu ve durum rozeti zemini.
+  final Color durumTamamlandiZemin;
+  /// Randevu durumu: Tamamlandı. `durum-tamamlandi-zemin` üzerindeki metin.
+  final Color durumTamamlandiMetin;
+  /// Randevu durumu: Tamamlandı. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumTamamlandiNokta;
+  /// Randevu durumu: Gelmedi. Takvim bloğu ve durum rozeti zemini.
+  final Color durumGelmediZemin;
+  /// Randevu durumu: Gelmedi. `durum-gelmedi-zemin` üzerindeki metin.
+  final Color durumGelmediMetin;
+  /// Randevu durumu: Gelmedi. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumGelmediNokta;
+  /// Randevu durumu: İptal. Takvim bloğu ve durum rozeti zemini.
+  final Color durumIptalZemin;
+  /// Randevu durumu: İptal. `durum-iptal-zemin` üzerindeki metin.
+  final Color durumIptalMetin;
+  /// Randevu durumu: İptal. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte.
+  final Color durumIptalNokta;
+  /// Yüzen alt sekme çubuğunun zemini (koyu hap).
+  final Color tabbarZemin;
+  /// Seçili olmayan sekme ikonu; `tabbar-zemin` üzerinde.
+  final Color tabbarPasif;
+  /// Seçili sekmenin ikon ve etiketi; `tabbar-aktif-zemin` hapının üzerinde.
+  final Color tabbarAktif;
+  /// Seçili sekmenin beyaz hapı.
+  final Color tabbarAktifZemin;
+  /// Bento blok: en önemli bilgi (sıradaki randevu). Üstünde `metin-ters`.
+  final Color blokMarka;
+  /// Bento blok: dikkat isteyen sayı (onay bekleyen). Üstünde `gri-0`.
+  final Color blokVurgu;
+  /// Bento blok: sakin bilgi (sıra, paket). Üstünde `blok-kum-metin`.
+  final Color blokKum;
+  /// `blok-kum` üzerindeki metin.
+  final Color blokKumMetin;
+  /// Yüklenirken gösterilen iskelet blokları.
+  final Color iskelet;
+  /// Alt sayfa (bottom sheet) tutamağı.
+  final Color tutamak;
+  /// Değerlendirme yıldızları (dolu). Yanında her zaman sayısal puan.
+  final Color yildiz;
+
+  static const acik = OmvilaRenkler(
+    zemin: Color(0xFFFAFAF8),
+    zeminYukseltilmis: Color(0xFFFFFFFF),
+    zeminIkincil: Color(0xFFF1F1EE),
+    zeminMarka: Color(0xFF0B3B37),
+    zeminMarkaYumusak: Color(0xFFEFF8F6),
+    zeminVurguYumusak: Color(0xFFFDF1EC),
+    metinVurgu: Color(0xFF66291B),
+    metin: Color(0xFF151816),
+    metinIkincil: Color(0xFF52554F),
+    metinMarka: Color(0xFF0F6D64),
+    metinTers: Color(0xFFFBF8F3),
+    marka: Color(0xFF0F6D64),
+    markaHover: Color(0xFF0D564F),
+    markaUstu: Color(0xFFFFFFFF),
+    vurgu: Color(0xFFE9785B),
+    vurguUstu: Color(0xFF401A11),
+    cizgi: Color(0xFFE9E9E4),
+    cizgiGuclu: Color(0xFF6E706A),
+    odak: Color(0xFF14857A),
+    basari: Color(0xFF2E7D32),
+    uyari: Color(0xFF8A5A00),
+    hata: Color(0xFFC0362C),
+    bilgi: Color(0xFF2F6BB8),
+    zeminHover: Color(0xFFF2F2EF),
+    zeminSecili: Color(0xFFEFF8F6),
+    zeminDevreDisi: Color(0xFFEDEDEA),
+    metinDevreDisi: Color(0xFF94958E),
+    basariZemin: Color(0xFFEEF7ED),
+    uyariZemin: Color(0xFFFCF0D6),
+    hataZemin: Color(0xFFFBE4E1),
+    bilgiZemin: Color(0xFFEDF3FB),
+    ustKatman: Color.fromRGBO(11, 35, 32, 0.48),
+    durumOnayZemin: Color(0xFFE2ECF8),
+    durumOnayMetin: Color(0xFF1C4275),
+    durumOnayNokta: Color(0xFF2F6BB8),
+    durumKaporaZemin: Color(0xFFFCF0D6),
+    durumKaporaMetin: Color(0xFF8A5A00),
+    durumKaporaNokta: Color(0xFFB07A12),
+    durumOnaylandiZemin: Color(0xFFEFF8F6),
+    durumOnaylandiMetin: Color(0xFF0D564F),
+    durumOnaylandiNokta: Color(0xFF14857A),
+    durumGeldiZemin: Color(0xFFE3F2E1),
+    durumGeldiMetin: Color(0xFF1B4D1F),
+    durumGeldiNokta: Color(0xFF2E7D32),
+    durumTamamlandiZemin: Color(0xFFF4EFE6),
+    durumTamamlandiMetin: Color(0xFF3D3328),
+    durumTamamlandiNokta: Color(0xFF7A654B),
+    durumGelmediZemin: Color(0xFFFBE4E1),
+    durumGelmediMetin: Color(0xFF7A1F18),
+    durumGelmediNokta: Color(0xFFC0362C),
+    durumIptalZemin: Color(0xFFEDEDEA),
+    durumIptalMetin: Color(0xFF52554F),
+    durumIptalNokta: Color(0xFF6E706A),
+    tabbarZemin: Color(0xFF062320),
+    tabbarPasif: Color(0xFF9DB3AE),
+    tabbarAktif: Color(0xFF0B3B37),
+    tabbarAktifZemin: Color(0xFFFFFFFF),
+    blokMarka: Color(0xFF0B3B37),
+    blokVurgu: Color(0xFFB54A30),
+    blokKum: Color(0xFFE9E0D0),
+    blokKumMetin: Color(0xFF241E18),
+    iskelet: Color(0xFFF4EFE6),
+    tutamak: Color(0xFFBDBDB6),
+    yildiz: Color(0xFFB57A0A),
+  );
+
+  static const koyu = OmvilaRenkler(
+    zemin: Color(0xFF0E1513),
+    zeminYukseltilmis: Color(0xFF16201E),
+    zeminIkincil: Color(0xFF121B19),
+    zeminMarka: Color(0xFF11403B),
+    zeminMarkaYumusak: Color(0xFF122E2A),
+    zeminVurguYumusak: Color(0xFF33201A),
+    metinVurgu: Color(0xFFEF9A7E),
+    metin: Color(0xFFEEF2F0),
+    metinIkincil: Color(0xFFA7B0AC),
+    metinMarka: Color(0xFF74C6B8),
+    metinTers: Color(0xFFEEF2F0),
+    marka: Color(0xFF74C6B8),
+    markaHover: Color(0xFFA8DDD3),
+    markaUstu: Color(0xFF062320),
+    vurgu: Color(0xFFEF9A7E),
+    vurguUstu: Color(0xFF401A11),
+    cizgi: Color(0xFF26322F),
+    cizgiGuclu: Color(0xFF7C8884),
+    odak: Color(0xFF74C6B8),
+    basari: Color(0xFF7BC47F),
+    uyari: Color(0xFFF0C35A),
+    hata: Color(0xFFF28B82),
+    bilgi: Color(0xFF8AB4EA),
+    zeminHover: Color(0xFF1B2624),
+    zeminSecili: Color(0xFF13302C),
+    zeminDevreDisi: Color(0xFF1E2826),
+    metinDevreDisi: Color(0xFF5E6966),
+    basariZemin: Color(0xFF15301A),
+    uyariZemin: Color(0xFF33280F),
+    hataZemin: Color(0xFF3A1A17),
+    bilgiZemin: Color(0xFF14243A),
+    ustKatman: Color.fromRGBO(0, 0, 0, 0.6),
+    durumOnayZemin: Color(0xFF14243A),
+    durumOnayMetin: Color(0xFF9DC0EE),
+    durumOnayNokta: Color(0xFF5E93D6),
+    durumKaporaZemin: Color(0xFF33280F),
+    durumKaporaMetin: Color(0xFFF0C35A),
+    durumKaporaNokta: Color(0xFFE5A823),
+    durumOnaylandiZemin: Color(0xFF12302C),
+    durumOnaylandiMetin: Color(0xFF8FD6C8),
+    durumOnaylandiNokta: Color(0xFF3FA899),
+    durumGeldiZemin: Color(0xFF15301A),
+    durumGeldiMetin: Color(0xFF9AD39D),
+    durumGeldiNokta: Color(0xFF5BB060),
+    durumTamamlandiZemin: Color(0xFF2A241D),
+    durumTamamlandiMetin: Color(0xFFD9CBB3),
+    durumTamamlandiNokta: Color(0xFFBFAA8A),
+    durumGelmediZemin: Color(0xFF3A1A17),
+    durumGelmediMetin: Color(0xFFF4A39B),
+    durumGelmediNokta: Color(0xFFE0665C),
+    durumIptalZemin: Color(0xFF1E2826),
+    durumIptalMetin: Color(0xFFA7B0AC),
+    durumIptalNokta: Color(0xFF6E7A76),
+    tabbarZemin: Color(0xFF1E2B28),
+    tabbarPasif: Color(0xFF8A9692),
+    tabbarAktif: Color(0xFF062320),
+    tabbarAktifZemin: Color(0xFFA8DDD3),
+    blokMarka: Color(0xFF11403B),
+    blokVurgu: Color(0xFFB54A30),
+    blokKum: Color(0xFF2A2520),
+    blokKumMetin: Color(0xFFF4EFE6),
+    iskelet: Color(0xFF1C2624),
+    tutamak: Color(0xFF3A4643),
+    yildiz: Color(0xFFF0C35A),
+  );
+
+  @override
+  OmvilaRenkler copyWith() => this;
+
+  @override
+  OmvilaRenkler lerp(ThemeExtension<OmvilaRenkler>? other, double t) {
+    if (other is! OmvilaRenkler) return this;
+    return OmvilaRenkler(zemin: Color.lerp(zemin, other.zemin, t)!, zeminYukseltilmis: Color.lerp(zeminYukseltilmis, other.zeminYukseltilmis, t)!, zeminIkincil: Color.lerp(zeminIkincil, other.zeminIkincil, t)!, zeminMarka: Color.lerp(zeminMarka, other.zeminMarka, t)!, zeminMarkaYumusak: Color.lerp(zeminMarkaYumusak, other.zeminMarkaYumusak, t)!, zeminVurguYumusak: Color.lerp(zeminVurguYumusak, other.zeminVurguYumusak, t)!, metinVurgu: Color.lerp(metinVurgu, other.metinVurgu, t)!, metin: Color.lerp(metin, other.metin, t)!, metinIkincil: Color.lerp(metinIkincil, other.metinIkincil, t)!, metinMarka: Color.lerp(metinMarka, other.metinMarka, t)!, metinTers: Color.lerp(metinTers, other.metinTers, t)!, marka: Color.lerp(marka, other.marka, t)!, markaHover: Color.lerp(markaHover, other.markaHover, t)!, markaUstu: Color.lerp(markaUstu, other.markaUstu, t)!, vurgu: Color.lerp(vurgu, other.vurgu, t)!, vurguUstu: Color.lerp(vurguUstu, other.vurguUstu, t)!, cizgi: Color.lerp(cizgi, other.cizgi, t)!, cizgiGuclu: Color.lerp(cizgiGuclu, other.cizgiGuclu, t)!, odak: Color.lerp(odak, other.odak, t)!, basari: Color.lerp(basari, other.basari, t)!, uyari: Color.lerp(uyari, other.uyari, t)!, hata: Color.lerp(hata, other.hata, t)!, bilgi: Color.lerp(bilgi, other.bilgi, t)!, zeminHover: Color.lerp(zeminHover, other.zeminHover, t)!, zeminSecili: Color.lerp(zeminSecili, other.zeminSecili, t)!, zeminDevreDisi: Color.lerp(zeminDevreDisi, other.zeminDevreDisi, t)!, metinDevreDisi: Color.lerp(metinDevreDisi, other.metinDevreDisi, t)!, basariZemin: Color.lerp(basariZemin, other.basariZemin, t)!, uyariZemin: Color.lerp(uyariZemin, other.uyariZemin, t)!, hataZemin: Color.lerp(hataZemin, other.hataZemin, t)!, bilgiZemin: Color.lerp(bilgiZemin, other.bilgiZemin, t)!, ustKatman: Color.lerp(ustKatman, other.ustKatman, t)!, durumOnayZemin: Color.lerp(durumOnayZemin, other.durumOnayZemin, t)!, durumOnayMetin: Color.lerp(durumOnayMetin, other.durumOnayMetin, t)!, durumOnayNokta: Color.lerp(durumOnayNokta, other.durumOnayNokta, t)!, durumKaporaZemin: Color.lerp(durumKaporaZemin, other.durumKaporaZemin, t)!, durumKaporaMetin: Color.lerp(durumKaporaMetin, other.durumKaporaMetin, t)!, durumKaporaNokta: Color.lerp(durumKaporaNokta, other.durumKaporaNokta, t)!, durumOnaylandiZemin: Color.lerp(durumOnaylandiZemin, other.durumOnaylandiZemin, t)!, durumOnaylandiMetin: Color.lerp(durumOnaylandiMetin, other.durumOnaylandiMetin, t)!, durumOnaylandiNokta: Color.lerp(durumOnaylandiNokta, other.durumOnaylandiNokta, t)!, durumGeldiZemin: Color.lerp(durumGeldiZemin, other.durumGeldiZemin, t)!, durumGeldiMetin: Color.lerp(durumGeldiMetin, other.durumGeldiMetin, t)!, durumGeldiNokta: Color.lerp(durumGeldiNokta, other.durumGeldiNokta, t)!, durumTamamlandiZemin: Color.lerp(durumTamamlandiZemin, other.durumTamamlandiZemin, t)!, durumTamamlandiMetin: Color.lerp(durumTamamlandiMetin, other.durumTamamlandiMetin, t)!, durumTamamlandiNokta: Color.lerp(durumTamamlandiNokta, other.durumTamamlandiNokta, t)!, durumGelmediZemin: Color.lerp(durumGelmediZemin, other.durumGelmediZemin, t)!, durumGelmediMetin: Color.lerp(durumGelmediMetin, other.durumGelmediMetin, t)!, durumGelmediNokta: Color.lerp(durumGelmediNokta, other.durumGelmediNokta, t)!, durumIptalZemin: Color.lerp(durumIptalZemin, other.durumIptalZemin, t)!, durumIptalMetin: Color.lerp(durumIptalMetin, other.durumIptalMetin, t)!, durumIptalNokta: Color.lerp(durumIptalNokta, other.durumIptalNokta, t)!, tabbarZemin: Color.lerp(tabbarZemin, other.tabbarZemin, t)!, tabbarPasif: Color.lerp(tabbarPasif, other.tabbarPasif, t)!, tabbarAktif: Color.lerp(tabbarAktif, other.tabbarAktif, t)!, tabbarAktifZemin: Color.lerp(tabbarAktifZemin, other.tabbarAktifZemin, t)!, blokMarka: Color.lerp(blokMarka, other.blokMarka, t)!, blokVurgu: Color.lerp(blokVurgu, other.blokVurgu, t)!, blokKum: Color.lerp(blokKum, other.blokKum, t)!, blokKumMetin: Color.lerp(blokKumMetin, other.blokKumMetin, t)!, iskelet: Color.lerp(iskelet, other.iskelet, t)!, tutamak: Color.lerp(tutamak, other.tutamak, t)!, yildiz: Color.lerp(yildiz, other.yildiz, t)!);
+  }
+}
+
+/// Boşluk ölçeği (mantıksal piksel).
+abstract final class OmvilaBosluk {
+  /// İkon ile metin arası (sıkı).
+  static const double bosluk1 = 4.0;
+  /// Çipler ve saat dilimleri arası.
+  static const double bosluk2 = 8.0;
+  /// Liste öğesi içi, kart içi öğeler arası.
+  static const double bosluk3 = 12.0;
+  /// Ekran kenar boşluğu, kart iç boşluğu.
+  static const double bosluk4 = 16.0;
+  /// Form alanları arası.
+  static const double bosluk5 = 20.0;
+  /// Bölümler arası.
+  static const double bosluk6 = 24.0;
+  /// Büyük bölüm ayrımı, alt sayfa iç boşluğu (alt).
+  static const double bosluk8 = 32.0;
+  /// Boş durum iç boşluğu.
+  static const double bosluk12 = 48.0;
+}
+
+/// Köşe yarıçapları.
+abstract final class OmvilaKose {
+  /// Rozet.
+  static const double koseXs = 6.0;
+  /// Saat dilimi, çip, küçük buton.
+  static const double koseSm = 12.0;
+  /// Buton, giriş alanı.
+  static const double koseMd = 14.0;
+  /// Liste kartı, hizmet kartı, liste grubu.
+  static const double koseLg = 20.0;
+  /// Bento blok, büyük kart, yüzen sekme çubuğu, diyalog.
+  static const double koseXl = 24.0;
+  /// Avatar, hap çip, switch.
+  static const double koseTam = 999.0;
+}
+
+/// Boyutlar: dokunma alanı, kontrol yükseklikleri, çubuklar.
+abstract final class OmvilaBoyut {
+  /// En küçük dokunma alanı; görsel öğe küçük olsa da dokunma alanı bu kadardır.
+  static const double dokunmaMin = 44.0;
+  /// Küçük buton (liste içi eylem), çip, segment.
+  static const double kontrolSm = 36.0;
+  /// Giriş alanı, varsayılan buton.
+  static const double kontrolMd = 48.0;
+  /// Ekranın ana eylemi (alt sabit buton).
+  static const double kontrolLg = 52.0;
+  /// Üst bar yüksekliği (durum çubuğu hariç).
+  static const double ustBar = 56.0;
+  /// Alt sekme çubuğu yüksekliği (güvenli alan hariç).
+  static const double tabbar = 64.0;
+  /// Saat seçicide bir saat düğmesinin yüksekliği.
+  static const double saatDilimi = 44.0;
+  /// Tasarım referans genişliği; rezervasyon sayfası masaüstünde en fazla 480px ortalanır.
+  static const double ekranGenislik = 390.0;
+}
+
+/// Yazı stilleri. Renk vermez; rengi bağlamdan alır.
+abstract final class OmvilaYazi {
+  static const String aile = 'PlusJakartaSans';
+  /// Sekme kök ekranlarının büyük başlığı; kaydırınca `ust-bar-basligi`na küçülür.
+  static const TextStyle buyukBaslik = TextStyle(fontFamily: aile, fontSize: 34.0, height: 1.118, fontWeight: FontWeight.w800, letterSpacing: -1.19);
+  /// Detay ekranı başlığı, rezervasyon sayfasında salon adı.
+  static const TextStyle baslik1 = TextStyle(fontFamily: aile, fontSize: 24.0, height: 1.250, fontWeight: FontWeight.w700, letterSpacing: -0.24);
+  /// Bölüm başlığı, alt sayfa başlığı, adım başlığı.
+  static const TextStyle baslik2 = TextStyle(fontFamily: aile, fontSize: 20.0, height: 1.300, fontWeight: FontWeight.w600);
+  /// Kart ve liste öğesi başlığı.
+  static const TextStyle baslik3 = TextStyle(fontFamily: aile, fontSize: 17.0, height: 1.412, fontWeight: FontWeight.w600);
+  /// Üst bar ortasındaki başlık.
+  static const TextStyle ustBarBasligi = TextStyle(fontFamily: aile, fontSize: 17.0, height: 1.294, fontWeight: FontWeight.w600);
+  /// Paket seansı, günlük ciro gibi tek büyük sayı; `tabular-nums`.
+  static const TextStyle metrik = TextStyle(fontFamily: aile, fontSize: 36.0, height: 1.111, fontWeight: FontWeight.w800, letterSpacing: -1.44, fontFeatures: [FontFeature.tabularFigures()]);
+  /// Varsayılan metin; mobilde okunacak hiçbir metin 16px'in altına inmez (açıklama hariç).
+  static const TextStyle govde = TextStyle(fontFamily: aile, fontSize: 16.0, height: 1.500, fontWeight: FontWeight.w400);
+  /// Liste öğesinin birincil değeri.
+  static const TextStyle govdeGuclu = TextStyle(fontFamily: aile, fontSize: 16.0, height: 1.500, fontWeight: FontWeight.w600);
+  /// Liste öğesinin ikinci satırı, yardımcı metin.
+  static const TextStyle ikincil = TextStyle(fontFamily: aile, fontSize: 14.0, height: 1.429, fontWeight: FontWeight.w400);
+  /// Buton metni.
+  static const TextStyle etiket = TextStyle(fontFamily: aile, fontSize: 16.0, height: 1.250, fontWeight: FontWeight.w600);
+  /// Küçük buton, çip, segment.
+  static const TextStyle etiketKucuk = TextStyle(fontFamily: aile, fontSize: 14.0, height: 1.286, fontWeight: FontWeight.w600);
+  /// Rozet, zaman damgası, form ipucu.
+  static const TextStyle aciklama = TextStyle(fontFamily: aile, fontSize: 12.0, height: 1.333, fontWeight: FontWeight.w500);
+  /// Alt sekme çubuğu etiketi.
+  static const TextStyle sekme = TextStyle(fontFamily: aile, fontSize: 11.0, height: 1.273, fontWeight: FontWeight.w600);
+  /// Saat ve tutar; `tabular-nums`.
+  static const TextStyle rakam = TextStyle(fontFamily: aile, fontSize: 16.0, height: 1.500, fontWeight: FontWeight.w600, fontFeatures: [FontFeature.tabularFigures()]);
+}
+
+/// Uygulamanın ThemeData'sı. `MaterialApp(theme: OmvilaTema.acik(), darkTheme: OmvilaTema.koyu())`
+abstract final class OmvilaTema {
+  static ThemeData acik() => _tema(OmvilaRenkler.acik, Brightness.light);
+  static ThemeData koyu() => _tema(OmvilaRenkler.koyu, Brightness.dark);
+
+  static ThemeData _tema(OmvilaRenkler r, Brightness b) {
+    final scheme = ColorScheme(
+      brightness: b,
+      primary: r.marka, onPrimary: r.markaUstu,
+      primaryContainer: r.zeminSecili, onPrimaryContainer: r.metinMarka,
+      secondary: r.vurgu, onSecondary: r.vurguUstu,
+      error: r.hata, onError: r.markaUstu,
+      surface: r.zeminYukseltilmis, onSurface: r.metin,
+      onSurfaceVariant: r.metinIkincil,
+      surfaceContainerHighest: r.zeminIkincil,
+      outline: r.cizgiGuclu, outlineVariant: r.cizgi,
+    );
+    final kose = (double k) => RoundedRectangleBorder(borderRadius: BorderRadius.circular(k));
+    return ThemeData(
+      useMaterial3: true,
+      brightness: b,
+      colorScheme: scheme,
+      fontFamily: OmvilaYazi.aile,
+      scaffoldBackgroundColor: r.zemin,
+      extensions: [r],
+      textTheme: TextTheme(
+        displaySmall: OmvilaYazi.buyukBaslik, headlineSmall: OmvilaYazi.baslik1,
+        titleLarge: OmvilaYazi.baslik2, titleMedium: OmvilaYazi.baslik3,
+        bodyLarge: OmvilaYazi.govde, bodyMedium: OmvilaYazi.ikincil,
+        labelLarge: OmvilaYazi.etiket, labelMedium: OmvilaYazi.etiketKucuk, labelSmall: OmvilaYazi.aciklama,
+      ).apply(bodyColor: r.metin, displayColor: r.metin),
+      appBarTheme: AppBarTheme(
+        backgroundColor: r.zemin, foregroundColor: r.metin, elevation: 0, scrolledUnderElevation: 0,
+        centerTitle: true, toolbarHeight: OmvilaBoyut.ustBar, titleTextStyle: OmvilaYazi.ustBarBasligi.copyWith(color: r.metin),
+      ),
+      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(
+        backgroundColor: r.marka, foregroundColor: r.markaUstu, minimumSize: const Size(64, OmvilaBoyut.kontrolMd),
+        textStyle: OmvilaYazi.etiket, shape: kose(OmvilaKose.koseMd),
+      )),
+      outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
+        foregroundColor: r.metin, side: BorderSide(color: r.cizgiGuclu), minimumSize: const Size(64, OmvilaBoyut.kontrolMd),
+        textStyle: OmvilaYazi.etiket, shape: kose(OmvilaKose.koseMd),
+      )),
+      textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(
+        foregroundColor: r.metinMarka, minimumSize: const Size(44, OmvilaBoyut.dokunmaMin), textStyle: OmvilaYazi.etiket,
+      )),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true, fillColor: r.zeminYukseltilmis,
+        contentPadding: const EdgeInsets.symmetric(horizontal: OmvilaBosluk.bosluk4, vertical: 14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(OmvilaKose.koseMd), borderSide: BorderSide(color: r.cizgiGuclu)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(OmvilaKose.koseMd), borderSide: BorderSide(color: r.cizgiGuclu)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(OmvilaKose.koseMd), borderSide: BorderSide(color: r.odak, width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(OmvilaKose.koseMd), borderSide: BorderSide(color: r.hata)),
+        labelStyle: OmvilaYazi.ikincil.copyWith(color: r.metinIkincil), hintStyle: OmvilaYazi.govde.copyWith(color: r.metinIkincil),
+      ),
+      cardTheme: CardThemeData(color: r.zeminYukseltilmis, elevation: 0, margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(OmvilaKose.koseLg), side: BorderSide(color: r.cizgi))),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: r.tabbarZemin, height: OmvilaBoyut.tabbar, indicatorColor: r.zeminSecili, elevation: 0,
+        iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? r.tabbarAktif : r.tabbarPasif, size: 24)),
+        labelTextStyle: WidgetStateProperty.resolveWith((s) => OmvilaYazi.sekme.copyWith(color: s.contains(WidgetState.selected) ? r.tabbarAktif : r.tabbarPasif)),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(backgroundColor: r.zeminYukseltilmis, showDragHandle: true, dragHandleColor: r.tutamak,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(OmvilaKose.koseXl)))),
+      dialogTheme: DialogThemeData(backgroundColor: r.zeminYukseltilmis, shape: kose(OmvilaKose.koseXl)),
+      chipTheme: ChipThemeData(shape: kose(OmvilaKose.koseTam), side: BorderSide(color: r.cizgiGuclu), selectedColor: r.zeminSecili,
+        labelStyle: OmvilaYazi.etiketKucuk.copyWith(color: r.metin)),
+      snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: OmvilaRampa.petrol950, contentTextStyle: OmvilaYazi.ikincil.copyWith(color: OmvilaRampa.kum50),
+        shape: kose(OmvilaKose.koseMd)),
+      dividerTheme: DividerThemeData(color: r.cizgi, thickness: 1, space: 1),
+      switchTheme: SwitchThemeData(trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? r.marka : r.cizgiGuclu),
+        thumbColor: const WidgetStatePropertyAll(Colors.white), trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent)),
+    );
+  }
+}
+
+/// Renk rampaları (temadan bağımsız). Doğrudan değil, semantik renkler üzerinden kullanın.
+abstract final class OmvilaRampa {
+  static const Color petrol50 = Color(0xFFEFF8F6);
+  static const Color petrol100 = Color(0xFFD3EEE8);
+  static const Color petrol200 = Color(0xFFA8DDD3);
+  static const Color petrol300 = Color(0xFF74C6B8);
+  static const Color petrol400 = Color(0xFF35A596);
+  static const Color petrol500 = Color(0xFF14857A);
+  static const Color petrol600 = Color(0xFF0F6D64);
+  static const Color petrol700 = Color(0xFF0D564F);
+  static const Color petrol800 = Color(0xFF0B4540);
+  static const Color petrol900 = Color(0xFF0B3B37);
+  static const Color petrol950 = Color(0xFF062320);
+  static const Color kum50 = Color(0xFFFBF8F3);
+  static const Color kum100 = Color(0xFFF4EFE6);
+  static const Color kum200 = Color(0xFFE9E0D0);
+  static const Color kum300 = Color(0xFFD9CBB3);
+  static const Color kum400 = Color(0xFFBFAA8A);
+  static const Color kum500 = Color(0xFF9C8566);
+  static const Color kum600 = Color(0xFF7A654B);
+  static const Color kum700 = Color(0xFF5B4B39);
+  static const Color kum800 = Color(0xFF3D3328);
+  static const Color kum900 = Color(0xFF241E18);
+  static const Color mercan50 = Color(0xFFFDF1EC);
+  static const Color mercan100 = Color(0xFFFADCD1);
+  static const Color mercan200 = Color(0xFFF5BBA6);
+  static const Color mercan300 = Color(0xFFEF9A7E);
+  static const Color mercan400 = Color(0xFFE9785B);
+  static const Color mercan500 = Color(0xFFD85E40);
+  static const Color mercan600 = Color(0xFFB54A30);
+  static const Color mercan700 = Color(0xFF8E3925);
+  static const Color mercan800 = Color(0xFF66291B);
+  static const Color mercan900 = Color(0xFF401A11);
+  static const Color gri0 = Color(0xFFFFFFFF);
+  static const Color gri50 = Color(0xFFF7F7F5);
+  static const Color gri100 = Color(0xFFEDEDEA);
+  static const Color gri200 = Color(0xFFDCDCD7);
+  static const Color gri300 = Color(0xFFBDBDB6);
+  static const Color gri400 = Color(0xFF94958E);
+  static const Color gri500 = Color(0xFF6E706A);
+  static const Color gri600 = Color(0xFF52554F);
+  static const Color gri700 = Color(0xFF3B3E39);
+  static const Color gri800 = Color(0xFF262925);
+  static const Color gri900 = Color(0xFF151816);
+  static const Color basari100 = Color(0xFFE3F2E1);
+  static const Color basari600 = Color(0xFF2E7D32);
+  static const Color basari800 = Color(0xFF1B4D1F);
+  static const Color uyari100 = Color(0xFFFCF0D6);
+  static const Color uyari400 = Color(0xFFE5A823);
+  static const Color uyari700 = Color(0xFF8A5A00);
+  static const Color hata100 = Color(0xFFFBE4E1);
+  static const Color hata600 = Color(0xFFC0362C);
+  static const Color hata800 = Color(0xFF7A1F18);
+  static const Color bilgi100 = Color(0xFFE2ECF8);
+  static const Color bilgi600 = Color(0xFF2F6BB8);
+  static const Color bilgi800 = Color(0xFF1C4275);
+}

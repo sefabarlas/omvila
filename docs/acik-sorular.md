@@ -1,0 +1,51 @@
+# Açık sorular ve alınan varsayımlar
+
+Her satır ya **karar bekliyor** ya da **varsayımla ilerlendi** durumundadır. Varsayımla ilerlenen konu kodda ilgili ayar veya tek bir sınıf arkasında durur; değişirse tek yer değişir. Bir ajan bu listeye dokunan bir işe başlarsa varsayımı uygular. Varsayımı değiştirmez; gerekirse kullanıcıya sorar.
+
+Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · ✅ kapandı
+
+## Ürün
+
+| # | Soru | Varsayım / durum | Etkilediği dilim |
+|---|---|---|---|
+| S-01 | Kapora ve onay birlikte gerekiyorsa tek süre mi? | 🟡 Tek tutma süresi `TransferWindowMinutes`; "Kapora geldi" onay sayılır | 4 |
+| S-02 | Kapora istenmiş talebi salon kapora gelmeden onaylayabilir mi? | 🟡 Evet, açık `waiveDeposit = true` ile ("Kaporasız onayla") | 4 |
+| S-03 | Havale ekranından sonra müşteriye ne gösterilir? Tasarımda `YRBasari` / `Basari` "Randevunuz onaylandı" diyor, `Havale` ise "Salon havaleyi görünce onaylar" diyor | 🟡 "Havaleyi yaptım"dan sonra "Salon onayı bekleniyor" (Talep ekranı deseni). "Randevunuz onaylandı" yalnız gerçekten `Confirmed` olunca. Tasarımda düzeltilmeli | 4 |
+| S-04 | Salon müşteri adına iptal veya erteleme yaparken son süreye tabi mi? | 🟡 Hayır, salon sınırsız | 2 |
+| S-05 | Salt okunur abonelikte salon elle randevu ekleyebilir mi? Eski kural evet, tasarım hayır | 🟡 Tasarım: hayır | 6 |
+| S-06 | Online akışta çok hizmetli randevuda hizmet başına farklı personel | ✅ Evet ("İki hizmet de aynı kişiden" anahtarı kapalıyken) | 2 |
+| S-07 | Personel kendi randevusunu iptal edebilir mi, kapora işaretleyebilir mi? | 🟡 v1'de hayır | 3 |
+| S-08 | Panelden eklenen randevuya kapora istenebilir mi? | 🟡 v1'de hayır | 4 |
+| S-09 | "Gelmedi" olan randevunun paket seansı geri döner mi? | 🟡 Hayır (seans yanar); salon elle geri verebilir (v2) | 5 |
+| S-10 | Kısmi kullanılmış paketin iade hesabı | 🔴 Karar yok. v1'de iade tutarını salon elle girer | 5 |
+| S-11 | Müşteri saat değiştirince salon onaylı çalışıyorsa yeniden onaya düşer mi? | ✅ Evet (RandevuErtele ekranı) | 3 |
+| S-12 | Tekrarlayan randevuda çakışan tekrar | 🟡 Atlanır, salona liste gösterilir | 2 |
+| S-13 | Hatırlatma, sessiz saatler, değerlendirme zamanı, havale süresi, iptal/erteleme süreleri | 🟡 Teslim notlarındaki örnek değerler ("Onay" bekleyenler) | 3 |
+| S-14 | Yer tutucular: fiyat, plan sınırı, deneme kontörü, KDV, OMVILA banka, alan adı | 🔴 Değer yok; veriden/yapılandırmadan okunur, kodda yazılmaz | 6 |
+| S-15 | Değerlendirmeler otomatik mi yayınlanır? | 🟡 Evet; salon gizleyemez, yalnız yanıtlar (v1) | 5 |
+| S-16 | Kullanıcı birden çok markaya üye olabilir mi? | 🟡 v1'de hayır | 1 |
+| S-17 | "Kapıda sıra" SMS'inde "Lütfen" geçiyor; ses-tonu kuralı yasaklıyor | 🟡 "Salona yakın olun." kullanılır; tasarım düzeltilmeli | 5 |
+| S-18 | Panelde onay bekleyen talepte "Reddet" butonu var; müşteri tarafında hiçbir zaman "reddedildi" denmez | ✅ `Cancelled` + `DeclinedBySalon`; müşteriye "iptal" metni | 3 |
+| S-19 | SMS bağlantı kodu tasarımda 4 karakter (`7Kx2`) | 🟡 Güvenlik için 8 karakter; SMS uzunluk testleri buna göre | 3 |
+
+## Teknik
+
+| # | Soru | Varsayım / durum |
+|---|---|---|
+| T-01 | Veritabanı | ✅ PostgreSQL 17 (kullanıcının teknik kararı; ADR-0001) |
+| T-02 | Web çatısı | ✅ Paneller React + Vite SPA; rezervasyon ve tanıtım Next.js (ADR-0008) |
+| T-03 | SMS sağlayıcısı | 🔴 Seçilmedi. Kriterler: başlık (originator) onay süreci, İYS entegrasyonu, Türkçe karakter ve 155 sınırı, teslim raporu webhook'u, fiyat. Adaylar: Netgsm, İleti Merkezi, Mutlucell, Verimor. `ISmsSender` arkasında; geliştirmede sahte sağlayıcı |
+| T-04 | Push | 🟡 Firebase Cloud Messaging (iOS için APNs FCM üzerinden) |
+| T-05 | E-posta | 🟡 Amazon SES veya Postmark; `IEmailSender` arkasında |
+| T-06 | Abonelik kart çekimi sağlayıcısı | 🔴 Seçilmedi (adaylar: iyzico abonelik API'si, Param). Dilim 6'ya kadar gerekmiyor |
+| T-07 | Barındırma | 🔴 Seçilmedi. KVKK açısından yurt içi veri merkezi değerlendirilmeli (açık rıza olmadan yurt dışı aktarım riski) |
+| T-08 | Dosya depolama (logo, dekont) | 🟡 S3 uyumlu; `IFileStorage` arkasında |
+| T-09 | İYS entegrasyonu | 🔴 SMS sağlayıcısıyla birlikte; kampanya gönderimi dilim 6 sonrası |
+| T-10 | Hata izleme / gözlemlenebilirlik | 🟡 OpenTelemetry + Serilog; hedef (Sentry, Grafana) barındırmayla birlikte |
+
+## Hukuk (kod beklemez, metin bekler)
+- H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.
+- H-02 KVKK veri sorumlusu / veri işleyen ayrımı (salon sorumlu, OMVILA işleyen varsayımı).
+- H-03 Saklama süreleri (işlem kayıtları 3 yıl, denetim 2 yıl).
+- H-04 SSS, hesap silme ve kapora/iade metinleri.
+- H-05 Tanıtım sitesi yasal sayfaları.

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Veri" height=170 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>StatCard — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row',style:{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}},h(P.StatCard,{label:'Bugünkü randevu',value:'24',delta:'%12',trend:'up',hint:'geçen salıya göre',icon:'calendar'}),h(P.StatCard,{label:'Günlük ciro',value:'18.450 ₺',delta:'%8',trend:'up',hint:'geçen salıya göre',icon:'wallet'}),h(P.StatCard,{label:'Doluluk',value:'%82',hint:'3 personel · 9 saat',icon:'clock'}),h(P.StatCard,{label:'Gelmeyen',value:'2',delta:'1',trend:'down',hint:'bu hafta',icon:'circle-x'})));
+</script>
+</body>
+</html>

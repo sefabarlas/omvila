@@ -1,0 +1,12 @@
+<!-- @dsCard group="Form" height=90 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Checkbox — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row',style:{gap:'28px',alignItems:'flex-start'}},h(P.Checkbox,{label:'SMS hatırlatma gönder',description:'Randevudan 24 saat önce',defaultChecked:true}),h(P.Checkbox,{label:'E-posta gönder'}),h(P.Checkbox,{label:'Kapora iste',disabled:true})));
+</script>
+</body>
+</html>

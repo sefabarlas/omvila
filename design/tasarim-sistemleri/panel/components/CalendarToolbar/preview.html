@@ -1,0 +1,12 @@
+<!-- @dsCard group="Takvim" height=80 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>CalendarToolbar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'20px'}},h(P.CalendarToolbar,{dateLabel:'Salı, 25 Kasım 2026',view:'gun',staffFilter:h(P.Button,{size:'sm',icon:'users',iconRight:'chevron-down'},'Tüm personel')})));
+</script>
+</body>
+</html>

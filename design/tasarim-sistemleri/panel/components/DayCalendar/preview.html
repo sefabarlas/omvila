@@ -1,0 +1,28 @@
+<!-- @dsCard group="Takvim" height=680 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>DayCalendar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+var STAFF=[{id:'elif',name:'Elif Kaya',color:'#14857A'},{id:'mert',name:'Mert Demir',color:'#E9785B'},{id:'zeynep',name:'Zeynep Aksoy',color:'#7A654B'}];
+var APPTS=[
+ {id:1,staffId:'elif',start:'09:30',end:'10:15',customer:'Ayşe Yılmaz',service:'Saç kesimi',status:'tamamlandi'},
+ {id:2,staffId:'elif',start:'10:30',end:'12:00',customer:'Selin Öztürk',service:'Boya ve fön',status:'geldi'},
+ {id:3,staffId:'elif',start:'13:00',end:'13:45',customer:'Derya Şahin',service:'Saç kesimi',status:'onaylandi'},
+ {id:4,staffId:'elif',start:'14:30',end:'15:00',customer:'Gizem Arslan',service:'Fön',status:'kapora'},
+ {id:5,staffId:'mert',start:'09:00',end:'09:30',customer:'Can Yıldız',service:'Sakal tıraşı',status:'tamamlandi'},
+ {id:6,staffId:'mert',start:'10:00',end:'10:45',customer:'Emre Koç',service:'Saç ve sakal',status:'gelmedi'},
+ {id:7,staffId:'mert',start:'11:00',end:'11:30',customer:'Burak Çelik',service:'Saç kesimi',status:'iptal'},
+ {id:8,staffId:'mert',start:'12:30',end:'13:15',customer:'Onur Aydın',service:'Saç ve sakal',status:'onaylandi'},
+ {id:9,staffId:'mert',start:'15:00',end:'15:45',customer:'Kerem Polat',service:'Saç kesimi',status:'onaylandi'},
+ {id:10,staffId:'zeynep',start:'09:30',end:'11:00',customer:'Melis Kurt',service:'Cilt bakımı',status:'tamamlandi'},
+ {id:11,staffId:'zeynep',start:'11:30',end:'12:30',customer:'Nazlı Erdem',service:'Manikür ve pedikür',status:'geldi'},
+ {id:12,staffId:'zeynep',start:'14:00',end:'15:30',customer:'Ece Doğan',service:'Kalıcı oje',status:'onaylandi'},
+ {id:13,staffId:'zeynep',start:'16:00',end:'17:00',customer:'Pınar Yalçın',service:'Cilt bakımı',status:'onay'}];
+
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'20px'}},h(P.DayCalendar,{staff:STAFF,appointments:APPTS,startHour:9,endHour:18,now:'12:10'})));
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Marka" height=120 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Logo — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens',style:{alignItems:'center'}},h(P.Logo,{size:36}),h('div',{style:{background:'var(--zemin-marka)',padding:'14px 18px',borderRadius:'16px'}},h(P.Logo,{tone:'ters',size:36})),h(P.Logo,{showWordmark:false,size:48})));
+</script>
+</body>
+</html>

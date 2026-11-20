@@ -1,0 +1,129 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-19T11:23:55Z"
+ },
+ "title": "OMVILA Marka Sistemi",
+ "namespace": "Omvila",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Logos",
+  "Uygulama"
+ ],
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "l",
+   "order": [
+    "omvila-logo-yatay.svg",
+    "omvila-logo-yatay-ters.svg",
+    "omvila-logo-slogan.svg",
+    "omvila-logo-slogan-ters.svg",
+    "omvila-logo-mono-petrol.svg",
+    "omvila-logo-mono-beyaz.svg",
+    "omvila-amblem.svg",
+    "omvila-amblem-ters.svg",
+    "omvila-amblem-kucuk.svg"
+   ],
+   "files": {
+    "omvila-logo-yatay.svg": {
+     "name": "omvila-logo-yatay.svg",
+     "blob": "0bef755dee1866561c8dc09c138111f8",
+     "size": 4702,
+     "type": "image/svg+xml"
+    },
+    "omvila-logo-yatay-ters.svg": {
+     "name": "omvila-logo-yatay-ters.svg",
+     "blob": "844c4de50738452e1ce828ae2c9e3f57",
+     "size": 4702,
+     "type": "image/svg+xml"
+    },
+    "omvila-logo-slogan.svg": {
+     "name": "omvila-logo-slogan.svg",
+     "blob": "987a1d0e0bef5705357575d568e15327",
+     "size": 27448,
+     "type": "image/svg+xml"
+    },
+    "omvila-logo-slogan-ters.svg": {
+     "name": "omvila-logo-slogan-ters.svg",
+     "blob": "d31c106c3431f620bf4b33a941968d45",
+     "size": 27448,
+     "type": "image/svg+xml"
+    },
+    "omvila-logo-mono-petrol.svg": {
+     "name": "omvila-logo-mono-petrol.svg",
+     "blob": "2864f1474926fbac4c0ede813ce98c39",
+     "size": 4413,
+     "type": "image/svg+xml"
+    },
+    "omvila-logo-mono-beyaz.svg": {
+     "name": "omvila-logo-mono-beyaz.svg",
+     "blob": "888f69530e381aa6047bfc08577ffac8",
+     "size": 4413,
+     "type": "image/svg+xml"
+    },
+    "omvila-amblem.svg": {
+     "name": "omvila-amblem.svg",
+     "blob": "29af928e65b2346a06713c1d7154538c",
+     "size": 1197,
+     "type": "image/svg+xml"
+    },
+    "omvila-amblem-ters.svg": {
+     "name": "omvila-amblem-ters.svg",
+     "blob": "603677a3d9c33507fa08443b1eee013f",
+     "size": 1197,
+     "type": "image/svg+xml"
+    },
+    "omvila-amblem-kucuk.svg": {
+     "name": "omvila-amblem-kucuk.svg",
+     "blob": "204f3017ae4a3b9fa024a29f128a5a6d",
+     "size": 779,
+     "type": "image/svg+xml"
+    }
+   }
+  },
+  "Uygulama": {
+   "name": "Uygulama",
+   "tile": "m",
+   "order": [
+    "app-icon-isletme.svg",
+    "app-icon-musteri.svg",
+    "favicon.svg"
+   ],
+   "files": {
+    "app-icon-isletme.svg": {
+     "name": "app-icon-isletme.svg",
+     "blob": "322380be6775f0e469a14843fc097b66",
+     "size": 1323,
+     "type": "image/svg+xml"
+    },
+    "app-icon-musteri.svg": {
+     "name": "app-icon-musteri.svg",
+     "blob": "235a226b6a816e2e52de390af85d537e",
+     "size": 1323,
+     "type": "image/svg+xml"
+    },
+    "favicon.svg": {
+     "name": "favicon.svg",
+     "blob": "8fb9ee52fb9fe27f54e53ef0c257ad5d",
+     "size": 779,
+     "type": "image/svg+xml"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Claude",
+  "at": "2026-11-19T11:59:04Z",
+  "via": "Claude",
+  "note": "Kapak yeni logoya göre yenilendi"
+ }
+}

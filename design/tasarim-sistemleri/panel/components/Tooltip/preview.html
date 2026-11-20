@@ -1,0 +1,12 @@
+<!-- @dsCard group="Durum" height=110 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Tooltip — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row',style:{paddingTop:'52px',paddingLeft:'64px'}},h(P.Tooltip,{text:'Kapora 200 ₺ · bekleniyor',open:true},h(P.StatusBadge,{status:'kapora'}))));
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!-- @dsCard group="Katmanlar" height=180 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Banner — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-stack'},h(P.Banner,{tone:'uyari',title:'Ödeme hesabınız onay bekliyor',action:h(P.Button,{size:'sm'},'Belgeleri yükle')},'Onaylanana kadar müşterileriniz kapora ödeyemez.'),h(P.Banner,{tone:'bilgi'},'Yarın 9 randevunuz var. Hatırlatmalar 18:00’de SMS ile gidecek.')));
+</script>
+</body>
+</html>

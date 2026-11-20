@@ -1,0 +1,12 @@
+<!-- @dsCard group="Durum" height=88 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Badge — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row'},h(P.Badge,null,'Taslak'),h(P.Badge,{tone:'marka'},'Paket'),h(P.Badge,{tone:'vurgu'},'Yeni müşteri'),h(P.Badge,{tone:'basari',icon:'check'},'Ödendi'),h(P.Badge,{tone:'uyari'},'Az kaldı'),h(P.Badge,{tone:'hata'},'Borçlu'),h(P.Badge,{tone:'bilgi'},'VIP')));
+</script>
+</body>
+</html>

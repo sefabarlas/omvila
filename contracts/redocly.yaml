@@ -1,0 +1,9 @@
+extends:
+  - recommended
+rules:
+  operation-4xx-response: error
+  operation-operationId-unique: error
+  operation-summary: error
+  no-unused-components: warn
+  tag-description: error
+  security-defined: off   # public uçlar bilerek güvenliksiz

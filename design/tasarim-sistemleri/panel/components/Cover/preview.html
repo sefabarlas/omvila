@@ -1,0 +1,67 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>OMVILA Panel</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--zemin); color:var(--metin); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .side { fill:var(--sidebar-zemin); }
+  [data-theme="dark"] .side { fill:var(--petrol-800); }
+  .menu { fill:var(--sidebar-metin); opacity:.55; }
+  .menu.on { fill:var(--mercan-400); opacity:1; }
+  .board { fill:var(--kum-200); }
+  .tile { fill:var(--petrol-50); }
+  .tile.on { fill:var(--petrol-500); }
+  .now { fill:var(--mercan-400); }
+  .blk { rx:var(--kose-xl); }
+  .t { rx:var(--kose-sm); }
+  .p { rx:4px; }
+  .words { position:absolute; left:var(--bosluk-8); bottom:var(--bosluk-8); max-width:440px; }
+  .name { margin:0; font-size:72px; line-height:.95; font-weight:600; letter-spacing:.12em; color:var(--petrol-900); }
+  [data-theme="dark"] .name { color:var(--metin); }
+  .tag { margin:var(--bosluk-4) 0 0 4px; font-size:14px; line-height:20px; color:var(--metin-ikincil); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      sidebar-zemin 112x288 slab bled top and bottom (the panel's petrol menu) · kum-200 board 320x232 bled off the right edge · mercan-400 now-line 2px once — about two fifths of 960x288
+  arrangement one tall menu slab with the working board beside it, the board's bottom bosluk-8 above the edge, bosluk-4 gutter
+  pattern     tiles cut by the radius tokens, from "Yoğun ama sıkışık değildir" and the calendar rules: three staff columns of appointment tiles at a bosluk-4 grid, quiet petrol-50 with a few booked in petrol-500, menu pills in the slab, one in mercan
+  scales      sides in bosluk-2 multiples; gutters bosluk-2 and bosluk-4; tiles 16px per 15 minutes as takvim-saat; corners kose-xl on blocks, kose-sm on tiles
+-->
+<rect class="side" x="16" y="-16" width="112" height="320" rx="16"/>
+<rect class="menu" x="36" y="40" width="56" height="8" rx="4"/>
+<rect class="menu on" x="36" y="64" width="72" height="8" rx="4"/>
+<rect class="menu" x="36" y="88" width="48" height="8" rx="4"/>
+<rect class="menu" x="36" y="128" width="64" height="8" rx="4"/>
+<rect class="menu" x="36" y="152" width="40" height="8" rx="4"/>
+<rect class="menu" x="36" y="176" width="56" height="8" rx="4"/>
+<rect class="board blk" x="144" y="24" width="352" height="232" rx="16"/>
+<rect class="tile on" x="160" y="40" width="96" height="48" rx="6"/>
+<rect class="tile" x="160" y="96" width="96" height="32" rx="6"/>
+<rect class="tile on" x="160" y="152" width="96" height="80" rx="6"/>
+<rect class="tile" x="264" y="40" width="96" height="32" rx="6"/>
+<rect class="tile" x="264" y="80" width="96" height="64" rx="6"/>
+<rect class="tile on" x="264" y="184" width="96" height="48" rx="6"/>
+<rect class="tile on" x="368" y="56" width="96" height="64" rx="6"/>
+<rect class="tile" x="368" y="128" width="96" height="48" rx="6"/>
+<rect class="tile" x="368" y="200" width="96" height="32" rx="6"/>
+<rect class="now" x="152" y="139" width="336" height="2"/>
+<circle class="now" cx="156" cy="140" r="5"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">OMVILA<br>Panel</h1>
+<p class="tag">Salonun gün boyu açık kalan çalışma alanı.</p>
+</div>
+</div>
+</body>
+</html>

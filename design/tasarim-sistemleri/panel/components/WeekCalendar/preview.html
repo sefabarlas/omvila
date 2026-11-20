@@ -1,0 +1,12 @@
+<!-- @dsCard group="Takvim" height=640 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>WeekCalendar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'20px'}},h(P.WeekCalendar,{today:'sa',now:'12:10',startHour:9,endHour:17,days:[{id:'pt',weekday:'Pzt',day:24},{id:'sa',weekday:'Sal',day:25},{id:'ca',weekday:'Çar',day:26},{id:'pe',weekday:'Per',day:27},{id:'cu',weekday:'Cum',day:28},{id:'ct',weekday:'Cmt',day:29}],appointments:[{id:1,dayId:'pt',start:'10:00',end:'11:00',customer:'Melis Kurt',service:'Cilt bakımı',status:'tamamlandi'},{id:2,dayId:'pt',start:'14:00',end:'14:45',customer:'Can Yıldız',service:'Saç kesimi',status:'tamamlandi'},{id:3,dayId:'sa',start:'09:30',end:'10:15',customer:'Ayşe Yılmaz',service:'Saç kesimi',status:'tamamlandi'},{id:4,dayId:'sa',start:'10:30',end:'12:00',customer:'Selin Öztürk',service:'Boya ve fön',status:'geldi'},{id:5,dayId:'sa',start:'13:00',end:'13:45',customer:'Derya Şahin',service:'Saç kesimi',status:'onaylandi'},{id:6,dayId:'ca',start:'11:00',end:'12:30',customer:'Ece Doğan',service:'Kalıcı oje',status:'onaylandi'},{id:7,dayId:'ca',start:'15:00',end:'15:30',customer:'Gizem Arslan',service:'Fön',status:'kapora'},{id:8,dayId:'pe',start:'09:00',end:'10:30',customer:'Nazlı Erdem',service:'Manikür',status:'onaylandi'},{id:9,dayId:'cu',start:'13:30',end:'14:15',customer:'Onur Aydın',service:'Saç ve sakal',status:'onaylandi'},{id:10,dayId:'ct',start:'10:00',end:'12:00',customer:'Zehra Bulut',service:'Gelin saçı',status:'kapora'}]})));
+</script>
+</body>
+</html>

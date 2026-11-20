@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm --filter:*)",
+      "Bash(pnpm turbo:*)",
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet format:*)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(fvm flutter test:*)",
+      "Bash(fvm flutter analyze:*)",
+      "Bash(melos run:*)",
+      "Bash(python3 contracts/scripts/check_conventions.py:*)",
+      "Bash(python3 scripts/gen_inventory.py:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker compose ps)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git switch -c:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(dotnet ef database drop:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(packages/api-client-ts/src/generated/**)",
+      "Edit(packages/api-client-dart/lib/**)",
+      "Edit(packages/omvila_ui/lib/theme/omvila_theme.dart)",
+      "Edit(design/ekranlar/**)",
+      "Edit(design/tasarim-sistemleri/**)",
+      "Edit(docs/referans/**)"
+    ]
+  }
+}

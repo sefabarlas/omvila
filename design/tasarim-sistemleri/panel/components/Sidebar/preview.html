@@ -1,0 +1,12 @@
+<!-- @dsCard group="Yerleşim" height=600 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Sidebar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{display:'flex',height:'600px',gap:'24px',background:'var(--zemin)'}},h(P.Sidebar,{items:[{items:[{id:'ozet',label:'Özet',icon:'layout-dashboard'},{id:'takvim',label:'Takvim',icon:'calendar',count:3},{id:'musteriler',label:'Müşteriler',icon:'users'}]},{title:'Yönetim',items:[{id:'hizmetler',label:'Hizmetler ve fiyatlar',icon:'tag'},{id:'personel',label:'Personel',icon:'user'},{id:'paketler',label:'Paketler',icon:'package'},{id:'kasa',label:'Kasa',icon:'wallet'},{id:'raporlar',label:'Raporlar',icon:'chart-column'}]},{items:[{id:'ayarlar',label:'Ayarlar',icon:'settings'}]}],active:'takvim',branch:'Kadıköy şubesi',user:{name:'Elif Kaya',role:'Salon sahibi'}}),h(P.Sidebar,{collapsed:true,items:[{items:[{id:'ozet',label:'Özet',icon:'layout-dashboard'},{id:'takvim',label:'Takvim',icon:'calendar',count:3},{id:'musteriler',label:'Müşteriler',icon:'users'}]},{title:'Yönetim',items:[{id:'hizmetler',label:'Hizmetler ve fiyatlar',icon:'tag'},{id:'personel',label:'Personel',icon:'user'},{id:'paketler',label:'Paketler',icon:'package'},{id:'kasa',label:'Kasa',icon:'wallet'},{id:'raporlar',label:'Raporlar',icon:'chart-column'}]},{items:[{id:'ayarlar',label:'Ayarlar',icon:'settings'}]}],active:'takvim',user:{name:'Elif Kaya'}})));
+</script>
+</body>
+</html>

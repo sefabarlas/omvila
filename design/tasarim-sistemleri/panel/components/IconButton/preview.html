@@ -1,0 +1,12 @@
+<!-- @dsCard group="Eylemler" height=88 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>IconButton — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row'},h(P.IconButton,{icon:'ellipsis',label:'Diğer işlemler'}),h(P.IconButton,{icon:'chevron-left',label:'Önceki',variant:'secondary'}),h(P.IconButton,{icon:'chevron-right',label:'Sonraki',variant:'secondary'}),h(P.IconButton,{icon:'plus',label:'Ekle',variant:'primary'}),h(P.IconButton,{icon:'x',label:'Kapat',size:'sm'})));
+</script>
+</body>
+</html>

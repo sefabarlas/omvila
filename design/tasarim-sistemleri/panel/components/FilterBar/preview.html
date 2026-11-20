@@ -1,0 +1,12 @@
+<!-- @dsCard group="Yerleşim" height=90 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>FilterBar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-row'},h(P.FilterBar,{filters:[{id:'p',label:'Personel: Elif Kaya',active:true},{id:'d',label:'Durum: Geldi',active:true},{id:'h',label:'Hizmet'},{id:'t',label:'Etiket'}]},h(P.TextField,{icon:'search',placeholder:'Müşteri ara','aria-label':'Müşteri ara',style:{width:'220px'}}))));
+</script>
+</body>
+</html>

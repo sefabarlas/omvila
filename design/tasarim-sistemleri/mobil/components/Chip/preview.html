@@ -1,0 +1,12 @@
+<!-- @dsCard group="Seçim" height=90 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Chip — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens',style:{gap:'8px'}},h(P.Chip,{selected:true},'Bugün'),h(P.Chip,null,'Yarın'),h(P.Chip,{icon:'calendar'},'Tarih seç'),h(P.Chip,{icon:'user'},'Personel')));
+</script>
+</body>
+</html>

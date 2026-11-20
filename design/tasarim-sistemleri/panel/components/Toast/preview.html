@@ -1,0 +1,12 @@
+<!-- @dsCard group="Katmanlar" height=230 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>Toast — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'ov-stack'},h(P.Toast,{tone:'basari',title:'Randevu oluşturuldu',description:'Ayşe Yılmaz · 25 Kasım 14:30. SMS gönderildi.',action:h(P.Button,{size:'sm',variant:'ghost'},'Geri al')}),h(P.Toast,{tone:'hata',title:'Bu saat dolu',description:'Elif Kaya 14:30–15:15 arası başka bir randevuda.'})));
+</script>
+</body>
+</html>

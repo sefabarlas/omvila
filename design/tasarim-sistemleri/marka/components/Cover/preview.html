@@ -1,0 +1,78 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>OMVILA</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--zemin); color:var(--metin); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; width:960px; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .deep { fill:var(--petrol-900); }
+  [data-theme="dark"] .deep { fill:var(--petrol-700); }
+  .head { fill:var(--mercan-400); }
+  .hole { fill:var(--zemin); }
+  .dial { fill:var(--kum-50); }
+  .quarter { fill:var(--petrol-200); }
+  .sand { fill:var(--kum-200); }
+  .blk { rx:var(--kose-xl); }
+  .slot { rx:var(--kose-sm); }
+  .slot.free { fill:var(--kum-50); }
+  .slot.booked { fill:var(--petrol-500); }
+  .slot.new { fill:var(--mercan-400); }
+  .words { position:absolute; left:var(--bosluk-10); bottom:var(--bosluk-10); max-width:440px; }
+  .name { margin:0; font-size:80px; line-height:.92; font-weight:600; letter-spacing:.12em; color:var(--petrol-900); }
+  [data-theme="dark"] .name { color:var(--metin); }
+  .tag { margin:var(--bosluk-4) 0 0 4px; font-size:14px; line-height:20px; color:var(--metin-ikincil); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      petrol-900 224x240 calendar slab bled off the top, its top bosluk-12 band in mercan-400 (the emblem's header) · kum-50 dial r64 with a petrol-200 quarter (the booked slot) · kum-200 176x208 bled off the right edge — about two fifths of 960x288
+  arrangement the emblem opened up: one tall calendar slab with a satellite slot board, bottoms on one line bosluk-10 above the edge, bosluk-4 gutter
+  pattern     calendar time slots, from the motif "takvimdeki saat dilimlerinden gelen yuvarlatılmış kısa bloklar": bosluk-4-tall slots at a bosluk-6 pitch on the sand board, mostly free, some booked in petrol-500, one new in mercan
+  scales      sides in bosluk-2 multiples; gutter bosluk-4; slot pitch bosluk-6, gap bosluk-2; corners kose-xl on blocks, kose-sm on slots; ring holes r8 as in the emblem
+-->
+<defs><clipPath id="hd"><rect x="0" y="0" width="480" height="48"/></clipPath></defs>
+<rect class="deep blk" x="24" y="-24" width="224" height="272" rx="24"/>
+<rect class="head blk" x="24" y="-24" width="224" height="272" rx="24" clip-path="url(#hd)"/>
+<circle class="hole" cx="88" cy="24" r="8"/>
+<circle class="hole" cx="184" cy="24" r="8"/>
+<circle class="dial" cx="136" cy="152" r="64"/>
+<path class="quarter" d="M136 152H192A56 56 0 0 1 136 208Z"/>
+<rect class="sand blk" x="264" y="40" width="240" height="208" rx="24"/>
+<rect class="slot free" x="288" y="64" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="344" y="64" width="48" height="16" rx="8"/>
+<rect class="slot free" x="400" y="64" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="288" y="88" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="344" y="88" width="48" height="16" rx="8"/>
+<rect class="slot free" x="400" y="88" width="48" height="16" rx="8"/>
+<rect class="slot free" x="288" y="112" width="48" height="16" rx="8"/>
+<rect class="slot new" x="344" y="112" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="400" y="112" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="288" y="136" width="48" height="16" rx="8"/>
+<rect class="slot free" x="344" y="136" width="48" height="16" rx="8"/>
+<rect class="slot free" x="400" y="136" width="48" height="16" rx="8"/>
+<rect class="slot free" x="288" y="160" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="344" y="160" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="400" y="160" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="288" y="184" width="48" height="16" rx="8"/>
+<rect class="slot free" x="344" y="184" width="48" height="16" rx="8"/>
+<rect class="slot free" x="400" y="184" width="48" height="16" rx="8"/>
+<rect class="slot free" x="288" y="208" width="48" height="16" rx="8"/>
+<rect class="slot free" x="344" y="208" width="48" height="16" rx="8"/>
+<rect class="slot booked" x="400" y="208" width="48" height="16" rx="8"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">OMVILA</h1>
+<p class="tag">Her randevu tek yerde.</p>
+</div>
+</div>
+</body>
+</html>

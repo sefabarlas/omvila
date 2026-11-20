@@ -1,0 +1,12 @@
+<!-- @dsCard group="Gezinme" height=200 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>AppBar — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaMobil,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{className:'om-screens'},h('div',{className:'om-screen'},h(P.AppBar,{large:true,title:'Bugün',subtitle:'Salı, 25 Kasım · 12 randevu',actions:h(P.IconButton,{icon:'plus',label:'Randevu ekle',variant:'tonal'})})),h('div',{className:'om-screen'},h(P.AppBar,{back:true,title:'Randevu detayı',actions:h(P.IconButton,{icon:'ellipsis',label:'Diğer'})}))));
+</script>
+</body>
+</html>

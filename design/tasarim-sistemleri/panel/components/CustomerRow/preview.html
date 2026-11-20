@@ -1,0 +1,12 @@
+<!-- @dsCard group="Veri" height=170 -->
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><title>CustomerRow — önizleme</title></head>
+<body>
+<div id="root"></div>
+<script>
+var P=window.OmvilaPanel,h=React.createElement;
+ReactDOM.createRoot(document.getElementById('root')).render(h('div',{style:{padding:'12px 20px',maxWidth:'560px'}},h(P.CustomerRow,{name:'Ayşe Yılmaz',phone:'0532 123 45 67',meta:'14 ziyaret',tags:[{label:'VIP',tone:'bilgi'}],action:h(P.Button,{size:'sm'},'Randevu ver')}),h(P.CustomerRow,{name:'Selin Öztürk',phone:'0541 987 65 43',meta:'3 ziyaret',tags:[{label:'Paket: 4/10 seans',tone:'marka'}],action:h(P.Button,{size:'sm'},'Randevu ver')})));
+</script>
+</body>
+</html>
