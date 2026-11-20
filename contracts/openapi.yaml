@@ -1984,6 +1984,7 @@ components:
         permissions:
           type: array
           items: { $ref: '#/components/schemas/Permission' }
+          example: [settings.manage, service.manage, staff.manage, calendar.view, customer.view, timeoff.request]
         branches:
           type: array
           items: { $ref: '#/components/schemas/BranchRef' }

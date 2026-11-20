@@ -1226,6 +1226,16 @@ export interface components {
                 /** Format: uuid */
                 staffId?: string | null;
             };
+            /**
+             * @example [
+             *       "settings.manage",
+             *       "service.manage",
+             *       "staff.manage",
+             *       "calendar.view",
+             *       "customer.view",
+             *       "timeoff.request"
+             *     ]
+             */
             permissions: components["schemas"]["Permission"][];
             branches: components["schemas"]["BranchRef"][];
             subscription: components["schemas"]["SubscriptionBanner"];
