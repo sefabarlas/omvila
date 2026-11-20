@@ -156,5 +156,16 @@ export function generateTypeScript(sources: Record<Scale, TokenSource>): string 
     lines.push(`export type ${type}ColorToken = (typeof ${scale}Tokens.renk)[number];`, '');
   }
 
+  // Personel takvim renkleri API'de hex saklanır (Staff.calendarColor); seçenekler buradan okunur, kodda hex yazılmaz.
+  const panel = sources.panel;
+  const staffColors = panel.color.tokens
+    .filter((t) => t.name.startsWith('personel-renk-'))
+    .map((t) => resolveColor(panel, t.name, 'light'));
+  lines.push(
+    '/** Personel takvim rengi seçenekleri (panel personel-renk-*), hex. */',
+    `export const personelRenkleri = [${staffColors.map((c) => `'${c}'`).join(', ')}] as const;`,
+    '',
+  );
+
   return `${lines.join('\n').trimEnd()}\n`;
 }

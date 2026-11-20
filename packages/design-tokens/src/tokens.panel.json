@@ -254,6 +254,54 @@
     "usage": "Rezervasyon sayfası kapak rengi `kum` (BookingPageSettings.coverColor); ayarlardaki renk örneği. Üstünde `gri-0`."
    },
    {
+    "name": "personel-renk-1",
+    "value": {
+     "light": "{petrol-500}",
+     "dark": "{petrol-500}"
+    },
+    "usage": "Personel takvim rengi seçeneği 1 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
+    "name": "personel-renk-2",
+    "value": {
+     "light": "{mercan-500}",
+     "dark": "{mercan-500}"
+    },
+    "usage": "Personel takvim rengi seçeneği 2 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
+    "name": "personel-renk-3",
+    "value": {
+     "light": "{kum-500}",
+     "dark": "{kum-500}"
+    },
+    "usage": "Personel takvim rengi seçeneği 3 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
+    "name": "personel-renk-4",
+    "value": {
+     "light": "{bilgi-600}",
+     "dark": "{bilgi-600}"
+    },
+    "usage": "Personel takvim rengi seçeneği 4 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
+    "name": "personel-renk-5",
+    "value": {
+     "light": "{basari-600}",
+     "dark": "{basari-600}"
+    },
+    "usage": "Personel takvim rengi seçeneği 5 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
+    "name": "personel-renk-6",
+    "value": {
+     "light": "{gri-500}",
+     "dark": "{gri-500}"
+    },
+    "usage": "Personel takvim rengi seçeneği 6 (Staff.calendarColor hex olarak saklanır; değer dist/tokens.ts personelRenkleri). Takvimde kolon başlığı avatar halkası."
+   },
+   {
     "name": "zemin-hover",
     "value": {
      "light": "#EFEFEB",

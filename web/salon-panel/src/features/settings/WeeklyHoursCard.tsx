@@ -1,5 +1,6 @@
 import { Button, IconButton, Switch, TextField } from '@omvila/ui-web/panel';
 import { Plus, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { dayError, dayNames, maxIntervalsPerDay, suggestedIntervals } from './hours';
 import type { DayDraft, IntervalDraft } from './hours';
 import styles from './Settings.module.css';
@@ -11,10 +12,18 @@ export interface WeeklyHoursCardProps {
   onChange: (days: DayDraft[]) => void;
   /** Kaydet denendi mi: hatalar ancak o zaman gösterilir. */
   showErrors: boolean;
+  /** Kartın altında eylem (personel ekranında "Saatleri kaydet"). */
+  footer?: ReactNode;
 }
 
 /** "Kadıköy · çalışma saatleri": her gün açık/kapalı ve en fazla dört aralık (mola iki aralık arasıdır). */
-export function WeeklyHoursCard({ branchName, days, onChange, showErrors }: WeeklyHoursCardProps) {
+export function WeeklyHoursCard({
+  branchName,
+  days,
+  onChange,
+  showErrors,
+  footer,
+}: WeeklyHoursCardProps) {
   const update = (dayOfWeek: number, change: (day: DayDraft) => DayDraft) => {
     onChange(days.map((day) => (day.dayOfWeek === dayOfWeek ? change(day) : day)));
   };
@@ -130,6 +139,7 @@ export function WeeklyHoursCard({ branchName, days, onChange, showErrors }: Week
           );
         })}
       </ul>
+      {footer ? <div className={styles.cardFoot}>{footer}</div> : null}
     </SettingsCard>
   );
 }

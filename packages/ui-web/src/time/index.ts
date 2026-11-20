@@ -47,3 +47,38 @@ export function daysBetween(a: string, b: string): number {
   };
   return Math.round((utc(b) - utc(a)) / 86_400_000);
 }
+
+/** Saat diliminin verilen andaki UTC farkı (dakika): Europe/Istanbul → 180. */
+function offsetMinutes(instant: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).formatToParts(instant);
+  const value = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? '0');
+  const asUtc = Date.UTC(
+    value('year'),
+    value('month') - 1,
+    value('day'),
+    value('hour'),
+    value('minute'),
+  );
+  return Math.round((asUtc - Math.floor(instant.getTime() / 60_000) * 60_000) / 60_000);
+}
+
+/**
+ * Şubenin yerel tarih ve saatini UTC ana çevirir: ("2026-12-02", "14:00", "Europe/Istanbul") →
+ * "2026-12-02T11:00:00.000Z". Yaz saati geçişlerinde farkı o anki değerle yeniden hesaplar.
+ */
+export function localDateTimeToUtc(localDate: string, localTime: string, timeZone: string): string {
+  const [y, m, d] = localDate.split('-').map(Number) as [number, number, number];
+  const [hh, mm] = localTime.split(':').map(Number) as [number, number];
+  const wall = Date.UTC(y, m - 1, d, hh, mm);
+  let guess = wall - offsetMinutes(new Date(wall), timeZone) * 60_000;
+  guess = wall - offsetMinutes(new Date(guess), timeZone) * 60_000;
+  return new Date(guess).toISOString();
+}
