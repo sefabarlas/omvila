@@ -24,7 +24,7 @@ jobs:
             base="${{ github.event.before }}"
           fi
           if [ -z "$base" ] || ! git rev-parse --verify --quiet "$base" >/dev/null || \
-             git diff --name-only "$base"...HEAD | grep -qE '^(contracts/|docs/sozlesme/|\.github/workflows/contracts\.yml)'; then
+             git diff --name-only "$base"...HEAD | grep -qE '^(contracts/|docs/sozlesme/|packages/api-client-(ts|dart)/|\.github/workflows/contracts\.yml)'; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -60,6 +60,50 @@ jobs:
           else
             echo "Ana dalda sözleşme yok; kırıcı değişiklik kontrolü atlandı."
           fi
+
+      # Üretilen istemciler commit edilir ve elle düzenlenmez (ADR-0009): yeniden üret, fark olmamalı.
+      - uses: pnpm/action-setup@v6
+        if: steps.changes.outputs.run == 'true'
+
+      - name: Node bağımlılıkları
+        if: steps.changes.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile --filter omvila --filter @omvila/contracts --filter @omvila/api-client-ts
+
+      - uses: actions/setup-java@v5
+        if: steps.changes.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Flutter sürümü
+        id: flutter
+        if: steps.changes.outputs.run == 'true'
+        run: echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - uses: subosito/flutter-action@v2
+        if: steps.changes.outputs.run == 'true'
+        with:
+          flutter-version: ${{ steps.flutter.outputs.version }}
+          channel: stable
+          cache: true
+
+      - name: İstemcileri yeniden üret
+        if: steps.changes.outputs.run == 'true'
+        run: pnpm --filter @omvila/contracts generate
+
+      - name: Üretim farkı
+        if: steps.changes.outputs.run == 'true'
+        run: |
+          if [ -n "$(git status --porcelain -- packages/api-client-ts packages/api-client-dart)" ]; then
+            git status --short -- packages/api-client-ts packages/api-client-dart
+            git diff --stat -- packages/api-client-ts packages/api-client-dart
+            echo "::error::Üretilen istemciler sözleşmeyle uyuşmuyor. 'pnpm --filter @omvila/contracts generate' çalıştırıp commit edin."
+            exit 1
+          fi
+
+      - name: Dart istemcisi derleniyor mu
+        if: steps.changes.outputs.run == 'true'
+        run: cd packages/api-client-dart && dart analyze --no-fatal-warnings
 
 # Not: api, web, flutter ve gitleaks işleri ci.yml'dedir ve aynı deseni izler:
 # her PR'da çalışır, ilgisiz değişiklikte hemen başarılı biter.

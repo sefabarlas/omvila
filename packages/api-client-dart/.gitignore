@@ -1,0 +1,4 @@
+# Elle tutulur (.openapi-generator-ignore). pubspec.lock bilerek commit edilir:
+# build_runner çıktısı (json_serializable sürümü) CI'da birebir aynı üretilsin.
+.dart_tool/
+build/
