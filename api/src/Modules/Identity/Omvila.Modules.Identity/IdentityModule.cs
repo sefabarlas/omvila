@@ -5,7 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NodaTime;
+using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Identity.Contracts;
+using Omvila.SharedKernel;
 using Omvila.Infrastructure.Security;
 using Omvila.Modules.Identity.Features.ManageAuth;
 using Omvila.Modules.Identity.Features.ManageSession;
@@ -40,6 +43,9 @@ public static class IdentityModule
             .Bind(configuration.GetSection(LegalOptions.Section))
             .Validate(o => o.IsValid(), "Legal ayarları eksik (appsettings \"Legal\").");
         services.AddScoped<ManageSignupService>();
+        services.AddScoped<IStaffMemberships, StaffMemberships>();
+        // v1 kullanıcı başına tek üyelik: başka markadaki üyelik RLS nedeniyle görünmez, tek dizin yakalar.
+        services.AddUniqueConstraintError("ix_user_memberships_user_id", ErrorCodes.PhoneAlreadyExists);
         services.AddOtpRateLimiting();
 
         // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.

@@ -26,6 +26,14 @@ internal sealed class ServiceStaff
 
     public bool IsActive { get; private set; }
 
+    public void SetOverrides(int? durationOverrideMinutes, long surchargeMinor, decimal? commissionPercentOverride)
+    {
+        DurationOverrideMinutes = durationOverrideMinutes;
+        SurchargeMinor = surchargeMinor;
+        CommissionPercentOverride = commissionPercentOverride;
+        IsActive = true;
+    }
+
     public static ServiceStaff Create(Guid id, Guid brandId, Guid serviceId, Guid staffId) => new()
     {
         Id = id,

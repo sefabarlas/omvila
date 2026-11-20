@@ -15,6 +15,7 @@ internal sealed class StaffConfiguration : IEntityTypeConfiguration<Staff>
         builder.Property(x => x.FullName).HasMaxLength(120);
         builder.Property(x => x.DisplayName).HasMaxLength(120);
         builder.Property(x => x.Title).HasMaxLength(60);
+        builder.Property(x => x.Bio).HasMaxLength(1000);
         builder.Property(x => x.CalendarColor).HasMaxLength(7);
         builder.Property(x => x.ServiceCommissionPercent).HasPrecision(5, 2);
         builder.Property(x => x.SaleCommissionPercent).HasPrecision(5, 2);

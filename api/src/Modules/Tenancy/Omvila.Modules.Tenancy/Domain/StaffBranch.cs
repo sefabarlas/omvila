@@ -19,6 +19,8 @@ internal sealed class StaffBranch
 
     public bool IsActive { get; private set; }
 
+    public void SetActive(bool isActive) => IsActive = isActive;
+
     public static StaffBranch Create(Guid id, Guid brandId, Guid staffId, Guid branchId, bool isPrimary) => new()
     {
         Id = id,

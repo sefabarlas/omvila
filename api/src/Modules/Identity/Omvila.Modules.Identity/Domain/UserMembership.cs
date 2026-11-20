@@ -46,6 +46,36 @@ internal sealed class UserMembership
             ActivatedUtc = status == MembershipStatus.Active ? now : null,
         };
 
+    /// <summary>Personel pasife alınınca (T-32). Zaten devre dışıysa değişmez.</summary>
+    public Result Disable()
+    {
+        if (Status == MembershipStatus.Disabled)
+        {
+            return Result.Success();
+        }
+
+        var next = MembershipTransitions.To(Status, MembershipStatus.Disabled);
+        if (!next.IsSuccess)
+        {
+            return next.Error;
+        }
+
+        Status = next.Value;
+        return Result.Success();
+    }
+
+    /// <summary>Rol ve şube kapsamı (personel düzenleme). Owner'ın rolü değişmez.</summary>
+    public void ChangeScope(string? role, IReadOnlyCollection<Guid>? branchIds)
+    {
+        if (string.Equals(Role, Contracts.Roles.Owner, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Role = role ?? Role;
+        BranchIds = branchIds is null ? BranchIds : [.. branchIds];
+    }
+
     /// <summary>Personel aynı numarayla ilk girişte Active olur (ADR-0007, kabul kriteri 10).</summary>
     public Result Activate(Instant now)
     {

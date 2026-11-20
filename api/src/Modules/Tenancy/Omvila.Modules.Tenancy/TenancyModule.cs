@@ -7,6 +7,7 @@ using Omvila.Modules.Tenancy.Contracts;
 using Omvila.Modules.Tenancy.Features.Brand;
 using Omvila.Modules.Tenancy.Features.Branches;
 using Omvila.Modules.Tenancy.Features.Onboarding;
+using Omvila.Modules.Tenancy.Features.Staff;
 using Omvila.SharedKernel;
 using Omvila.Modules.Tenancy.Infrastructure;
 
@@ -27,6 +28,8 @@ public static class TenancyModule
         services.AddUniqueConstraintError("ix_brands_slug", ErrorCodes.SlugUnavailable);
         services.AddScoped<ITenantQueries, TenantQueries>();
         services.AddScoped<OnboardingService>();
+        services.AddScoped<StaffReader>();
+        services.AddScoped<StaffWriter>();
         services.AddScoped<IOnboardingStepProvider, BusinessCreatedStep>();
         services.AddScoped<IOnboardingStepProvider, WorkingHoursStep>();
         services.AddScoped<IOnboardingStepProvider, StaffStep>();
@@ -34,12 +37,13 @@ public static class TenancyModule
         return services;
     }
 
-    /// <summary>Tenancy uçlarını eşler (kurulum, marka, şube).</summary>
+    /// <summary>Tenancy uçlarını eşler (kurulum, marka, şube, personel).</summary>
     public static IEndpointRouteBuilder MapTenancyEndpoints(this IEndpointRouteBuilder app)
     {
         OnboardingEndpoints.Map(app);
         BrandEndpoints.Map(app);
         BranchEndpoints.Map(app);
+        StaffEndpoints.Map(app);
         return app;
     }
 }

@@ -116,6 +116,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Auth:Otp:MaxPerPhonePerHour"] = "5",
             ["Auth:Otp:MaxPerIpPerHour"] = "20",
             ["Auth:SignupTokenMinutes"] = "15",
+            ["Auth:PanelSignInUrl"] = "https://omvila.com/giris",
             ["Legal:TermsOfUseVersion"] = "2026-11-01",
             ["Legal:PrivacyNoticeVersion"] = "2026-11-01",
             ["Tenancy:BookingPageBaseUrl"] = "https://omvila.com/",
