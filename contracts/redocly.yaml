@@ -7,3 +7,4 @@ rules:
   no-unused-components: warn
   tag-description: error
   security-defined: off   # public uçlar bilerek güvenliksiz
+  no-server-example.com: off   # yerel geliştirme sunucuları (localhost) bilerek listelenir

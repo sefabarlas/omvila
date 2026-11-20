@@ -1,4 +1,4 @@
-# Ürün sahibinin onayı gereken alanlar. GitHub kullanıcı adınızı yazın.
+# Ürün sahibinin onayı gereken alanlar.
 # Biçim: <yol> <@kullanici>
 /contracts/            @sefabarlas
 /docs/urun/            @sefabarlas

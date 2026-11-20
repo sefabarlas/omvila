@@ -1,35 +1,65 @@
 name: contracts
 
+# Her PR'da çalışır ki zorunlu durum kontrolü ("contracts") hiçbir PR'da "bekleniyor"da kalmasın.
+# İlgili dosyalar değişmediyse iş hemen başarılı biter.
 on:
   pull_request:
-    paths: ["contracts/**", "docs/sozlesme/**"]
   push:
     branches: [main]
-    paths: ["contracts/**", "docs/sozlesme/**"]
 
 jobs:
-  check:
+  contracts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Değişiklik kontrolü
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          if [ -z "$base" ] || ! git rev-parse --verify --quiet "$base" >/dev/null || \
+             git diff --name-only "$base"...HEAD | grep -qE '^(contracts/|docs/sozlesme/|\.github/workflows/contracts\.yml)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Sözleşme dosyaları değişmedi; denetim atlandı."
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.changes.outputs.run == 'true'
         with:
           python-version: "3.12"
+
       - name: Sözleşme kuralları
+        if: steps.changes.outputs.run == 'true'
         run: |
           pip install pyyaml "jsonschema>=4.18"
           python3 contracts/scripts/check_conventions.py contracts/openapi.yaml
+
       - uses: actions/setup-node@v4
+        if: steps.changes.outputs.run == 'true'
         with:
           node-version: 22
-      - name: Redocly lint
-        run: npx --yes @redocly/cli@1 lint contracts/openapi.yaml --config contracts/redocly.yaml
-      - name: Kırıcı değişiklik (oasdiff)
-        if: github.event_name == 'pull_request'
-        run: |
-          git show origin/${{ github.base_ref }}:contracts/openapi.yaml > /tmp/base.yaml || exit 0
-          docker run --rm -v /tmp:/base -v "$PWD/contracts":/head tufin/oasdiff breaking /base/base.yaml /head/openapi.yaml --fail-on ERR
 
-# Not: api, web ve flutter iş akışları Dilim 1 "Teknik temel" kapsamında eklenecek (docs/dilimler/dilim-01-giris-ve-kurulum.md).
+      - name: Redocly lint
+        if: steps.changes.outputs.run == 'true'
+        run: npx --yes @redocly/cli@1 lint contracts/openapi.yaml --config contracts/redocly.yaml
+
+      - name: Kırıcı değişiklik (oasdiff)
+        if: steps.changes.outputs.run == 'true' && github.event_name == 'pull_request'
+        run: |
+          if git show "origin/${{ github.base_ref }}:contracts/openapi.yaml" > /tmp/base.yaml 2>/dev/null; then
+            docker run --rm -v /tmp:/base -v "$PWD/contracts":/head tufin/oasdiff \
+              breaking /base/base.yaml /head/openapi.yaml --fail-on ERR
+          else
+            echo "Ana dalda sözleşme yok; kırıcı değişiklik kontrolü atlandı."
+          fi
+
+# Not: api, web ve flutter iş akışları Dilim 1 "Teknik temel" kapsamında eklenecek.
+# Her yeni iş aynı deseni izler: her PR'da çalışır, ilgisiz değişiklikte hemen başarılı biter.

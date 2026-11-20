@@ -34,6 +34,6 @@ dotnet run --project api/src/Omvila.Host -- --role=all
 ```
 
 ## Ürün sahibi için yapılacaklar
-- [ ] `.github/CODEOWNERS` içindeki `@OMVILA_URUN_SAHIBI` yerine GitHub kullanıcı adınızı yazın.
-- [ ] `main` dalında koruma kuralı: PR zorunlu, CI yeşil, CODEOWNERS onayı.
+- [x] `.github/CODEOWNERS`: `@sefabarlas`.
+- [ ] `main` ruleset: PR zorunlu, CODEOWNERS onayı, zorunlu kontroller `contracts` ve `pr-title` (kaynak: GitHub Actions). Yeni CI işleri eklendikçe listeye eklenir.
 - [ ] `docs/acik-sorular.md` içindeki 🔴 maddeler (SMS sağlayıcı, barındırma, fiyatlar).
