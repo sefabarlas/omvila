@@ -18,6 +18,14 @@ internal sealed class BookingPageSettings
 
     public string? PreAppointmentNote { get; private set; }
 
+    public void Update(string coverColorToken, bool showReviews, bool showPrices, string? preAppointmentNote)
+    {
+        CoverColorToken = coverColorToken;
+        ShowReviews = showReviews;
+        ShowPrices = showPrices;
+        PreAppointmentNote = string.IsNullOrWhiteSpace(preAppointmentNote) ? null : preAppointmentNote.Trim();
+    }
+
     /// <summary>Kayıtta: petrol kapak (tasarımda seçili ilk renk), değerlendirmeler ve fiyatlar açık (AyarlarRezervasyon).</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }

@@ -28,7 +28,7 @@ public sealed class TenantProvisioningTests(PostgresFixture db) : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await ExecuteAsMigratorAsync("TRUNCATE tenancy.brands CASCADE");
-        _services = db.CreateServices(configure: services => services.AddTenancyModule());
+        _services = db.CreateServices(configure: services => services.AddTenancyModule(db.Configuration()));
     }
 
     public async ValueTask DisposeAsync() => await _services.DisposeAsync();

@@ -48,7 +48,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         await using var services = CreateServices(configure: s => s
             .AddIdentityModule(configuration)
             .AddNotificationsModule(configuration)
-            .AddTenancyModule()
+            .AddTenancyModule(configuration)
             .AddPlatformModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
         await services.GetRequiredService<PlanSeeder>().SeedAsync(MigratorConnectionString, CancellationToken.None);
@@ -73,6 +73,9 @@ public sealed class PostgresFixture : IAsyncLifetime
         configure?.Invoke(services);
         return services.BuildServiceProvider();
     }
+
+    /// <summary>Settings() değerlerinden yapılandırma (modül kayıtları için).</summary>
+    public IConfiguration Configuration() => new ConfigurationBuilder().AddInMemoryCollection(Settings()).Build();
 
     /// <summary>Uygulamanın test yapılandırması: bağlantı dizeleri ve outbox ayarları (TestServer uygulamaları da kullanır).</summary>
     public IDictionary<string, string?> Settings(int? maxPoolSize = null)
@@ -113,6 +116,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Auth:SignupTokenMinutes"] = "15",
             ["Legal:TermsOfUseVersion"] = "2026-11-01",
             ["Legal:PrivacyNoticeVersion"] = "2026-11-01",
+            ["Tenancy:BookingPageBaseUrl"] = "https://omvila.com/",
             ["Platform:TrialDays"] = "14",
             ["Platform:PastDueGraceDays"] = "7",
             ["Platform:TrialPlanCode"] = "salon_plus",

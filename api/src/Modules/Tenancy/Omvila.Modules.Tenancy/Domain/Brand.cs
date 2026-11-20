@@ -43,6 +43,36 @@ internal sealed class Brand
 
     public Instant CreatedUtc { get; private set; }
 
+    /// <summary>İşletme bilgileri (AyarlarIsletme). Değerler uçta doğrulanmıştır; telefon E.164.</summary>
+    public void UpdateProfile(BrandProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        Name = profile.Name.Trim();
+        IndustryCode = profile.IndustryCode;
+        ShortDescription = profile.ShortDescription;
+        Phone = profile.Phone;
+        Email = profile.Email;
+        Instagram = profile.Instagram;
+        Website = profile.Website;
+        LegalName = profile.LegalName;
+        TaxOffice = profile.TaxOffice;
+        TaxNumber = profile.TaxNumber;
+    }
+
+    /// <summary>Bağlantı adı değişir; eski ad yönlendirme için geçmişe yazılır (aynı adsa null).</summary>
+    public BrandSlugHistory? ChangeSlug(Slug slug, Guid historyId, Instant now)
+    {
+        ArgumentNullException.ThrowIfNull(slug);
+        if (string.Equals(Slug, slug.Value, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var history = BrandSlugHistory.Record(historyId, Id, Slug, now);
+        Slug = slug.Value;
+        return history;
+    }
+
     /// <summary>Kurulum adımlarının hepsi tamamlanınca (dilim-01): Onboarding → Active. Diğer durumlarda değişmez.</summary>
     public bool CompleteOnboarding()
     {

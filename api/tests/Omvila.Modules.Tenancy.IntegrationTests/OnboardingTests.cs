@@ -29,7 +29,7 @@ public sealed class OnboardingTests(PostgresFixture db) : IAsyncLifetime
 
         // Saat (PR-14) ve hizmet (Catalog) adımlarının sağlayıcıları burada tamamlanmış sayılır.
         _services = db.CreateServices(configure: services => services
-            .AddTenancyModule()
+            .AddTenancyModule(db.Configuration())
             .AddScoped<IOnboardingStepProvider>(_ => new DoneStep(OnboardingStep.WorkingHours))
             .AddScoped<IOnboardingStepProvider>(_ => new DoneStep(OnboardingStep.Services)));
     }
@@ -52,7 +52,7 @@ public sealed class OnboardingTests(PostgresFixture db) : IAsyncLifetime
     [Fact]
     public async Task UnregisteredStep_IsNotDone()
     {
-        await using var services = db.CreateServices(configure: s => s.AddTenancyModule());
+        await using var services = db.CreateServices(configure: s => s.AddTenancyModule(db.Configuration()));
         await using var scope = services.CreateAsyncScope();
         var session = scope.ServiceProvider.GetRequiredService<IDbSession>();
         await session.BeginAsync(Ct);
