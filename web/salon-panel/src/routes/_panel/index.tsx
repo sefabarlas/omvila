@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Page } from '@/shared/Page';
+import { onboardingQuery } from '@/features/overview/api';
+import { OverviewPage } from '@/features/overview/OverviewPage';
 
-// Genel bakış: kurulum adımları ve ilk hafta kutuları PR-22'de (GenelBakisBos).
-function Overview() {
-  return <Page title="Genel bakış" />;
-}
-
-export const Route = createFileRoute('/_panel/')({ component: Overview });
+export const Route = createFileRoute('/_panel/')({
+  loader: ({ context }) =>
+    context.queryClient.query(onboardingQuery(context.api)).catch(() => undefined),
+  component: OverviewPage,
+});

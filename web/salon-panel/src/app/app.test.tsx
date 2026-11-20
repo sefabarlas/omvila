@@ -25,7 +25,9 @@ describe('oturum', () => {
     expect(
       within(nav).getByRole('link', { name: 'Genel bakış' }).getAttribute('aria-current'),
     ).toBe('page');
-    expect(screen.getByRole('heading', { level: 1, name: 'Genel bakış' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' }),
+    ).toBeTruthy();
   });
 
   it('personelde yönetim menüsü yok', async () => {
@@ -46,11 +48,19 @@ describe('oturum', () => {
 });
 
 describe('abonelik şeridi', () => {
-  it('deneme: kalan gün şubenin gününe göre', async () => {
-    renderApp('/');
+  it('deneme: son haftada şerit (T-40)', async () => {
+    renderApp('/', {
+      session: sessionFixture({ subscription: { status: 'Trialing', trialEndsOn: '2026-11-30' } }),
+    });
     expect((await screen.findByRole('status')).textContent).toContain(
-      'Deneme sürenizin bitmesine 14 gün var',
+      'Deneme sürenizin bitmesine 5 gün var',
     );
+  });
+
+  it('deneme 14 gün: şerit yok, kurulumda bağlamda yazar', async () => {
+    renderApp('/');
+    expect(await screen.findByText('Kuaför Elif · deneme 14 gün')).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('salt okunur: hata şeridi', async () => {
@@ -60,7 +70,7 @@ describe('abonelik şeridi', () => {
 
   it('aktif abonelikte şerit yok', async () => {
     renderApp('/', { session: sessionFixture({ subscription: { status: 'Active' } }) });
-    await screen.findByRole('heading', { level: 1, name: 'Genel bakış' });
+    await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' });
     expect(screen.queryByRole('status')).toBeNull();
   });
 });

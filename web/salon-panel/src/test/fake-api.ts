@@ -47,13 +47,18 @@ export interface FakeApiOptions {
   verify?: 'SignedIn' | 'SignupRequired' | 'otp_invalid' | 'otp_attempts_exceeded';
   /** İstek gövdeleri (yol → gövde listesi). */
   calls?: Record<string, unknown[]>;
+  /** Tamamlanmış kurulum adımları (BusinessCreated kayıtla tamam). */
+  doneSteps?: string[];
 }
+
+const stepKeys = ['BusinessCreated', 'WorkingHours', 'Services', 'Staff', 'ShareBookingLink'];
 
 export function fakeFetch({
   signedIn = true,
   session = sessionFixture(),
   verify = 'SignedIn',
   calls = {},
+  doneSteps = ['BusinessCreated'],
 }: FakeApiOptions = {}) {
   const json = (status: number, body: unknown) =>
     Promise.resolve(
@@ -93,6 +98,30 @@ export function fakeFetch({
         case 'otp_attempts_exceeded':
           return json(429, { code: 'otp_attempts_exceeded', meta: { retryAfterSeconds: 300 } });
       }
+    }
+
+    if (path === '/api/v1/manage/onboarding') {
+      const steps = stepKeys.map((key) => ({ key, done: doneSteps.includes(key) }));
+      return json(200, {
+        steps,
+        completedCount: steps.filter((st) => st.done).length,
+        totalCount: steps.length,
+      });
+    }
+
+    if (path === '/api/v1/manage/onboarding/events') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+
+    if (path === '/api/v1/manage/brand/booking-page') {
+      return json(200, {
+        slug: 'kuafor-elif',
+        url: 'https://omvila.com/kuafor-elif',
+        coverColor: 'petrol',
+        showReviews: true,
+        showPrices: true,
+        version: '1',
+      });
     }
 
     if (path === '/api/v1/manage/auth/signup') {

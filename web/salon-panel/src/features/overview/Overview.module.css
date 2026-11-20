@@ -1,0 +1,212 @@
+/* salon-paneli/KayitKurulum ve GenelBakisBos. */
+.onboarding {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.listHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--bosluk-3);
+}
+
+.listTitle {
+  margin: 0;
+  font-size: var(--yazi-bolum-basligi-boyut);
+  line-height: var(--yazi-bolum-basligi-satir);
+  font-weight: var(--yazi-bolum-basligi-agirlik);
+}
+
+.progress {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 70px;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  box-shadow: var(--golge-sm);
+  text-decoration: none;
+}
+
+a.step:hover {
+  background: var(--zemin-hover);
+}
+
+a.step:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.done {
+  background: var(--zemin-ikincil);
+  box-shadow: none;
+}
+
+.badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+}
+
+.done .badge {
+  background: var(--basari-zemin);
+  color: var(--basari);
+}
+
+.stepText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stepTitle {
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.done .stepTitle {
+  color: var(--metin-ikincil);
+  text-decoration: line-through;
+}
+
+.stepDetail {
+  overflow: hidden;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  display: flex;
+  flex: none;
+  color: var(--metin);
+}
+
+.why {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-5) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.whyLabel {
+  margin: 0;
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-ust-etiket-satir);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.whyText {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: 1.5;
+}
+
+.whyNote {
+  margin: 0;
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+}
+
+.share {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: var(--bosluk-6);
+  align-items: center;
+  padding: var(--bosluk-6) var(--bosluk-6) var(--bosluk-6) var(--bosluk-8);
+  border-radius: var(--kose-xl);
+  background: var(--blok-kum);
+  color: var(--blok-kum-metin);
+}
+
+.shareLabel {
+  margin: 0 0 var(--bosluk-2);
+  font-size: var(--yazi-ust-etiket-boyut);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.shareTitle {
+  margin: 0 0 var(--bosluk-3);
+  font-size: var(--yazi-sayfa-basligi-boyut);
+  line-height: var(--yazi-sayfa-basligi-satir);
+  font-weight: 800;
+  letter-spacing: var(--yazi-sayfa-basligi-harf);
+}
+
+.shareText {
+  margin: 0;
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.link {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  padding: var(--bosluk-2) var(--bosluk-2) var(--bosluk-2) var(--bosluk-3);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+}
+
+.linkText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (width <= 1199px) {
+  .onboarding,
+  .share {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

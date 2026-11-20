@@ -4,6 +4,8 @@ import type { Clock } from '@omvila/ui-web/time';
 import type { ManageSession } from './api';
 import { useClock } from './clock';
 
+const trialBannerDays = 7;
+
 interface SubscriptionBannerProps {
   subscription: ManageSession['subscription'];
   timeZone: string;
@@ -32,7 +34,8 @@ function daysLeft(
 function content(subscription: ManageSession['subscription'], days: number | null) {
   switch (subscription.status) {
     case 'Trialing': {
-      if (days === null) {
+      // Son haftada şerit (T-40); öncesinde kalan gün kurulum ekranının bağlamında yazar (KayitKurulum).
+      if (days === null || days > trialBannerDays) {
         return null;
       }
 

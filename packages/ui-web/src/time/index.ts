@@ -26,6 +26,14 @@ export function toBranchDate(instant: Date, timeZone: string): string {
   return `${value('year')}-${value('month')}-${value('day')}`;
 }
 
+/** Anlık zamanın şubenin saat dilimindeki saati (0–23); selamlama gibi gün içi metinler için. */
+export function branchHour(clock: Clock, timeZone: string): number {
+  const hour = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', hourCycle: 'h23' })
+    .formatToParts(clock.now())
+    .find((p) => p.type === 'hour')?.value;
+  return Number(hour ?? '0');
+}
+
 /** Şubede bugün. */
 export function branchToday(clock: Clock, timeZone: string): string {
   return toBranchDate(clock.now(), timeZone);
