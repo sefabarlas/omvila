@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Diğer modüllere açılan sözleşme: personel hizmetleri. Public tipler XML belgesi taşır. -->
+  <!-- Diğer modüllere açılan sözleşme: personel hizmetleri, fiyat ve süre çözümü. Public tipler XML belgesi taşır. -->
   <PropertyGroup>
     <NoWarn>$(NoWarn.Replace('CS1591', ''))</NoWarn>
   </PropertyGroup>

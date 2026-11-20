@@ -18,4 +18,16 @@ public static class PlatformDefaults
 
     /// <summary>Para birimi varsayılanı (alan-modeli.md § Brand.DefaultCurrencyCode).</summary>
     public const Currency DefaultCurrency = Currency.TRY;
+
+    /// <summary>sureler-ve-ayarlar.md § Randevu kuralları: CheckInEarliestMinutes ("Geldi" en erken başlangıçtan 60 dk önce; A10).</summary>
+    public const int CheckInEarliestMinutes = 60;
+
+    /// <summary>sureler-ve-ayarlar.md § Randevu kuralları: RecurringHorizonMonths (tekrarlayan randevuda somut üretilen ufuk).</summary>
+    public const int RecurringHorizonMonths = 3;
+
+    /// <summary>sureler-ve-ayarlar.md § Kimlik ve güvenlik: AccessCodeValidityAfterEndDays (SMS bağlantısı randevu bitişinden 7 gün sonra geçersiz).</summary>
+    public const int AccessCodeValidityAfterEndDays = 7;
+
+    /// <summary>musaitlik.md § Çok kalemli randevu: v1'de aynı randevuda en fazla 5 kalem (sözleşme items maxItems 5).</summary>
+    public const int MaxItemsPerAppointment = 5;
 }

@@ -12,6 +12,7 @@ using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
 using Omvila.Modules.Platform;
 using Omvila.Modules.Platform.Infrastructure;
+using Omvila.Modules.Scheduling;
 using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
 using Serilog;
@@ -36,6 +37,7 @@ builder.Services.AddTenancyModule(builder.Configuration);
 builder.Services.AddPlatformModule(builder.Configuration);
 builder.Services.AddCatalogModule();
 builder.Services.AddCustomersModule();
+builder.Services.AddSchedulingModule();
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
@@ -82,6 +84,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapTenancyEndpoints();
     app.MapCatalogEndpoints();
     app.MapCustomersEndpoints();
+    app.MapSchedulingEndpoints();
 }
 
 HostLog.Started(app.Logger, role);
