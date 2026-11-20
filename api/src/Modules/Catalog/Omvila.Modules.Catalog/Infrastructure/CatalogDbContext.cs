@@ -17,6 +17,8 @@ internal sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> option
 
     public DbSet<BranchServicePrice> BranchPrices => Set<BranchServicePrice>();
 
+    public DbSet<ServiceTemplate> Templates => Set<ServiceTemplate>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

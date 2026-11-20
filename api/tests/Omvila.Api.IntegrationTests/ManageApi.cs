@@ -22,6 +22,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             TRUNCATE notifications.notification_outbox, notifications.credit_transactions;
             TRUNCATE platform.subscriptions;
             TRUNCATE tenancy.brands CASCADE;
+            TRUNCATE catalog.service_categories CASCADE;
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);
     }
