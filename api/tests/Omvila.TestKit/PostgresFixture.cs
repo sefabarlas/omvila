@@ -6,6 +6,7 @@ using Npgsql;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Identity;
+using Omvila.Modules.Notifications;
 using Omvila.SharedKernel;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -41,7 +42,9 @@ public sealed class PostgresFixture : IAsyncLifetime
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(Settings()).Build();
 
         // Bütün modüllerin migration'ları (her modül kendi DbContext'ini AddModuleDbContext ile kaydeder).
-        await using var services = CreateServices(configure: s => s.AddIdentityModule(configuration));
+        await using var services = CreateServices(configure: s => s
+            .AddIdentityModule(configuration)
+            .AddNotificationsModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
     }
 
@@ -84,6 +87,12 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Outbox:RetryMaxDelaySeconds"] = "3600",
             ["Idempotency:RetentionHours"] = "24",
             ["Idempotency:PurgeIntervalMinutes"] = "60",
+            ["Notifications:DispatchIntervalSeconds"] = "1",
+            ["Notifications:BatchSize"] = "50",
+            ["Notifications:MaxAttempts"] = "3",
+            ["Notifications:RetryDelaySeconds"] = "60",
+            ["Sms:Provider"] = "Fake",
+            ["Sms:DefaultSender"] = "OMVILA",
             ["Auth:Issuer"] = "omvila",
             ["Auth:AccessTokenMinutes"] = "15",
             ["Auth:RefreshTokenDaysRemembered"] = "30",

@@ -13,5 +13,6 @@
     <ProjectReference Include="..\..\src\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
     <!-- Migration için bütün modüller; yeni modül eklenince buraya ve MigrateAsync'e eklenir. -->
     <ProjectReference Include="..\..\src\Modules\Identity\Omvila.Modules.Identity\Omvila.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Notifications\Omvila.Modules.Notifications\Omvila.Modules.Notifications.csproj" />
   </ItemGroup>
 </Project>

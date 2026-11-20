@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Omvila.Modules.Notifications.Contracts\Omvila.Modules.Notifications.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Omvila.Modules.Notifications.Tests" />
+    <InternalsVisibleTo Include="Omvila.Modules.Notifications.IntegrationTests" />
+  </ItemGroup>
+</Project>

@@ -555,6 +555,7 @@ Gönderilecek her mesaj bir satırdır. Randevu işlemiyle **aynı transaction'd
 | Category | enum | `Transactional`, `Marketing` |
 | RecipientType | enum | `Customer`, `User`, `Phone` |
 | RecipientId | uuid? | |
+| RecipientPhone | string(16)? | `RecipientType = Phone` ise alıcı (E.164); ör. OTP, personel daveti |
 | ChannelPlan | enum[] | Örn. `[Push, Sms]`: sırayla denenir |
 | ChannelUsed | enum? | Gerçekte gönderildiği kanal |
 | Payload | jsonb | Şablon değişkenleri |

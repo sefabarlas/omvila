@@ -17,15 +17,17 @@ public static class MigrationBuilderExtensions
     /// <summary>
     /// Markaya ait tabloyu kiracıya kilitler: ENABLE + FORCE RLS ve tenant_isolation politikası.
     /// <paramref name="customerColumn"/> verilirse müşteri kendi satırlarını görür (me yüzeyi).
+    /// <paramref name="allowPlatformRowInsert"/>: brand_id'si boş platform satırı (ör. OTP bildirimi) her bağlamdan
+    /// eklenebilir ama yalnız platform bağlamı okuyabilir.
     /// </summary>
     public static void EnableTenantIsolation(
-        this MigrationBuilder migrationBuilder, string schema, string table, string? customerColumn = null)
+        this MigrationBuilder migrationBuilder, string schema, string table, string? customerColumn = null, bool allowPlatformRowInsert = false)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(TenantIsolationSql(schema, table, customerColumn));
+        migrationBuilder.Sql(TenantIsolationSql(schema, table, customerColumn, allowPlatformRowInsert));
     }
 
-    internal static string TenantIsolationSql(string schema, string table, string? customerColumn = null)
+    internal static string TenantIsolationSql(string schema, string table, string? customerColumn = null, bool allowPlatformRowInsert = false)
     {
         var qualified = $"{Quote(schema)}.{Quote(table)}";
         var customerClause = customerColumn is null
@@ -39,6 +41,7 @@ public static class MigrationBuilderExtensions
                 brand_id = nullif(current_setting('app.brand_id', true), '')::uuid
                 OR current_setting('app.is_platform', true) = 'true'{customerClause}
               );
+            {(allowPlatformRowInsert ? $"CREATE POLICY platform_row_insert ON {qualified} FOR INSERT WITH CHECK (brand_id IS NULL);" : string.Empty)}
             """;
     }
 
