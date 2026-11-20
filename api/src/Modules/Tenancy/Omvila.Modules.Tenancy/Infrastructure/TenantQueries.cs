@@ -22,4 +22,11 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
         var list = await branches.OrderBy(b => b.CreatedUtc).Select(b => new BranchSummary(b.Id, b.Name)).ToListAsync(ct);
         return new TenantSummary(brand.Id, brand.Name, brand.Slug, brand.LogoUrl, brand.Status.ToString(), list);
     }
+
+    public async Task<IReadOnlySet<Guid>> GetActiveStaffIdsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct) =>
+        (await db.Staff.AsNoTracking().Where(s => s.BrandId == brandId && s.IsActive && staffIds.Contains(s.Id)).Select(s => s.Id).ToListAsync(ct))
+            .ToHashSet();
+
+    public Task<bool> BranchExistsAsync(Guid brandId, Guid branchId, CancellationToken ct) =>
+        db.Branches.AnyAsync(b => b.BrandId == brandId && b.Id == branchId, ct);
 }

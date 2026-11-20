@@ -16,5 +16,6 @@
     <ProjectReference Include="..\..\src\Modules\Notifications\Omvila.Modules.Notifications\Omvila.Modules.Notifications.csproj" />
     <ProjectReference Include="..\..\src\Modules\Tenancy\Omvila.Modules.Tenancy\Omvila.Modules.Tenancy.csproj" />
     <ProjectReference Include="..\..\src\Modules\Platform\Omvila.Modules.Platform\Omvila.Modules.Platform.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Catalog\Omvila.Modules.Catalog\Omvila.Modules.Catalog.csproj" />
   </ItemGroup>
 </Project>
