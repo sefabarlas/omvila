@@ -196,6 +196,7 @@ const _$ErrorCodeEnumMap = {
   ErrorCode.holdExpired: 'hold_expired',
   ErrorCode.alreadyReviewed: 'already_reviewed',
   ErrorCode.phoneAlreadyExists: 'phone_already_exists',
+  ErrorCode.slugUnavailable: 'slug_unavailable',
   ErrorCode.depositUnavailableNoIban: 'deposit_unavailable_no_iban',
   ErrorCode.outsideWorkingHours: 'outside_working_hours',
   ErrorCode.staffOnTimeOff: 'staff_on_time_off',

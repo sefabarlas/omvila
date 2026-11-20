@@ -56,7 +56,7 @@ jobs:
         run: |
           if git show "origin/${{ github.base_ref }}:contracts/openapi.yaml" > /tmp/base.yaml 2>/dev/null; then
             docker run --rm -v /tmp:/base -v "$PWD/contracts":/head tufin/oasdiff \
-              breaking /base/base.yaml /head/openapi.yaml --fail-on ERR
+              breaking /base/base.yaml /head/openapi.yaml --fail-on ERR --severity-levels /head/oasdiff-levels.txt
           else
             echo "Ana dalda sözleşme yok; kırıcı değişiklik kontrolü atlandı."
           fi

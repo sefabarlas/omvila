@@ -37,6 +37,8 @@ enum ErrorCode {
   alreadyReviewed(r'already_reviewed'),
   @JsonValue(r'phone_already_exists')
   phoneAlreadyExists(r'phone_already_exists'),
+  @JsonValue(r'slug_unavailable')
+  slugUnavailable(r'slug_unavailable'),
   @JsonValue(r'deposit_unavailable_no_iban')
   depositUnavailableNoIban(r'deposit_unavailable_no_iban'),
   @JsonValue(r'outside_working_hours')

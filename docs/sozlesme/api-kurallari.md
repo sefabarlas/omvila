@@ -82,6 +82,7 @@ RFC 9457 `application/problem+json`:
 | 409 | `hold_expired` | Bekleme teklifi veya tutma süresi doldu | "Bu saatin süresi doldu" |
 | 409 | `already_reviewed` | Randevu zaten değerlendirildi | |
 | 409 | `phone_already_exists` | Bu numara markada kayıtlı | "Bu numara zaten kayıtlı" + `meta.brandCustomerId` |
+| 409 | `slug_unavailable` | Bağlantı adı başka işletmede, başka işletmenin yönlendirmesi süren eski bağlantısı veya ayrılmış ad | Alan altında "Bu bağlantı adı kullanılamıyor" |
 | 409 | `deposit_unavailable_no_iban` | IBAN yokken kapora ayarı | "Kapora alınamaz" |
 | 409 | `outside_working_hours` | Panelde çalışma saati dışı (onaysız) | Uyarı + "Yine de ekle" |
 | 409 | `staff_on_time_off` | Personel izinli (onaysız) | Uyarı |
@@ -105,6 +106,7 @@ RFC 9457 `application/problem+json`:
 - `/api/v1` içinde yalnız geriye uyumlu değişiklik: yeni isteğe bağlı alan, yeni uç, yeni enum değeri.
 - **Enum'a değer eklemek istemciler için kırıcı olabilir.** İstemciler bilinmeyen enum değerini `Unknown` olarak ele almak zorundadır. Üretilen istemcilerde bu ayar açıktır.
 - Alan kaldırma, tip değiştirme, zorunlu yapma → kırıcı → `oasdiff` CI'da durdurur.
+- `oasdiff` yanıttaki enum'a değer eklemeyi varsayılan olarak kırıcı sayar. Yukarıdaki kurala uymak için bu tek kural (`response-property-enum-value-added`) `contracts/oasdiff-levels.txt` ile bilgi düzeyine indirilmiştir (ürün sahibi onayı 2026-11-20). Diğer bütün kırılmalar hata olarak kalır.
 
 ## Örnek ve açıklama zorunluluğu
 - Her şemanın ve her alanın `description`'ı vardır (Türkçe veya İngilizce; ekran adı varsa parantez içinde Türkçe: "Deposit transfer code (Açıklama kodu)").

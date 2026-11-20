@@ -50,9 +50,9 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-08 | Dosya depolama (logo, dekont) | 🟡 S3 uyumlu; `IFileStorage` arkasında |
 | T-09 | İYS entegrasyonu | 🔴 SMS sağlayıcısıyla birlikte; kampanya gönderimi dilim 6 sonrası |
 | T-10 | Hata izleme / gözlemlenebilirlik | 🟡 OpenTelemetry + Serilog; hedef (Sentry, Grafana) barındırmayla birlikte |
-| T-11 | Bağlantı adı (slug) çakışır veya ayrılmış ad ise hata kodu (D1) | ✅ Yeni `slug_unavailable` kodu, 409 (eklemedir, kırıcı değil). Kullanıcı onayı 2026-11-20 |
+| T-11 | Bağlantı adı (slug) çakışır veya ayrılmış ad ise hata kodu (D1) | ✅ Yeni `slug_unavailable` kodu, 409 (eklemedir, kırıcı değil). Başka işletmenin yönlendirmesi süren eski bağlantısı da kullanılamaz; işletme kendi eski adına dönebilir. Kullanıcı onayı 2026-11-20 |
 | T-12 | Logo yükleme ucu sözleşmede yok (AyarlarIsletme "Logo yükle") (D1) | ✅ Dilim 1'de buton gizli; uç sonraki bir dilimde önce `yol-haritasi.md`'ye eklenir. Kullanıcı onayı 2026-11-20 |
-| T-13 | Şubeler arası geçiş süresi tasarımda şubeye özel, sözleşmede yalnız marka ayarı (D1) | ✅ `Branch.branchTransferMinutes` (null = marka ayarı) eklenir; kırıcı değil. Kullanıcı onayı 2026-11-20 |
+| T-13 | Şubeler arası geçiş süresi tasarımda şubeye özel, sözleşmede yalnız marka ayarı (D1) | ✅ Şubeye alan eklenmez: alan modelinde süre şube çifti için (`BranchTransferTime(From, To)`), şubeye tek değer belirsiz kalır. AyarlarSube'deki seçim `BrandSettings.defaultBranchTransferMinutes`'ı okur ve yazar. Çift bazında ayar gerekirse ayrı uç olarak eklenir. Kullanıcı kararı 2026-11-20 (ilk onaylanan şube alanının yerine) |
 | T-14 | "Oda veya cihaz" (ResourceType) uçları sözleşmede yok (HizmetEkle) (D1) | ✅ Dilim 1'de alan gizli; kaynak yönetimi ayrı bir dilimde. Kullanıcı onayı 2026-11-20 |
 | T-15 | `publicGetBrand` Dilim 2 ucu, ama Dilim 1 kabul kriteri 16 eski bağlantının 301 dönmesini istiyor | 🟡 Dilim 1'de uç yalnız slug çözümlemesini yapar (301 / 404); 200 gövdesi Dilim 2'de dolar |
 | T-16 | Personelin iki şubedeki saatleri çakışırsa hata kodu | 🟡 Yeni kod yok: `validation_failed` + alan hatası |
