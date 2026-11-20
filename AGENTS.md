@@ -101,4 +101,4 @@ melos bootstrap && melos run test          # Flutter paketleri
 Projeye özel komutlar ilgili `AGENTS.md`'dedir.
 
 ## 9. Durum
-Proje başlangıç aşamasındadır: belgeler, sözleşme taslağı (Dilim 1–2) ve iskelet hazırdır, uygulama kodu yoktur. Sıradaki iş [Dilim 1](docs/dilimler/dilim-01-giris-ve-kurulum.md)'dir.
+[Dilim 1](docs/dilimler/dilim-01-giris-ve-kurulum.md) uygulandı: backend (kimlik, kiracı, katalog, personel), salon panelinde giriş, kurulum, ayarlar, hizmetler, personel ve personel görünümü; Playwright uçtan uca testleri. Dilimin kapanması için ürün sahibi demosu ve `docs/acik-sorular.md`'deki Dilim 1 varsayımlarının (T-37…T-45) onayı bekleniyor. Sıradaki iş [Dilim 2](docs/dilimler/dilim-02-musaitlik-rezervasyon-takvim.md)'dir.
