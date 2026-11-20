@@ -1,0 +1,16 @@
+/* Üretildi: pnpm --filter @omvila/design-tokens build. Elle düzenlemeyin. */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('../fonts/PlusJakartaSans-Latin-Variable.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans TR';
+  src: url('../fonts/PlusJakartaSans-LatinExt-Variable.woff2') format('woff2');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
