@@ -62,7 +62,10 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-20 | Panelde iki sekme aynı yenileme jetonuyla aynı anda yenilerse ADR-0007'deki katı kural (tekrar kullanım → aile iptali) kullanıcıyı çıkarır | 🟡 ADR olduğu gibi uygulandı (test: ikinci yenileme zinciri düşürür). Panel, sekmeler arası tek yenileme yapacak (BroadcastChannel / Web Locks). Sorun görülürse kısa bir tolerans penceresi ayrı kararla eklenir |
 | T-21 | OTP isteği için IP başına sınırın değeri (ADR-0007 "ayrıca IP başına sınır"; sureler-ve-ayarlar.md'de değer yok) | 🟡 Saatte 20 (`Auth:Otp:MaxPerIpPerHour`). Ters vekil arkasında istemci IP'si ForwardedHeaders ile gelmeli (T-07 ile) |
 | T-22 | Mobil çıkış: sözleşmede `manageLogout` gövdesizdir, mobil istemci yenileme jetonunu gönderemez | 🟡 Çerez yoksa üyeliğin mobil yenileme jetonlarının hepsi iptal edilir (o üyeliğin bütün mobil cihazları çıkar) |
-| T-23 | Devre dışı üyeliği olan telefon giriş yaparsa | 🟡 Etkin üyelik yok sayılır, kayıt jetonu (SignupRequired) döner; kayıtta aynı telefonun durumu kayıt akışında ele alınır |
+| T-23 | Devre dışı üyeliği olan telefon giriş yaparsa | 🟡 Etkin üyelik yok sayılır, kayıt jetonu (SignupRequired) döner; kayıt ucu bu telefonla yeni marka açmaz (v1 kullanıcı başına tek üyelik), 401 döner |
+| T-24 | Kayıt ucunda Idempotency-Key | 🟡 Başlık zorunlu ve biçimi denetlenir ama yanıt saklanmaz: yanıt erişim/yenileme jetonu taşır, jetonlar veritabanına açık yazılmaz (ADR-0007). Tekrar gönderimde numaranın üyeliği varsa yeni marka açılmaz, girişle aynı sonuç (201 SignedIn) döner. Kayıtta "hatırla" seçeneği yok; web oturumu hatırlama kapalı açılır |
+| T-25 | Deneme aboneliğinin planı ve geliştirme planları | 🟡 `Platform:TrialPlanCode` (varsayılan `salon_plus`; Trialing'de her şey açık). Planlar veridir: geliştirme ve testte `Platform:SeedPlans` ile fiyatsız/sınırsız plan `migrate` sonrası eklenir (S-14); üretimde plan verisi Dilim 6'da platform panelinden. Plan yoksa kayıt başarısız olur. Deneme kontörü `Platform:TrialCredits` (yalnız geliştirmede 100; boşsa hediye yazılmaz) |
+| T-26 | En az uzunluk hata kodu | 🟡 `too_short` (ör. işletme adı < 2). `api-kurallari.md` kod listesine eklendi |
 
 ## Hukuk (kod beklemez, metin bekler)
 - H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.

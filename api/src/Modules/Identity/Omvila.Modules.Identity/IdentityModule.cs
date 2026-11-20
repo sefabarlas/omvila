@@ -35,6 +35,10 @@ public static class IdentityModule
         services.AddScoped<OtpService>();
         services.AddSingleton<SignupTokenService>();
         services.AddScoped<ManageSignInService>();
+        services.AddOptions<LegalOptions>()
+            .Bind(configuration.GetSection(LegalOptions.Section))
+            .Validate(o => o.IsValid(), "Legal ayarları eksik (appsettings \"Legal\").");
+        services.AddScoped<ManageSignupService>();
         services.AddOtpRateLimiting();
 
         // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.

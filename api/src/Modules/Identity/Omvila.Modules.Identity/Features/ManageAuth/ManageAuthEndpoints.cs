@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Security;
@@ -11,7 +13,7 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Identity.Features.ManageAuth;
 
-/// <summary>Salon girişi uçları (sözleşme manage-auth; ADR-0007). Kayıt ucu (manageSignup) Tenancy ile birlikte gelir.</summary>
+/// <summary>Salon girişi ve kayıt uçları (sözleşme manage-auth; ADR-0007).</summary>
 internal static partial class ManageAuthEndpoints
 {
     public const string OtpRateLimitPolicy = "manage-otp-ip";
@@ -25,6 +27,10 @@ internal static partial class ManageAuthEndpoints
 
         // Giriş öncesi: anonim (kod doğrulaması oturumu açar).
         auth.MapPost("/otp/verify", VerifyOtpAsync).WithName("manageVerifyOtp").AllowAnonymous();
+
+        // Kayıt jetonuyla çalışır (oturum henüz yok). Yanıt jeton taşıdığı için idempotency kaydı tutulmaz (jetonlar
+        // veritabanına açık yazılmaz, ADR-0007); tekrar gönderim var olan işletmeye giriş olur (ManageSignupService).
+        auth.MapPost("/signup", SignupAsync).WithName("manageSignup").AllowAnonymous();
 
         // Yenileme jetonuyla çalışır (erişim jetonunun süresi dolmuştur); çerezde CSRF için X-Requested-With.
         auth.MapPost("/refresh", RefreshAsync).WithName("manageRefreshToken").AllowAnonymous().AddEndpointFilter<XRequestedWithFilter>();
@@ -92,6 +98,92 @@ internal static partial class ManageAuthEndpoints
             "SignedIn", session.AccessToken, session.ExpiresInSeconds, DeliverRefreshToken(http.Response, client.Value, session.RefreshToken)));
     }
 
+    private static async Task<IResult> SignupAsync(SignupRequest body, HttpContext http, ManageSignupService signup, CancellationToken ct)
+    {
+        var client = ClientTypeHeader.Read(http.Request);
+        if (!client.IsSuccess)
+        {
+            return client.Error.ToProblem();
+        }
+
+        // Sözleşmede zorunlu başlık; biçimi denetlenir, yanıt saklanmaz (yukarıdaki not).
+        if (!Guid.TryParse(http.Request.Headers["Idempotency-Key"].ToString(), out _))
+        {
+            return Error.Validation("Idempotency-Key", "required").ToProblem();
+        }
+
+        var errors = ValidateSignup(body, http.RequestServices.GetRequiredService<IOptions<LegalOptions>>().Value);
+        if (errors.Count > 0)
+        {
+            return Error.Validation(errors).ToProblem();
+        }
+
+        var command = new SignupCommand(
+            body.SignupToken!,
+            body.BusinessName!.Trim(),
+            body.IndustryCode!,
+            string.IsNullOrWhiteSpace(body.OwnerFullName) ? null : body.OwnerFullName.Trim(),
+            http.Connection.RemoteIpAddress?.ToString());
+        var session = await signup.SignupAsync(command, client.Value, ct);
+        return session.ToHttp(value => TypedResults.Json(
+            new ManageAuthResult("SignedIn", value.AccessToken, value.ExpiresInSeconds, DeliverRefreshToken(http.Response, client.Value, value.RefreshToken)),
+            statusCode: StatusCodes.Status201Created));
+    }
+
+    private static Dictionary<string, string[]> ValidateSignup(SignupRequest body, LegalOptions legal)
+    {
+        var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(body.SignupToken))
+        {
+            errors["signupToken"] = ["required"];
+        }
+
+        var name = body.BusinessName?.Trim();
+        if (string.IsNullOrEmpty(name))
+        {
+            errors["businessName"] = ["required"];
+        }
+        else if (name.Length < 2)
+        {
+            errors["businessName"] = ["too_short"];
+        }
+        else if (name.Length > 160)
+        {
+            errors["businessName"] = ["too_long"];
+        }
+
+        if (body.IndustryCode is null)
+        {
+            errors["industryCode"] = ["required"];
+        }
+        else if (!IndustryCodes.Contains(body.IndustryCode))
+        {
+            errors["industryCode"] = ["invalid_format"];
+        }
+
+        if (body.OwnerFullName?.Trim().Length > 120)
+        {
+            errors["ownerFullName"] = ["too_long"];
+        }
+
+        if (!body.AcceptedTerms)
+        {
+            errors["acceptedTerms"] = ["required"];
+        }
+
+        // İstemci yürürlükteki aydınlatma metnini göstermiş olmalı; eski sürümle onay kabul edilmez.
+        if (string.IsNullOrWhiteSpace(body.PrivacyNoticeVersion))
+        {
+            errors["privacyNoticeVersion"] = ["required"];
+        }
+        else if (!string.Equals(body.PrivacyNoticeVersion, legal.PrivacyNoticeVersion, StringComparison.Ordinal))
+        {
+            errors["privacyNoticeVersion"] = ["out_of_range"];
+        }
+
+        return errors;
+    }
+
     private static async Task<IResult> RefreshAsync(
         RefreshRequest? body, HttpContext http, ManageSignInService signIn, CancellationToken ct)
     {
@@ -149,6 +241,10 @@ internal static partial class ManageAuthEndpoints
         RefreshTokenCookie.Append(response, token);
         return null;
     }
+
+    // Sözleşme IndustryCode.
+    private static readonly HashSet<string> IndustryCodes =
+        new(["barber", "hair_salon", "beauty", "spa", "nail", "dietitian", "other"], StringComparer.Ordinal);
 
     [GeneratedRegex(@"^\d{6}$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 100)]
     private static partial Regex SixDigits();

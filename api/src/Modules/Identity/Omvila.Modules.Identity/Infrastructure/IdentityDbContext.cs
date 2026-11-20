@@ -15,6 +15,8 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
 
     public DbSet<UserMembership> Memberships => Set<UserMembership>();
 
+    public DbSet<TermsAcceptance> TermsAcceptances => Set<TermsAcceptance>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

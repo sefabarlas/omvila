@@ -61,7 +61,7 @@ RFC 9457 `application/problem+json`:
 
 - `code` kararlıdır ve istemcinin tek dayanağıdır. `title` ve `detail` İngilizce, geliştirici içindir; kullanıcıya gösterilmez.
 - **Kullanıcı metni istemcide** durur: `code` → Türkçe mesaj eşlemesi web'de `packages/ui-web/errors/tr.ts`, Flutter'da `omvila_ui/lib/errors/tr.dart`. Her yeni `code` bu iki dosyaya da eklenir.
-- Doğrulama hatası: `400` + `code: validation_failed` + `errors` (alan yolu → kod listesi; kodlar `required`, `too_long`, `invalid_format`, `out_of_range`…).
+- Doğrulama hatası: `400` + `code: validation_failed` + `errors` (alan yolu → kod listesi; kodlar `required`, `too_short`, `too_long`, `invalid_format`, `out_of_range`…).
 
 ### Hata kodu kataloğu
 

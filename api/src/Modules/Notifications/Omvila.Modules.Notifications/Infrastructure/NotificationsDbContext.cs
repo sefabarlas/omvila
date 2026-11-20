@@ -9,6 +9,8 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<NotificationMessage> Outbox => Set<NotificationMessage>();
 
+    public DbSet<CreditTransaction> CreditTransactions => Set<CreditTransaction>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
