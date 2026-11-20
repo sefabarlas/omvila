@@ -21,12 +21,20 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | S-11 | Müşteri saat değiştirince salon onaylı çalışıyorsa yeniden onaya düşer mi? | ✅ Evet (RandevuErtele ekranı) | 3 |
 | S-12 | Tekrarlayan randevuda çakışan tekrar | 🟡 Atlanır, salona liste gösterilir | 2 |
 | S-13 | Hatırlatma, sessiz saatler, değerlendirme zamanı, havale süresi, iptal/erteleme süreleri | 🟡 Teslim notlarındaki örnek değerler ("Onay" bekleyenler) | 3 |
-| S-14 | Yer tutucular: fiyat, plan sınırı, deneme kontörü, KDV, OMVILA banka, alan adı | 🔴 Değer yok; veriden/yapılandırmadan okunur, kodda yazılmaz | 6 |
+| S-14 | Yer tutucular: fiyat, plan sınırı, deneme kontörü, KDV, OMVILA banka, alan adı | 🔴 Değer yok; veriden/yapılandırmadan okunur, kodda yazılmaz. Dilim 1 değer beklemeden ilerler: geliştirmede sınırsız plan seed'i ve yapılandırmadan deneme kontörü (kullanıcı onayı 2026-11-20) | 1, 6 |
 | S-15 | Değerlendirmeler otomatik mi yayınlanır? | 🟡 Evet; salon gizleyemez, yalnız yanıtlar (v1) | 5 |
 | S-16 | Kullanıcı birden çok markaya üye olabilir mi? | 🟡 v1'de hayır | 1 |
 | S-17 | "Kapıda sıra" SMS'inde "Lütfen" geçiyor; ses-tonu kuralı yasaklıyor | 🟡 "Salona yakın olun." kullanılır; tasarım düzeltilmeli | 5 |
 | S-18 | Panelde onay bekleyen talepte "Reddet" butonu var; müşteri tarafında hiçbir zaman "reddedildi" denmez | ✅ `Cancelled` + `DeclinedBySalon`; müşteriye "iptal" metni | 3 |
 | S-19 | SMS bağlantı kodu tasarımda 4 karakter (`7Kx2`) | 🟡 Güvenlik için 8 karakter; SMS uzunluk testleri buna göre | 3 |
+| S-20 | Panel menüsünde henüz yapılmamış bölümler (Takvim, Müşteriler, Bekleme listesi, Kasa, Değerlendirmeler, Paketler, Raporlar) gösterilsin mi? Tasarımda yeni hesapta da rozet var (4, 2, zil 3) | 🟡 Bölüm, ait olduğu dilimde açılana kadar menüde gizlenir. Rozet yalnız gerçek sayıyla gösterilir; tasarımdaki yeni hesap rozetleri düzeltilmeli | 1 |
+| S-21 | Kayıt ekranında ad soyad alanı yok; KayitKurulum "Hoş geldiniz, Elif" diyor | 🟡 Kayıtta ad sorulmaz (tasarıma uyulur); `ownerFullName` boş kalır, selamlama "Hoş geldiniz" olur. Ad, personel kaydından düzenlenir | 1 |
+| S-22 | Randevu kuralları ekranındaki kapora bölümü Dilim 1'de nasıl görünür? | 🟡 "Kapora istenemiyor · IBAN tanımlı değil" deseniyle pasif gösterilir; IBAN ayarı Dilim 4 | 1 |
+| S-23 | Personel kartlarındaki doluluk, "bu hafta" ve Google Takvim kartı | 🟡 Doluluk ve "bu hafta" Dilim 2'ye kadar "—"; Google Takvim kartı Dilim 6'ya kadar gizli | 1 |
+| S-24 | Hazır listeden eklenen hizmetin fiyatı (şablonda fiyat yok, hizmette zorunlu) | 🟡 Hazır liste seçiminde fiyat zorunlu girilir; sıfır fiyatla hizmet oluşturulmaz | 1 |
+| S-25 | "Resmi tatiller otomatik eklenir" (AyarlarSube) | 🟡 Tatiller `PublicHoliday` seed'inden öneri olarak gelir; şube kabul edince `WorkingHoursOverride` oluşur, tatil kendiliğinden kapatmaz | 1 |
+| S-26 | Şube ekle bilgi kutusu ("Aboneliğinize 1 ek şube eklenir") plan verisi ister | 🟡 Dilim 1'de fiyat ve sayı içermeyen sabit bilgi metni; plan verisi Dilim 6'da | 1 |
+| S-27 | Personel takvim rengi: sözleşme hex saklıyor, arayüzde sabit hex yasak | 🟡 Seçenekler token paletinden üretilir; hex yalnız veri olarak saklanır, bileşen kodunda hex geçmez | 1 |
 
 ## Teknik
 
@@ -42,6 +50,12 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-08 | Dosya depolama (logo, dekont) | 🟡 S3 uyumlu; `IFileStorage` arkasında |
 | T-09 | İYS entegrasyonu | 🔴 SMS sağlayıcısıyla birlikte; kampanya gönderimi dilim 6 sonrası |
 | T-10 | Hata izleme / gözlemlenebilirlik | 🟡 OpenTelemetry + Serilog; hedef (Sentry, Grafana) barındırmayla birlikte |
+| T-11 | Bağlantı adı (slug) çakışır veya ayrılmış ad ise hata kodu (D1) | ✅ Yeni `slug_unavailable` kodu, 409 (eklemedir, kırıcı değil). Kullanıcı onayı 2026-11-20 |
+| T-12 | Logo yükleme ucu sözleşmede yok (AyarlarIsletme "Logo yükle") (D1) | ✅ Dilim 1'de buton gizli; uç sonraki bir dilimde önce `yol-haritasi.md`'ye eklenir. Kullanıcı onayı 2026-11-20 |
+| T-13 | Şubeler arası geçiş süresi tasarımda şubeye özel, sözleşmede yalnız marka ayarı (D1) | ✅ `Branch.branchTransferMinutes` (null = marka ayarı) eklenir; kırıcı değil. Kullanıcı onayı 2026-11-20 |
+| T-14 | "Oda veya cihaz" (ResourceType) uçları sözleşmede yok (HizmetEkle) (D1) | ✅ Dilim 1'de alan gizli; kaynak yönetimi ayrı bir dilimde. Kullanıcı onayı 2026-11-20 |
+| T-15 | `publicGetBrand` Dilim 2 ucu, ama Dilim 1 kabul kriteri 16 eski bağlantının 301 dönmesini istiyor | 🟡 Dilim 1'de uç yalnız slug çözümlemesini yapar (301 / 404); 200 gövdesi Dilim 2'de dolar |
+| T-16 | Personelin iki şubedeki saatleri çakışırsa hata kodu | 🟡 Yeni kod yok: `validation_failed` + alan hatası |
 
 ## Hukuk (kod beklemez, metin bekler)
 - H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.
