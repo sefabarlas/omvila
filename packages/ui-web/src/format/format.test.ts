@@ -3,6 +3,8 @@ import {
   formatDate,
   formatDuration,
   formatMoney,
+  moneyInputValue,
+  parseMoneyInput,
   formatPhone,
   formatTime,
   maskPhone,
@@ -10,6 +12,29 @@ import {
 } from './index';
 
 // Kural: docs/urun/urun-kurallari.md § Biçimler — örnekler birebir.
+describe('parseMoneyInput', () => {
+  it.each([
+    ['450', 45000],
+    ['1.250', 125000],
+    ['85,50', 8550],
+    ['1.250,5 ₺', 125050],
+    ['2800', 280000],
+    ['0', 0],
+  ])('%s → %d kuruş', (input, expected) => {
+    expect(parseMoneyInput(input)).toBe(expected);
+  });
+
+  it.each(['', 'abc', '-5', '12,345', '1.25', '1,2,3'])('geçersiz: %s', (input) => {
+    expect(parseMoneyInput(input)).toBeNull();
+  });
+
+  it('düzenleme değeri geri çevrilir', () => {
+    expect(moneyInputValue(125000)).toBe('1.250');
+    expect(moneyInputValue(8550)).toBe('85,50');
+    expect(parseMoneyInput(moneyInputValue(8550))).toBe(8550);
+  });
+});
+
 describe('formatMoney', () => {
   it.each([
     [125000, '1.250 ₺'],

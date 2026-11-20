@@ -8,4 +8,8 @@ export const queryKeys = {
   branch: (branchId: string) => ['branch', branchId] as const,
   workingHours: (branchId: string) => ['branch', branchId, 'working-hours'] as const,
   overrides: (branchId: string, from: string) => ['branch', branchId, 'overrides', from] as const,
+  services: (branchId: string | undefined) => ['services', branchId ?? 'brand'] as const,
+  serviceCategories: () => ['service-categories'] as const,
+  serviceTemplates: (industryCode: string) => ['service-templates', industryCode] as const,
+  staff: () => ['staff'] as const,
 };

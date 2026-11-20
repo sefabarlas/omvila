@@ -13,7 +13,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   /** Metin dizisi veya {value, label}. */
   options: readonly (string | SelectOption)[];
-  hint?: string;
+  hint?: string | undefined;
   error?: string | undefined;
   /** Etiket ekranda başka yerde yazıyorsa (ayar satırı) yalnız ekran okuyucuya. */
   hideLabel?: boolean;

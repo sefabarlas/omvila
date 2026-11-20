@@ -8,7 +8,7 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Her zaman görünür etiket. */
   label: string;
   /** Yardımcı metin. */
-  hint?: string;
+  hint?: string | undefined;
   /** Hata: ne olduğunu ve ne yapılacağını söyler ("Telefon numarası 10 haneli olmalı."). */
   error?: string | undefined;
   /** Etiket ekranda başka yerde yazıyorsa (ayar satırı) yalnız ekran okuyucuya. */

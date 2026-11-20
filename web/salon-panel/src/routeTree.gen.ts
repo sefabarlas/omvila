@@ -15,6 +15,7 @@ import { Route as KayitRouteImport } from './routes/kayit'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 import { Route as PanelAyarlarRouteImport } from './routes/_panel/ayarlar'
+import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
 import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/index'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
@@ -50,6 +51,11 @@ const PanelAyarlarRoute = PanelAyarlarRouteImport.update({
   path: '/ayarlar',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelHizmetlerRoute = PanelHizmetlerRouteImport.update({
+  id: '/hizmetler',
+  path: '/hizmetler',
+  getParentRoute: () => PanelRoute,
+} as any)
 const PanelAyarlarIndexRoute = PanelAyarlarIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
   '/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/hizmetler': typeof PanelHizmetlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
+  '/hizmetler': typeof PanelHizmetlerRoute
   '/': typeof PanelIndexRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/kayit': typeof KayitRoute
   '/_panel/$': typeof PanelSplatRoute
   '/_panel/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/_panel/hizmetler': typeof PanelHizmetlerRoute
   '/_panel/': typeof PanelIndexRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/$'
     | '/ayarlar'
+    | '/hizmetler'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/kayit'
     | '/$'
+    | '/hizmetler'
     | '/'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/_panel/$'
     | '/_panel/ayarlar'
+    | '/_panel/hizmetler'
     | '/_panel/'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/randevu-kurallari'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/ayarlar'
       fullPath: '/ayarlar'
       preLoaderRoute: typeof PanelAyarlarRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/hizmetler': {
+      id: '/_panel/hizmetler'
+      path: '/hizmetler'
+      fullPath: '/hizmetler'
+      preLoaderRoute: typeof PanelHizmetlerRouteImport
       parentRoute: typeof PanelRoute
     }
     '/_panel/ayarlar/': {
@@ -264,12 +283,14 @@ const PanelAyarlarRouteWithChildren = PanelAyarlarRoute._addFileChildren(
 interface PanelRouteChildren {
   PanelSplatRoute: typeof PanelSplatRoute
   PanelAyarlarRoute: typeof PanelAyarlarRouteWithChildren
+  PanelHizmetlerRoute: typeof PanelHizmetlerRoute
   PanelIndexRoute: typeof PanelIndexRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
   PanelSplatRoute: PanelSplatRoute,
   PanelAyarlarRoute: PanelAyarlarRouteWithChildren,
+  PanelHizmetlerRoute: PanelHizmetlerRoute,
   PanelIndexRoute: PanelIndexRoute,
 }
 

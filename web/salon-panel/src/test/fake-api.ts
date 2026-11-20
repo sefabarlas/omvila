@@ -55,6 +55,8 @@ export interface FakeApiOptions {
   depositAvailable?: boolean;
   /** Şube eklerken plan sınırı (403 + meta.planLimit). */
   branchLimitReached?: boolean;
+  /** Hizmetler dolu mu (yoksa HizmetlerBos). */
+  withServices?: boolean;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -76,6 +78,105 @@ export const branchFixture = {
   isActive: true,
   version: '5',
 };
+
+export const secondBranchId = '0193a8f0-0000-7000-8000-0000000000b2';
+const categoryHair = '0193a8f0-0000-7000-8000-0000000000e1';
+const categoryColor = '0193a8f0-0000-7000-8000-0000000000e2';
+const staffElif = '0193a8f0-0000-7000-8000-0000000000c1';
+const staffMert = '0193a8f0-0000-7000-8000-0000000000c2';
+const staffCan = '0193a8f0-0000-7000-8000-0000000000c3';
+
+export const categoriesFixture = [
+  { id: categoryHair, name: 'Saç', sortOrder: 1, isActive: true, serviceCount: 2 },
+  { id: categoryColor, name: 'Renk', sortOrder: 2, isActive: true, serviceCount: 0 },
+];
+
+const staffMember = (id: string, fullName: string, role: string) => ({
+  id,
+  fullName,
+  displayName: null,
+  title: null,
+  photoUrl: null,
+  calendarColor: '#0F6E5C',
+  isBookableOnline: true,
+  isActive: true,
+  branchIds: [branchId],
+  role,
+  membershipStatus: 'Active',
+});
+
+export const staffFixture = [
+  staffMember(staffElif, 'Elif Kaya', 'Owner'),
+  staffMember(staffMert, 'Mert Demir', 'Staff'),
+  staffMember(staffCan, 'Can Yücel', 'Staff'),
+];
+
+const serviceBase = {
+  description: null,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  requiresApproval: null,
+  minNoticeMinutes: null,
+  maxAdvanceDays: null,
+  resourceTypeId: null,
+  isActive: true,
+  stages: [],
+};
+
+export const servicesFixture = [
+  {
+    ...serviceBase,
+    id: '0193a8f0-0000-7000-8000-0000000000f1',
+    categoryId: categoryHair,
+    name: 'Saç kesimi',
+    durationMinutes: 45,
+    price: { amountMinor: 45000, currency: 'TRY' },
+    priceDisplay: 'Fixed',
+    isBranchPrice: false,
+    deposit: { mode: 'Never' },
+    isOnlineBookable: true,
+    sortOrder: 1,
+    staffIds: [staffElif, staffMert, staffCan],
+    version: '4',
+  },
+  {
+    ...serviceBase,
+    id: '0193a8f0-0000-7000-8000-0000000000f2',
+    categoryId: categoryHair,
+    name: 'Keratin',
+    description: 'Uzunluğa göre',
+    durationMinutes: 90,
+    price: { amountMinor: 180000, currency: 'TRY' },
+    priceDisplay: 'StartingFrom',
+    isBranchPrice: false,
+    deposit: { mode: 'Always', amount: { amountMinor: 30000, currency: 'TRY' } },
+    isOnlineBookable: false,
+    sortOrder: 2,
+    staffIds: [staffElif],
+    version: '2',
+  },
+];
+
+export const templatesFixture = [
+  {
+    id: '0193a8f0-0000-7000-8000-000000000a01',
+    categoryName: 'Saç',
+    name: 'Saç kesimi',
+    defaultDurationMinutes: 45,
+  },
+  {
+    id: '0193a8f0-0000-7000-8000-000000000a02',
+    categoryName: 'Saç',
+    name: 'Fön',
+    defaultDurationMinutes: 30,
+  },
+  {
+    id: '0193a8f0-0000-7000-8000-000000000a03',
+    categoryName: 'Renk',
+    name: 'Boya',
+    defaultDurationMinutes: 120,
+  },
+];
 
 export const workingHoursFixture = {
   days: [
@@ -171,6 +272,7 @@ export function fakeFetch({
   saveError,
   depositAvailable = false,
   branchLimitReached = false,
+  withServices = false,
 }: FakeApiOptions = {}) {
   const json = (status: number, body: unknown) =>
     Promise.resolve(
@@ -243,6 +345,85 @@ export function fakeFetch({
       }
     };
     const body = async () => (await request.clone().json()) as Record<string, unknown>;
+
+    const services = withServices ? servicesFixture : [];
+    if (path === '/api/v1/manage/services') {
+      if (request.method === 'GET') {
+        // Nişantaşı'nda saç kesimi şube fiyatıyla (kabul kriteri 9).
+        const atSecond = new URL(request.url).searchParams.get('branchId') === secondBranchId;
+        return json(200, {
+          items: services.map((service) =>
+            atSecond && service.name === 'Saç kesimi'
+              ? { ...service, price: { amountMinor: 55000, currency: 'TRY' }, isBranchPrice: true }
+              : service,
+          ),
+        });
+      }
+
+      const created = await body();
+      if (
+        created.deposit &&
+        (created.deposit as { mode: string }).mode === 'Always' &&
+        !depositAvailable
+      ) {
+        return json(409, { code: 'deposit_unavailable_no_iban' });
+      }
+
+      return json(201, {
+        ...serviceBase,
+        ...created,
+        id: '0193a8f0-0000-7000-8000-0000000000f9',
+        version: '1',
+      });
+    }
+
+    const serviceMatch = /^\/api\/v1\/manage\/services\/([^/]+)$/.exec(path);
+    if (serviceMatch && serviceMatch[1] !== 'from-templates') {
+      const service = servicesFixture.find((item) => item.id === serviceMatch[1]);
+      if (!service) {
+        return json(404, { code: 'not_found' });
+      }
+
+      return request.method === 'GET'
+        ? json(200, service)
+        : (saveFailure() ?? json(200, { ...service, ...(await body()), version: '9' }));
+    }
+
+    if (/^\/api\/v1\/manage\/services\/[^/]+\/branch-prices\/[^/]+$/.test(path)) {
+      return request.method === 'DELETE'
+        ? Promise.resolve(new Response(null, { status: 204 }))
+        : json(200, await body());
+    }
+
+    if (path === '/api/v1/manage/services/from-templates') {
+      const { items } = (await body()) as { items: unknown[] };
+      return json(201, { items: items.map(() => servicesFixture[0]) });
+    }
+
+    if (path === '/api/v1/manage/service-categories') {
+      if (request.method === 'GET') {
+        return json(200, { items: withServices ? categoriesFixture : [] });
+      }
+
+      const { name } = (await body()) as { name: string };
+      return categoriesFixture.some((category) => category.name === name) && withServices
+        ? json(409, { code: 'conflict' })
+        : json(201, {
+            id: '0193a8f0-0000-7000-8000-0000000000e9',
+            name,
+            sortOrder: 3,
+            isActive: true,
+            serviceCount: 0,
+          });
+    }
+
+    if (path.startsWith('/api/v1/manage/industries/')) {
+      return json(200, { items: templatesFixture });
+    }
+
+    if (path === '/api/v1/manage/staff' && request.method === 'GET') {
+      return json(200, { items: staffFixture });
+    }
 
     const branchBase = `/api/v1/manage/branches/${branchId}`;
     if (path === '/api/v1/manage/branches' && request.method === 'POST') {
