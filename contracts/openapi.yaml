@@ -5,6 +5,7 @@ info:
   summary: Randevu ve salon yönetimi platformu
   license:
     name: Tescilli (tüm hakları saklıdır)
+    identifier: LicenseRef-OMVILA-Proprietary
   description: |
     OMVILA'nın tek HTTP sözleşmesi. Kurallar: docs/sozlesme/api-kurallari.md.
 
