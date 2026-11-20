@@ -6,20 +6,26 @@ export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   /** Ayarın açık hâli: "Online randevu açık". "Açık/Kapalı" durum metni eklenmez. */
   label: string;
   description?: string;
+  /** Etiket ekranda başka yerde yazıyorsa (ayar satırı) yalnız ekran okuyucuya. */
+  hideLabel?: boolean;
 }
 
 /** Anında kaydedilen açık/kapalı ayar. */
-export function Switch({ label, description, className, ...rest }: SwitchProps) {
+export function Switch({ label, description, hideLabel = false, className, ...rest }: SwitchProps) {
   return (
     <label className={classNames(styles.control, className)}>
       <input type="checkbox" role="switch" className={styles.native} {...rest} />
       <span className={styles.track} aria-hidden="true">
         <span className={styles.thumb} />
       </span>
-      <span className={styles.text}>
-        {label}
-        {description ? <span className={styles.description}>{description}</span> : null}
-      </span>
+      {hideLabel ? (
+        <span className={styles.visuallyHidden}>{label}</span>
+      ) : (
+        <span className={styles.text}>
+          {label}
+          {description ? <span className={styles.description}>{description}</span> : null}
+        </span>
+      )}
     </label>
   );
 }

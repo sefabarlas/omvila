@@ -101,6 +101,18 @@ it('Select seçenekleri metin veya {value,label}', async () => {
   expect((select as HTMLSelectElement).value).toBe('barber');
 });
 
+it('TextField ve Select hideLabel: ad korunur, etiket gizli sınıfta', () => {
+  render(
+    <>
+      <TextField label="Bağlantı adı" hideLabel />
+      <Select label="Yanıt süresi" options={['2 saat']} hideLabel />
+    </>,
+  );
+  expect(screen.getByRole('textbox', { name: 'Bağlantı adı' })).toBeTruthy();
+  expect(screen.getByRole('combobox', { name: 'Yanıt süresi' })).toBeTruthy();
+  expect(screen.getByText('Bağlantı adı').className).toContain('visuallyHidden');
+});
+
 it('Checkbox açıklamasıyla etiketlenir ve boşlukla işaretlenir', async () => {
   render(
     <Checkbox
@@ -119,6 +131,12 @@ it('Switch role=switch', async () => {
   render(<Switch label="Online randevu açık" onChange={onChange} />);
   await userEvent.click(screen.getByRole('switch', { name: 'Online randevu açık' }));
   expect(onChange).toHaveBeenCalledOnce();
+});
+
+it('Switch hideLabel: ad ekran okuyucuda, görünür metin yok', () => {
+  render(<Switch label="Fiyatları göster" hideLabel />);
+  const control = screen.getByRole('switch', { name: 'Fiyatları göster' });
+  expect(control.parentElement?.querySelector('[class*="text"]')).toBeNull();
 });
 
 it('Badge ve StatusBadge metinle', () => {

@@ -230,6 +230,30 @@
     "usage": "`blok-kum` üzerindeki metin."
    },
    {
+    "name": "kapak-petrol",
+    "value": {
+     "light": "{petrol-900}",
+     "dark": "{petrol-900}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `petrol` (BookingPageSettings.coverColor); ayarlardaki renk örneği. Üstünde `gri-0`."
+   },
+   {
+    "name": "kapak-mercan",
+    "value": {
+     "light": "{mercan-600}",
+     "dark": "{mercan-600}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `mercan` (BookingPageSettings.coverColor); ayarlardaki renk örneği. Üstünde `gri-0`."
+   },
+   {
+    "name": "kapak-kum",
+    "value": {
+     "light": "{kum-600}",
+     "dark": "{kum-600}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `kum` (BookingPageSettings.coverColor); ayarlardaki renk örneği. Üstünde `gri-0`."
+   },
+   {
     "name": "zemin-hover",
     "value": {
      "light": "#EFEFEB",

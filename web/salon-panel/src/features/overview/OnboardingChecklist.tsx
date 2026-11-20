@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Check, ChevronRight } from 'lucide-react';
 import type { OnboardingStepKey } from './api';
 import styles from './Overview.module.css';
+import { displayUrl } from '@/shared/booking-link';
 
 interface StepView {
   title: string;
@@ -100,9 +101,4 @@ export function OnboardingChecklist({
       </ol>
     </section>
   );
-}
-
-/** "https://omvila.com/kuafor-elif" → "omvila.com/kuafor-elif" (KayitKurulum). */
-export function displayUrl(url: string | undefined): string {
-  return url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : '';
 }

@@ -15,17 +15,28 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: readonly (string | SelectOption)[];
   hint?: string;
   error?: string | undefined;
+  /** Etiket ekranda başka yerde yazıyorsa (ayar satırı) yalnız ekran okuyucuya. */
+  hideLabel?: boolean;
 }
 
 /** Etiketli yerel açılır liste; 7'den az seçenekte. Uzun listeler için aramalı menü kullanılır. */
-export function Select({ label, options, hint, error, id, className, ...rest }: SelectProps) {
+export function Select({
+  label,
+  options,
+  hint,
+  error,
+  hideLabel = false,
+  id,
+  className,
+  ...rest
+}: SelectProps) {
   const generated = useId();
   const selectId = id ?? generated;
   const hintId = `${selectId}-hint`;
   const message = error ?? hint;
   return (
     <div className={classNames(styles.field, className)}>
-      <label className={styles.label} htmlFor={selectId}>
+      <label className={hideLabel ? styles.visuallyHidden : styles.label} htmlFor={selectId}>
         {label}
       </label>
       <div className={styles.wrap}>
