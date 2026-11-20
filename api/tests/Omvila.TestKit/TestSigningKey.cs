@@ -14,4 +14,7 @@ public static class TestSigningKey
     });
 
     public static string PrivateKeyPem => Pem.Value;
+
+    /// <summary>OTP HMAC anahtarı (base64, 32 bayt); çalışma başına üretilir.</summary>
+    public static string OtpHmacKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 }

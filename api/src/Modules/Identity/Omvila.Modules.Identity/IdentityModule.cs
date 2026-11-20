@@ -26,6 +26,11 @@ public static class IdentityModule
         services.AddSingleton<IPermissionResolver, RolePermissionResolver>();
         services.AddModuleDbContext<IdentityDbContext>(IdentityDbContext.Schema);
         services.AddScoped<RefreshTokenService>();
+        services.AddOptions<OtpOptions>()
+            .Bind(configuration.GetSection(OtpOptions.Section))
+            .Validate(o => o.IsValid(), "Auth:Otp ayarları eksik veya geçersiz.");
+        services.AddSingleton<OtpHasher>();
+        services.AddScoped<OtpService>();
 
         // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.
         var authentication = services.AddAuthentication();
