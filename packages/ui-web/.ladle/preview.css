@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  background: var(--zemin);
+  color: var(--metin);
+  font-family: var(--yazi-aile-sans);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+/* stylelint-disable-next-line selector-class-pattern -- Ladle kökü, CSS Modules değil */
+.omvila-preview {
+  padding: var(--bosluk-6);
+}

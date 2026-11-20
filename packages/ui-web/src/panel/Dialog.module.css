@@ -1,0 +1,108 @@
+/* design/tasarim-sistemleri/panel/components/Modal; yan panel aynı katmanı sağda açar (golge-lg). */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--bosluk-6);
+  background: var(--ust-katman);
+  animation: fade 0.12s ease-out;
+}
+
+.drawerOverlay {
+  place-items: stretch end;
+  padding: 0;
+}
+
+.modal,
+.drawer {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  box-shadow: var(--golge-lg);
+}
+
+.modal {
+  max-width: 480px;
+  max-height: calc(100vh - var(--bosluk-12));
+  border-radius: var(--kose-xl);
+}
+
+.lg {
+  max-width: 640px;
+}
+
+.drawer {
+  max-width: 560px;
+  height: 100%;
+  animation: slide 0.18s ease-out;
+}
+
+.modal:focus,
+.drawer:focus {
+  outline: none;
+}
+
+.head {
+  display: flex;
+  gap: var(--bosluk-4);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--bosluk-5) var(--bosluk-5) 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-bolum-basligi-boyut);
+  line-height: var(--yazi-bolum-basligi-satir);
+  font-weight: 800;
+  letter-spacing: var(--yazi-bolum-basligi-harf);
+}
+
+.description {
+  margin: var(--bosluk-0-5) 0 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-5);
+  overflow-y: auto;
+}
+
+.foot {
+  display: flex;
+  gap: var(--bosluk-2);
+  justify-content: flex-end;
+  padding: var(--bosluk-4) var(--bosluk-5);
+  border-top: 1px solid var(--cizgi);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(var(--bosluk-6));
+    opacity: 0;
+  }
+}
+
+/* Azaltılmış harekette yalnız kısa opaklık (urun-kurallari.md). */
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: fade 0.12s ease-out;
+  }
+}

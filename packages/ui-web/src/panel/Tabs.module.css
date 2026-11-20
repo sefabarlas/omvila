@@ -1,0 +1,61 @@
+/* design/tasarim-sistemleri/panel/components/Tabs. */
+.list {
+  display: flex;
+  gap: var(--bosluk-5);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.tab {
+  position: relative;
+  display: inline-flex;
+  gap: var(--bosluk-1-5);
+  align-items: center;
+  padding: var(--bosluk-2) 0 var(--bosluk-3);
+  border: 0;
+  background: none;
+  color: var(--metin-ikincil);
+  font: inherit;
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--metin);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--metin);
+  font-weight: 600;
+}
+
+.tab[aria-selected='true']::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: var(--kose-xs) var(--kose-xs) 0 0;
+  background: var(--marka);
+  content: '';
+}
+
+.count {
+  padding: 0 var(--bosluk-1-5);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+@media (pointer: coarse) {
+  .tab {
+    min-height: 44px;
+  }
+}

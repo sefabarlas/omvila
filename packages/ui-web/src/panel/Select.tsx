@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, XCircle } from 'lucide-react';
 import { useId } from 'react';
 import type { SelectHTMLAttributes } from 'react';
 import { classNames } from './Button';
@@ -52,6 +52,7 @@ export function Select({ label, options, hint, error, id, className, ...rest }: 
       </div>
       {message ? (
         <p id={hintId} className={classNames(styles.hint, error !== undefined && styles.error)}>
+          {error !== undefined ? <XCircle size={14} aria-hidden="true" /> : null}
           {message}
         </p>
       ) : null}

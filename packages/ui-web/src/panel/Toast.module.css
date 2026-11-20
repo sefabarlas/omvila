@@ -1,0 +1,85 @@
+/* design/tasarim-sistemleri/panel/components/Toast: sağ altta, üst üste en fazla üç. */
+.region {
+  position: fixed;
+  right: var(--bosluk-6);
+  bottom: var(--bosluk-6);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  max-width: calc(100vw - var(--bosluk-8));
+}
+
+.toast {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  box-sizing: border-box;
+  width: 380px;
+  max-width: 100%;
+  padding: var(--bosluk-3) var(--bosluk-3) var(--bosluk-3) var(--bosluk-4);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  box-shadow: var(--golge-md);
+  animation: enter 0.18s ease-out;
+}
+
+.icon {
+  display: flex;
+  margin-top: calc(var(--bosluk-0-5) / 2);
+}
+
+.basari .icon {
+  color: var(--basari);
+}
+
+.hata .icon {
+  color: var(--hata);
+}
+
+.uyari .icon {
+  color: var(--uyari);
+}
+
+.bilgi .icon {
+  color: var(--bilgi);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+}
+
+.title {
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 600;
+}
+
+.message {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+@keyframes enter {
+  from {
+    transform: translateY(var(--bosluk-2));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: fade 0.12s ease-out;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+}

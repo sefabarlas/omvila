@@ -89,6 +89,10 @@
   cursor: not-allowed;
 }
 
+.button[aria-busy='true'] {
+  cursor: progress;
+}
+
 .iconOnly {
   width: var(--kontrol-md);
   padding: 0;

@@ -1,0 +1,26 @@
+.skeleton {
+  display: block;
+  border-radius: var(--kose-sm);
+  background: var(--zemin-ikincil);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.text {
+  height: var(--yazi-govde-satir);
+}
+
+.circle {
+  border-radius: var(--kose-tam);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

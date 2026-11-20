@@ -1,3 +1,4 @@
+import { XCircle } from 'lucide-react';
 import { useId } from 'react';
 import type { InputHTMLAttributes, ReactNode } from 'react';
 import { classNames } from './Button';
@@ -61,6 +62,7 @@ export function TextField({
       </div>
       {message ? (
         <p id={hintId} className={classNames(styles.hint, error !== undefined && styles.error)}>
+          {error !== undefined ? <XCircle size={14} aria-hidden="true" /> : null}
           {message}
         </p>
       ) : null}

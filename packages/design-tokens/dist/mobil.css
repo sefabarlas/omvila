@@ -65,6 +65,12 @@
   --iskelet: #F4EFE6;
   --tutamak: #BDBDB6;
   --yildiz: #B57A0A;
+  --avatar-1-zemin: #D3EEE8;
+  --avatar-1-metin: #0B4540;
+  --avatar-2-zemin: #E9E0D0;
+  --avatar-2-metin: #3D3328;
+  --avatar-3-zemin: #FADCD1;
+  --avatar-3-metin: #66291B;
   --petrol-50: #EFF8F6;
   --petrol-100: #D3EEE8;
   --petrol-200: #A8DDD3;
@@ -268,6 +274,12 @@
   --iskelet: #1C2624;
   --tutamak: #3A4643;
   --yildiz: #F0C35A;
+  --avatar-1-zemin: #0B4540;
+  --avatar-1-metin: #D3EEE8;
+  --avatar-2-zemin: #3D3328;
+  --avatar-2-metin: #E9E0D0;
+  --avatar-3-zemin: #66291B;
+  --avatar-3-metin: #FADCD1;
   --golge-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
   --golge-md: 0 8px 24px rgba(0, 0, 0, 0.5);
   --golge-lg: 0 -8px 32px rgba(0, 0, 0, 0.6);
