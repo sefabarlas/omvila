@@ -16,6 +16,7 @@ import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 import { Route as PanelAyarlarRouteImport } from './routes/_panel/ayarlar'
 import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
+import { Route as PanelPersonelRouteImport } from './routes/_panel/personel'
 import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/index'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
@@ -56,6 +57,11 @@ const PanelHizmetlerRoute = PanelHizmetlerRouteImport.update({
   path: '/hizmetler',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelPersonelRoute = PanelPersonelRouteImport.update({
+  id: '/personel',
+  path: '/personel',
+  getParentRoute: () => PanelRoute,
+} as any)
 const PanelAyarlarIndexRoute = PanelAyarlarIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof PanelSplatRoute
   '/ayarlar': typeof PanelAyarlarRouteWithChildren
   '/hizmetler': typeof PanelHizmetlerRoute
+  '/personel': typeof PanelPersonelRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
   '/hizmetler': typeof PanelHizmetlerRoute
+  '/personel': typeof PanelPersonelRoute
   '/': typeof PanelIndexRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_panel/$': typeof PanelSplatRoute
   '/_panel/ayarlar': typeof PanelAyarlarRouteWithChildren
   '/_panel/hizmetler': typeof PanelHizmetlerRoute
+  '/_panel/personel': typeof PanelPersonelRoute
   '/_panel/': typeof PanelIndexRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/ayarlar'
     | '/hizmetler'
+    | '/personel'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/$'
     | '/hizmetler'
+    | '/personel'
     | '/'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/_panel/$'
     | '/_panel/ayarlar'
     | '/_panel/hizmetler'
+    | '/_panel/personel'
     | '/_panel/'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/randevu-kurallari'
@@ -222,6 +234,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelHizmetlerRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/personel': {
+      id: '/_panel/personel'
+      path: '/personel'
+      fullPath: '/personel'
+      preLoaderRoute: typeof PanelPersonelRouteImport
+      parentRoute: typeof PanelRoute
+    }
     '/_panel/ayarlar/': {
       id: '/_panel/ayarlar/'
       path: '/'
@@ -284,6 +303,7 @@ interface PanelRouteChildren {
   PanelSplatRoute: typeof PanelSplatRoute
   PanelAyarlarRoute: typeof PanelAyarlarRouteWithChildren
   PanelHizmetlerRoute: typeof PanelHizmetlerRoute
+  PanelPersonelRoute: typeof PanelPersonelRoute
   PanelIndexRoute: typeof PanelIndexRoute
 }
 
@@ -291,6 +311,7 @@ const PanelRouteChildren: PanelRouteChildren = {
   PanelSplatRoute: PanelSplatRoute,
   PanelAyarlarRoute: PanelAyarlarRouteWithChildren,
   PanelHizmetlerRoute: PanelHizmetlerRoute,
+  PanelPersonelRoute: PanelPersonelRoute,
   PanelIndexRoute: PanelIndexRoute,
 }
 

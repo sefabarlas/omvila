@@ -12,4 +12,5 @@ export const queryKeys = {
   serviceCategories: () => ['service-categories'] as const,
   serviceTemplates: (industryCode: string) => ['service-templates', industryCode] as const,
   staff: () => ['staff'] as const,
+  staffDetail: (staffId: string) => ['staff', staffId] as const,
 };

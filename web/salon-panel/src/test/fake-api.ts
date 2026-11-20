@@ -57,6 +57,10 @@ export interface FakeApiOptions {
   branchLimitReached?: boolean;
   /** Hizmetler dolu mu (yoksa HizmetlerBos). */
   withServices?: boolean;
+  /** Yalnız işletme sahibi var (PersonelBos). */
+  onlyOwner?: boolean;
+  /** İzin eklerken etkilenen randevu sayısı. */
+  affectedAppointments?: number;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -156,6 +160,45 @@ export const servicesFixture = [
     version: '2',
   },
 ];
+
+/** Personel ayrıntısı: Elif'in Merkez saatleri ve hizmetleri (Keratin 75 dk özel). */
+export function staffDetail(person: (typeof staffFixture)[number]) {
+  const isElif = person.fullName === 'Elif Kaya';
+  return {
+    ...person,
+    phoneMasked: '0532 *** ** 05',
+    bio: null,
+    serviceCommissionPercent: isElif ? 24 : 20,
+    saleCommissionPercent: 10,
+    services: isElif
+      ? [
+          { serviceId: '0193a8f0-0000-7000-8000-0000000000f1', durationOverrideMinutes: null },
+          {
+            serviceId: '0193a8f0-0000-7000-8000-0000000000f2',
+            durationOverrideMinutes: 75,
+            surcharge: { amountMinor: 20000, currency: 'TRY' },
+          },
+        ]
+      : [],
+    workingHours: [
+      {
+        branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+        hours: {
+          days: [2, 3, 4, 5].map((dayOfWeek) => ({
+            dayOfWeek,
+            intervals: [
+              { start: '10:00', end: '13:00' },
+              { start: '13:45', end: '19:00' },
+            ],
+          })),
+          version: '6',
+        },
+      },
+    ],
+    googleCalendarStatus: null,
+    version: '7',
+  };
+}
 
 export const templatesFixture = [
   {
@@ -273,6 +316,8 @@ export function fakeFetch({
   depositAvailable = false,
   branchLimitReached = false,
   withServices = false,
+  onlyOwner = false,
+  affectedAppointments = 0,
 }: FakeApiOptions = {}) {
   const json = (status: number, body: unknown) =>
     Promise.resolve(
@@ -421,8 +466,47 @@ export function fakeFetch({
       return json(200, { items: templatesFixture });
     }
 
-    if (path === '/api/v1/manage/staff' && request.method === 'GET') {
-      return json(200, { items: staffFixture });
+    const team = onlyOwner ? staffFixture.slice(0, 1) : staffFixture;
+    if (path === '/api/v1/manage/staff') {
+      if (request.method === 'GET') {
+        return json(200, { items: team });
+      }
+
+      const created = await body();
+      return json(201, {
+        ...staffDetail(staffMember(staffElif, 'Elif Kaya', 'Owner')),
+        ...created,
+        id: '0193a8f0-0000-7000-8000-0000000000c9',
+        role: created.role,
+        membershipStatus: created.phone ? 'Invited' : null,
+      });
+    }
+
+    const staffMatch = /^\/api\/v1\/manage\/staff\/([^/]+)(\/.*)?$/.exec(path);
+    if (staffMatch) {
+      const person = staffFixture.find((item) => item.id === staffMatch[1]);
+      if (!person) {
+        return json(404, { code: 'not_found' });
+      }
+
+      const rest = staffMatch[2] ?? '';
+      if (rest === '' && request.method === 'GET') {
+        return json(200, staffDetail(person));
+      }
+
+      if (rest === '/services' || rest.endsWith('/working-hours')) {
+        return (
+          saveFailure() ?? json(200, { ...staffDetail(person), ...(await body()), version: '8' })
+        );
+      }
+
+      if (rest === '/time-off') {
+        const created = await body();
+        return json(201, {
+          timeOff: { id: '0193a8f0-0000-7000-8000-0000000000aa', staffId: person.id, ...created },
+          affectedAppointments: Array.from({ length: affectedAppointments }, () => ({})),
+        });
+      }
     }
 
     const branchBase = `/api/v1/manage/branches/${branchId}`;
