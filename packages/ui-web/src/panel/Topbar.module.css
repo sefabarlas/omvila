@@ -1,0 +1,119 @@
+/* design/tasarim-sistemleri/panel/components/Topbar. */
+
+/* Ekran tasarımlarına göre (ör. salon-paneli/HizmetlerBos): bağlam küçük harfle başlığın üstünde (T-37). */
+.topbar {
+  display: flex;
+  gap: var(--bosluk-4);
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  min-height: var(--ustbar-yukseklik);
+  padding: var(--bosluk-4) var(--bosluk-6);
+}
+
+.heading {
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-sayfa-basligi-boyut);
+  line-height: var(--yazi-sayfa-basligi-satir);
+  font-weight: var(--yazi-sayfa-basligi-agirlik);
+  letter-spacing: var(--yazi-sayfa-basligi-harf);
+  white-space: nowrap;
+}
+
+.context {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.right {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.search {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  box-sizing: border-box;
+  width: 300px;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-2) 0 var(--bosluk-3);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin-ikincil);
+  box-shadow: var(--golge-sm);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--odak);
+  outline-offset: 1px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  font-size: var(--yazi-kucuk-boyut);
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--metin-ikincil);
+}
+
+.kbd {
+  padding: 0 var(--bosluk-1);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-xs);
+  background: var(--zemin-yukseltilmis);
+  font: inherit;
+  font-size: var(--yazi-ust-etiket-boyut);
+}
+
+.bell {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: var(--bosluk-0-5);
+  right: var(--bosluk-0-5);
+  box-sizing: border-box;
+  min-width: var(--bosluk-4);
+  height: var(--bosluk-4);
+  padding: 0 var(--bosluk-1);
+  border-radius: var(--kose-tam);
+  background: var(--vurgu);
+  color: var(--vurgu-ustu);
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-ust-etiket-satir);
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--zemin-yukseltilmis);
+}
+
+@media (width <= 1199px) {
+  .search {
+    width: 220px;
+  }
+}
+
+@media (width <= 899px) {
+  .search {
+    display: none;
+  }
+}

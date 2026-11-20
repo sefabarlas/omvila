@@ -1,0 +1,118 @@
+/* design/tasarim-sistemleri/panel/components/DataTable: satır 48 px, sayılar sağa ve tabular-nums. */
+.wrap {
+  overflow: hidden;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--yazi-govde-boyut);
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th {
+  padding: var(--bosluk-3);
+  border-bottom: 1px solid var(--cizgi);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td {
+  height: var(--tablo-satir);
+  padding: 0 var(--bosluk-3);
+  border-bottom: 1px solid var(--cizgi);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--zemin-hover);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.selected {
+  background: var(--zemin-secili);
+}
+
+.right {
+  text-align: right;
+}
+
+.table th.right {
+  text-align: right;
+}
+
+.center {
+  text-align: center;
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.check {
+  width: var(--bosluk-5);
+  padding-right: 0;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  border-top: 1px solid var(--cizgi);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.person {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.personText {
+  display: flex;
+  flex-direction: column;
+}
+
+.personName {
+  font-weight: 600;
+}
+
+.personDetail {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+@media (width <= 899px) {
+  .table {
+    min-width: 720px;
+  }
+}
