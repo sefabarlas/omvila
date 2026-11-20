@@ -13,19 +13,20 @@ assets/app/*.svg        # uygulama ikonları ve favicon
 fonts/                  # Plus Jakarta Sans (Latin + Latin Ext; ikisi birlikte yüklenir)
 ```
 Üretilenler (`dist/`, commit edilir):
-- `dist/tokens.css`: `:root` (açık) + `[data-theme="dark"]` (koyu) + `prefers-reduced-motion` kuralları; panel ve mobil için ayrı dosyalar: `dist/panel.css`, `dist/mobil.css`
-- `dist/tokens.ts`: tip güvenli token adları (CSS değişkeni adlarını string literal olarak)
-- `../omvila_ui/lib/theme/omvila_theme.dart`: `OmvilaRenkler`, `OmvilaYazi`, `OmvilaBosluk`, `OmvilaKose`, `OmvilaBoyut`, `OmvilaTema` (referans dosyadaki API ile aynı)
+- `dist/panel.css`, `dist/mobil.css`, `dist/marka.css`: ölçek başına `:root` (açık tema ve temasız tokenlar) + `[data-theme='dark']` (koyu temada değişen renk ve gölgeler). Yazı stilleri `--yazi-<stil>-boyut|satir|agirlik|harf`, aile `--yazi-aile-sans`.
+- `dist/fonts.css`: `@font-face` tanımları (yollar `../fonts/`).
+- `dist/tokens.ts`: ölçek başına tip güvenli token adları (`panelTokens.renk`… ve `PanelColorToken` tipi).
+- Henüz yok (T-34): `../omvila_ui/lib/theme/omvila_theme.dart` (Flutter işleri başlarken eklenir; referans dosyadaki API ile aynı) ve `prefers-reduced-motion` kuralları (kaynakta hareket tokenı yok).
 
 ## Kurallar
 - Token adı ve değeri yalnız `src/*.json` içinde değişir; üretilen dosyalar elle düzenlenmez.
 - Tasarım ekibi yeni token eklerse önce burada, sonra kullanım. Semantik token eklemek serbesttir. Primitif palete (`petrol-*`, `kum-*`, `mercan-*`) dokunmak marka kararıdır.
 - Bileşenler yalnız **semantik** tokenları kullanır. `zemin-vurgu-yumusak` üzerindeki metin `metin-vurgu`dur.
 - Logo kullanım kuralları: [design/tasarim-sistemleri/marka/README.md § Logo](../../design/tasarim-sistemleri/marka/README.md). 48 px altında `omvila-amblem-kucuk.svg`.
-- Üretim aracı Style Dictionary (`build.mjs`). Dart çıktısı referans dosyayla aynı sınıf ve alan adlarını korur; ilk üretimde fark raporu çıkarılır ve referansla hizalanır.
+- Üretim aracı `scripts/build.ts` (bağımlılıksız Node; kaynak biçimi Style Dictionary/DTCG değil, dönüştürmek yerine doğrudan okunur). Testler `dist/`'in kaynakla güncel olduğunu denetler: JSON değişince `build` çalıştırılıp `dist/` commit edilir. Dart çıktısı eklendiğinde referans dosyayla aynı sınıf ve alan adlarını korur.
 
 ## Komutlar
 ```bash
-pnpm --filter @omvila/design-tokens build   # dist/ ve omvila_theme.dart üretir
-pnpm --filter @omvila/design-tokens test    # kontrast testleri: her metin/zemin çifti iki temada ≥ 4.5:1
+pnpm --filter @omvila/design-tokens build   # dist/ üretir
+pnpm --filter @omvila/design-tokens test    # kontrast (her metin/zemin çifti iki temada ≥ 4.5:1), başvurular, dist/ güncelliği
 ```

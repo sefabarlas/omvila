@@ -1,0 +1,26 @@
+{
+  "name": "@omvila/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OMVILA tasarım tokenları: src/*.json kaynağından CSS değişkenleri ve tip güvenli token adları",
+  "type": "module",
+  "exports": {
+    ".": "./dist/tokens.ts",
+    "./panel.css": "./dist/panel.css",
+    "./mobil.css": "./dist/mobil.css",
+    "./marka.css": "./dist/marka.css",
+    "./fonts.css": "./dist/fonts.css",
+    "./fonts/*": "./fonts/*",
+    "./assets/*": "./assets/*"
+  },
+  "scripts": {
+    "build": "node --experimental-strip-types --disable-warning=ExperimentalWarning scripts/build.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint --max-warnings=0 scripts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "vitest": "^5.1.1"
+  }
+}
