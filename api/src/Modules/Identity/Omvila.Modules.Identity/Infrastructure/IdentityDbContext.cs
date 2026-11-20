@@ -9,6 +9,8 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

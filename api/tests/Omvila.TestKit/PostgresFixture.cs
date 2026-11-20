@@ -97,6 +97,13 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Auth:AccessTokenMinutes"] = "15",
             ["Auth:RefreshTokenDaysRemembered"] = "30",
             ["Auth:RefreshTokenDaysSession"] = "1",
+            ["Auth:Otp:Length"] = "6",
+            ["Auth:Otp:TtlSeconds"] = "180",
+            ["Auth:Otp:ResendCooldownSeconds"] = "60",
+            ["Auth:Otp:MaxAttempts"] = "5",
+            ["Auth:Otp:LockoutMinutes"] = "5",
+            ["Auth:Otp:MaxPerPhonePerHour"] = "5",
+            ["Auth:Otp:HmacKey"] = TestSigningKey.OtpHmacKey,
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
         };

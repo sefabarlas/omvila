@@ -24,6 +24,62 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Omvila.Modules.Identity.Domain.OtpChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("code_hash");
+
+                    b.Property<Instant?>("ConsumedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("consumed_utc");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<Instant>("ExpiresUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_utc");
+
+                    b.Property<Instant?>("LockedUntilUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_until_utc");
+
+                    b.Property<string>("PhoneE164")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phone_e164");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("purpose");
+
+                    b.HasKey("Id")
+                        .HasName("pk_otp_challenges");
+
+                    b.HasIndex("PhoneE164", "CreatedUtc")
+                        .HasDatabaseName("ix_otp_challenges_phone_e164_created_utc");
+
+                    b.ToTable("otp_challenges", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_otp_challenges_purpose", "purpose IN ('ManageLogin', 'ManageSignup', 'CustomerLogin', 'PublicBooking', 'AccountDeletion')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Identity.Domain.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")

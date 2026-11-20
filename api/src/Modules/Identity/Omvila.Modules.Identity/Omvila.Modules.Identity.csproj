@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Omvila.Modules.Identity.Contracts\Omvila.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\Notifications\Omvila.Modules.Notifications.Contracts\Omvila.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
