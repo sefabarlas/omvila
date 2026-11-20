@@ -6,7 +6,30 @@
     "node": ">=22"
   },
   "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint && pnpm lint:repo",
+    "typecheck": "turbo run typecheck",
+    "lint:repo": "eslint --max-warnings=0 *.mjs *.cjs",
+    "lint:css": "stylelint \"{web,packages}/**/*.css\" --allow-empty-input --max-warnings=0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "contracts:check": "python3 contracts/scripts/check_conventions.py contracts/openapi.yaml",
     "inventory": "python3 scripts/gen_inventory.py design/ekranlar"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^2.1.1",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1",
+    "eslint-plugin-jsx-a11y": "^6.10",
+    "eslint-plugin-react-hooks": "^7.1",
+    "globals": "^17",
+    "prettier": "^3.10",
+    "stylelint": "^18.1",
+    "stylelint-config-standard": "^41.1",
+    "turbo": "^2.11",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.73"
   }
 }

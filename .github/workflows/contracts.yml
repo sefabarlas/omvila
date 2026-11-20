@@ -34,7 +34,7 @@ jobs:
       - uses: actions/setup-python@v5
         if: steps.changes.outputs.run == 'true'
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Sözleşme kuralları
         if: steps.changes.outputs.run == 'true'
