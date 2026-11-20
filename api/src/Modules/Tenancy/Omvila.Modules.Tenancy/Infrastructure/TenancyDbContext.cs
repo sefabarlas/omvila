@@ -21,6 +21,8 @@ internal sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> option
 
     public DbSet<StaffBranch> StaffBranches => Set<StaffBranch>();
 
+    public DbSet<BrandOnboarding> Onboarding => Set<BrandOnboarding>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

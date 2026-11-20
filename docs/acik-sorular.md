@@ -66,6 +66,7 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-24 | Kayıt ucunda Idempotency-Key | 🟡 Başlık zorunlu ve biçimi denetlenir ama yanıt saklanmaz: yanıt erişim/yenileme jetonu taşır, jetonlar veritabanına açık yazılmaz (ADR-0007). Tekrar gönderimde numaranın üyeliği varsa yeni marka açılmaz, girişle aynı sonuç (201 SignedIn) döner. Kayıtta "hatırla" seçeneği yok; web oturumu hatırlama kapalı açılır |
 | T-25 | Deneme aboneliğinin planı ve geliştirme planları | 🟡 `Platform:TrialPlanCode` (varsayılan `salon_plus`; Trialing'de her şey açık). Planlar veridir: geliştirme ve testte `Platform:SeedPlans` ile fiyatsız/sınırsız plan `migrate` sonrası eklenir (S-14); üretimde plan verisi Dilim 6'da platform panelinden. Plan yoksa kayıt başarısız olur. Deneme kontörü `Platform:TrialCredits` (yalnız geliştirmede 100; boşsa hediye yazılmaz) |
 | T-26 | En az uzunluk hata kodu | 🟡 `too_short` (ör. işletme adı < 2). `api-kurallari.md` kod listesine eklendi |
+| T-27 | Kurulum adımlarının değerlendirilmesi ve markanın Active'e geçişi | 🟡 Adımı verisinin sahibi modül değerlendirir (`IOnboardingStepProvider`); sağlayıcısı olmayan adım (şimdilik WorkingHours, Services) tamamlanmamış sayılır. Hepsi tamamlanınca `Brand.Status = Active`; değerlendirme `GET /manage/onboarding` ve olay kaydında yapılır (GET bu tek durum geçişini yazabilir). Kurulum olayını yalnız `settings.manage` izni olan (Owner) bildirir; adımları her rol okuyabilir |
 
 ## Hukuk (kod beklemez, metin bekler)
 - H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.

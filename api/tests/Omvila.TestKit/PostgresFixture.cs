@@ -114,6 +114,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Legal:TermsOfUseVersion"] = "2026-11-01",
             ["Legal:PrivacyNoticeVersion"] = "2026-11-01",
             ["Platform:TrialDays"] = "14",
+            ["Platform:PastDueGraceDays"] = "7",
             ["Platform:TrialPlanCode"] = "salon_plus",
             ["Platform:TrialCredits"] = "100",
             ["Platform:SeedPlans:0:Code"] = "salon_plus",

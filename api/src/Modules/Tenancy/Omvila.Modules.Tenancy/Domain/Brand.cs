@@ -43,6 +43,18 @@ internal sealed class Brand
 
     public Instant CreatedUtc { get; private set; }
 
+    /// <summary>Kurulum adımlarının hepsi tamamlanınca (dilim-01): Onboarding → Active. Diğer durumlarda değişmez.</summary>
+    public bool CompleteOnboarding()
+    {
+        if (Status != BrandStatus.Onboarding)
+        {
+            return false;
+        }
+
+        Status = BrandStatus.Active;
+        return true;
+    }
+
     /// <summary>Kayıtta: durum Onboarding; kurulum adımları bitince Active (dilim-01).</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }

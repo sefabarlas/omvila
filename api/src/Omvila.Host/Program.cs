@@ -75,6 +75,7 @@ if (role.HasFlag(HostRole.Api))
 {
     app.MapOpenApi("/openapi/{documentName}.json");
     app.MapIdentityEndpoints();
+    app.MapTenancyEndpoints();
 }
 
 HostLog.Started(app.Logger, role);
