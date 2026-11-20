@@ -43,19 +43,29 @@ Modüller: Identity, Tenancy, Catalog, Customers, Scheduling, Sales, Reviews, No
 ## Komutlar
 `dotnet test` komutları `api/` içinden çalışır: test platformu (Microsoft.Testing.Platform) ayarı `api/global.json`'dadır; depo kökünden çalıştırılırsa eski VSTest kipine düşer.
 ```bash
-docker compose up -d postgres                                  # kökten
+docker compose up -d postgres                                  # kökten (api/db/init rol betiği ilk açılışta çalışır)
 cd api
+dotnet tool restore                                            # dotnet-ef (dotnet-tools.json)
+dotnet run --project src/Omvila.Host -- migrate                # migration'ları omvila_migrator ile uygular
 dotnet build Omvila.slnx -warnaserror
 dotnet test --solution Omvila.slnx --filter-not-trait "Category=Integration"   # hızlı
 dotnet test --solution Omvila.slnx                                             # tümü (Docker gerekir)
 dotnet format Omvila.slnx --verify-no-changes
 dotnet run --project src/Omvila.Host -- --role=all             # http://localhost:5080
-dotnet ef migrations add <YYYYMMDDHHmm_Ad> -p src/Modules/Scheduling/Omvila.Modules.Scheduling -c SchedulingDbContext -o Infrastructure/Migrations
+dotnet ef migrations add <KisaAciklama> -p src/Modules/Scheduling/Omvila.Modules.Scheduling -c SchedulingDbContext -o Infrastructure/Migrations   # EF zaman damgasını ekler
 scripts/export-openapi.sh && oasdiff diff ../contracts/openapi.yaml artifacts/openapi.json --fail-on-diff
 ```
+
+## Veritabanı erişimi
+- Uygulama `omvila_app` rolüyle bağlanır (RLS'e tabi, tablo sahibi değil); migration `omvila_migrator` ile çalışır (ADR-0001). Roller `api/db/init/01-roles.sql`'de; docker-compose ve Testcontainers aynı betiği kullanır.
+- Her API ucu `MapApiGroup(...)` grubunda tek transaction'da çalışır: başarılı sonuç yanıt yazılmadan commit, 4xx/5xx ve istisna rollback (`TransactionEndpointFilter`). İş (worker) kendi kapsamında `IDbSession.BeginAsync` çağırır.
+- Kiracı bağlamı `IDbSession.SetTenantAsync(TenantScope...)` ile kurulur ve `set_config(..., true)` ile yalnız o transaction'a uygulanır.
+- Modül DbContext'i `services.AddModuleDbContext<T>("schema")` ile kaydedilir; ilk migration `GrantSchemaUsageToApp`, markaya ait her tablo `EnableTenantIsolation` çağırır. `RlsGuardTests` politikasız `brand_id` tablosunda düşer.
+- Testler: `Omvila.TestKit` (`PostgresFixture`, `TestClock`, `RlsGuard`). Veritabanı testleri `[Trait("Category", "Integration")]` ve `[Collection(PostgresTests.Name)]` taşır.
+- Yerelde 5432'de başka bir PostgreSQL çalışıyorsa `localhost` ona gider; `ConnectionStrings__Default/Migrator` ile portu değiştirin.
 
 ## Geliştirme verisi
 `dotnet run --project api/src/Omvila.Host -- seed` tasarım ekranlarındaki verileri kurar: Kuaför Elif (Kadıköy, Nişantaşı), personel Elif Kaya, Mert Demir, Zeynep Aksoy, Can Yücel; hizmetler Saç/Renk/Bakım/Tırnak; örnek müşteriler. Seed yalnız `Development` ortamında çalışır.
 
 ## Analizör istisnaları
-`api/.editorconfig` kapatılan kuralları gerekçesiyle listeler (CA1716, CA1000, MA0008, MA0004; testlerde CA1707). Yeni istisna gerekçesiz eklenmez.
+`api/.editorconfig` kapatılan kuralları gerekçesiyle listeler (CA1716, CA1000, MA0008, MA0004; testlerde CA1707; EF migration dosyaları `generated_code`). Yeni istisna gerekçesiz eklenmez.

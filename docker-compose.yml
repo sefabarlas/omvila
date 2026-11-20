@@ -9,7 +9,7 @@ services:
     ports: ['5432:5432']
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./api/db/init:/docker-entrypoint-initdb.d:ro # omvila_app rolü (RLS'e tabi, sahip değil) ve btree_gist; Dilim 1'de eklenir
+      - ./api/db/init:/docker-entrypoint-initdb.d:ro # omvila_app rolü (RLS'e tabi, tablo sahibi değil) ve btree_gist
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U omvila_migrator -d omvila']
       interval: 5s
