@@ -53,7 +53,7 @@ Giris, GirisKod, Kayit, KayitKurulum, GenelBakisBos (yalnız ilk hafta bağlant�
 ## Teknik temel (bu dilimde kurulur)
 | İş | Çıktı |
 |---|---|
-| Monorepo | `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, ESLint/Prettier/stylelint, kök `pubspec.yaml` (workspace) + `melos.yaml`, `.fvmrc`, `docker-compose.yml` (postgres, prism, mailpit) |
+| Monorepo | `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, ESLint/Prettier/stylelint, kök `pubspec.yaml` (workspace + `melos:` bölümü; Melos 7 ayrı `melos.yaml` kullanmaz), `.fvmrc`, `docker-compose.yml` (postgres, prism, mailpit) |
 | CI | `.github/workflows/ci.yml`: yol filtreli işler; contracts (lint, breaking, generate diff), api (build, test, arch, contract), web (lint, test, build), flutter (analyze, test), commitlint, gitleaks |
 | Backend çekirdeği | Çözüm, `SharedKernel`, `Infrastructure` (bağlantı + transaction + `set_config` RLS + outbox + idempotency + iş zamanlayıcı iskeleti), `Omvila.Host` (sağlık, OpenAPI dışa aktarma, problem+json, hız sınırı), mimari testler, `TestKit`, izolasyon test altyapısı |
 | Sözleşme araçları | `contracts/` betiklerinin çalışır hâli; Prism mock docker'da |

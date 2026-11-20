@@ -31,7 +31,7 @@ TestResults/
 build/
 .flutter-plugins
 .flutter-plugins-dependencies
-.fvm/flutter_sdk
+.fvm/
 **/ios/Pods/
 **/android/.gradle/
 *.g.dart.tmp

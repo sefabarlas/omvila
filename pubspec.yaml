@@ -1,0 +1,33 @@
+# Dart pub workspace kökü ve Melos betikleri (ADR-0010).
+# Paketler oluştukça `workspace:` listesine eklenir; her üye pubspec'inde `resolution: workspace` bulunur.
+name: omvila_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+workspace: []
+  # - packages/omvila_ui
+  # - packages/api-client-dart
+  # - mobile/isletme
+  # - mobile/musteri
+
+dev_dependencies:
+  melos: ^7.0.0
+  very_good_analysis: ^9.0.0
+
+melos:
+  name: omvila
+  sdkPath: .fvm/flutter_sdk
+  scripts:
+    analyze:
+      description: Statik analiz, bilgi düzeyi dahil hata (docs/standartlar/kodlama-flutter.md)
+      exec: flutter analyze --fatal-infos
+    format:check:
+      description: Biçim denetimi
+      exec: dart format --set-exit-if-changed .
+    test:
+      description: Testler (test klasörü olan paketler)
+      exec: flutter test
+      packageFilters:
+        dirExists: test

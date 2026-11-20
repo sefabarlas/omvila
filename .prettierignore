@@ -1,0 +1,16 @@
+# Üretilen veya başka araçla biçimlenen dosyalar
+pnpm-lock.yaml
+**/dist/
+**/.next/
+**/out/
+**/coverage/
+**/generated/
+packages/api-client-dart/
+contracts/
+design/
+docs/
+api/
+mobile/
+packages/omvila_ui/
+*.md
+packages/design-tokens/src/

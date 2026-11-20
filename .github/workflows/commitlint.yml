@@ -9,12 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
+      # Yalnız kök paket; commitlint kök geliştirme bağımlılığıdır.
+      - run: pnpm install --frozen-lockfile --filter omvila
       - name: PR başlığı biçimi
         env:
           TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          npm i --no-save @commitlint/cli@19 @commitlint/config-conventional@19
-          echo "$TITLE" | npx commitlint --config commitlint.config.cjs
+        run: echo "$TITLE" | pnpm exec commitlint --config commitlint.config.cjs
