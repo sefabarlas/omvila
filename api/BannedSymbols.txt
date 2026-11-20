@@ -1,0 +1,19 @@
+P:System.DateTime.Now;IClock.GetCurrentInstant() kullanın (ADR-0003)
+P:System.DateTime.UtcNow;IClock.GetCurrentInstant() kullanın (ADR-0003)
+P:System.DateTime.Today;IClock ve şubenin saat dilimi kullanın (ADR-0003)
+P:System.DateTimeOffset.Now;IClock.GetCurrentInstant() kullanın (ADR-0003)
+P:System.DateTimeOffset.UtcNow;IClock.GetCurrentInstant() kullanın (ADR-0003)
+T:System.TimeZoneInfo;NodaTime DateTimeZoneProviders.Tzdb kullanın (ADR-0003)
+M:System.Guid.NewGuid;IIdGenerator.New() kullanın (UUID v7)
+M:System.Guid.CreateVersion7;IIdGenerator.New() kullanın (tek üretim noktası)
+M:System.Guid.CreateVersion7(System.DateTimeOffset);IIdGenerator.New() kullanın (tek üretim noktası)
+M:Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.IgnoreQueryFilters``1(System.Linq.IQueryable{``0});Kiracı filtresi kapatılamaz (ADR-0006)
+M:System.Console.WriteLine;ILogger<T> kullanın
+M:System.Console.WriteLine(System.String);ILogger<T> kullanın
+M:System.Console.WriteLine(System.Object);ILogger<T> kullanın
+M:System.Threading.Thread.Sleep(System.Int32);await Task.Delay kullanın
+M:System.Threading.Thread.Sleep(System.TimeSpan);await Task.Delay kullanın
+M:System.Threading.Tasks.Task.Wait;await kullanın
+P:System.Threading.Tasks.Task`1.Result;await kullanın
+T:System.Random;Güvenlik amaçlı rastgelelik için RandomNumberGenerator kullanın
+M:System.Net.Http.HttpClient.#ctor;IHttpClientFactory kullanın

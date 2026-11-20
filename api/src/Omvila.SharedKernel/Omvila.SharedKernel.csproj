@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Bağımlılık yalnız NodaTime (docs/mimari/mimari.md § Katman kuralları). -->
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Omvila.SharedKernel.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Omvila.Host/Omvila.Host.csproj" />
+    <Project Path="src/Omvila.SharedKernel/Omvila.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Omvila.ArchitectureTests/Omvila.ArchitectureTests.csproj" />
+    <Project Path="tests/Omvila.Host.Tests/Omvila.Host.Tests.csproj" />
+    <Project Path="tests/Omvila.SharedKernel.Tests/Omvila.SharedKernel.Tests.csproj" />
+  </Folder>
+</Solution>

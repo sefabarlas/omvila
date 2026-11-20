@@ -41,19 +41,21 @@ Modüller: Identity, Tenancy, Catalog, Customers, Scheduling, Sales, Reviews, No
 - MediatR, AutoMapper, Hangfire, EF InMemory, SQLite kullanılmaz.
 
 ## Komutlar
+`dotnet test` komutları `api/` içinden çalışır: test platformu (Microsoft.Testing.Platform) ayarı `api/global.json`'dadır; depo kökünden çalıştırılırsa eski VSTest kipine düşer.
 ```bash
 docker compose up -d postgres                                  # kökten
-dotnet build api/Omvila.slnx -warnaserror
-dotnet test api/Omvila.slnx --filter "Category!=Integration"   # hızlı
-dotnet test api/Omvila.slnx                                    # tümü (Docker gerekir)
-dotnet format api/Omvila.slnx --verify-no-changes
-dotnet run --project api/src/Omvila.Host -- --role=all         # http://localhost:5080
-dotnet ef migrations add <YYYYMMDDHHmm_Ad> -p api/src/Modules/Scheduling/Omvila.Modules.Scheduling -c SchedulingDbContext -o Infrastructure/Migrations
-api/scripts/export-openapi.sh && oasdiff diff contracts/openapi.yaml api/artifacts/openapi.json --fail-on-diff
+cd api
+dotnet build Omvila.slnx -warnaserror
+dotnet test --solution Omvila.slnx --filter-not-trait "Category=Integration"   # hızlı
+dotnet test --solution Omvila.slnx                                             # tümü (Docker gerekir)
+dotnet format Omvila.slnx --verify-no-changes
+dotnet run --project src/Omvila.Host -- --role=all             # http://localhost:5080
+dotnet ef migrations add <YYYYMMDDHHmm_Ad> -p src/Modules/Scheduling/Omvila.Modules.Scheduling -c SchedulingDbContext -o Infrastructure/Migrations
+scripts/export-openapi.sh && oasdiff diff ../contracts/openapi.yaml artifacts/openapi.json --fail-on-diff
 ```
 
 ## Geliştirme verisi
 `dotnet run --project api/src/Omvila.Host -- seed` tasarım ekranlarındaki verileri kurar: Kuaför Elif (Kadıköy, Nişantaşı), personel Elif Kaya, Mert Demir, Zeynep Aksoy, Can Yücel; hizmetler Saç/Renk/Bakım/Tırnak; örnek müşteriler. Seed yalnız `Development` ortamında çalışır.
 
-## İlk kurulum işi (Dilim 1'in parçası)
-İskelet henüz yok. İlk PR: çözüm ve proje dosyaları, `SharedKernel` temel tipleri, `Infrastructure` (bağlantı + transaction + RLS ayarı + outbox tabloları), mimari test projesi (kurallar boş modüllerde bile koşar), `Omvila.Host` sağlık uçları, CI iş akışı. Ayrıntı: [dilim-01](../docs/dilimler/dilim-01-giris-ve-kurulum.md) § Teknik temel.
+## Analizör istisnaları
+`api/.editorconfig` kapatılan kuralları gerekçesiyle listeler (CA1716, CA1000, MA0008, MA0004; testlerde CA1707). Yeni istisna gerekçesiz eklenmez.
