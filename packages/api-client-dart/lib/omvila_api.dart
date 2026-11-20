@@ -46,6 +46,7 @@ export 'package:omvila_api/src/model/calendar_view_days_inner.dart';
 export 'package:omvila_api/src/model/calendar_view_days_inner_staff_hours_inner.dart';
 export 'package:omvila_api/src/model/calendar_view_staff_inner.dart';
 export 'package:omvila_api/src/model/cancellation_reason.dart';
+export 'package:omvila_api/src/model/customer_appointment_row.dart';
 export 'package:omvila_api/src/model/customer_cancel_request.dart';
 export 'package:omvila_api/src/model/customer_create.dart';
 export 'package:omvila_api/src/model/customer_summary.dart';
@@ -68,6 +69,7 @@ export 'package:omvila_api/src/model/manage_create_services_from_templates_reque
 export 'package:omvila_api/src/model/manage_create_services_from_templates_request_items_inner.dart';
 export 'package:omvila_api/src/model/manage_list_branch_overrides200_response.dart';
 export 'package:omvila_api/src/model/manage_list_branches200_response.dart';
+export 'package:omvila_api/src/model/manage_list_customer_appointments200_response.dart';
 export 'package:omvila_api/src/model/manage_list_customers200_response.dart';
 export 'package:omvila_api/src/model/manage_list_service_categories200_response.dart';
 export 'package:omvila_api/src/model/manage_list_service_templates200_response.dart';

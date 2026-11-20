@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 
 import 'package:omvila_api/src/model/customer_create.dart';
 import 'package:omvila_api/src/model/customer_summary.dart';
+import 'package:omvila_api/src/model/manage_list_customer_appointments200_response.dart';
 import 'package:omvila_api/src/model/manage_list_customers200_response.dart';
 import 'package:omvila_api/src/model/problem.dart';
 
@@ -187,6 +188,94 @@ _responseData = rawData == null ? null : deserialize<CustomerSummary, CustomerSu
     }
 
     return Response<CustomerSummary>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Müşteri kartı · Randevular sekmesi
+  /// MusteriKarti ekranı. Yeniden eskiye; tutar randevuya kopyalanan kalem fiyatlarının toplamıdır. Personel rolünde yalnız kendi randevuları döner. İzin: customer.view
+  ///
+  /// Parameters:
+  /// * [brandCustomerId] 
+  /// * [limit] 
+  /// * [cursor] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [ManageListCustomerAppointments200Response] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<ManageListCustomerAppointments200Response>> manageListCustomerAppointments({ 
+    required String brandCustomerId,
+    int? limit = 50,
+    String? cursor,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/customers/{brandCustomerId}/appointments'.replaceAll('{' r'brandCustomerId' '}', brandCustomerId.toString());
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (limit != null) r'limit': limit,
+      if (cursor != null) r'cursor': cursor,
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    ManageListCustomerAppointments200Response? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<ManageListCustomerAppointments200Response, ManageListCustomerAppointments200Response>(rawData, 'ManageListCustomerAppointments200Response', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<ManageListCustomerAppointments200Response>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

@@ -1108,6 +1108,33 @@ paths:
                 $ref: '#/components/schemas/CustomerSummary'
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /api/v1/manage/customers/{brandCustomerId}/appointments:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageListCustomerAppointments
+      summary: Müşteri kartı · Randevular sekmesi
+      description: "MusteriKarti ekranı. Yeniden eskiye; tutar randevuya kopyalanan kalem fiyatlarının toplamıdır. Personel rolünde yalnız kendi randevuları döner. İzin: customer.view"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Randevular
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/CustomerAppointmentRow' }
+                  nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
   # ───────────────────────────── manage-calendar ─────────────────────────────
   /api/v1/manage/calendar:
     get:
@@ -2484,6 +2511,25 @@ components:
           type: array
           items: { type: string, example: Düzenli }
         notes: { type: [string, 'null'] }
+    CustomerAppointmentRow:
+      type: object
+      description: Müşteri kartındaki randevu satırı ("21 Eki 14:00 · Fön · Elif · Tamamlandı · 450 ₺")
+      required: [appointmentId, branchId, startUtc, status, displayStatus, serviceNames, staffNames, total]
+      properties:
+        appointmentId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        startUtc: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        serviceNames:
+          type: array
+          items: { type: string }
+          example: [Boya, Fön]
+        staffNames:
+          type: array
+          items: { type: string }
+          example: [Elif Kaya]
+        total: { $ref: '#/components/schemas/Money' }
     CustomerCreate:
       type: object
       required: [fullName, phone]
