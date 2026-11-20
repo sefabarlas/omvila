@@ -1,14 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using NodaTime;
 using Npgsql;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
@@ -48,20 +44,10 @@ public sealed class HttpPipelineTests(PostgresFixture db) : IAsyncLifetime
             await command.ExecuteNonQueryAsync(Ct);
         }
 
-        var builder = WebApplication.CreateBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection(db.Settings());
-        builder.Services.AddSingleton<IClock>(TestClock.Create());
-        builder.Services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
-        builder.Services.AddOmvilaProblemDetails();
-        builder.Services.AddOmvilaInfrastructure(builder.Configuration);
-        builder.Services.AddUniqueConstraintError("ix_probe_phone", ErrorCodes.PhoneAlreadyExists);
-
-        _app = builder.Build();
-        _app.UseExceptionHandler();
-        _app.UseStatusCodePages();
-        MapProbeEndpoints(_app.MapApiGroup("/api/test"));
-        await _app.StartAsync(Ct);
+        _app = await TestApiHost.StartAsync(
+            db,
+            MapProbeEndpoints,
+            services => services.AddUniqueConstraintError("ix_probe_phone", ErrorCodes.PhoneAlreadyExists));
         _client = _app.GetTestClient();
     }
 

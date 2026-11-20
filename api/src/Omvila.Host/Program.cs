@@ -4,6 +4,7 @@ using NodaTime;
 using Omvila.Host;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
 using Omvila.SharedKernel;
 using Serilog;
@@ -49,6 +50,7 @@ if (args.Contains("migrate", StringComparer.Ordinal))
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseIdempotencyRequestBuffering();
 
 // Canlılık: süreç ayakta. Hazırlık: bağımlılıklar (veritabanı, outbox gecikmesi) "ready" etiketiyle eklenir.
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });

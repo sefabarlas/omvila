@@ -24,6 +24,49 @@ namespace Omvila.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Omvila.Infrastructure.Idempotency.IdempotencyRecord", b =>
+                {
+                    b.Property<string>("Scope")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid>("Key")
+                        .HasColumnType("uuid")
+                        .HasColumnName("key");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("location");
+
+                    b.Property<string>("RequestHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("request_hash");
+
+                    b.Property<string>("ResponseBody")
+                        .HasColumnType("text")
+                        .HasColumnName("response_body");
+
+                    b.Property<int>("StatusCode")
+                        .HasColumnType("integer")
+                        .HasColumnName("status_code");
+
+                    b.HasKey("Scope", "Key")
+                        .HasName("pk_idempotency_keys");
+
+                    b.HasIndex("CreatedUtc")
+                        .HasDatabaseName("ix_idempotency_keys_created_utc");
+
+                    b.ToTable("idempotency_keys", "infra");
+                });
+
             modelBuilder.Entity("Omvila.Infrastructure.Jobs.JobRun", b =>
                 {
                     b.Property<Guid>("Id")

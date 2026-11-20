@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
+using Npgsql;
+using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Jobs;
 using Omvila.TestKit;
 
@@ -55,11 +57,34 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
         (await runner.RunOnceAsync(typeof(BlockingJob), Ct)).ShouldBe(JobOutcome.Succeeded, "kilit bırakıldıktan sonra yeniden çalışır");
     }
 
+    [Fact]
+    public async Task Job_RunsInsidePlatformScopedTransaction()
+    {
+        var gate = new Gate();
+        await using var services = Services(gate);
+
+        (await Runner(services).RunOnceAsync(typeof(ScopeProbeJob), Ct)).ShouldBe(JobOutcome.Succeeded);
+
+        gate.ObservedPlatformSetting.ShouldBe("true");
+    }
+
+    [Fact]
+    public async Task FailingJob_RollsBackItsWrites()
+    {
+        await using var services = Services();
+
+        (await Runner(services).RunOnceAsync(typeof(WritingThenFailingJob), Ct)).ShouldBe(JobOutcome.Failed);
+
+        (await InfraTables.ScalarAsync<long>(db, "SELECT count(*) FROM infra.processed_events", Ct)).ShouldBe(0);
+    }
+
     private ServiceProvider Services(Gate? gate = null) => db.CreateServices(configure: services => services
         .AddSingleton(gate ?? new Gate())
         .AddPeriodicJob<SucceedingJob>()
         .AddPeriodicJob<FailingJob>()
-        .AddPeriodicJob<BlockingJob>());
+        .AddPeriodicJob<BlockingJob>()
+        .AddPeriodicJob<ScopeProbeJob>()
+        .AddPeriodicJob<WritingThenFailingJob>());
 
     private static JobRunner Runner(IServiceProvider services) => services.GetRequiredService<JobRunner>();
 
@@ -68,6 +93,39 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string? ObservedPlatformSetting { get; set; }
+    }
+
+    public sealed class ScopeProbeJob(IDbSession session, Gate gate) : IPeriodicJob
+    {
+        public string Key => "TestScopeProbeJob";
+
+        public Duration Interval => Duration.FromMinutes(1);
+
+        public async Task RunAsync(CancellationToken ct)
+        {
+            await using var command = new NpgsqlCommand(
+                "SELECT current_setting('app.is_platform', true)", session.Connection, session.Transaction);
+            gate.ObservedPlatformSetting = (string?)await command.ExecuteScalarAsync(ct);
+        }
+    }
+
+    public sealed class WritingThenFailingJob(IDbSession session) : IPeriodicJob
+    {
+        public string Key => "TestWritingThenFailingJob";
+
+        public Duration Interval => Duration.FromMinutes(1);
+
+        public async Task RunAsync(CancellationToken ct)
+        {
+            await using var command = new NpgsqlCommand(
+                "INSERT INTO infra.processed_events (event_id, handler, processed_utc) VALUES ('0193a8f0-0000-7000-8000-0000000000ff', 'probe', now())",
+                session.Connection,
+                session.Transaction);
+            await command.ExecuteNonQueryAsync(ct);
+            throw new InvalidOperationException("yazdıktan sonra hata");
+        }
     }
 
     public sealed class SucceedingJob : IPeriodicJob
