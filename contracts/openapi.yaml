@@ -3,6 +3,8 @@ info:
   title: OMVILA API
   version: 0.1.0
   summary: Randevu ve salon yönetimi platformu
+  license:
+    name: Tescilli (tüm hakları saklıdır)
   description: |
     OMVILA'nın tek HTTP sözleşmesi. Kurallar: docs/sozlesme/api-kurallari.md.
 
@@ -163,6 +165,7 @@ paths:
       security: [ { manageBearer: [] } ]
       responses:
         '204': { description: Kapatıldı }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   # ───────────────────────────── manage-session ─────────────────────────────
   /api/v1/manage/session:
@@ -567,6 +570,8 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/ServiceTemplate' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   /api/v1/manage/services/from-templates:
     post:
@@ -629,6 +634,7 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/ServiceCategory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [manage-catalog]
       operationId: manageCreateServiceCategory
@@ -697,6 +703,7 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/Service' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [manage-catalog]
       operationId: manageCreateService
@@ -827,6 +834,7 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/StaffSummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [manage-staff]
       operationId: manageCreateStaff
@@ -989,6 +997,8 @@ paths:
                   items:
                     type: array
                     items: { $ref: '#/components/schemas/TimeOff' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
     post:
       tags: [manage-staff]
       operationId: manageCreateTimeOff
@@ -1055,6 +1065,7 @@ paths:
                     type: array
                     items: { $ref: '#/components/schemas/CustomerSummary' }
                   nextCursor: { type: [string, 'null'] }
+        '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [manage-customers]
       operationId: manageCreateCustomer

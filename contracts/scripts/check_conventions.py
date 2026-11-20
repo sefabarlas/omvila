@@ -87,6 +87,8 @@ for path, item in doc["paths"].items():
         responses = op.get("responses", {})
         if not any(str(c)[0] in "23" for c in responses):
             errors.append(f"{oid}: başarı yanıtı yok")
+        if not any(str(c)[0] == "4" for c in responses):
+            errors.append(f"{oid}: en az bir 4xx yanıtı olmalı")
         for code, resp in responses.items():
             if str(code)[0] in "45" and "$ref" not in resp:
                 errors.append(f"{oid}: {code} yanıtı components/responses'a başvurmalı")
