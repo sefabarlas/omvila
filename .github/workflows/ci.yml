@@ -70,17 +70,24 @@ jobs:
         if: steps.guard.outputs.go == 'true'
         with:
           global-json-file: api/global.json
+      # Komutlar api/ içinden: test platformu ayarı (Microsoft.Testing.Platform) api/global.json'da.
       - name: Derleme (uyarı = hata)
         if: steps.guard.outputs.go == 'true'
-        run: dotnet build api/Omvila.slnx -warnaserror
+        working-directory: api
+        run: dotnet build Omvila.slnx -warnaserror
       - name: Biçim
         if: steps.guard.outputs.go == 'true'
-        run: dotnet format api/Omvila.slnx --verify-no-changes --no-restore
+        working-directory: api
+        run: dotnet format Omvila.slnx --verify-no-changes --no-restore
       # Alan, entegrasyon (Testcontainers; runner'da Docker var) ve mimari testler.
-      # Backend OpenAPI = sözleşme karşılaştırması Omvila.Host dışa aktarımı geldiğinde (PR-4) eklenir.
       - name: Testler
         if: steps.guard.outputs.go == 'true'
-        run: dotnet test api/Omvila.slnx --no-build
+        working-directory: api
+        run: dotnet test --solution Omvila.slnx --no-build
+      # Belge üretimi çalışıyor mu. Sözleşmeyle karşılaştırma (oasdiff diff) D1 uçları tamamlanınca açılır.
+      - name: OpenAPI dışa aktarımı
+        if: steps.guard.outputs.go == 'true'
+        run: api/scripts/export-openapi.sh
 
   web:
     needs: changes

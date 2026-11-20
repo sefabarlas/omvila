@@ -1,0 +1,17 @@
+# api/ analizör ayarları (kök .editorconfig'in üstüne). Kapatılan her kural gerekçelidir.
+
+[*.cs]
+# Yalnız C#: VB anahtar sözcüğü çakışması (Error, IIdGenerator.New) anlamsız; adlar belgelerde sabit.
+dotnet_diagnostic.CA1716.severity = none
+# Result<T>.Success/Failure gibi genel tipte statik fabrika bilinçli kalıp.
+dotnet_diagnostic.CA1000.severity = none
+# StructLayout önerisi: değer nesneleri birlikte çalışma (interop) için değil.
+dotnet_diagnostic.MA0008.severity = none
+
+[tests/**.cs]
+# Test adları belgelenmiş biçimde alt çizgili: Metot_Kosul_Beklenen (docs/standartlar/test-stratejisi.md § Adlandırma).
+dotnet_diagnostic.CA1707.severity = none
+
+[*.cs]
+# ASP.NET Core'da SynchronizationContext yok; ConfigureAwait(false) gürültü olur.
+dotnet_diagnostic.MA0004.severity = none

@@ -95,7 +95,7 @@ pnpm install                               # JS/TS bağımlılıkları (pnpm wor
 pnpm --filter @omvila/contracts lint       # sözleşme denetimi
 pnpm --filter @omvila/contracts generate   # TS + Dart istemcileri
 pnpm turbo build test lint                 # tüm web paketleri
-dotnet test api/Omvila.slnx                # backend testleri
+(cd api && dotnet test --solution Omvila.slnx)   # backend testleri
 melos bootstrap && melos run test          # Flutter paketleri
 ```
 Projeye özel komutlar ilgili `AGENTS.md`'dedir.

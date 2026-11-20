@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Omvila.SharedKernel\Omvila.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Omvila.Host\Omvila.Host.csproj" />
+    <!-- Yeni modüller kendiliğinden kapsanır. -->
+    <ProjectReference Include="..\..\src\Modules\**\*.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
+</Project>

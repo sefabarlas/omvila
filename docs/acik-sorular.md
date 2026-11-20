@@ -56,6 +56,8 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 | T-14 | "Oda veya cihaz" (ResourceType) uçları sözleşmede yok (HizmetEkle) (D1) | ✅ Dilim 1'de alan gizli; kaynak yönetimi ayrı bir dilimde. Kullanıcı onayı 2026-11-20 |
 | T-15 | `publicGetBrand` Dilim 2 ucu, ama Dilim 1 kabul kriteri 16 eski bağlantının 301 dönmesini istiyor | 🟡 Dilim 1'de uç yalnız slug çözümlemesini yapar (301 / 404); 200 gövdesi Dilim 2'de dolar |
 | T-16 | Personelin iki şubedeki saatleri çakışırsa hata kodu | 🟡 Yeni kod yok: `validation_failed` + alan hatası |
+| T-17 | Yabancı telefon numaraları (turist, yurt dışı müşteri) | 🟡 v1'de yalnız +90 numaraları kabul edilir (`PhoneNumber`); SMS maliyeti ve doğrulama Türkiye için. Gerekirse genel E.164 desteği eklenir |
+| T-18 | Sözleşmede genel sunucu hatası kodu yok; 500'de hangi `code` döner? | 🟡 Çerçevenin ürettiği 5xx yanıtları `try_again` kodunu taşır (istemci bir kez tekrar dener). Ayrı bir `internal_error` kodu gerekirse sözleşmeye eklenir |
 
 ## Hukuk (kod beklemez, metin bekler)
 - H-01 Randevu hatırlatması işlem mesajı mı (İYS dışı)? Varsayım: evet.
