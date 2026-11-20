@@ -178,6 +178,42 @@ namespace Omvila.Infrastructure.Persistence.Migrations
 
                     b.ToTable("processed_events", "infra");
                 });
+
+            modelBuilder.Entity("Omvila.Infrastructure.Sms.DevSmsMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<string>("PhoneE164")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phone_e164");
+
+                    b.Property<string>("Sender")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("sender");
+
+                    b.Property<Instant>("SentUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_dev_sms_log");
+
+                    b.HasIndex("PhoneE164", "SentUtc")
+                        .HasDatabaseName("ix_dev_sms_log_phone_e164_sent_utc");
+
+                    b.ToTable("dev_sms_log", "infra");
+                });
 #pragma warning restore 612, 618
         }
     }

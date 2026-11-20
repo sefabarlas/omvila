@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
+using Omvila.Infrastructure.Sms;
 
 namespace Omvila.Infrastructure.Persistence;
 
@@ -20,6 +21,8 @@ internal sealed class InfraDbContext(DbContextOptions<InfraDbContext> options) :
     public DbSet<JobRun> JobRuns => Set<JobRun>();
 
     public DbSet<IdempotencyRecord> IdempotencyKeys => Set<IdempotencyRecord>();
+
+    public DbSet<DevSmsMessage> DevSmsLog => Set<DevSmsMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

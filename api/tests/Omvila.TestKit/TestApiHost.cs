@@ -23,7 +23,7 @@ public static class TestApiHost
         Action<WebApplication>? configurePipeline = null,
         string? audience = null)
     {
-        var builder = WebApplication.CreateBuilder();
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Testing" });
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(db.Settings());
         builder.Services.AddSingleton<IClock>(TestClock.Create());

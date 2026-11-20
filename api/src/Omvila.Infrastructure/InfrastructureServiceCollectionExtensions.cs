@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Omvila.Infrastructure.Health;
 using Omvila.Infrastructure.Http;
@@ -12,6 +13,7 @@ using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
+using Omvila.Infrastructure.Sms;
 
 namespace Omvila.Infrastructure;
 
@@ -25,6 +27,9 @@ public static class InfrastructureServiceCollectionExtensions
 
     public static IServiceCollection AddOmvilaInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section));
+        services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
+
         // Veri kaynağı ilk kullanımda kurulur: OpenAPI belge üretimi gibi veritabanısız çalıştırmalar etkilenmez.
         // Bağlantılar bu veri kaynağından açılır ve DbContext'lere verilir: NodaTime eşlemesi burada da açık olmalı.
         services.AddSingleton(_ => new NpgsqlDataSourceBuilder(
@@ -58,6 +63,24 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
         return services;
+    }
+
+    // Sağlayıcı seçimi (T-03): şimdilik yalnız sahte sağlayıcı; o da yalnız Development ve test ortamında.
+    private static FakeSmsSender CreateSmsSender(IServiceProvider services)
+    {
+        var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SmsOptions>>().Value;
+        var environment = services.GetService<IHostEnvironment>();
+        if (!string.Equals(options.Provider, SmsOptions.FakeProvider, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Desteklenmeyen SMS sağlayıcısı: '{options.Provider}' (T-03 karar bekliyor).");
+        }
+
+        if (environment is not null && !environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
+        {
+            throw new InvalidOperationException("Sahte SMS sağlayıcısı yalnız Development ve Testing ortamında kullanılabilir.");
+        }
+
+        return ActivatorUtilities.CreateInstance<FakeSmsSender>(services);
     }
 
     /// <summary>Kayıtlı periyodik işleri zamanlar. Yalnız worker rolünde çağrılır.</summary>
