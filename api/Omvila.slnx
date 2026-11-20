@@ -13,6 +13,9 @@
     <Project Path="src/Modules/Notifications/Omvila.Modules.Notifications.Contracts/Omvila.Modules.Notifications.Contracts.csproj" />
     <Project Path="src/Modules/Notifications/Omvila.Modules.Notifications/Omvila.Modules.Notifications.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Tenancy/">
+    <Project Path="src/Modules/Tenancy/Omvila.Modules.Tenancy/Omvila.Modules.Tenancy.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Omvila.ArchitectureTests/Omvila.ArchitectureTests.csproj" />
     <Project Path="tests/Omvila.Host.Tests/Omvila.Host.Tests.csproj" />
@@ -22,6 +25,7 @@
     <Project Path="tests/Omvila.Modules.Identity.Tests/Omvila.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.IntegrationTests/Omvila.Modules.Notifications.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.Tests/Omvila.Modules.Notifications.Tests.csproj" />
+    <Project Path="tests/Omvila.Modules.Tenancy.Tests/Omvila.Modules.Tenancy.Tests.csproj" />
     <Project Path="tests/Omvila.SharedKernel.Tests/Omvila.SharedKernel.Tests.csproj" />
     <Project Path="tests/Omvila.TestKit/Omvila.TestKit.csproj" />
   </Folder>
