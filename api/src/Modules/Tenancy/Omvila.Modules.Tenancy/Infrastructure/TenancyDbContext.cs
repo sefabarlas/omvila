@@ -29,6 +29,8 @@ internal sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> option
 
     public DbSet<StaffWorkingHours> StaffHours => Set<StaffWorkingHours>();
 
+    public DbSet<TimeOff> TimeOffs => Set<TimeOff>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

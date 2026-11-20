@@ -41,27 +41,19 @@ public sealed class StaffTests
 
     [Fact]
     public void StaffHours_AtTwoBranchesOnDifferentDays_AreValid() =>
-        StaffHoursRules.CheckNoCrossBranchOverlap(new Dictionary<Guid, WeeklyHours>
-        {
-            [Kadikoy] = Hours(IsoDayOfWeek.Tuesday, (T(10), T(19))),
-            [Nisantasi] = Hours(IsoDayOfWeek.Monday, (T(10), T(19))),
-        }).IsSuccess.ShouldBeTrue();
+        StaffHoursRules.CheckAgainstOtherBranches(
+            [IsoDayOfWeek.Tuesday], Hours(IsoDayOfWeek.Tuesday, (T(10), T(19))), [Hours(IsoDayOfWeek.Monday, (T(10), T(19)))]).IsSuccess.ShouldBeTrue();
 
     [Fact]
-    public void StaffHours_OverlappingAcrossBranches_AreValidationFailed() =>
-        StaffHoursRules.CheckNoCrossBranchOverlap(new Dictionary<Guid, WeeklyHours>
-        {
-            [Kadikoy] = Hours(IsoDayOfWeek.Tuesday, (T(10), T(14))),
-            [Nisantasi] = Hours(IsoDayOfWeek.Tuesday, (T(13), T(19))),
-        }).Error!.FieldErrors["workingHours"].ShouldBe(["overlapping_branches"]);
+    public void StaffHours_OverlappingAcrossBranches_ReportsDayIndexPerContract() =>
+        StaffHoursRules.CheckAgainstOtherBranches(
+            [IsoDayOfWeek.Tuesday], Hours(IsoDayOfWeek.Tuesday, (T(10), T(14))), [Hours(IsoDayOfWeek.Tuesday, (T(13), T(19)))])
+            .Error!.FieldErrors["days[0].intervals"].ShouldBe(["overlaps_other_branch"]);
 
     [Fact]
     public void StaffHours_SameDayBackToBackAtTwoBranches_AreValid() =>
-        StaffHoursRules.CheckNoCrossBranchOverlap(new Dictionary<Guid, WeeklyHours>
-        {
-            [Kadikoy] = Hours(IsoDayOfWeek.Saturday, (T(9), T(13))),
-            [Nisantasi] = Hours(IsoDayOfWeek.Saturday, (T(14), T(18))),
-        }).IsSuccess.ShouldBeTrue();
+        StaffHoursRules.CheckAgainstOtherBranches(
+            [IsoDayOfWeek.Saturday], Hours(IsoDayOfWeek.Saturday, (T(9), T(13))), [Hours(IsoDayOfWeek.Saturday, (T(14), T(18)))]).IsSuccess.ShouldBeTrue();
 
     [Fact]
     public void StaffLimit_IsStrict_AndCarriesPlanLimitMeta()

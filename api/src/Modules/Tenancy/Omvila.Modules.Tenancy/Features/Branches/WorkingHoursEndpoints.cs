@@ -54,45 +54,14 @@ internal static class WorkingHoursEndpoints
             return Error.PreconditionFailed().ToProblem();
         }
 
-        var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
-        var days = body.Days ?? [];
-        if (body.Days is null)
-        {
-            errors["days"] = ["required"];
-        }
-        else if (days.Count > 7)
-        {
-            errors["days"] = ["too_long"];
-        }
-
-        var raw = new List<(IsoDayOfWeek, IReadOnlyList<(LocalTime, LocalTime)>)>();
-        for (var i = 0; i < days.Count && errors.Count == 0; i++)
-        {
-            if (days[i].DayOfWeek is < 1 or > 7)
-            {
-                errors[$"days[{i}].dayOfWeek"] = ["out_of_range"];
-                break;
-            }
-
-            if (TimeText.Parse(days[i].Intervals, $"days[{i}].intervals", errors) is { } intervals)
-            {
-                raw.Add(((IsoDayOfWeek)days[i].DayOfWeek, intervals));
-            }
-        }
-
-        if (errors.Count > 0)
-        {
-            return Error.Validation(errors).ToProblem();
-        }
-
-        var hours = WeeklyHours.Create(raw);
+        var hours = WeeklyHoursInput.Parse(body);
         if (!hours.IsSuccess)
         {
             return hours.Error.ToProblem();
         }
 
         await db.BranchHours.Where(h => h.BranchId == branchId).ExecuteDeleteAsync(ct);
-        db.BranchHours.AddRange(BranchWorkingHours.From(branch.BrandId, branchId, hours.Value, ids.New));
+        db.BranchHours.AddRange(BranchWorkingHours.From(branch.BrandId, branchId, hours.Value.Hours, ids.New));
         db.Entry(branch).State = EntityState.Modified;
         await db.SaveChangesAsync(ct);
 

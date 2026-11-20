@@ -31,6 +31,8 @@ internal static class StaffEndpoints
         group.MapGet("/{staffId:guid}", GetAsync).WithName("manageGetStaff").RequireAuthenticated(Audiences.Manage);
         group.MapPatch("/{staffId:guid}", (Guid staffId, JsonElement body, HttpContext http, StaffWriter writer, CancellationToken ct) => writer.UpdateAsync(staffId, new JsonBody(body), http, ct))
             .WithName("manageUpdateStaff").RequirePermission(Permissions.Staff.Manage).RequireIfMatch();
+        StaffScheduleEndpoints.Map(group);
+        TimeOffEndpoints.Map(group);
     }
 
     private static async Task<IResult> ListAsync(
