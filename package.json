@@ -18,6 +18,8 @@
     "inventory": "python3 scripts/gen_inventory.py design/ekranlar"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21",
+    "@commitlint/config-conventional": "^21",
     "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.15.0",
@@ -31,5 +33,10 @@
     "turbo": "^2.11",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.73"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "~5.9.3"
+    }
   }
 }
