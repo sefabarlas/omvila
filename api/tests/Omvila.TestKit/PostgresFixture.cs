@@ -80,6 +80,10 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Outbox:RetryMaxDelaySeconds"] = "3600",
             ["Idempotency:RetentionHours"] = "24",
             ["Idempotency:PurgeIntervalMinutes"] = "60",
+            ["Auth:Issuer"] = "omvila",
+            ["Auth:AccessTokenMinutes"] = "15",
+            ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
+            ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
         };
     }
 

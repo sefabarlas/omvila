@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Omvila.SharedKernel\Omvila.SharedKernel.csproj" />
     <ProjectReference Include="..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Identity\Omvila.Modules.Identity\Omvila.Modules.Identity.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Omvila.Host.Tests" />
