@@ -27,7 +27,9 @@ describe('giriş', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Bu bilgisayarda 30 gün hatırla' }));
     await userEvent.click(screen.getByRole('button', { name: 'Giriş yap' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Genel bakış' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' }),
+    ).toBeTruthy();
     expect(calls['/api/v1/manage/auth/otp/request']?.[0]).toEqual({
       phone: '+905324187705',
       purpose: 'Login',
@@ -83,7 +85,9 @@ describe('giriş', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'İşletmeyi oluştur' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Genel bakış' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' }),
+    ).toBeTruthy();
     expect(calls['/api/v1/manage/auth/signup']?.[0]).toEqual({
       signupToken: 'kayit-jetonu',
       businessName: 'Kuaför Elif',
@@ -95,7 +99,9 @@ describe('giriş', () => {
 
   it('oturumu süren kullanıcı girişten panele döner', async () => {
     renderApp('/giris');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Genel bakış' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' }),
+    ).toBeTruthy();
   });
 });
 
@@ -117,7 +123,9 @@ describe('kayıt', () => {
     await userEvent.keyboard('482193');
     await userEvent.click(screen.getByRole('button', { name: 'İşletmeyi oluştur' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Genel bakış' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Hoş geldiniz, Elif' }),
+    ).toBeTruthy();
     expect(calls['/api/v1/manage/auth/otp/request']?.[0]).toEqual({
       phone: '+905324187705',
       purpose: 'Signup',

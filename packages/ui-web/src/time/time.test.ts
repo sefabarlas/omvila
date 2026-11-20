@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { branchToday, daysBetween, fixedClock, toBranchDate } from './index';
+import { branchHour, branchToday, daysBetween, fixedClock, toBranchDate } from './index';
 
 // Kural: AGENTS.md § 5 — takvim günü şubenin saat diliminde; cihaz saat dilimi yok.
 it('gün şubenin saat dilimine göre', () => {
@@ -13,4 +13,9 @@ it('gün farkı', () => {
   expect(daysBetween('2026-11-25', '2026-12-09')).toBe(14);
   expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
   expect(daysBetween('2026-12-09', '2026-11-25')).toBe(-14);
+});
+
+it('şube saati', () => {
+  expect(branchHour(fixedClock('2026-11-25T06:30:00Z'), 'Europe/Istanbul')).toBe(9);
+  expect(branchHour(fixedClock('2026-11-25T21:30:00Z'), 'Europe/Istanbul')).toBe(0);
 });
