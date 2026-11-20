@@ -8,6 +8,8 @@ using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
+using Omvila.Modules.Platform;
+using Omvila.Modules.Platform.Infrastructure;
 using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
 using Serilog;
@@ -29,6 +31,7 @@ builder.Services.AddOmvilaInfrastructure(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddNotificationsModule(builder.Configuration);
 builder.Services.AddTenancyModule();
+builder.Services.AddPlatformModule(builder.Configuration);
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
@@ -46,11 +49,13 @@ builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((doc
 var app = builder.Build();
 
 // `dotnet run --project src/Omvila.Host -- migrate`: migration'ları migrator rolüyle uygular ve çıkar.
+// Platform:SeedPlans doluysa (yalnız geliştirme yapılandırması) planlar da eklenir (S-14).
 if (args.Contains("migrate", StringComparer.Ordinal))
 {
     var migrator = builder.Configuration.GetConnectionString(InfrastructureServiceCollectionExtensions.MigratorConnectionName)
         ?? throw new InvalidOperationException("ConnectionStrings:Migrator tanımlı değil.");
     await app.Services.GetRequiredService<MigrationRunner>().RunAsync(migrator, CancellationToken.None);
+    await app.Services.GetRequiredService<PlanSeeder>().SeedAsync(migrator, CancellationToken.None);
     return;
 }
 

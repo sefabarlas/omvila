@@ -7,6 +7,8 @@ using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
+using Omvila.Modules.Platform;
+using Omvila.Modules.Platform.Infrastructure;
 using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
 using Testcontainers.PostgreSql;
@@ -46,8 +48,10 @@ public sealed class PostgresFixture : IAsyncLifetime
         await using var services = CreateServices(configure: s => s
             .AddIdentityModule(configuration)
             .AddNotificationsModule(configuration)
-            .AddTenancyModule());
+            .AddTenancyModule()
+            .AddPlatformModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
+        await services.GetRequiredService<PlanSeeder>().SeedAsync(MigratorConnectionString, CancellationToken.None);
     }
 
     public ValueTask DisposeAsync() => _container.DisposeAsync();
@@ -107,6 +111,13 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Auth:Otp:MaxPerPhonePerHour"] = "5",
             ["Auth:Otp:MaxPerIpPerHour"] = "20",
             ["Auth:SignupTokenMinutes"] = "15",
+            ["Legal:TermsOfUseVersion"] = "2026-11-01",
+            ["Legal:PrivacyNoticeVersion"] = "2026-11-01",
+            ["Platform:TrialDays"] = "14",
+            ["Platform:TrialPlanCode"] = "salon_plus",
+            ["Platform:TrialCredits"] = "100",
+            ["Platform:SeedPlans:0:Code"] = "salon_plus",
+            ["Platform:SeedPlans:0:Name"] = "Salon Plus",
             ["Auth:Otp:HmacKey"] = TestSigningKey.OtpHmacKey,
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,

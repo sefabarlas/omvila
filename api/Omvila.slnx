@@ -16,6 +16,10 @@
     <Project Path="src/Modules/Notifications/Omvila.Modules.Notifications.Contracts/Omvila.Modules.Notifications.Contracts.csproj" />
     <Project Path="src/Modules/Notifications/Omvila.Modules.Notifications/Omvila.Modules.Notifications.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Platform/">
+    <Project Path="src/Modules/Platform/Omvila.Modules.Platform.Contracts/Omvila.Modules.Platform.Contracts.csproj" />
+    <Project Path="src/Modules/Platform/Omvila.Modules.Platform/Omvila.Modules.Platform.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Tenancy/">
     <Project Path="src/Modules/Tenancy/Omvila.Modules.Tenancy.Contracts/Omvila.Modules.Tenancy.Contracts.csproj" />
     <Project Path="src/Modules/Tenancy/Omvila.Modules.Tenancy/Omvila.Modules.Tenancy.csproj" />

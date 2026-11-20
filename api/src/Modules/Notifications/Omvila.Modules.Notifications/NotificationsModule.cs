@@ -18,6 +18,7 @@ public static class NotificationsModule
             .Validate(o => o.IsValid(), "Notifications ayarları eksik veya geçersiz (appsettings \"Notifications\").");
         services.AddModuleDbContext<NotificationsDbContext>(NotificationsDbContext.Schema);
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
+        services.AddScoped<ICreditLedger, CreditLedger>();
         services.AddPeriodicJob<DispatchNotifications>();
         return services;
     }
