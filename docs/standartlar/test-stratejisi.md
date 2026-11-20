@@ -53,8 +53,8 @@ Satır kapsama hedef değil, **kural kapsaması** hedeftir:
 ## Hızlı geri bildirim
 | Komut | Ne çalışır | Hedef süre |
 |---|---|---|
-| `dotnet test --filter Category!=Integration` | Alan + mimari | < 30 sn |
-| `dotnet test` | Hepsi (Testcontainers) | < 5 dk |
+| `dotnet test --solution Omvila.slnx --filter-not-trait "Category=Integration"` (api/ içinden) | Alan + mimari | < 30 sn |
+| `dotnet test --solution Omvila.slnx` (api/ içinden) | Hepsi (Testcontainers) | < 5 dk |
 | `pnpm turbo test --filter=...[origin/main]` | Değişen web paketleri | < 2 dk |
 | `melos run test` | Flutter paketleri | < 3 dk |
 
