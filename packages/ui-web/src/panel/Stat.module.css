@@ -1,0 +1,111 @@
+/* design/tasarim-sistemleri/panel/components/StatCard ve özet bento blokları. */
+.card,
+.block {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  box-shadow: var(--golge-sm);
+}
+
+.card {
+  gap: var(--bosluk-1-5);
+  padding: var(--bosluk-5);
+}
+
+.head,
+.label {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.value {
+  font-size: var(--yazi-metrik-boyut);
+  line-height: var(--yazi-metrik-satir);
+  font-weight: var(--yazi-metrik-agirlik);
+  letter-spacing: var(--yazi-metrik-harf);
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+}
+
+.delta {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  font-weight: 600;
+}
+
+.good {
+  color: var(--basari);
+}
+
+.bad {
+  color: var(--hata);
+}
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.block {
+  position: relative;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-5);
+  overflow: hidden;
+  text-decoration: none;
+}
+
+a.block:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.marka {
+  background: var(--blok-marka);
+  color: var(--metin-ters);
+  box-shadow: none;
+}
+
+.vurgu {
+  background: var(--blok-vurgu);
+  color: var(--blok-vurgu-metin);
+  box-shadow: none;
+}
+
+.kum {
+  background: var(--blok-kum);
+  color: var(--blok-kum-metin);
+  box-shadow: none;
+}
+
+.marka .label,
+.vurgu .label,
+.kum .label {
+  color: inherit;
+}
+
+.sub {
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  font-weight: 600;
+}
+
+@media (width <= 899px) {
+  .bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

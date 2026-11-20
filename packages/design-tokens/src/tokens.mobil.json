@@ -574,6 +574,22 @@
     "usage": "Avatar baş harfi, ton 3; `avatar-3-zemin` üzerinde."
    },
    {
+    "name": "sidebar-ikon-aktif",
+    "value": {
+     "light": "{mercan-300}",
+     "dark": "{mercan-300}"
+    },
+    "usage": "Kenar menüsünde etkin öğenin ikonu; `sidebar-secili` üzerinde."
+   },
+   {
+    "name": "blok-vurgu-metin",
+    "value": {
+     "light": "{gri-0}",
+     "dark": "{gri-0}"
+    },
+    "usage": "`blok-vurgu` özet bloğu üzerindeki metin."
+   },
+   {
     "name": "petrol-50",
     "value": "#EFF8F6",
     "usage": "Petrol rampası, 50 adımı. Doğrudan değil, semantik tokenlar üzerinden kullanılır."

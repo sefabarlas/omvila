@@ -1,0 +1,244 @@
+/* design/tasarim-sistemleri/panel/components/Sidebar: petrol zemin; 1199 px altında ikon şeridi (72 px). */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  box-sizing: border-box;
+  width: var(--sidebar-genislik);
+  min-height: 100%;
+  padding: var(--bosluk-4) var(--bosluk-3);
+  background: var(--sidebar-zemin);
+  color: var(--sidebar-metin);
+}
+
+.sidebar :focus-visible {
+  outline: 2px solid var(--odak-sidebar);
+  outline-offset: 1px;
+}
+
+.brand {
+  display: flex;
+  padding: var(--bosluk-1) var(--bosluk-2);
+}
+
+.brand img {
+  height: var(--bosluk-6);
+}
+
+.emblem {
+  display: none;
+}
+
+.branch {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.branchIcon,
+.branchChevron {
+  position: absolute;
+  display: flex;
+  color: var(--sidebar-metin-aktif);
+  pointer-events: none;
+}
+
+.branchIcon {
+  left: var(--bosluk-2);
+}
+
+.branchChevron {
+  right: var(--bosluk-2);
+}
+
+.branchSelect {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-8);
+  border: 1px solid var(--sidebar-cizgi);
+  border-radius: var(--kose-md);
+  background: var(--sidebar-hover);
+  color: var(--sidebar-metin-aktif);
+  font: inherit;
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  appearance: none;
+  cursor: pointer;
+}
+
+.groups {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.title {
+  padding: 0 var(--bosluk-2) var(--bosluk-1);
+  color: var(--sidebar-metin);
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-ust-etiket-satir);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.item {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-2);
+  border-radius: var(--kose-md);
+  color: var(--sidebar-metin);
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.item:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-metin-aktif);
+}
+
+.item[aria-current='page'] {
+  background: var(--sidebar-secili);
+  color: var(--sidebar-metin-aktif);
+}
+
+.icon {
+  display: flex;
+  flex: none;
+}
+
+.item[aria-current='page'] .icon {
+  color: var(--sidebar-ikon-aktif);
+}
+
+.count {
+  margin-left: auto;
+  padding: 0 var(--bosluk-1-5);
+  border-radius: var(--kose-tam);
+  background: var(--vurgu);
+  color: var(--vurgu-ustu);
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 600;
+}
+
+.user {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-2) 0;
+  border-top: 1px solid var(--sidebar-cizgi);
+}
+
+.userText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.userName {
+  color: var(--sidebar-metin-aktif);
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 600;
+}
+
+.userRole {
+  color: var(--sidebar-metin);
+  font-size: var(--yazi-aciklama-boyut);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (width <= 1199px) {
+  .sidebar {
+    align-items: center;
+    width: 72px;
+    padding: var(--bosluk-4) var(--bosluk-2);
+  }
+
+  .brand {
+    padding: var(--bosluk-1) 0;
+  }
+
+  .logo {
+    display: none;
+  }
+
+  .emblem {
+    display: block;
+  }
+
+  .title,
+  .label,
+  .userText,
+  .branchChevron {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .branchSelect {
+    width: 44px;
+    padding: 0;
+    color: transparent;
+  }
+
+  .branchIcon {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .item {
+    position: relative;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .count {
+    position: absolute;
+    top: var(--bosluk-0-5);
+    right: 0;
+    min-width: var(--bosluk-4);
+    margin: 0;
+    padding: 0 var(--bosluk-1);
+    text-align: center;
+  }
+
+  .user {
+    justify-content: center;
+    padding: var(--bosluk-3) 0 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .item {
+    min-height: 44px;
+  }
+}
