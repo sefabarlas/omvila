@@ -1,8 +1,8 @@
-# Ürün sahibinin onayı gereken alanlar. GitHub kullanıcı adınızı yazın.
+# Ürün sahibinin onayı gereken alanlar.
 # Biçim: <yol> <@kullanici>
-/contracts/            @OMVILA_URUN_SAHIBI
-/docs/urun/            @OMVILA_URUN_SAHIBI
-/docs/alan/            @OMVILA_URUN_SAHIBI
-/docs/mimari/          @OMVILA_URUN_SAHIBI
-/api/src/**/Migrations/ @OMVILA_URUN_SAHIBI
-/AGENTS.md             @OMVILA_URUN_SAHIBI
+/contracts/            @sefabarlas
+/docs/urun/            @sefabarlas
+/docs/alan/            @sefabarlas
+/docs/mimari/          @sefabarlas
+/api/src/**/Migrations/ @sefabarlas
+/AGENTS.md             @sefabarlas
