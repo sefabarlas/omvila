@@ -640,6 +640,64 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.TimeOff", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<Instant>("EndUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_utc");
+
+                    b.Property<bool>("IsAllDay")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_all_day");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_id");
+
+                    b.Property<Instant>("StartUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_utc");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_time_offs");
+
+                    b.HasIndex("StaffId")
+                        .HasDatabaseName("ix_time_offs_staff_id");
+
+                    b.HasIndex("BrandId", "StaffId", "StartUtc")
+                        .HasDatabaseName("ix_time_offs_brand_id_staff_id_start_utc");
+
+                    b.ToTable("time_offs", "tenancy", t =>
+                        {
+                            t.HasCheckConstraint("ck_time_offs_range", "start_utc < end_utc");
+
+                            t.HasCheckConstraint("ck_time_offs_type", "type IN ('Leave', 'Break', 'Training', 'Sick', 'Other')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.WorkingHoursOverride", b =>
                 {
                     b.Property<Guid>("Id")
@@ -795,6 +853,16 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_staff_working_hours_staff_branches_staff_branch_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.TimeOff", b =>
+                {
+                    b.HasOne("Omvila.Modules.Tenancy.Domain.Staff", null)
+                        .WithMany()
+                        .HasForeignKey("StaffId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_time_offs_staff_staff_id");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.WorkingHoursOverride", b =>

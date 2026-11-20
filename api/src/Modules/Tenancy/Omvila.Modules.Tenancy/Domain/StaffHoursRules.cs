@@ -1,3 +1,4 @@
+using NodaTime;
 using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Tenancy.Domain;
@@ -6,28 +7,30 @@ namespace Omvila.Modules.Tenancy.Domain;
 /// Personel saatleri (alan-modeli.md § StaffWorkingHours): bir personelin farklı şubelerdeki aralıkları aynı anda
 /// örtüşemez. Şubeler arası geçiş süresi burada değil, müsaitlikte uygulanır (musaitlik.md § 5).
 /// "İşletme saatleriyle aynı" şube saatlerinin kopyasıdır; bağ tutulmaz (dilim-01).
-/// Hata: validation_failed + workingHours alanı (acik-sorular.md T-16).
+/// Hata: validation_failed + days[n].intervals = overlaps_other_branch (sözleşme; acik-sorular.md T-16).
 /// </summary>
 internal static class StaffHoursRules
 {
-    public static Result CheckNoCrossBranchOverlap(IReadOnlyDictionary<Guid, WeeklyHours> hoursByBranch)
+    /// <summary>
+    /// Bir şubede kaydedilen saatleri personelin diğer şubelerdeki saatleriyle karşılaştırır. Sözleşme
+    /// (manageSetStaffWorkingHours): çakışan gün <c>days[n].intervals = overlaps_other_branch</c>; n istekteki sıradır.
+    /// </summary>
+    public static Result CheckAgainstOtherBranches(IReadOnlyList<IsoDayOfWeek> requestDays, WeeklyHours edited, IEnumerable<WeeklyHours> otherBranches)
     {
-        ArgumentNullException.ThrowIfNull(hoursByBranch);
-        var branches = hoursByBranch.ToList();
-        for (var a = 0; a < branches.Count; a++)
+        ArgumentNullException.ThrowIfNull(requestDays);
+        ArgumentNullException.ThrowIfNull(edited);
+        ArgumentNullException.ThrowIfNull(otherBranches);
+        var others = otherBranches.ToList();
+        var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        for (var n = 0; n < requestDays.Count; n++)
         {
-            for (var b = a + 1; b < branches.Count; b++)
+            var intervals = edited.Days[requestDays[n]];
+            if (others.Exists(o => o.Days.TryGetValue(requestDays[n], out var other) && intervals.Any(i => other.Any(i.Overlaps))))
             {
-                foreach (var (day, intervals) in branches[a].Value.Days)
-                {
-                    if (branches[b].Value.Days.TryGetValue(day, out var other) && intervals.Any(i => other.Any(i.Overlaps)))
-                    {
-                        return Error.Validation("workingHours", "overlapping_branches");
-                    }
-                }
+                errors[$"days[{n}].intervals"] = ["overlaps_other_branch"];
             }
         }
 
-        return Result.Success();
+        return errors.Count > 0 ? Error.Validation(errors) : Result.Success();
     }
 }
