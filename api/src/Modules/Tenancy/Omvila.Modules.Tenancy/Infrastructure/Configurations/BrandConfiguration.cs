@@ -29,7 +29,7 @@ internal sealed class BrandConfiguration : IEntityTypeConfiguration<Brand>
         builder.Property(x => x.Website).HasMaxLength(200);
         builder.Property(x => x.LegalName).HasMaxLength(200);
         builder.Property(x => x.TaxOffice).HasMaxLength(100);
-        builder.Property(x => x.TaxNumber).HasMaxLength(11);
+        builder.Property(x => x.TaxNumber).HasMaxLength(20);
         builder.Property(x => x.DefaultCurrencyCode).HasMaxLength(3).IsFixedLength();
         builder.Property(x => x.Version).IsRowVersion();
         // Güncel bağlantı adı bütün markalar arasında tektir (yönlendirmesi süren eski adlar SlugAvailability'de).

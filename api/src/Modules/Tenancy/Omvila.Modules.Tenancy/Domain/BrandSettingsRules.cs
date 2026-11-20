@@ -1,0 +1,57 @@
+namespace Omvila.Modules.Tenancy.Domain;
+
+/// <summary>
+/// Ayar aralıkları (sözleşme BrandSettings; sureler-ve-ayarlar.md). Alan yolu → hata kodu döner; boşsa geçerlidir.
+/// </summary>
+internal static class BrandSettingsRules
+{
+    private static readonly int[] ApprovalTimeouts = [30, 60, 120, 240];
+    private static readonly int[] SlotIntervals = [5, 10, 15];
+    private static readonly string[] DepositPolicies = ["None", "RiskyCustomersOnly", "Always"];
+
+    public static Dictionary<string, string[]> Validate(BrandSettingsValues v)
+    {
+        ArgumentNullException.ThrowIfNull(v);
+        var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        void Range(string field, int value, int min, int max)
+        {
+            if (value < min || value > max)
+            {
+                errors[field] = ["out_of_range"];
+            }
+        }
+
+        if (!ApprovalTimeouts.Contains(v.ApprovalTimeoutMinutes))
+        {
+            errors["approvalTimeoutMinutes"] = ["out_of_range"];
+        }
+
+        Range("cancellationCutoffHours", v.CancellationCutoffHours, 0, 168);
+        Range("rescheduleCutoffHours", v.RescheduleCutoffHours, 0, 168);
+        Range("noShowAfterMinutes", v.NoShowAfterMinutes, 5, 120);
+        Range("minNoticeMinutes", v.MinNoticeMinutes, 0, 10080);
+        Range("maxAdvanceDays", v.MaxAdvanceDays, 1, 365);
+        if (!SlotIntervals.Contains(v.SlotIntervalMinutes))
+        {
+            errors["slotIntervalMinutes"] = ["out_of_range"];
+        }
+
+        Range("defaultBranchTransferMinutes", v.DefaultBranchTransferMinutes, 0, 240);
+        if (!DepositPolicies.Contains(v.DepositPolicy, StringComparer.Ordinal))
+        {
+            errors["depositPolicy"] = ["invalid_format"];
+        }
+
+        Range("riskyCustomerNoShowThreshold", v.RiskyCustomerNoShowThreshold, 1, 10);
+        if (v.ReminderOffsetsMinutes.Count > 3)
+        {
+            errors["reminderOffsetsMinutes"] = ["too_long"];
+        }
+        else if (v.ReminderOffsetsMinutes.Any(m => m is < 30 or > 4320))
+        {
+            errors["reminderOffsetsMinutes"] = ["out_of_range"];
+        }
+
+        return errors;
+    }
+}

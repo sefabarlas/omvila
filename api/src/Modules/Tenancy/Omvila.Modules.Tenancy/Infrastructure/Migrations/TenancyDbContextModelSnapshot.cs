@@ -242,8 +242,8 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .HasColumnName("status");
 
                     b.Property<string>("TaxNumber")
-                        .HasMaxLength(11)
-                        .HasColumnType("character varying(11)")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("tax_number");
 
                     b.Property<string>("TaxOffice")

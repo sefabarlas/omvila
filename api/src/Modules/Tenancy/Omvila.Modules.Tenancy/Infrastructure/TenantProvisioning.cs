@@ -1,6 +1,4 @@
-using Microsoft.EntityFrameworkCore;
 using NodaTime;
-using Npgsql;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.Modules.Tenancy.Domain;
@@ -13,13 +11,11 @@ namespace Omvila.Modules.Tenancy.Infrastructure;
 /// platform bağlamında okunur ve aynı anda gelen kayıtlar işlem kilidiyle sıraya girer (aynı ad iki markaya verilmez).
 /// Satırlar yeni markanın kiracı bağlamında eklenir; RLS bu bağlamın dışına yazmayı engeller.
 /// </summary>
-internal sealed class TenantProvisioning(TenancyDbContext db, IDbSession session, IIdGenerator ids, IClock clock) : ITenantProvisioning
+internal sealed class TenantProvisioning(TenancyDbContext db, IDbSession session, SlugRegistry slugs, IIdGenerator ids, IClock clock) : ITenantProvisioning
 {
     // S-27: sahip personelinin varsayılan takvim rengi. Takvim rengi personel verisidir (sözleşme calendarColor),
     // tasarım tokenı değildir; sahip personel düzenleme ekranından değiştirebilir.
     internal const string OwnerCalendarColor = "#0F6E5C";
-
-    private const string SlugLockKey = "tenancy:brand-slug";
 
     public async Task<ProvisionedTenant> ProvisionBrandAsync(
         string businessName, string industryCode, Guid ownerUserId, string? ownerFullName, CancellationToken ct)
@@ -61,27 +57,11 @@ internal sealed class TenantProvisioning(TenancyDbContext db, IDbSession session
 
     private async Task<Slug> ReserveSlugAsync(string businessName, Instant now, CancellationToken ct)
     {
-        await session.SetTenantAsync(TenantScope.Platform, ct);
-        await using (var command = new NpgsqlCommand(
-            "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", session.Connection, session.Transaction))
-        {
-            command.Parameters.Add(new NpgsqlParameter { Value = SlugLockKey });
-            await command.ExecuteNonQueryAsync(ct);
-        }
+        await slugs.LockAsync(ct);
 
-        // Kilit transaction sonuna kadar tutulur; ReadCommitted'da sonraki sorgu önceki kaydın commit'ini görür.
         // Yalnız tabanla başlayan adlar okunur. 60 karaktere yakın tabanda "-n" adayı kısaltılmış tabandan üretilir;
         // o uç durumda tek ad dizini (ix_brands_slug) ikinci kaydı reddeder.
-        var prefix = SlugGenerator.BaseFrom(businessName);
-        var current = await db.Brands.AsNoTracking()
-            .Where(b => b.Slug.StartsWith(prefix))
-            .Select(b => b.Slug)
-            .ToListAsync(ct);
-        var redirecting = await db.SlugHistory.AsNoTracking()
-            .Where(h => h.Slug.StartsWith(prefix) && h.RedirectExpiresUtc > now)
-            .Select(h => h.Slug)
-            .ToListAsync(ct);
-        var taken = current.Concat(redirecting).ToHashSet(StringComparer.Ordinal);
+        var taken = await slugs.TakenWithPrefixAsync(SlugGenerator.BaseFrom(businessName), now, ct);
         return SlugGenerator.FirstAvailable(businessName, taken.Contains);
     }
 }

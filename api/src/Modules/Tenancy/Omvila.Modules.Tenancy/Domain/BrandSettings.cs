@@ -44,6 +44,28 @@ internal sealed class BrandSettings
 
     public bool ReviewInviteEnabled { get; private set; }
 
+    /// <summary>Doğrulanmış değerleri uygular (BrandSettingsRules). Hatırlatmalar büyükten küçüğe, tekrarsız saklanır.</summary>
+    public void Apply(BrandSettingsValues v)
+    {
+        ArgumentNullException.ThrowIfNull(v);
+        RequiresApproval = v.RequiresApproval;
+        ApprovalTimeoutMinutes = v.ApprovalTimeoutMinutes;
+        AllowStaffSelection = v.AllowStaffSelection;
+        AllowAnyStaffOption = v.AllowAnyStaffOption;
+        CancellationCutoffHours = v.CancellationCutoffHours;
+        RescheduleCutoffHours = v.RescheduleCutoffHours;
+        NoShowAfterMinutes = v.NoShowAfterMinutes;
+        MinNoticeMinutes = v.MinNoticeMinutes;
+        MaxAdvanceDays = v.MaxAdvanceDays;
+        SlotIntervalMinutes = v.SlotIntervalMinutes;
+        DefaultBranchTransferMinutes = v.DefaultBranchTransferMinutes;
+        DepositPolicy = v.DepositPolicy;
+        RiskyCustomerNoShowThreshold = v.RiskyCustomerNoShowThreshold;
+        MaskCustomerPhoneFromStaff = v.MaskCustomerPhoneFromStaff;
+        ReminderOffsetsMinutes = [.. v.ReminderOffsetsMinutes.Distinct().OrderDescending()];
+        ReviewInviteEnabled = v.ReviewInviteEnabled;
+    }
+
     /// <summary>Kayıtta oluşan ayarlar: sureler-ve-ayarlar.md varsayılanları birebir.</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }
