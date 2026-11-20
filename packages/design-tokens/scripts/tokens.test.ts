@@ -39,6 +39,10 @@ const textPairs: [string, string][] = [
   ['sidebar-metin-aktif', 'sidebar-zemin'],
   ['sidebar-metin-aktif', 'sidebar-secili'],
   ...['basari', 'uyari', 'hata', 'bilgi'].map((s): [string, string] => [s, `${s}-zemin`]),
+  ...[1, 2, 3].map((n): [string, string] => [
+    `avatar-${String(n)}-metin`,
+    `avatar-${String(n)}-zemin`,
+  ]),
 ];
 
 function luminance(hex: string): number {

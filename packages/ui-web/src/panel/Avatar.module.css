@@ -1,0 +1,48 @@
+/* design/tasarim-sistemleri/panel/components/Avatar. Tonlar anlam taşımaz (avatar-1..3 semantik tokenları). */
+.avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--kose-tam);
+  font-weight: 600;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sm {
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  font-size: var(--yazi-ust-etiket-boyut);
+}
+
+.md {
+  width: var(--kontrol-md);
+  height: var(--kontrol-md);
+  font-size: var(--yazi-etiket-boyut);
+}
+
+.lg {
+  width: var(--bosluk-12);
+  height: var(--bosluk-12);
+  font-size: var(--yazi-kart-basligi-boyut);
+}
+
+.t0 {
+  background: var(--avatar-1-zemin);
+  color: var(--avatar-1-metin);
+}
+
+.t1 {
+  background: var(--avatar-2-zemin);
+  color: var(--avatar-2-metin);
+}
+
+.t2 {
+  background: var(--avatar-3-zemin);
+  color: var(--avatar-3-metin);
+}

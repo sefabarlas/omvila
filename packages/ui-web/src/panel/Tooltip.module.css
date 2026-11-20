@@ -1,0 +1,36 @@
+/* design/tasarim-sistemleri/panel/components/Tooltip. */
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bubble {
+  position: absolute;
+  bottom: calc(100% + var(--bosluk-2));
+  left: 50%;
+  z-index: 40;
+  padding: var(--bosluk-1-5) var(--bosluk-2);
+  border-radius: var(--kose-sm);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--golge-md);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+.wrap:hover .bubble,
+.wrap:focus-within .bubble {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    transition: none;
+  }
+}

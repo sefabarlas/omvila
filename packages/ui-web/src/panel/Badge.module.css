@@ -12,6 +12,10 @@
   white-space: nowrap;
 }
 
+.badge > span[aria-hidden='true'] {
+  display: inline-flex;
+}
+
 .dot {
   flex: none;
   width: 6px;

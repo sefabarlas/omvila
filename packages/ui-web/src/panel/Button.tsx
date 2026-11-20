@@ -29,8 +29,10 @@ export function Button({
   className,
   disabled,
   children,
+  onClick,
   ...rest
 }: ButtonProps) {
+  // Yüklenirken buton rengini korur (tasarım), tıklama yok sayılır; ekran okuyucuya meşgul ve devre dışı bildirilir.
   return (
     <button
       type={type}
@@ -40,8 +42,10 @@ export function Button({
         size !== 'md' && styles[size],
         className,
       )}
-      disabled={disabled === true || loading}
+      disabled={disabled}
       aria-busy={loading || undefined}
+      aria-disabled={loading || undefined}
+      onClick={loading ? undefined : onClick}
       {...rest}
     >
       {loading ? <span className={styles.spinner} aria-hidden="true" /> : icon}

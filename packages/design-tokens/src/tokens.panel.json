@@ -526,6 +526,54 @@
     "usage": "Randevu durumu: İptal. Durum noktası ve takvim bloğunun üst şeridi; her zaman durum adıyla birlikte."
    },
    {
+    "name": "avatar-1-zemin",
+    "value": {
+     "light": "{petrol-100}",
+     "dark": "{petrol-800}"
+    },
+    "usage": "Avatar baş harf zemini, ton 1 (anlam taşımaz)."
+   },
+   {
+    "name": "avatar-1-metin",
+    "value": {
+     "light": "{petrol-800}",
+     "dark": "{petrol-100}"
+    },
+    "usage": "Avatar baş harfi, ton 1; `avatar-1-zemin` üzerinde."
+   },
+   {
+    "name": "avatar-2-zemin",
+    "value": {
+     "light": "{kum-200}",
+     "dark": "{kum-800}"
+    },
+    "usage": "Avatar baş harf zemini, ton 2."
+   },
+   {
+    "name": "avatar-2-metin",
+    "value": {
+     "light": "{kum-800}",
+     "dark": "{kum-200}"
+    },
+    "usage": "Avatar baş harfi, ton 2; `avatar-2-zemin` üzerinde."
+   },
+   {
+    "name": "avatar-3-zemin",
+    "value": {
+     "light": "{mercan-100}",
+     "dark": "{mercan-800}"
+    },
+    "usage": "Avatar baş harf zemini, ton 3."
+   },
+   {
+    "name": "avatar-3-metin",
+    "value": {
+     "light": "{mercan-800}",
+     "dark": "{mercan-100}"
+    },
+    "usage": "Avatar baş harfi, ton 3; `avatar-3-zemin` üzerinde."
+   },
+   {
     "name": "petrol-50",
     "value": "#EFF8F6",
     "usage": "Petrol rampası, 50 adımı. Doğrudan değil, semantik tokenlar üzerinden kullanılır."
