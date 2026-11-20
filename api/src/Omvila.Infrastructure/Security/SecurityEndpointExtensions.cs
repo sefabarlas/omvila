@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
@@ -11,4 +12,10 @@ public static class SecurityEndpointExtensions
             .WithMetadata(new PermissionMetadata(permission))
             .RequireAuthorization(policy => policy.AddRequirements(new PermissionRequirement(permission)))
             .ProducesProblem(StatusCodes.Status403Forbidden);
+
+    /// <summary>Uç yalnız o yüzeyin geçerli oturumunu ister (izin gerektirmeyen işlemler, ör. çıkış).</summary>
+    public static RouteHandlerBuilder RequireAuthenticated(this RouteHandlerBuilder builder, string audience) =>
+        builder
+            .WithMetadata(new AuthenticatedOnlyMetadata(audience))
+            .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = audience });
 }

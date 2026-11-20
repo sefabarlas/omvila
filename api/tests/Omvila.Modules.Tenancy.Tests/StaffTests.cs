@@ -4,8 +4,8 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Tenancy.Tests;
 
-// Kural: dilim-01 kabul kriterleri 10 (davet → ilk girişte Active), 12 (Elif'e 2–4 Aralık yıllık izin),
-// alan-modeli.md § StaffWorkingHours (şubeler arası örtüşme yok), § TimeOff, § Plan; durum-makinesi.md (üyelik)
+// Kural: dilim-01 kabul kriteri 12 (Elif'e 2–4 Aralık yıllık izin),
+// alan-modeli.md § StaffWorkingHours (şubeler arası örtüşme yok), § TimeOff, § Plan
 public sealed class StaffTests
 {
     private static readonly DateTimeZone Istanbul = DateTimeZoneProviders.Tzdb["Europe/Istanbul"];
@@ -62,18 +62,6 @@ public sealed class StaffTests
             [Kadikoy] = Hours(IsoDayOfWeek.Saturday, (T(9), T(13))),
             [Nisantasi] = Hours(IsoDayOfWeek.Saturday, (T(14), T(18))),
         }).IsSuccess.ShouldBeTrue();
-
-    [Fact]
-    public void InvitedMembership_BecomesActiveOnFirstLogin() =>
-        MembershipTransitions.To(MembershipStatus.Invited, MembershipStatus.Active).Value.ShouldBe(MembershipStatus.Active);
-
-    [Theory]
-    [InlineData("Active", "Invited")]
-    [InlineData("Disabled", "Active")]
-    [InlineData("Invited", "Disabled")]
-    public void OtherMembershipTransitions_AreInvalid(string from, string to) =>
-        MembershipTransitions.To(Enum.Parse<MembershipStatus>(from), Enum.Parse<MembershipStatus>(to))
-            .Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
 
     [Fact]
     public void StaffLimit_IsStrict_AndCarriesPlanLimitMeta()

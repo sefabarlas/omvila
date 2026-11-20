@@ -20,9 +20,12 @@ public sealed class OtpOptions
 
     public int MaxPerPhonePerHour { get; set; }
 
+    /// <summary>IP başına saatlik OTP isteği sınırı (ADR-0007: "ayrıca IP başına sınır"; değer belgede yok, A-01).</summary>
+    public int MaxPerIpPerHour { get; set; }
+
     /// <summary>Base64, en az 32 bayt. Development'ta yoksa geçici anahtar üretilir.</summary>
     public string HmacKey { get; set; } = string.Empty;
 
     internal bool IsValid() =>
-        Length is >= 4 and <= 8 && TtlSeconds > 0 && ResendCooldownSeconds > 0 && MaxAttempts > 0 && LockoutMinutes > 0 && MaxPerPhonePerHour > 0;
+        Length is >= 4 and <= 8 && TtlSeconds > 0 && ResendCooldownSeconds > 0 && MaxAttempts > 0 && LockoutMinutes > 0 && MaxPerPhonePerHour > 0 && MaxPerIpPerHour > 0;
 }

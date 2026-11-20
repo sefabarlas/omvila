@@ -11,6 +11,10 @@ internal sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> opti
 
     public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
 
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<UserMembership> Memberships => Set<UserMembership>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

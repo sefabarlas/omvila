@@ -150,6 +150,123 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')");
                         });
                 });
+
+            modelBuilder.Entity("Omvila.Modules.Identity.Domain.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("FullName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("full_name");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("language_code");
+
+                    b.Property<Instant?>("LastLoginUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_login_utc");
+
+                    b.Property<string>("PhoneE164")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("phone_e164");
+
+                    b.HasKey("Id")
+                        .HasName("pk_users");
+
+                    b.HasIndex("PhoneE164")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_phone_e164");
+
+                    b.ToTable("users", "identity");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Identity.Domain.UserMembership", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Instant?>("ActivatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("activated_utc");
+
+                    b.PrimitiveCollection<Guid[]>("BranchIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("branch_ids");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
+                    b.Property<Guid?>("StaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_user_memberships");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_memberships_user_id");
+
+                    b.HasIndex("BrandId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_user_memberships_brand_id_user_id");
+
+                    b.ToTable("user_memberships", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_user_memberships_role", "role IN ('Owner', 'BranchManager', 'Staff')");
+
+                            t.HasCheckConstraint("ck_user_memberships_status", "status IN ('Invited', 'Active', 'Disabled')");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Identity.Domain.UserMembership", b =>
+                {
+                    b.HasOne("Omvila.Modules.Identity.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_memberships_users_user_id");
+                });
 #pragma warning restore 612, 618
         }
     }

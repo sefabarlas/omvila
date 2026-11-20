@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using System.Text.Json.Serialization;
+using NodaTime;
+using NodaTime.Serialization.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +30,13 @@ public static class InfrastructureServiceCollectionExtensions
 
     public static IServiceCollection AddOmvilaInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        // Sözleşme JSON'u: camelCase, enum metin (PascalCase), boş isteğe bağlı alan yazılmaz, NodaTime tipleri.
+        services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+        });
         services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section));
         services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
 
@@ -83,6 +93,12 @@ public static class InfrastructureServiceCollectionExtensions
         return ActivatorUtilities.CreateInstance<FakeSmsSender>(services);
     }
 
+    /// <summary>
+    /// API uçlarının veritabanı oturumu. UseAuthentication ve UseAuthorization'dan sonra, uçlardan önce çağrılır.
+    /// </summary>
+    public static IApplicationBuilder UseOmvilaDbSession(this IApplicationBuilder app) =>
+        app.UseMiddleware<DbSessionMiddleware>();
+
     /// <summary>Kayıtlı periyodik işleri zamanlar. Yalnız worker rolünde çağrılır.</summary>
     public static IServiceCollection AddOmvilaWorker(this IServiceCollection services) =>
         services.AddHostedService<JobHostedService>();
@@ -94,6 +110,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static RouteGroupBuilder MapApiGroup(this IEndpointRouteBuilder endpoints, string prefix, string? audience = null)
     {
         var group = endpoints.MapGroup(prefix);
+        group.WithMetadata(new TransactionalEndpointMetadata());
         group.AddEndpointFilter<TransactionEndpointFilter>();
         if (audience is not null)
         {

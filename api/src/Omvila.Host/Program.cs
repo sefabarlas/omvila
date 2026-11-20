@@ -57,6 +57,8 @@ app.UseStatusCodePages();
 app.UseIdempotencyRequestBuffering();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
+app.UseOmvilaDbSession();
 
 // Canlılık: süreç ayakta. Hazırlık: bağımlılıklar (veritabanı, outbox gecikmesi) "ready" etiketiyle eklenir.
 app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
@@ -65,6 +67,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions { Predicate = check 
 if (role.HasFlag(HostRole.Api))
 {
     app.MapOpenApi("/openapi/{documentName}.json");
+    app.MapIdentityEndpoints();
 }
 
 HostLog.Started(app.Logger, role);

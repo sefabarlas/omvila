@@ -73,13 +73,18 @@ internal sealed class OtpService(
         return new OtpIssued(challenge.Id, settings.TtlSeconds, settings.ResendCooldownSeconds, phone.Masked);
     }
 
-    public async Task<Result<VerifiedOtp>> VerifyAsync(Guid otpId, string code, OtpPurpose purpose, CancellationToken ct)
+    public Task<Result<VerifiedOtp>> VerifyAsync(Guid otpId, string code, OtpPurpose purpose, CancellationToken ct) =>
+        VerifyAsync(otpId, code, [purpose], ct);
+
+    /// <summary>Kodun amacı istekte yoksa (manageVerifyOtp) izin verilen amaçlardan biri olmalıdır.</summary>
+    public async Task<Result<VerifiedOtp>> VerifyAsync(Guid otpId, string code, IReadOnlyCollection<OtpPurpose> allowedPurposes, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(allowedPurposes);
         var settings = options.Value;
         var now = clock.GetCurrentInstant();
         var challenge = await db.OtpChallenges.AsNoTracking().SingleOrDefaultAsync(c => c.Id == otpId, ct);
-        if (challenge is null || challenge.Purpose != purpose || challenge.ConsumedUtc is not null)
+        if (challenge is null || !allowedPurposes.Contains(challenge.Purpose) || challenge.ConsumedUtc is not null)
         {
             return Error.Unprocessable(ErrorCodes.OtpInvalid);
         }
@@ -94,6 +99,7 @@ internal sealed class OtpService(
             return Error.Unprocessable(ErrorCodes.OtpExpired);
         }
 
+        var purpose = challenge.Purpose;
         if (!hasher.Matches(challenge.CodeHash, purpose, challenge.PhoneE164, code))
         {
             var attempts = await RecordFailedAttemptAsync(challenge.Id, now, ct);

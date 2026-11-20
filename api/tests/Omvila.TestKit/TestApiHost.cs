@@ -37,6 +37,7 @@ public static class TestApiHost
         app.UseStatusCodePages();
         app.UseIdempotencyRequestBuffering();
         configurePipeline?.Invoke(app);
+        app.UseOmvilaDbSession();
         mapEndpoints(app.MapApiGroup("/api/test", audience));
         await app.StartAsync(TestContext.Current.CancellationToken);
         return app;

@@ -1,0 +1,45 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Omvila.Modules.Identity.Security;
+using Omvila.SharedKernel;
+
+namespace Omvila.Modules.Identity.Features.ManageAuth;
+
+/// <summary>
+/// OTP isteği için IP başına sınır (ADR-0007; telefon başına sınır OtpService'te). Aşımda 429 rate_limited +
+/// Retry-After. Ters vekil arkasında istemci IP'si ForwardedHeaders ile gelmelidir (barındırma kararı T-07).
+/// </summary>
+internal static class OtpRateLimiting
+{
+    public static IServiceCollection AddOtpRateLimiting(this IServiceCollection services) =>
+        services.AddRateLimiter(options =>
+        {
+            options.AddPolicy(ManageAuthEndpoints.OtpRateLimitPolicy, http =>
+            {
+                var settings = http.RequestServices.GetRequiredService<IOptions<OtpOptions>>().Value;
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.MaxPerIpPerHour, Window = TimeSpan.FromHours(1), QueueLimit = 0 });
+            });
+            options.OnRejected = async (context, ct) =>
+            {
+                var http = context.HttpContext;
+                http.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    http.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+
+                await http.RequestServices.GetRequiredService<IProblemDetailsService>().WriteAsync(new ProblemDetailsContext
+                {
+                    HttpContext = http,
+                    ProblemDetails = new ProblemDetails { Status = StatusCodes.Status429TooManyRequests, Extensions = { ["code"] = ErrorCodes.RateLimited } },
+                });
+            };
+        });
+}
