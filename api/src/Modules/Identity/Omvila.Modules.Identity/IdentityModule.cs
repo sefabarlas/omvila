@@ -8,6 +8,7 @@ using NodaTime;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
 using Omvila.Modules.Identity.Features.ManageAuth;
+using Omvila.Modules.Identity.Features.ManageSession;
 using Omvila.Modules.Identity.Infrastructure;
 using Omvila.Modules.Identity.Security;
 
@@ -54,10 +55,11 @@ public static class IdentityModule
         return services;
     }
 
-    /// <summary>Identity uçlarını eşler (manage-auth).</summary>
+    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session).</summary>
     public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
     {
         ManageAuthEndpoints.Map(app);
+        ManageSessionEndpoints.Map(app);
         return app;
     }
 

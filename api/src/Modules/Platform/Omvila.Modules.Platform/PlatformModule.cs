@@ -16,6 +16,7 @@ public static class PlatformModule
             .Validate(o => o.IsValid(), "Platform ayarları eksik veya geçersiz (appsettings \"Platform\").");
         services.AddModuleDbContext<PlatformDbContext>(PlatformDbContext.Schema);
         services.AddScoped<ISubscriptionProvisioning, SubscriptionProvisioning>();
+        services.AddScoped<ISubscriptionQueries, SubscriptionQueries>();
         services.AddSingleton<PlanSeeder>();
         return services;
     }

@@ -11,6 +11,9 @@ public sealed class PlatformOptions
     /// <summary>TrialDays.</summary>
     public int TrialDays { get; set; }
 
+    /// <summary>PastDueGraceDays: gecikmeden kaç gün sonra salt okunur.</summary>
+    public int PastDueGraceDays { get; set; }
+
     /// <summary>Deneme aboneliğinin bağlandığı plan (Trialing'de her şey açıktır; durum-makinesi.md).</summary>
     public string TrialPlanCode { get; set; } = string.Empty;
 
@@ -21,6 +24,6 @@ public sealed class PlatformOptions
     public IList<PlanSeed> SeedPlans { get; } = [];
 
     internal bool IsValid() =>
-        TrialDays > 0 && !string.IsNullOrWhiteSpace(TrialPlanCode) && TrialCredits is null or > 0
+        TrialDays > 0 && PastDueGraceDays > 0 && !string.IsNullOrWhiteSpace(TrialPlanCode) && TrialCredits is null or > 0
         && SeedPlans.All(p => !string.IsNullOrWhiteSpace(p.Code) && !string.IsNullOrWhiteSpace(p.Name));
 }

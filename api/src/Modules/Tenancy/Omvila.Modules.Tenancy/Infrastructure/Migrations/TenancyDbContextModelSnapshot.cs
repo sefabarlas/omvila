@@ -279,6 +279,26 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandOnboarding", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("BookingLinkSharedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("booking_link_shared_utc");
+
+                    b.Property<Instant?>("SoloConfirmedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("solo_confirmed_utc");
+
+                    b.HasKey("BrandId")
+                        .HasName("pk_brand_onboarding");
+
+                    b.ToTable("brand_onboarding", "tenancy");
+                });
+
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandSettings", b =>
                 {
                     b.Property<Guid>("BrandId")
@@ -547,6 +567,16 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_branches_brands_brand_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandOnboarding", b =>
+                {
+                    b.HasOne("Omvila.Modules.Tenancy.Domain.Brand", null)
+                        .WithOne()
+                        .HasForeignKey("Omvila.Modules.Tenancy.Domain.BrandOnboarding", "BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_brand_onboarding_brands_brand_id");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandSettings", b =>
