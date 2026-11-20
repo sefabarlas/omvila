@@ -61,6 +61,7 @@ export default tseslint.config(
       '**/out/**',
       '**/coverage/**',
       '**/generated/**',
+      '**/routeTree.gen.ts',
       '**/.turbo/**',
       'api/**',
       'contracts/**',
@@ -113,6 +114,22 @@ export default tseslint.config(
       { files: ['**/*.tsx', '**/*.jsx'], ...jsxA11y.flatConfigs.strict },
     ]),
   ),
+
+  // TanStack Router yönlendirmeyi `throw redirect()` / `throw notFound()` ile yapar.
+  {
+    files: ['web/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            { from: 'package', package: '@tanstack/router-core', name: 'Redirect' },
+            { from: 'package', package: '@tanstack/router-core', name: 'NotFoundError' },
+          ],
+        },
+      ],
+    },
+  },
 
   // Zaman dönüşümünün tek yeri ve fetch'in tek kullanıcısı
   {
