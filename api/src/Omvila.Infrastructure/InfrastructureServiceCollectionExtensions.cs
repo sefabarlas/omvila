@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Omvila.Infrastructure.Health;
+using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
@@ -33,6 +34,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDbSession>(sp => sp.GetRequiredService<DbSession>());
         services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<DbSession>());
         services.AddScoped<TransactionEndpointFilter>();
+        services.AddExceptionHandler<DatabaseExceptionHandler>();
         services.AddModuleDbContext<InfraDbContext>(InfraDbContext.Schema);
         services.AddTransient<MigrationRunner>();
 

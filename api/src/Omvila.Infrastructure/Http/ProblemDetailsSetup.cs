@@ -1,13 +1,15 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Omvila.SharedKernel;
 
-namespace Omvila.Host;
+namespace Omvila.Infrastructure.Http;
 
 /// <summary>
 /// Bütün hata yanıtları RFC 9457 problem+json ve sözleşmedeki zorunlu alanlarla döner:
 /// type, title, status, code, traceId (docs/sozlesme/api-kurallari.md § Hatalar).
 /// </summary>
-internal static class ProblemDetailsSetup
+public static class ProblemDetailsSetup
 {
     private const string TypeBase = "https://docs.omvila.com/errors/";
 

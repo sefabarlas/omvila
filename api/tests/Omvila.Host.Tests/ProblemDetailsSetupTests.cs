@@ -1,3 +1,5 @@
+using Omvila.Infrastructure.Http;
+
 namespace Omvila.Host.Tests;
 
 public sealed class ProblemDetailsSetupTests
