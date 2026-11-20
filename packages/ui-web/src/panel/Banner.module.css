@@ -1,0 +1,51 @@
+/* design/tasarim-sistemleri/panel/components/Banner. */
+.banner {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.icon {
+  display: flex;
+  flex: none;
+  margin-top: calc(var(--bosluk-0-5) / 2);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+}
+
+.title {
+  font-weight: 600;
+}
+
+.action {
+  flex: none;
+}
+
+.bilgi {
+  background: var(--bilgi-zemin);
+  color: var(--bilgi);
+}
+
+.uyari {
+  background: var(--uyari-zemin);
+  color: var(--uyari);
+}
+
+.hata {
+  background: var(--hata-zemin);
+  color: var(--hata);
+}
+
+.basari {
+  background: var(--basari-zemin);
+  color: var(--basari);
+}

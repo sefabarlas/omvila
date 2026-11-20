@@ -1,0 +1,119 @@
+/* design/tasarim-sistemleri/panel/components/Badge, StatusBadge. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bosluk-1-5);
+  height: 22px;
+  padding: 0 var(--bosluk-2);
+  border-radius: var(--kose-tam);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--kose-tam);
+  background: currentcolor;
+}
+
+.notr {
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+}
+
+.marka {
+  background: var(--zemin-secili);
+  color: var(--metin-marka);
+}
+
+.vurgu {
+  background: var(--zemin-vurgu-yumusak);
+  color: var(--metin-vurgu);
+}
+
+.basari {
+  background: var(--basari-zemin);
+  color: var(--basari);
+}
+
+.uyari {
+  background: var(--uyari-zemin);
+  color: var(--uyari);
+}
+
+.hata {
+  background: var(--hata-zemin);
+  color: var(--hata);
+}
+
+.bilgi {
+  background: var(--bilgi-zemin);
+  color: var(--bilgi);
+}
+
+.onay {
+  background: var(--durum-onay-zemin);
+  color: var(--durum-onay-metin);
+}
+
+.onay .dot {
+  background: var(--durum-onay-nokta);
+}
+
+.kapora {
+  background: var(--durum-kapora-zemin);
+  color: var(--durum-kapora-metin);
+}
+
+.kapora .dot {
+  background: var(--durum-kapora-nokta);
+}
+
+.onaylandi {
+  background: var(--durum-onaylandi-zemin);
+  color: var(--durum-onaylandi-metin);
+}
+
+.onaylandi .dot {
+  background: var(--durum-onaylandi-nokta);
+}
+
+.geldi {
+  background: var(--durum-geldi-zemin);
+  color: var(--durum-geldi-metin);
+}
+
+.geldi .dot {
+  background: var(--durum-geldi-nokta);
+}
+
+.tamamlandi {
+  background: var(--durum-tamamlandi-zemin);
+  color: var(--durum-tamamlandi-metin);
+}
+
+.tamamlandi .dot {
+  background: var(--durum-tamamlandi-nokta);
+}
+
+.gelmedi {
+  background: var(--durum-gelmedi-zemin);
+  color: var(--durum-gelmedi-metin);
+}
+
+.gelmedi .dot {
+  background: var(--durum-gelmedi-nokta);
+}
+
+.iptal {
+  background: var(--durum-iptal-zemin);
+  color: var(--durum-iptal-metin);
+}
+
+.iptal .dot {
+  background: var(--durum-iptal-nokta);
+}
