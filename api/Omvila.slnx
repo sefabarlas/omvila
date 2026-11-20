@@ -5,6 +5,9 @@
     <Project Path="src/Omvila.SharedKernel/Omvila.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Catalog/">
+    <Project Path="src/Modules/Catalog/Omvila.Modules.Catalog/Omvila.Modules.Catalog.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Identity/">
     <Project Path="src/Modules/Identity/Omvila.Modules.Identity.Contracts/Omvila.Modules.Identity.Contracts.csproj" />
     <Project Path="src/Modules/Identity/Omvila.Modules.Identity/Omvila.Modules.Identity.csproj" />
@@ -21,6 +24,7 @@
     <Project Path="tests/Omvila.Host.Tests/Omvila.Host.Tests.csproj" />
     <Project Path="tests/Omvila.Infrastructure.IntegrationTests/Omvila.Infrastructure.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Infrastructure.Tests/Omvila.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Omvila.Modules.Catalog.Tests/Omvila.Modules.Catalog.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Identity.IntegrationTests/Omvila.Modules.Identity.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Identity.Tests/Omvila.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.IntegrationTests/Omvila.Modules.Notifications.IntegrationTests.csproj" />

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Omvila.SharedKernel\Omvila.SharedKernel.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Omvila.Modules.Catalog.Tests" />
+    <InternalsVisibleTo Include="Omvila.Modules.Catalog.IntegrationTests" />
+  </ItemGroup>
+</Project>
