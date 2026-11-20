@@ -49,23 +49,7 @@ public sealed class PostgresFixture : IAsyncLifetime
     /// </summary>
     public ServiceProvider CreateServices(int? maxPoolSize = null, Action<IServiceCollection>? configure = null)
     {
-        var app = new NpgsqlConnectionStringBuilder(AppConnectionString);
-        if (maxPoolSize is { } size)
-        {
-            app.MaxPoolSize = size;
-        }
-
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)
-            {
-                [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.AppConnectionName}"] = app.ConnectionString,
-                [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.MigratorConnectionName}"] = MigratorConnectionString,
-                ["Outbox:BatchSize"] = "50",
-                ["Outbox:DispatchIntervalSeconds"] = "1",
-                ["Outbox:RetryBaseDelaySeconds"] = "30",
-                ["Outbox:RetryMaxDelaySeconds"] = "3600",
-            })
-            .Build();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(Settings(maxPoolSize)).Build();
 
         var services = new ServiceCollection()
             .AddSingleton<Microsoft.Extensions.Logging.ILoggerFactory>(NullLoggerFactory.Instance)
@@ -75,6 +59,26 @@ public sealed class PostgresFixture : IAsyncLifetime
             .AddOmvilaInfrastructure(configuration);
         configure?.Invoke(services);
         return services.BuildServiceProvider();
+    }
+
+    /// <summary>Uygulamanın test yapılandırması: bağlantı dizeleri ve outbox ayarları (TestServer uygulamaları da kullanır).</summary>
+    public IDictionary<string, string?> Settings(int? maxPoolSize = null)
+    {
+        var app = new NpgsqlConnectionStringBuilder(AppConnectionString);
+        if (maxPoolSize is { } size)
+        {
+            app.MaxPoolSize = size;
+        }
+
+        return new Dictionary<string, string?>(StringComparer.Ordinal)
+        {
+            [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.AppConnectionName}"] = app.ConnectionString,
+            [$"ConnectionStrings:{InfrastructureServiceCollectionExtensions.MigratorConnectionName}"] = MigratorConnectionString,
+            ["Outbox:BatchSize"] = "50",
+            ["Outbox:DispatchIntervalSeconds"] = "1",
+            ["Outbox:RetryBaseDelaySeconds"] = "30",
+            ["Outbox:RetryMaxDelaySeconds"] = "3600",
+        };
     }
 
     /// <summary>Migrator rolüyle (tablo sahibi, RLS'i atlar) açık bağlantı: test verisi ve şema kurulumu için.</summary>

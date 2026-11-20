@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using NodaTime;
 using Omvila.Host;
 using Omvila.Infrastructure;
+using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
 using Omvila.SharedKernel;
 using Serilog;
