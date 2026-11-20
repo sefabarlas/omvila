@@ -1,0 +1,182 @@
+name: ci
+
+# Yol filtreli işler (ADR-0010, docs/standartlar/git-akisi.md § CI kapıları).
+# Her iş her PR'da çalışır ki zorunlu durum kontrolü "bekleniyor"da kalmasın; ilgili dosyalar
+# değişmediyse veya proje henüz yoksa adımlar atlanır ve iş başarılı biter (contracts.yml ile aynı desen).
+# `contracts/` değişirse bütün istemci işleri çalışır.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      web: ${{ steps.filter.outputs.web }}
+      flutter: ${{ steps.filter.outputs.flutter }}
+      base: ${{ steps.filter.outputs.base }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Değişen alanlar
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then base="origin/$BASE_REF"; else base="$BEFORE"; fi
+          if [ -z "$base" ] || ! git rev-parse --verify --quiet "$base^{commit}" >/dev/null; then
+            echo "Karşılaştırma tabanı yok; bütün işler çalışır."
+            files="*"
+            base=""
+          else
+            files="$(git diff --name-only "$base"...HEAD)"
+          fi
+          echo "base=$base" >> "$GITHUB_OUTPUT"
+          match() {
+            if [ "$files" = "*" ] || printf '%s\n' "$files" | grep -qE "$1"; then echo "$2=true"; else echo "$2=false"; fi >> "$GITHUB_OUTPUT"
+          }
+          common='^(contracts/|\.github/workflows/ci\.yml$)'
+          match "$common|^api/|^global\.json$" api
+          match "$common|^web/|^packages/(api-client-ts|design-tokens|ui-web)/|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig\.base\.json|eslint\.config\.mjs|stylelint\.config\.mjs|prettier\.config\.mjs|\.prettierignore|\.nvmrc)$" web
+          match "$common|^mobile/|^packages/(api-client-dart|omvila_ui|design-tokens)/|^(pubspec\.yaml|pubspec\.lock|analysis_options\.yaml|\.fvmrc)$" flutter
+          cat "$GITHUB_OUTPUT"
+
+  api:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RUN: ${{ needs.changes.outputs.api }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Proje var mı
+        id: guard
+        run: |
+          if [ "$RUN" != "true" ]; then echo "Backend dosyaları değişmedi; atlandı."; echo "go=false" >> "$GITHUB_OUTPUT"
+          elif [ ! -f api/Omvila.slnx ]; then echo "api/Omvila.slnx henüz yok; atlandı."; echo "go=false" >> "$GITHUB_OUTPUT"
+          else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-dotnet@v6
+        if: steps.guard.outputs.go == 'true'
+        with:
+          global-json-file: api/global.json
+      - name: Derleme (uyarı = hata)
+        if: steps.guard.outputs.go == 'true'
+        run: dotnet build api/Omvila.slnx -warnaserror
+      - name: Biçim
+        if: steps.guard.outputs.go == 'true'
+        run: dotnet format api/Omvila.slnx --verify-no-changes --no-restore
+      # Alan, entegrasyon (Testcontainers; runner'da Docker var) ve mimari testler.
+      # Backend OpenAPI = sözleşme karşılaştırması Omvila.Host dışa aktarımı geldiğinde (PR-4) eklenir.
+      - name: Testler
+        if: steps.guard.outputs.go == 'true'
+        run: dotnet test api/Omvila.slnx --no-build
+
+  web:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RUN: ${{ needs.changes.outputs.web }}
+      BASE: ${{ needs.changes.outputs.base }}
+      EVENT: ${{ github.event_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+        if: env.RUN == 'true'
+      - uses: actions/setup-node@v7
+        if: env.RUN == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Bağımlılıklar
+        if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Kök ayarlar, stil ve biçim
+        if: env.RUN == 'true'
+        run: |
+          pnpm lint:repo
+          pnpm lint:css
+          pnpm format:check
+      # PR'da yalnız değişen paketler ve onlara bağlı olanlar; contracts/ değişmişse ve main'de hepsi.
+      - name: Lint, tip, test, derleme
+        if: env.RUN == 'true'
+        run: |
+          # Sözleşme denetimi contracts.yml'de; burada tekrarlanmaz.
+          set -- lint typecheck test build --filter=!@omvila/contracts
+          if [ "$EVENT" = "pull_request" ] && [ -n "$BASE" ] && ! git diff --name-only "$BASE"...HEAD | grep -qE '^(contracts/|package\.json$|pnpm-lock\.yaml$|turbo\.json$|tsconfig\.base\.json$|eslint\.config\.mjs$)'; then
+            set -- "$@" "--filter=...[$BASE]"
+          fi
+          pnpm turbo run "$@"
+
+  flutter:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RUN: ${{ needs.changes.outputs.flutter }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Sürüm ve proje kontrolü
+        id: guard
+        run: |
+          echo "version=$(jq -r .flutter .fvmrc)" >> "$GITHUB_OUTPUT"
+          if [ "$RUN" != "true" ]; then echo "Flutter dosyaları değişmedi; atlandı."; echo "go=false" >> "$GITHUB_OUTPUT"
+          elif ! grep -qE '^workspace:[[:space:]]*$' pubspec.yaml; then echo "Workspace'te paket yok; atlandı."; echo "go=false" >> "$GITHUB_OUTPUT"
+          else echo "go=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: subosito/flutter-action@v2
+        if: steps.guard.outputs.go == 'true'
+        with:
+          flutter-version: ${{ steps.guard.outputs.version }}
+          channel: stable
+          cache: true
+      # Melos sdkPath = .fvm/flutter_sdk (FVM yerelde kurar); CI'da kurulan SDK'ya bağlanır.
+      - name: Bağımlılıklar
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          mkdir -p .fvm && ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+          dart pub get
+      - name: Biçim
+        if: steps.guard.outputs.go == 'true'
+        run: dart run melos run format:check --no-select
+      - name: Analiz (bilgi düzeyi dahil hata)
+        if: steps.guard.outputs.go == 'true'
+        run: dart run melos run analyze --no-select
+      - name: Testler
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          if dart run melos list --dir-exists=test --parsable | grep -q .; then
+            dart run melos run test --no-select
+          else
+            echo "Test klasörü olan paket yok; atlandı."
+          fi
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Gizli değer taraması
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then range="origin/$BASE_REF..HEAD"
+          elif git rev-parse --verify --quiet "$BEFORE^{commit}" >/dev/null; then range="$BEFORE..HEAD"
+          else range="HEAD"; fi
+          # Kapsayıcıdaki git, runner'ın sahip olduğu depoyu "dubious ownership" ile reddetmesin.
+          docker run --rm -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' \
+            -v "$PWD:/repo" -w /repo ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git --redact --no-banner --exit-code 1 --log-opts="$range" .
