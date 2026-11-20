@@ -20,9 +20,15 @@ export async function refreshAccessToken(
     credentials: 'include',
     ...(fetcher ? { fetch: fetcher } : {}),
   });
-  const { data } = await client.POST('/api/v1/manage/auth/refresh', { body: {} });
-  auth.setToken(data?.accessToken ?? null);
-  return data !== undefined;
+  try {
+    const { data } = await client.POST('/api/v1/manage/auth/refresh', { body: {} });
+    auth.setToken(data?.accessToken ?? null);
+    return data !== undefined;
+  } catch {
+    // Ağ hatası: oturum açılamadı sayılır (giriş ekranı gösterilir).
+    auth.setToken(null);
+    return false;
+  }
 }
 
 export function createApi(fetcher?: (request: Request) => Promise<Response>) {

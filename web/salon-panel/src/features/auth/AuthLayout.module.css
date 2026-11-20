@@ -1,0 +1,112 @@
+/* salon-paneli/Giris, GirisKod, Kayit: solda marka paneli, sağda form. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  min-height: 100vh;
+  background: var(--zemin);
+  color: var(--metin);
+}
+
+.brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--bosluk-12) var(--bosluk-12) var(--bosluk-12)
+    calc(var(--bosluk-12) + var(--bosluk-1-5));
+  overflow: hidden;
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.logo {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  height: var(--bosluk-8);
+}
+
+.shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 22%;
+}
+
+.shapeKum {
+  top: 33%;
+  left: 4%;
+  width: 18%;
+  aspect-ratio: 1;
+  background: var(--blok-kum);
+  transform: rotate(-6deg);
+}
+
+.shapeVurgu {
+  top: 20%;
+  right: -12%;
+  width: 52%;
+  aspect-ratio: 1;
+  background: var(--blok-vurgu);
+  transform: rotate(16deg);
+}
+
+.shapeMarka {
+  top: 47%;
+  left: 48%;
+  width: 26%;
+  aspect-ratio: 1;
+  background: var(--marka);
+  opacity: 0.7;
+  transform: rotate(-10deg);
+}
+
+.slogan {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+}
+
+.sloganTitle {
+  margin: 0 0 var(--bosluk-4);
+  font-size: calc(var(--yazi-metrik-boyut) * 1.75);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.sloganText {
+  margin: 0;
+  color: var(--sidebar-metin);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bosluk-8) var(--bosluk-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (width <= 899px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brand {
+    display: none;
+  }
+}

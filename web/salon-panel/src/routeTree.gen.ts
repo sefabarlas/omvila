@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PanelRouteImport } from './routes/_panel'
 import { Route as GirisRouteImport } from './routes/giris'
+import { Route as KayitRouteImport } from './routes/kayit'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 
@@ -21,6 +22,11 @@ const PanelRoute = PanelRouteImport.update({
 const GirisRoute = GirisRouteImport.update({
   id: '/giris',
   path: '/giris',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KayitRoute = KayitRouteImport.update({
+  id: '/kayit',
+  path: '/kayit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanelIndexRoute = PanelIndexRouteImport.update({
@@ -37,10 +43,12 @@ const PanelSplatRoute = PanelSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
   '/giris': typeof GirisRoute
+  '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
+  '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
   '/': typeof PanelIndexRoute
 }
@@ -48,20 +56,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_panel': typeof PanelRouteWithChildren
   '/giris': typeof GirisRoute
+  '/kayit': typeof KayitRoute
   '/_panel/$': typeof PanelSplatRoute
   '/_panel/': typeof PanelIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/giris' | '/$'
+  fullPaths: '/' | '/giris' | '/kayit' | '/$'
   fileRoutesByTo: FileRoutesByTo
-  to: '/giris' | '/$' | '/'
-  id: '__root__' | '/_panel' | '/giris' | '/_panel/$' | '/_panel/'
+  to: '/giris' | '/kayit' | '/$' | '/'
+  id: '__root__' | '/_panel' | '/giris' | '/kayit' | '/_panel/$' | '/_panel/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   PanelRoute: typeof PanelRouteWithChildren
   GirisRoute: typeof GirisRoute
+  KayitRoute: typeof KayitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,6 +88,13 @@ declare module '@tanstack/react-router' {
       path: '/giris'
       fullPath: '/giris'
       preLoaderRoute: typeof GirisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kayit': {
+      id: '/kayit'
+      path: '/kayit'
+      fullPath: '/kayit'
+      preLoaderRoute: typeof KayitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_panel/': {
@@ -112,6 +129,7 @@ const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   PanelRoute: PanelRouteWithChildren,
   GirisRoute: GirisRoute,
+  KayitRoute: KayitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
