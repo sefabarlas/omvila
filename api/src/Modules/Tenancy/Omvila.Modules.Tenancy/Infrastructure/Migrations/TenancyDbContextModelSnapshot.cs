@@ -170,6 +170,49 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                     b.ToTable("branches", "tenancy");
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BranchWorkingHours", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_week");
+
+                    b.Property<LocalTime>("EndTime")
+                        .HasColumnType("time")
+                        .HasColumnName("end_time");
+
+                    b.Property<LocalTime>("StartTime")
+                        .HasColumnType("time")
+                        .HasColumnName("start_time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_branch_working_hours");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_branch_working_hours_branch_id");
+
+                    b.HasIndex("BrandId", "BranchId", "DayOfWeek")
+                        .HasDatabaseName("ix_branch_working_hours_brand_id_branch_id_day_of_week");
+
+                    b.ToTable("branch_working_hours", "tenancy", t =>
+                        {
+                            t.HasCheckConstraint("ck_branch_working_hours_day", "day_of_week BETWEEN 1 AND 7");
+
+                            t.HasCheckConstraint("ck_branch_working_hours_range", "start_time < end_time");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.Brand", b =>
                 {
                     b.Property<Guid>("Id")
@@ -549,6 +592,66 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                     b.ToTable("staff_branches", "tenancy");
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.WorkingHoursOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<LocalDate>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.PrimitiveCollection<string[]>("Intervals")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("intervals");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_closed");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.HasKey("Id")
+                        .HasName("pk_working_hours_overrides");
+
+                    b.HasIndex("BranchId")
+                        .HasDatabaseName("ix_working_hours_overrides_branch_id");
+
+                    b.HasIndex("BrandId", "BranchId", "Date")
+                        .IsUnique()
+                        .HasDatabaseName("ix_working_hours_overrides_brand_id_branch_id_date");
+
+                    b.ToTable("working_hours_overrides", "tenancy", t =>
+                        {
+                            t.HasCheckConstraint("ck_working_hours_overrides_intervals", "(is_closed AND cardinality(intervals) = 0) OR (NOT is_closed AND cardinality(intervals) > 0)");
+
+                            t.HasCheckConstraint("ck_working_hours_overrides_kind", "kind IN ('Holiday', 'Closure', 'ExtraOpening', 'ShortDay')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BookingPageSettings", b =>
                 {
                     b.HasOne("Omvila.Modules.Tenancy.Domain.Brand", null)
@@ -567,6 +670,16 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_branches_brands_brand_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BranchWorkingHours", b =>
+                {
+                    b.HasOne("Omvila.Modules.Tenancy.Domain.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_branch_working_hours_branches_branch_id");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandOnboarding", b =>
@@ -624,6 +737,16 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_staff_branches_staff_staff_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.WorkingHoursOverride", b =>
+                {
+                    b.HasOne("Omvila.Modules.Tenancy.Domain.Branch", null)
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_working_hours_overrides_branches_branch_id");
                 });
 #pragma warning restore 612, 618
         }

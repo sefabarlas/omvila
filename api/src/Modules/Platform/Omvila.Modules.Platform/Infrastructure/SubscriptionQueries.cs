@@ -20,4 +20,11 @@ internal sealed class SubscriptionQueries(PlatformDbContext db, IOptions<Platfor
             : (NodaTime.LocalDate?)null;
         return new SubscriptionBannerInfo(subscription.Status.ToString(), subscription.TrialEndsOn, subscription.PastDueSince, readOnlyOn);
     }
+
+    public async Task<PlanLimitInfo?> GetPlanLimitsAsync(Guid brandId, CancellationToken ct) =>
+        await (from s in db.Subscriptions.AsNoTracking()
+               join p in db.Plans.AsNoTracking() on s.PlanId equals p.Id
+               where s.BrandId == brandId
+               select new PlanLimitInfo(p.StaffLimit, p.IncludedBranchCount, p.ExtraBranchPriceMinor != null || p.IncludedBranchCount == null))
+            .SingleOrDefaultAsync(ct);
 }

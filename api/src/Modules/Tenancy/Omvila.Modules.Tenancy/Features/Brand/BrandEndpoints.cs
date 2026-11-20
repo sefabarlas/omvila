@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -10,6 +9,7 @@ using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
+using static Omvila.Modules.Tenancy.Features.ManageEndpointSupport;
 using Omvila.Modules.Identity.Contracts;
 using Omvila.Modules.Tenancy.Domain;
 using Omvila.Modules.Tenancy.Infrastructure;
@@ -21,7 +21,7 @@ namespace Omvila.Modules.Tenancy.Features.Brand;
 /// İşletme, randevu kuralları ve rezervasyon sayfası uçları (sözleşme manage-brand; AyarlarIsletme, AyarlarRezervasyon).
 /// Okuma her rolde açıktır; değiştirmek settings.manage ister. Düzenlemeler If-Match ile korunur (sürüm = xmin).
 /// </summary>
-internal static partial class BrandEndpoints
+internal static class BrandEndpoints
 {
     private static readonly HashSet<string> IndustryCodes =
         new(["barber", "hair_salon", "beauty", "spa", "nail", "dietitian", "other"], StringComparer.Ordinal);
@@ -183,31 +183,19 @@ internal static partial class BrandEndpoints
             input.Errors["name"] = [name is null ? "required" : "too_short"];
         }
 
-        MaxLength(input, "name", name, 160);
+        MaxLength(name, "name", 160, input.Errors);
         var industry = input.String("industryCode", brand.IndustryCode);
         if (industry is null || !IndustryCodes.Contains(industry))
         {
             input.Errors["industryCode"] = ["invalid_format"];
         }
 
-        var description = MaxLength(input, "shortDescription", input.String("shortDescription", brand.ShortDescription), 160);
-        var phone = input.String("phone", brand.Phone);
-        if (input.Has("phone") && phone is not null)
+        var description = MaxLength(input.String("shortDescription", brand.ShortDescription), "shortDescription", 160, input.Errors);
+        var phone = input.Has("phone") ? NormalizePhone(input.String("phone", null), "phone", input.Errors) : brand.Phone;
+        var email = input.String("email", brand.Email);
+        if (input.Has("email"))
         {
-            if (PhoneNumber.TryParse(phone, out var parsed))
-            {
-                phone = parsed.E164;
-            }
-            else
-            {
-                input.Errors["phone"] = ["invalid_format"];
-            }
-        }
-
-        var email = MaxLength(input, "email", input.String("email", brand.Email), 254);
-        if (input.Has("email") && email is not null && !EmailPattern().IsMatch(email))
-        {
-            input.Errors["email"] = ["invalid_format"];
+            CheckEmail(email, "email", input.Errors);
         }
 
         return new BrandProfile(
@@ -216,40 +204,10 @@ internal static partial class BrandEndpoints
             description,
             phone,
             email,
-            MaxLength(input, "instagram", input.String("instagram", brand.Instagram), 60),
-            MaxLength(input, "website", input.String("website", brand.Website), 200),
-            MaxLength(input, "legalName", input.String("legalName", brand.LegalName), 200),
-            MaxLength(input, "taxOffice", input.String("taxOffice", brand.TaxOffice), 80),
-            MaxLength(input, "taxNumber", input.String("taxNumber", brand.TaxNumber), 20));
+            MaxLength(input.String("instagram", brand.Instagram), "instagram", 60, input.Errors),
+            MaxLength(input.String("website", brand.Website), "website", 200, input.Errors),
+            MaxLength(input.String("legalName", brand.LegalName), "legalName", 200, input.Errors),
+            MaxLength(input.String("taxOffice", brand.TaxOffice), "taxOffice", 80, input.Errors),
+            MaxLength(input.String("taxNumber", brand.TaxNumber), "taxNumber", 20, input.Errors));
     }
-
-    private static string? MaxLength(JsonBody input, string field, string? value, int max)
-    {
-        if (value is not null && value.Length > max)
-        {
-            input.Errors[field] = ["too_long"];
-        }
-
-        return value;
-    }
-
-    /// <summary>If-Match sürümü güncel mi; değilse 412. Ayrıca kaydetmede xmin denetimi için özgün değer atanır.</summary>
-    private static bool Matches<TEntity>(DbContext db, TEntity entity, uint current, uint expected)
-        where TEntity : class
-    {
-        db.Entry(entity).Property<uint>("Version").OriginalValue = expected;
-        return current == expected;
-    }
-
-    private static Microsoft.AspNetCore.Http.HttpResults.Ok<T> Versioned<T>(HttpContext http, uint version, T body)
-    {
-        http.Response.Headers.ETag = ETagVersion.Format(version);
-        return TypedResults.Ok(body);
-    }
-
-    private static Guid BrandOf(ITenantContext tenant) =>
-        tenant.Scope.BrandId ?? throw new DomainException("Manage isteğinde marka bağlamı yok.");
-
-    [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 100)]
-    private static partial Regex EmailPattern();
 }
