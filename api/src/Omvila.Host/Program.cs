@@ -20,6 +20,11 @@ builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
 builder.Services.AddOmvilaProblemDetails();
 builder.Services.AddOmvilaInfrastructure(builder.Configuration);
+if (role.HasFlag(HostRole.Worker))
+{
+    builder.Services.AddOmvilaWorker();
+}
+
 builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((document, _, _) =>
 {
     document.Info.Title = "OMVILA API";
