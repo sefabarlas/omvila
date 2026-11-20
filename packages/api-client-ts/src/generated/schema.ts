@@ -643,6 +643,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/customers/{brandCustomerId}/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                brandCustomerId: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Müşteri kartı · Randevular sekmesi
+         * @description MusteriKarti ekranı. Yeniden eskiye; tutar randevuya kopyalanan kalem fiyatlarının toplamıdır. Personel rolünde yalnız kendi randevuları döner. İzin: customer.view
+         */
+        get: operations["manageListCustomerAppointments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/calendar": {
         parameters: {
             query?: never;
@@ -1743,6 +1765,31 @@ export interface components {
             isNoShowRisk?: boolean;
             tags: string[];
             notes?: string | null;
+        };
+        /** @description Müşteri kartındaki randevu satırı ("21 Eki 14:00 · Fön · Elif · Tamamlandı · 450 ₺") */
+        CustomerAppointmentRow: {
+            /** Format: uuid */
+            appointmentId: string;
+            /** Format: uuid */
+            branchId: string;
+            /** Format: date-time */
+            startUtc: string;
+            status: components["schemas"]["AppointmentStatus"];
+            displayStatus: components["schemas"]["DisplayStatus"];
+            /**
+             * @example [
+             *       "Boya",
+             *       "Fön"
+             *     ]
+             */
+            serviceNames: string[];
+            /**
+             * @example [
+             *       "Elif Kaya"
+             *     ]
+             */
+            staffNames: string[];
+            total: components["schemas"]["Money"];
         };
         CustomerCreate: {
             fullName: string;
@@ -3746,6 +3793,36 @@ export interface operations {
                     "application/json": components["schemas"]["CustomerSummary"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageListCustomerAppointments: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                brandCustomerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Randevular */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["CustomerAppointmentRow"][];
+                        nextCursor: string | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
         };
     };

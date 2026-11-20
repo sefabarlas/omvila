@@ -21,6 +21,7 @@ import 'package:omvila_api/src/model/calendar_view.dart';
 import 'package:omvila_api/src/model/calendar_view_days_inner.dart';
 import 'package:omvila_api/src/model/calendar_view_days_inner_staff_hours_inner.dart';
 import 'package:omvila_api/src/model/calendar_view_staff_inner.dart';
+import 'package:omvila_api/src/model/customer_appointment_row.dart';
 import 'package:omvila_api/src/model/customer_cancel_request.dart';
 import 'package:omvila_api/src/model/customer_create.dart';
 import 'package:omvila_api/src/model/customer_summary.dart';
@@ -40,6 +41,7 @@ import 'package:omvila_api/src/model/manage_create_services_from_templates_reque
 import 'package:omvila_api/src/model/manage_create_services_from_templates_request_items_inner.dart';
 import 'package:omvila_api/src/model/manage_list_branch_overrides200_response.dart';
 import 'package:omvila_api/src/model/manage_list_branches200_response.dart';
+import 'package:omvila_api/src/model/manage_list_customer_appointments200_response.dart';
 import 'package:omvila_api/src/model/manage_list_customers200_response.dart';
 import 'package:omvila_api/src/model/manage_list_service_categories200_response.dart';
 import 'package:omvila_api/src/model/manage_list_service_templates200_response.dart';
@@ -186,6 +188,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'CancellationReason':
           
           
+        case 'CustomerAppointmentRow':
+          return CustomerAppointmentRow.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CustomerCancelRequest':
           return CustomerCancelRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CustomerCreate':
@@ -233,6 +237,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return ManageListBranchOverrides200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ManageListBranches200Response':
           return ManageListBranches200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'ManageListCustomerAppointments200Response':
+          return ManageListCustomerAppointments200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ManageListCustomers200Response':
           return ManageListCustomers200Response.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ManageListServiceCategories200Response':

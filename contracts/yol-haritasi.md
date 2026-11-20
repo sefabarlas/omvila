@@ -1,6 +1,6 @@
 # Sözleşme yol haritası
 
-`openapi.yaml` şu an Dilim 1 ve 2'yi kapsar (66 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
+`openapi.yaml` şu an Dilim 1 ve 2'yi kapsar (67 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
 
 ## Dilim 3: Onay akışı + SMS
 | Yöntem | Yol | operationId | Not |
@@ -56,7 +56,7 @@
 | POST | `/api/v1/manage/cash/close` | `manageCloseCashDay` |
 | GET/POST/PUT | `/api/v1/manage/packages`, `/{packageId}` | Paket tanımları |
 | POST | `/api/v1/manage/customers/{brandCustomerId}/packages` | `manageSellPackage` |
-| GET | `/api/v1/manage/customers/{brandCustomerId}/appointments`, `/packages`, `/payments`, `/reviews` | Müşteri kartı sekmeleri |
+| GET | `/api/v1/manage/customers/{brandCustomerId}/packages`, `/payments`, `/reviews` | Müşteri kartı sekmeleri (Randevular sekmesi `manageListCustomerAppointments` Dilim 2'de sözleşmeye alındı) |
 | POST | `/api/v1/manage/customers/{brandCustomerId}/merge` | `manageMergeCustomers` |
 | POST | `/api/v1/manage/customers/imports`, `/imports/{importId}/commit` | `managePreviewImport`, `manageCommitImport` |
 | GET | `/api/v1/manage/customers/export` | `manageExportCustomers` |
