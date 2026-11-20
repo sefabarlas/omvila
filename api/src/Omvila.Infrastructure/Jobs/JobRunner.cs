@@ -18,12 +18,19 @@ public sealed partial class JobRunner(
     {
         ArgumentNullException.ThrowIfNull(jobType);
         await using var scope = scopes.CreateAsyncScope();
+
+        // İş, platform kapsamlı bir transaction içinde çözülür ve çalışır (ADR-0006 § worker): kurucusunda
+        // DbContext alabilir. Marka bazında çalışan iş kapsamı kendisi daraltır (IDbSession.SetTenantAsync).
+        var session = scope.ServiceProvider.GetRequiredService<IDbSession>();
+        await session.SetTenantAsync(TenantScope.Platform, ct);
+        await session.BeginAsync(ct);
         var job = (IPeriodicJob)scope.ServiceProvider.GetRequiredService(jobType);
 
         // Kilit, işin transaction'ından bağımsız ayrı bir bağlantıda tutulur (oturum düzeyinde).
         await using var lockConnection = await dataSource.OpenConnectionAsync(ct);
         if (!await AdvisoryLockAsync(lockConnection, "pg_try_advisory_lock", job.Key, ct))
         {
+            await session.RollbackAsync(ct);
             LogSkipped(logger, job.Key);
             return JobOutcome.Skipped;
         }
@@ -34,9 +41,11 @@ public sealed partial class JobRunner(
         try
         {
             await job.RunAsync(ct);
+            await session.CommitAsync(ct);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            await session.RollbackAsync(CancellationToken.None);
             outcome = JobOutcome.Failed;
             error = exception.GetType().Name;
             LogFailed(logger, exception, job.Key);

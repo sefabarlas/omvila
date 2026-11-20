@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Omvila.Infrastructure.Health;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
@@ -45,6 +46,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IOutbox, Outbox>();
         services.AddSingleton<JobRunner>();
         services.AddPeriodicJob<OutboxDispatcher>();
+
+        services.AddOptions<IdempotencyOptions>()
+            .Bind(configuration.GetSection(IdempotencyOptions.Section))
+            .Validate(o => o.IsValid(), "Idempotency ayarları eksik veya geçersiz (appsettings \"Idempotency\").");
+        services.AddPeriodicJob<PurgeIdempotencyKeys>();
 
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
         return services;

@@ -4,7 +4,9 @@ namespace Omvila.Infrastructure.Jobs;
 
 /// <summary>
 /// Periyodik iş (ADR-0005). İş mantığı modülün Jobs/ sınıfındadır ve IClock alır; testte doğrudan
-/// JobRunner.RunOnceAsync ile çağrılır. Her çalışma kendi kapsamında (scope) çözülür.
+/// JobRunner.RunOnceAsync ile çağrılır. Her çalışma kendi kapsamında, platform kapsamlı (app.is_platform)
+/// açık bir transaction içinde çözülür: DbContext kurucudan alınabilir. RunAsync başarıyla biterse commit,
+/// istisnada rollback yapılır. İş, oturumu kendisi başlatmaz veya commit etmez.
 /// </summary>
 public interface IPeriodicJob
 {

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 
@@ -17,6 +18,8 @@ internal sealed class InfraDbContext(DbContextOptions<InfraDbContext> options) :
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
     public DbSet<JobRun> JobRuns => Set<JobRun>();
+
+    public DbSet<IdempotencyRecord> IdempotencyKeys => Set<IdempotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
