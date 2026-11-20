@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="NodaTime" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Omvila.SharedKernel\Omvila.SharedKernel.csproj" />
+    <ProjectReference Include="..\Omvila.Modules.Tenancy.Contracts\Omvila.Modules.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Omvila.Modules.Tenancy.Tests" />
