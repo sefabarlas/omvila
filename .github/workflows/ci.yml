@@ -127,6 +127,41 @@ jobs:
           fi
           pnpm turbo run "$@"
 
+  # Salon paneli uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md). Zorunlu denetimlere
+  # eklenmedi; dal koruması ayrıca karar verilir.
+  e2e:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RUN: ${{ needs.changes.outputs.web }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        if: env.RUN == 'true'
+      - uses: actions/setup-node@v7
+        if: env.RUN == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Bağımlılıklar
+        if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Playwright Chromium
+        if: env.RUN == 'true'
+        run: pnpm --filter @omvila/salon-panel exec playwright install --with-deps chromium
+      - name: Uçtan uca testler
+        if: env.RUN == 'true'
+        run: pnpm --filter @omvila/salon-panel e2e
+      - name: Rapor ve ekran görüntüleri
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: salon-panel-e2e
+          path: |
+            web/salon-panel/e2e-report/
+            web/salon-panel/e2e-results/
+          retention-days: 7
+
   flutter:
     needs: changes
     runs-on: ubuntu-latest
