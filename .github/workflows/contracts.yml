@@ -61,5 +61,5 @@ jobs:
             echo "Ana dalda sözleşme yok; kırıcı değişiklik kontrolü atlandı."
           fi
 
-# Not: api, web ve flutter iş akışları Dilim 1 "Teknik temel" kapsamında eklenecek.
-# Her yeni iş aynı deseni izler: her PR'da çalışır, ilgisiz değişiklikte hemen başarılı biter.
+# Not: api, web, flutter ve gitleaks işleri ci.yml'dedir ve aynı deseni izler:
+# her PR'da çalışır, ilgisiz değişiklikte hemen başarılı biter.
