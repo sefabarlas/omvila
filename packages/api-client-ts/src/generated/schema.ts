@@ -1233,6 +1233,7 @@ export interface components {
              *       "staff.manage",
              *       "calendar.view",
              *       "customer.view",
+             *       "report.view",
              *       "timeoff.request"
              *     ]
              */

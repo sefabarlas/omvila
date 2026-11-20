@@ -210,3 +210,52 @@ a.step:focus-visible {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* salon-paneli/PersonelRolu */
+.staffGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.staffSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.staffCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.scope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scope li {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+}
+
+.scopeClosed {
+  color: var(--metin-ikincil);
+}
+
+@media (width <= 1199px) {
+  .staffGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

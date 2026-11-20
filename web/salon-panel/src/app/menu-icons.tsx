@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Calendar,
+  DoorOpen,
   Hourglass,
   LayoutGrid,
   Package,
@@ -26,4 +27,7 @@ export const menuIcons: Record<string, ReactNode> = {
   paketler: <Package size={18} />,
   raporlar: <BarChart3 size={18} />,
   ayarlar: <Settings size={18} />,
+  takvimim: <Calendar size={18} />,
+  kapida: <DoorOpen size={18} />,
+  primim: <Wallet size={18} />,
 };
