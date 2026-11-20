@@ -117,6 +117,7 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | `OmvilaBankAccount` | `[OMVILA ŞİRKET UNVANI]`, `[OMVILA IBAN]` | Abonelik havalesinde gösterilir; yapılandırmadan okunur | ✔ |
 | `ReviewPublicThreshold` | 5 | Rezervasyon sayfasında puan için en az 5 yayınlanmış değerlendirme | ✔ |
 | `BookingDomain` | `omvila.com` (örnek) | Rezervasyon ve kısa bağlantı alanı; yapılandırmadan | ✔ |
+| `SlugRedirectDays` | 30 | Rezervasyon bağlantı adı değişince eski adres bu kadar gün yeni adrese yönlenir (alan-modeli.md § Brand, `BrandSlugHistory`) | |
 
 ## Yer tutucu kuralı
 Köşeli parantezli değerler kodda **sabit metin olarak geçmez**. Fiyat ve plan değerleri veritabanındaki `Plan` ve `CreditPackage` satırlarından, banka bilgileri ve alan adı yapılandırmadan (`appsettings` / ortam değişkeni) okunur. Seed verisi geliştirme ortamında yer tutucu metni gösterir. Böylece değer geldiğinde tek yerde değişir.
