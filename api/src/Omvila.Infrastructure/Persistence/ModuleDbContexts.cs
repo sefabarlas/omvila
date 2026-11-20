@@ -28,7 +28,8 @@ public static class ModuleDbContexts
         return services;
     }
 
-    internal static DbContextOptionsBuilder<TContext> Configure<TContext>(
+    /// <summary>Modül DbContext seçenekleri; modüllerin tasarım zamanı fabrikaları da kullanır.</summary>
+    public static DbContextOptionsBuilder<TContext> Configure<TContext>(
         DbContextOptionsBuilder<TContext> builder, NpgsqlConnection connection, string schema)
         where TContext : DbContext =>
         builder
