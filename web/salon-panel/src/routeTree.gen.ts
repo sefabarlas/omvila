@@ -19,6 +19,7 @@ import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/i
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
 import { Route as PanelAyarlarRezervasyonRouteImport } from './routes/_panel/ayarlar/rezervasyon'
+import { Route as PanelAyarlarSubeRouteImport } from './routes/_panel/ayarlar/sube'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
@@ -70,6 +71,11 @@ const PanelAyarlarRezervasyonRoute = PanelAyarlarRezervasyonRouteImport.update({
   path: '/rezervasyon',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelAyarlarSubeRoute = PanelAyarlarSubeRouteImport.update({
+  id: '/sube',
+  path: '/sube',
+  getParentRoute: () => PanelAyarlarRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
+  '/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/ayarlar/': typeof PanelAyarlarIndexRoute
 }
 export interface FileRoutesByTo {
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
+  '/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/ayarlar': typeof PanelAyarlarIndexRoute
 }
 export interface FileRoutesById {
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/_panel/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
+  '/_panel/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/_panel/ayarlar/': typeof PanelAyarlarIndexRoute
 }
 export interface FileRouteTypes {
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
+    | '/ayarlar/sube'
     | '/ayarlar/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
+    | '/ayarlar/sube'
     | '/ayarlar'
   id:
     | '__root__'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/randevu-kurallari'
     | '/_panel/ayarlar/rezervasyon'
+    | '/_panel/ayarlar/sube'
     | '/_panel/ayarlar/'
   fileRoutesById: FileRoutesById
 }
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarRezervasyonRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/ayarlar/sube': {
+      id: '/_panel/ayarlar/sube'
+      path: '/sube'
+      fullPath: '/ayarlar/sube'
+      preLoaderRoute: typeof PanelAyarlarSubeRouteImport
+      parentRoute: typeof PanelAyarlarRoute
+    }
   }
 }
 
@@ -226,6 +245,7 @@ interface PanelAyarlarRouteChildren {
   PanelAyarlarIsletmeRoute: typeof PanelAyarlarIsletmeRoute
   PanelAyarlarRandevuKurallariRoute: typeof PanelAyarlarRandevuKurallariRoute
   PanelAyarlarRezervasyonRoute: typeof PanelAyarlarRezervasyonRoute
+  PanelAyarlarSubeRoute: typeof PanelAyarlarSubeRoute
   PanelAyarlarIndexRoute: typeof PanelAyarlarIndexRoute
 }
 
@@ -233,6 +253,7 @@ const PanelAyarlarRouteChildren: PanelAyarlarRouteChildren = {
   PanelAyarlarIsletmeRoute: PanelAyarlarIsletmeRoute,
   PanelAyarlarRandevuKurallariRoute: PanelAyarlarRandevuKurallariRoute,
   PanelAyarlarRezervasyonRoute: PanelAyarlarRezervasyonRoute,
+  PanelAyarlarSubeRoute: PanelAyarlarSubeRoute,
   PanelAyarlarIndexRoute: PanelAyarlarIndexRoute,
 }
 

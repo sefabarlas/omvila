@@ -37,6 +37,11 @@ describe('formatDate', () => {
     expect(formatDate('2025-11-21', style)).toBe(expected);
   });
 
+  it('dayMonth: "31 Aralık"', () => {
+    expect(formatDate('2026-12-31', 'dayMonth')).toBe('31 Aralık');
+    expect(formatDate('2027-01-01', 'dayMonth')).toBe('1 Ocak');
+  });
+
   it('panel: "Salı, 25 Kasım"', () => {
     expect(formatDate('2026-11-25', 'panel')).toBe('Çarşamba, 25 Kasım');
     expect(formatDate('2026-11-24', 'panel')).toBe('Salı, 24 Kasım');

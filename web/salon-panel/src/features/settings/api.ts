@@ -78,3 +78,32 @@ export function useUpdateBookingPage() {
     },
   });
 }
+
+/**
+ * Gönderilecek gövde: pasif denetimin değeri formdan gelmeyebilir (react-hook-form), o zaman kayıtlı değer korunur.
+ * Salt okunur alanlar (depositAvailable, version) gövdeye girmez.
+ */
+export function brandSettingsBody(
+  current: BrandSettings,
+  values: Partial<BrandSettings>,
+): BrandSettings {
+  const pick = <K extends keyof BrandSettings>(key: K) => values[key] ?? current[key];
+  return {
+    requiresApproval: pick('requiresApproval'),
+    approvalTimeoutMinutes: pick('approvalTimeoutMinutes'),
+    allowStaffSelection: pick('allowStaffSelection'),
+    allowAnyStaffOption: pick('allowAnyStaffOption'),
+    cancellationCutoffHours: pick('cancellationCutoffHours'),
+    rescheduleCutoffHours: pick('rescheduleCutoffHours'),
+    noShowAfterMinutes: pick('noShowAfterMinutes'),
+    minNoticeMinutes: pick('minNoticeMinutes'),
+    maxAdvanceDays: pick('maxAdvanceDays'),
+    slotIntervalMinutes: pick('slotIntervalMinutes'),
+    defaultBranchTransferMinutes: pick('defaultBranchTransferMinutes'),
+    depositPolicy: pick('depositPolicy'),
+    riskyCustomerNoShowThreshold: pick('riskyCustomerNoShowThreshold'),
+    maskCustomerPhoneFromStaff: pick('maskCustomerPhoneFromStaff'),
+    reminderOffsetsMinutes: pick('reminderOffsetsMinutes'),
+    reviewInviteEnabled: pick('reviewInviteEnabled'),
+  };
+}

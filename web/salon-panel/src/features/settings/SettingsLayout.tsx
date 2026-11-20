@@ -5,10 +5,11 @@ import type { ReactNode } from 'react';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Şubeler ve saatler (PR-24), bildirimler (D3), kapora ve IBAN (D4), roller, abonelik, KVKK (D5–6)
+// Bölüm menüsü. Bildirimler (D3), kapora ve IBAN (D4), roller, abonelik, KVKK (D5–6)
 // ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
 const sections = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
+  { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
   { to: '/ayarlar/randevu-kurallari', label: 'Randevu kuralları' },
   { to: '/ayarlar/rezervasyon', label: 'Rezervasyon sayfası' },
 ] as const;
@@ -18,26 +19,37 @@ export interface SettingsLayoutProps {
   /** Üst bardaki "Değişiklikleri kaydet" bu formu gönderir. */
   formId: string;
   saving: boolean;
+  /** Kaydetmenin solunda ikincil eylem ("Şube ekle"). */
+  extraAction?: ReactNode;
   children: ReactNode;
 }
 
 /** Ayarlar sayfası: üst barda tek birincil eylem, solda bölüm menüsü, sağda kartlar. */
-export function SettingsLayout({ context, formId, saving, children }: SettingsLayoutProps) {
+export function SettingsLayout({
+  context,
+  formId,
+  saving,
+  extraAction,
+  children,
+}: SettingsLayoutProps) {
   return (
     <Page
       title="Ayarlar"
       context={context}
       action={
-        <Button
-          variant="primary"
-          type="submit"
-          form={formId}
-          icon={<Check size={16} aria-hidden="true" />}
-          loading={saving}
-          loadingLabel="Kaydediliyor…"
-        >
-          Değişiklikleri kaydet
-        </Button>
+        <>
+          {extraAction}
+          <Button
+            variant="primary"
+            type="submit"
+            form={formId}
+            icon={<Check size={16} aria-hidden="true" />}
+            loading={saving}
+            loadingLabel="Kaydediliyor…"
+          >
+            Değişiklikleri kaydet
+          </Button>
+        </>
       }
     >
       <div className={styles.layout}>
