@@ -3,21 +3,13 @@ import { ApiProblem, idempotencyKey } from '@omvila/api-client-ts';
 import { personelRenkleri } from '@omvila/design-tokens';
 import { errorMessage } from '@omvila/ui-web/errors';
 import { formatDuration, parseMobilePhone } from '@omvila/ui-web/format';
-import {
-  Banner,
-  Button,
-  Checkbox,
-  Drawer,
-  Select,
-  Switch,
-  TextField,
-  useToast,
-} from '@omvila/ui-web/panel';
+import { Banner, Button, Drawer, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { useSession } from '@/app/session';
+import { CheckboxGroup } from '@/shared/CheckboxGroup';
 import type { Service } from '@/features/services/api';
 import { useCreateStaff } from './api';
 import type { StaffDetail } from './api';
@@ -229,15 +221,15 @@ export function AddStaffDrawer({
           {services.length === 0 ? (
             <p className={styles.note}>Henüz hizmet yok.</p>
           ) : (
-            services.map((service) => (
-              <Checkbox
-                key={service.id}
-                label={service.name}
-                description={formatDuration(service.durationMinutes)}
-                value={service.id}
-                {...form.register('serviceIds')}
-              />
-            ))
+            <CheckboxGroup
+              control={form.control}
+              name="serviceIds"
+              options={services.map((service) => ({
+                value: service.id,
+                label: service.name,
+                description: formatDuration(service.durationMinutes),
+              }))}
+            />
           )}
         </fieldset>
         {multiBranch ? (
@@ -247,14 +239,11 @@ export function AddStaffDrawer({
               Aynı kişi iki şubede aynı saatte randevu alamaz; şube arası geçiş süresi otomatik
               eklenir.
             </p>
-            {session.branches.map((branch) => (
-              <Checkbox
-                key={branch.id}
-                label={branch.name}
-                value={branch.id}
-                {...form.register('branchIds')}
-              />
-            ))}
+            <CheckboxGroup
+              control={form.control}
+              name="branchIds"
+              options={session.branches.map((branch) => ({ value: branch.id, label: branch.name }))}
+            />
             {errors.branchIds?.message ? <p role="alert">{errors.branchIds.message}</p> : null}
           </fieldset>
         ) : null}

@@ -38,3 +38,7 @@ build/
 
 # Claude
 .claude/settings.local.json
+
+# Playwright çıktıları
+web/salon-panel/e2e-results/
+web/salon-panel/e2e-report/

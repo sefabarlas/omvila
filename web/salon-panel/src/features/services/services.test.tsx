@@ -139,6 +139,22 @@ describe('hizmet listesi', () => {
     });
   });
 
+  it('tek personelli salonda "Kimler veriyor?" dizi olarak gönderilir', async () => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/hizmetler', { calls, withServices: true, onlyOwner: true });
+    await screen.findByRole('table', { name: 'Hizmetler' });
+    await userEvent.click(screen.getByRole('button', { name: 'Hizmet ekle' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Hizmet ekle' });
+    await userEvent.type(within(dialog).getByRole('textbox', { name: 'Hizmet adı' }), 'Fön');
+    await userEvent.type(within(dialog).getByRole('textbox', { name: 'Süre' }), '30');
+    await userEvent.type(within(dialog).getByRole('textbox', { name: 'Fiyat' }), '250');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Hizmeti ekle' }));
+    expect(await screen.findByText('Fön eklendi')).toBeTruthy();
+    expect(calls['/api/v1/manage/services']?.[0]).toMatchObject({
+      staffIds: ['0193a8f0-0000-7000-8000-0000000000c1'],
+    });
+  });
+
   it('eksik ad, süre ve fiyat gönderilmez', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/hizmetler', { calls, withServices: true });
