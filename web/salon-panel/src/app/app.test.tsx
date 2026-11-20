@@ -30,7 +30,7 @@ describe('oturum', () => {
     ).toBeTruthy();
   });
 
-  it('personelde yönetim menüsü yok', async () => {
+  it('personelde yönetim menüsü yok; kişisel menü "Benim" (kabul kriteri 10)', async () => {
     renderApp('/', {
       session: sessionFixture({
         permissions: staffPermissions,
@@ -42,7 +42,9 @@ describe('oturum', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Genel bakış']);
+    ).toEqual(['Takvimim']);
+    expect(within(nav).getByText('Benim')).toBeTruthy();
+    expect(within(nav).queryByText('Yönetim')).toBeNull();
     expect(within(nav).getByText('Personel')).toBeTruthy();
   });
 });
@@ -91,11 +93,23 @@ describe('menü', () => {
       'personel',
       'ayarlar',
     ]);
-    expect(visibleMenu(() => false).map((e) => e.key)).toEqual(['genel']);
+    // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; Dilim 1'de yalnız Takvimim açık.
+    expect(visibleMenu(() => false).map((e) => e.key)).toEqual(['takvimim']);
+  });
+
+  it('personel menüsü bölümler gelince Takvimim, Müşteriler, Kapıda sıra, Primim (kabul kriteri 10)', () => {
+    const staff = new Set(['calendar.view', 'customer.view', 'walkin.manage', 'commission.view']);
+    expect(visibleMenu((p) => staff.has(p), true).map((e) => e.label)).toEqual([
+      'Takvimim',
+      'Müşteriler',
+      'Kapıda sıra',
+      'Primim',
+    ]);
   });
 
   it('etkin öğe yoldan', () => {
     expect(activeMenuKey('/')).toBe('genel');
+    expect(activeMenuKey('/', true)).toBe('takvimim');
     expect(activeMenuKey('/ayarlar/isletme')).toBe('ayarlar');
     expect(activeMenuKey('/hizmetlerim')).toBe('');
   });

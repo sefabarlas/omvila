@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { BranchContext } from './branch';
 import styles from './AppLayout.module.css';
 import { menuIcons } from './menu-icons';
-import { activeMenuKey, visibleMenu } from './menu';
+import { activeMenuKey, isPersonalView, visibleMenu } from './menu';
 import { useSession } from './session';
 
 const roleLabels: Record<string, string> = {
@@ -20,8 +20,10 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const entries = visibleMenu(can);
+  const personal = isPersonalView(can);
   const groups: SidebarGroup[] = (
     [
+      ['benim', 'Benim'],
       ['isletme', 'İşletme'],
       ['yonetim', 'Yönetim'],
     ] as const
@@ -44,7 +46,7 @@ export function AppLayout() {
         <div className={styles.sidebar}>
           <Sidebar
             groups={groups}
-            active={activeMenuKey(pathname)}
+            active={activeMenuKey(pathname, personal)}
             onNavigate={(item) => void navigate({ to: item.href })}
             branches={session.branches}
             {...(branchId ? { branchId } : {})}

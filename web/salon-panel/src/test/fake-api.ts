@@ -7,6 +7,7 @@ export const ownerPermissions = [
   'staff.manage',
   'calendar.view',
   'customer.view',
+  'report.view',
   'timeoff.request',
 ];
 export const staffPermissions = [

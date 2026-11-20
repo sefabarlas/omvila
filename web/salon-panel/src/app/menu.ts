@@ -8,7 +8,7 @@ export interface MenuEntry {
   /** Görmek için gereken izin; boş = her oturum. */
   permission?: string;
   available: boolean;
-  group: 'isletme' | 'yonetim';
+  group: 'isletme' | 'yonetim' | 'benim';
 }
 
 export const menuEntries: readonly MenuEntry[] = [
@@ -95,17 +95,62 @@ export const menuEntries: readonly MenuEntry[] = [
   },
 ];
 
-/** Kullanıcının görebileceği öğeler. */
-export function visibleMenu(can: (permission: string) => boolean): MenuEntry[] {
-  return menuEntries.filter(
-    (entry) => entry.available && (entry.permission === undefined || can(entry.permission)),
+/**
+ * Kişisel menü (salon-paneli/PersonelRolu, kabul kriteri 10): raporları göremeyen kullanıcı (personel) işletme
+ * menüsü yerine "Benim" grubunu görür; ana sayfa onun için "Takvimim" özetidir. Müşteriler (D2), Kapıda sıra (D3)
+ * ve Primim (D6) sayfaları gelince açılır (acik-sorular.md T-45).
+ */
+export const personalEntries: readonly MenuEntry[] = [
+  { key: 'takvimim', label: 'Takvimim', to: '/', available: true, group: 'benim' },
+  {
+    key: 'musteriler',
+    label: 'Müşteriler',
+    to: '/musteriler',
+    permission: 'customer.view',
+    available: false,
+    group: 'benim',
+  },
+  {
+    key: 'kapida',
+    label: 'Kapıda sıra',
+    to: '/kapida-sira',
+    permission: 'walkin.manage',
+    available: false,
+    group: 'benim',
+  },
+  {
+    key: 'primim',
+    label: 'Primim',
+    to: '/primim',
+    permission: 'commission.view',
+    available: false,
+    group: 'benim',
+  },
+];
+
+/** Raporları görmeyen kullanıcı kişisel menüyü görür (roller-yetkiler.md § Menü görünürlüğü). */
+export function isPersonalView(can: (permission: string) => boolean): boolean {
+  return !can('report.view');
+}
+
+/** Kullanıcının görebileceği öğeler; `ignoreAvailability` henüz yapılmamış bölümleri de verir (test, plan). */
+export function visibleMenu(
+  can: (permission: string) => boolean,
+  ignoreAvailability = false,
+): MenuEntry[] {
+  const source = isPersonalView(can) ? personalEntries : menuEntries;
+  return source.filter(
+    (entry) =>
+      (ignoreAvailability || entry.available) &&
+      (entry.permission === undefined || can(entry.permission)),
   );
 }
 
-/** Yoldan etkin öğe ("/" yalnız tam eşleşmede). */
-export function activeMenuKey(pathname: string): string {
-  const match = menuEntries.find(
+/** Yoldan etkin öğe ("/" yalnız tam eşleşmede; kişisel menüde "Takvimim"). */
+export function activeMenuKey(pathname: string, personal = false): string {
+  const source = personal ? personalEntries : menuEntries;
+  const match = source.find(
     (entry) => entry.to !== '/' && (pathname === entry.to || pathname.startsWith(`${entry.to}/`)),
   );
-  return match?.key ?? (pathname === '/' ? 'genel' : '');
+  return match?.key ?? (pathname === '/' ? (personal ? 'takvimim' : 'genel') : '');
 }

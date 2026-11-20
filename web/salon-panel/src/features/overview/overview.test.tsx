@@ -1,7 +1,7 @@
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { sessionFixture, staffPermissions } from '../../test/fake-api';
+import { sessionFixture } from '../../test/fake-api';
 import { renderApp } from '../../test/render-app';
 
 // Kural: dilim-01 kabul kriteri 1 (kurulumda 1/5), § Alan kuralları (adımlar), salon-paneli/KayitKurulum ve GenelBakisBos
@@ -68,7 +68,7 @@ describe('ilk hafta', () => {
     expect(calls['/api/v1/manage/onboarding/events']?.[0]).toEqual({ event: 'BookingLinkCopied' });
   });
 
-  it('personel kopyalayınca olay bildirmez (settings.manage yok)', async () => {
+  it('ayar izni olmayan şube müdürü kopyalayınca olay bildirmez', async () => {
     const calls: Record<string, unknown[]> = {};
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: () => Promise.resolve() },
@@ -76,7 +76,8 @@ describe('ilk hafta', () => {
     });
     renderApp('/', {
       session: sessionFixture({
-        permissions: staffPermissions,
+        permissions: ['report.view', 'calendar.view', 'customer.view'],
+        membership: { role: 'BranchManager', branchIds: [], staffId: null },
         brand: { ...sessionFixture().brand, status: 'Active' },
       }),
       calls,
