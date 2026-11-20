@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Testlerin ortak altyapısı (docs/standartlar/test-stratejisi.md § Test verisi). Test projesi değildir. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="NodaTime.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

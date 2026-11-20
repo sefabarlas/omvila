@@ -64,7 +64,7 @@ internal static class CreateAppointmentEndpoint
 - Modül başına bir `DbContext`, kendi şemasında (`HasDefaultSchema("scheduling")`).
 - Konfigürasyon `IEntityTypeConfiguration<T>` sınıflarında; veri notasyonu (attribute) kullanılmaz.
 - Her markaya ait varlık `IBrandOwned` arayüzünü uygular; global filtre ve RLS politikası buna göre kurulur 🔒.
-- Migration adı: `YYYYMMDDHHmm_KisaAciklama`. RLS politikaları, exclusion constraint'ler ve özel indeksler migration içinde `migrationBuilder.Sql(...)` ile yazılır; bu SQL dosyaları `Infrastructure/Migrations/Sql/` altında adlandırılmış dosyalardır.
+- Migration adı: `KisaAciklama`; EF dosya adına `YYYYMMDDHHmmss_` zaman damgasını kendisi ekler (`dotnet ef migrations add KisaAciklama`). RLS politikaları, exclusion constraint'ler ve özel indeksler migration içinde `migrationBuilder.Sql(...)` ile yazılır; bu SQL dosyaları `Infrastructure/Migrations/Sql/` altında adlandırılmış dosyalardır.
 - Döngü içinde sorgu yasak (N+1). Toplu yükleme için `Where(x => ids.Contains(x.Id))`.
 - Ham SQL yalnız `FromSql` / `SqlQuery` ile parametreli; string birleştirme yasak 🔒.
 - Para `bigint`, zaman `timestamptz`, yerel saat `time`, tarih `date`, aralık `tstzrange`.

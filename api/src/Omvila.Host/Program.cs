@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using NodaTime;
 using Omvila.Host;
+using Omvila.Infrastructure;
+using Omvila.Infrastructure.Persistence;
 using Omvila.SharedKernel;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -17,7 +19,7 @@ builder.Services.AddSerilog((services, logger) => logger
 builder.Services.AddSingleton<IClock>(SystemClock.Instance);
 builder.Services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
 builder.Services.AddOmvilaProblemDetails();
-builder.Services.AddHealthChecks();
+builder.Services.AddOmvilaInfrastructure(builder.Configuration);
 builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((document, _, _) =>
 {
     document.Info.Title = "OMVILA API";
@@ -26,6 +28,15 @@ builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((doc
 }));
 
 var app = builder.Build();
+
+// `dotnet run --project src/Omvila.Host -- migrate`: migration'ları migrator rolüyle uygular ve çıkar.
+if (args.Contains("migrate", StringComparer.Ordinal))
+{
+    var migrator = builder.Configuration.GetConnectionString(InfrastructureServiceCollectionExtensions.MigratorConnectionName)
+        ?? throw new InvalidOperationException("ConnectionStrings:Migrator tanımlı değil.");
+    await app.Services.GetRequiredService<MigrationRunner>().RunAsync(migrator, CancellationToken.None);
+    return;
+}
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

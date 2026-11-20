@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Omvila.Host\Omvila.Host.csproj" />
+    <ProjectReference Include="..\Omvila.TestKit\Omvila.TestKit.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

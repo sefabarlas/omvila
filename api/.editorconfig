@@ -15,3 +15,8 @@ dotnet_diagnostic.CA1707.severity = none
 [*.cs]
 # ASP.NET Core'da SynchronizationContext yok; ConfigureAwait(false) gürültü olur.
 dotnet_diagnostic.MA0004.severity = none
+
+[**/Migrations/*.cs]
+# EF Core'un ürettiği migration ve snapshot dosyaları elle yazılmaz; analizör kuralları uygulanmaz.
+# Elle eklenen SQL (RLS, izinler) MigrationBuilderExtensions'tan çağrılır ve orada denetlenir.
+generated_code = true
