@@ -283,3 +283,133 @@
     flex-wrap: wrap;
   }
 }
+
+/* salon-paneli/AyarlarSube: gün satırları, özel günler, takvim düzeni. */
+.dayRow {
+  display: grid;
+  grid-template-columns: 120px auto minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: center;
+  padding: var(--bosluk-3) 0;
+  border-top: 1px solid var(--cizgi);
+}
+
+.dayRow:last-child {
+  padding-bottom: 0;
+}
+
+.dayName {
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.dayClosed {
+  color: var(--metin-ikincil);
+}
+
+.dayIntervals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2) var(--bosluk-4);
+  align-items: center;
+}
+
+.interval {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.timeField {
+  width: 112px;
+}
+
+.dayError {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.specialRow {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) auto auto;
+  gap: var(--bosluk-4);
+  align-items: center;
+  padding: var(--bosluk-3) 0;
+  border-top: 1px solid var(--cizgi);
+}
+
+.specialDate {
+  font-weight: 700;
+}
+
+.specialKind {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  text-align: right;
+}
+
+.cardFoot {
+  display: flex;
+  padding-top: var(--bosluk-3);
+  border-top: 1px solid var(--cizgi);
+}
+
+.segmented {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  margin: 0;
+  padding: var(--bosluk-1);
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: var(--zemin-ikincil);
+}
+
+.segment {
+  position: relative;
+  padding: var(--bosluk-1) var(--bosluk-3);
+  border-radius: var(--kose-tam);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segment:has(input:checked) {
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  box-shadow: var(--golge-sm);
+}
+
+.segment:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.segmentInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.staticValue {
+  font-weight: 700;
+}
+
+@media (width <= 899px) {
+  .dayRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .dayIntervals,
+  .dayClosed {
+    grid-column: 1 / -1;
+  }
+
+  .specialRow {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

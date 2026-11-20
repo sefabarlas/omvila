@@ -53,7 +53,61 @@ export interface FakeApiOptions {
   saveError?: 'concurrency_conflict' | 'slug_unavailable' | 'validation_failed:phone';
   /** Aktif IBAN var mı (kapora ayarları). */
   depositAvailable?: boolean;
+  /** Şube eklerken plan sınırı (403 + meta.planLimit). */
+  branchLimitReached?: boolean;
 }
+
+export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
+
+export const branchFixture = {
+  id: branchId,
+  name: 'Merkez',
+  slug: 'merkez',
+  addressLine: 'Moda Cad. 42',
+  district: 'Kadıköy',
+  city: 'İstanbul',
+  postalCode: null,
+  latitude: null,
+  longitude: null,
+  phone: null,
+  email: null,
+  timeZone: 'Europe/Istanbul',
+  slotIntervalMinutes: null,
+  isActive: true,
+  version: '5',
+};
+
+export const workingHoursFixture = {
+  days: [
+    { dayOfWeek: 2, intervals: [{ start: '10:00', end: '20:00' }] },
+    { dayOfWeek: 6, intervals: [{ start: '09:00', end: '19:00' }] },
+  ],
+  version: '9',
+};
+
+const closedDay = (id: string, date: string, note: string) => ({
+  id,
+  date,
+  kind: 'Closure',
+  isClosed: true,
+  intervals: [],
+  note,
+});
+
+export const overridesFixture = [
+  {
+    id: '0193a8f0-0000-7000-8000-0000000000d1',
+    date: '2026-12-31',
+    kind: 'ShortDay',
+    isClosed: false,
+    intervals: [{ start: '10:00', end: '16:00' }],
+    note: 'Erken kapanış',
+  },
+  closedDay('0193a8f0-0000-7000-8000-0000000000d2', '2027-01-01', 'Yılbaşı'),
+  closedDay('0193a8f0-0000-7000-8000-0000000000d3', '2027-03-20', 'Ramazan Bayramı'),
+  closedDay('0193a8f0-0000-7000-8000-0000000000d4', '2027-03-21', 'Ramazan Bayramı'),
+  closedDay('0193a8f0-0000-7000-8000-0000000000d5', '2027-03-22', 'Ramazan Bayramı'),
+];
 
 export const brandFixture = {
   id: '0193a8f0-0000-7000-8000-00000000000a',
@@ -116,6 +170,7 @@ export function fakeFetch({
   doneSteps = ['BusinessCreated'],
   saveError,
   depositAvailable = false,
+  branchLimitReached = false,
 }: FakeApiOptions = {}) {
   const json = (status: number, body: unknown) =>
     Promise.resolve(
@@ -188,6 +243,49 @@ export function fakeFetch({
       }
     };
     const body = async () => (await request.clone().json()) as Record<string, unknown>;
+
+    const branchBase = `/api/v1/manage/branches/${branchId}`;
+    if (path === '/api/v1/manage/branches' && request.method === 'POST') {
+      if (branchLimitReached) {
+        return json(403, { code: 'forbidden', meta: { planLimit: 1 } });
+      }
+
+      const created = await body();
+      return json(201, {
+        ...branchFixture,
+        ...created,
+        id: '0193a8f0-0000-7000-8000-0000000000b2',
+        version: '1',
+      });
+    }
+
+    if (path === branchBase) {
+      return request.method === 'GET'
+        ? json(200, branchFixture)
+        : (saveFailure() ?? json(200, { ...branchFixture, ...(await body()), version: '6' }));
+    }
+
+    if (path === `${branchBase}/working-hours`) {
+      return request.method === 'GET'
+        ? json(200, workingHoursFixture)
+        : (saveFailure() ?? json(200, { ...(await body()), version: '10' }));
+    }
+
+    if (path === `${branchBase}/overrides`) {
+      if (request.method === 'GET') {
+        return json(200, { items: overridesFixture });
+      }
+
+      const created = await body();
+      return json(201, {
+        ...closedDay('0193a8f0-0000-7000-8000-0000000000d9', String(created.fromDate), ''),
+        ...created,
+      });
+    }
+
+    if (path.startsWith(`${branchBase}/overrides/`) && request.method === 'DELETE') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
 
     if (path === '/api/v1/manage/brand') {
       if (request.method === 'GET') {

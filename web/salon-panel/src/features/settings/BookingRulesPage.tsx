@@ -3,7 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useApi } from '@/app/api-context';
-import { brandSettingsQuery, useUpdateBrandSettings } from './api';
+import { brandSettingsBody, brandSettingsQuery, useUpdateBrandSettings } from './api';
 import type { BrandSettings } from './api';
 import { ConflictBanner } from './ConflictBanner';
 import { describeSaveError } from './save-error';
@@ -51,32 +51,6 @@ function numberOptions(values: number[], current: number, label: (n: number) => 
   );
 }
 
-/**
- * Gönderilecek gövde: pasif denetimin değeri formdan gelmeyebilir (react-hook-form), o zaman kayıtlı değer korunur.
- * Salt okunur alanlar (depositAvailable, version) gövdeye girmez.
- */
-function toBody(current: BrandSettings, values: Partial<BrandSettings>): BrandSettings {
-  const pick = <K extends keyof BrandSettings>(key: K) => values[key] ?? current[key];
-  return {
-    requiresApproval: pick('requiresApproval'),
-    approvalTimeoutMinutes: pick('approvalTimeoutMinutes'),
-    allowStaffSelection: pick('allowStaffSelection'),
-    allowAnyStaffOption: pick('allowAnyStaffOption'),
-    cancellationCutoffHours: pick('cancellationCutoffHours'),
-    rescheduleCutoffHours: pick('rescheduleCutoffHours'),
-    noShowAfterMinutes: pick('noShowAfterMinutes'),
-    minNoticeMinutes: pick('minNoticeMinutes'),
-    maxAdvanceDays: pick('maxAdvanceDays'),
-    slotIntervalMinutes: pick('slotIntervalMinutes'),
-    defaultBranchTransferMinutes: pick('defaultBranchTransferMinutes'),
-    depositPolicy: pick('depositPolicy'),
-    riskyCustomerNoShowThreshold: pick('riskyCustomerNoShowThreshold'),
-    maskCustomerPhoneFromStaff: pick('maskCustomerPhoneFromStaff'),
-    reminderOffsetsMinutes: pick('reminderOffsetsMinutes'),
-    reviewInviteEnabled: pick('reviewInviteEnabled'),
-  };
-}
-
 const asNumber = { setValueAs: (value: string) => Number(value) };
 
 /**
@@ -96,7 +70,7 @@ export function BookingRulesPage() {
   const depositAvailable = settings.depositAvailable === true;
 
   const onSubmit = form.handleSubmit(async (values) => {
-    const body = toBody(settings, values);
+    const body = brandSettingsBody(settings, values);
     try {
       const saved = await update.mutateAsync({ version: settings.version ?? '', body });
       form.reset(saved);

@@ -21,7 +21,12 @@ describe('İşletme bilgileri', () => {
       within(nav)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['İşletme bilgileri', 'Randevu kuralları', 'Rezervasyon sayfası']);
+    ).toEqual([
+      'İşletme bilgileri',
+      'Şubeler ve saatler',
+      'Randevu kuralları',
+      'Rezervasyon sayfası',
+    ]);
     expect(
       within(nav).getByRole('link', { name: 'İşletme bilgileri' }).getAttribute('aria-current'),
     ).toBe('page');
