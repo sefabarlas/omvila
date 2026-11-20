@@ -54,6 +54,12 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `staff.walkin_queue` | Tercihe göre | `Sırada {n} kişi` | `Kapıda sıra · tahmini bekleme {dk} dk.` | Sıra |
 | `owner.credits_low` | Owner | `SMS kontörü azaldı` | `{kalan} SMS kaldı, tahmini {gün} gün yeter.` | Panel · kontör |
 | `owner.subscription_payment_failed` | Owner | `Abonelik ödemesi alınamadı` | `{gün} gün içinde kartı güncelleyin ya da havale ile ödeyin; {tarih} salt okunur.` | Panel · abonelik |
+
+### İşletme SMS'leri
+
+| EventCode | Tetikleyici | Kanal | SMS metni (şablon) |
+|---|---|---|---|
+| `staff.invite` | Personel telefonla eklendi, "Davet SMS'i gönder" açık | SMS | `{salon}: Ekibimize eklendiniz. Bu numarayla OMVILA'ya giriş yapın: {bağlantı}` — **taslak**, tasarımda yok (acik-sorular.md T-32) |
 | `staff.daily_summary` | Tercihe göre (kapalı varsayılan) | `Gün sonu özeti` | `{n} randevu tamamlandı, {tutar} tahsilat.` | Bugün |
 
 ## E-posta (işletmeye, gönderen OMVILA)

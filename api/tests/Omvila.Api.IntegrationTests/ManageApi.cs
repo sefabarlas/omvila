@@ -33,7 +33,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         factory.Clock.Advance(NodaTime.Duration.FromMinutes(2));
         var otp = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/request", new { phone, purpose = "Signup" });
         var code = await ScalarAsync<string>(
-            "SELECT payload->>'kod' FROM notifications.notification_outbox ORDER BY created_utc DESC, id DESC LIMIT 1");
+            "SELECT payload->>'kod' FROM notifications.notification_outbox WHERE event_code = 'otp.code' ORDER BY created_utc DESC, id DESC LIMIT 1");
         var verified = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/verify", new { otpId = otp.Body.GetProperty("otpId").GetGuid(), code });
         var signup = await SendAsync(
             HttpMethod.Post,
@@ -70,9 +70,19 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         factory.Clock.Advance(NodaTime.Duration.FromMinutes(2));
         var otp = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/request", new { phone, purpose = "Login" });
         var code = await ScalarAsync<string>(
-            "SELECT payload->>'kod' FROM notifications.notification_outbox ORDER BY created_utc DESC, id DESC LIMIT 1");
+            "SELECT payload->>'kod' FROM notifications.notification_outbox WHERE event_code = 'otp.code' ORDER BY created_utc DESC, id DESC LIMIT 1");
         var verified = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/verify", new { otpId = otp.Body.GetProperty("otpId").GetGuid(), code });
         return verified.Body.GetProperty("accessToken").GetString()!;
+    }
+
+    /// <summary>OTP ile panele giriş; erişim jetonunu (veya SignupRequired gövdesini) döner.</summary>
+    public async Task<Response> SignInAsync(string phone)
+    {
+        factory.Clock.Advance(NodaTime.Duration.FromMinutes(2));
+        var otp = await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/request", new { phone, purpose = "Login" });
+        var code = await ScalarAsync<string>(
+            "SELECT payload->>'kod' FROM notifications.notification_outbox WHERE event_code = 'otp.code' ORDER BY created_utc DESC, id DESC LIMIT 1");
+        return await SendAsync(HttpMethod.Post, "/api/v1/manage/auth/otp/verify", new { otpId = otp.Body.GetProperty("otpId").GetGuid(), code });
     }
 
     public Task<Response> GetAsync(string path, string token) => SendAsync(HttpMethod.Get, path, null, token);

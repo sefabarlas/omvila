@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Catalog.Contracts;
 using Omvila.Modules.Catalog.Features;
 using Omvila.Modules.Catalog.Features.BranchPrices;
 using Omvila.Modules.Catalog.Features.Categories;
@@ -19,6 +20,7 @@ public static class CatalogModule
     {
         services.AddModuleDbContext<CatalogDbContext>(CatalogDbContext.Schema);
         services.AddScoped<IOnboardingStepProvider, ServicesOnboardingStep>();
+        services.AddScoped<IStaffServiceAssignments, StaffServiceAssignments>();
         services.AddIntegrationEventHandler<BranchCreated, CopyBranchPricesOnBranchCreated>();
         return services;
     }

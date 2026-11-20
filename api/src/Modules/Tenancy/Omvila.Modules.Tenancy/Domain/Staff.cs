@@ -36,6 +36,38 @@ internal sealed class Staff
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }
 
+    public string? Bio { get; private set; }
+
+    /// <summary>"Personel ekle" (StaffRules ile doğrulanmış).</summary>
+    public static Staff Create(Guid id, Guid brandId, string fullName, string? title, string calendarColor, decimal serviceCommission, decimal saleCommission, bool isBookableOnline, Instant now) => new()
+    {
+        Id = id,
+        BrandId = brandId,
+        FullName = fullName.Trim(),
+        Title = title,
+        CalendarColor = calendarColor,
+        ServiceCommissionPercent = serviceCommission,
+        SaleCommissionPercent = saleCommission,
+        IsBookableOnline = isBookableOnline,
+        IsActive = true,
+        CreatedUtc = now,
+    };
+
+    /// <summary>Personel düzenleme (doğrulanmış değerler).</summary>
+    public void Update(StaffProfile p)
+    {
+        ArgumentNullException.ThrowIfNull(p);
+        FullName = p.FullName;
+        DisplayName = p.DisplayName;
+        Title = p.Title;
+        Bio = p.Bio;
+        CalendarColor = p.CalendarColor;
+        ServiceCommissionPercent = p.ServiceCommissionPercent;
+        SaleCommissionPercent = p.SaleCommissionPercent;
+        IsBookableOnline = p.IsBookableOnline;
+        IsActive = p.IsActive;
+    }
+
     public static Staff CreateOwner(Guid id, Guid brandId, Guid userId, string fullName, string calendarColor, Instant now) => new()
     {
         Id = id,

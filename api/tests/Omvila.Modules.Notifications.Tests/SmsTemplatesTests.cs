@@ -10,6 +10,11 @@ public sealed class SmsTemplatesTests
     private static readonly Dictionary<string, Dictionary<string, string>> LongestValues = new(StringComparer.Ordinal)
     {
         [NotificationEvents.OtpCode] = new(StringComparer.Ordinal) { ["kod"] = "999999" },
+        [NotificationEvents.StaffInvite] = new(StringComparer.Ordinal)
+        {
+            ["salon"] = "Güzellik ve Bakım Merkezi Nişantaşı Şubesi",
+            ["bağlantı"] = "https://omvila.com/giris",
+        },
     };
 
     [Fact]
@@ -30,6 +35,14 @@ public sealed class SmsTemplatesTests
     public void OtpCode_RendersDocumentText() =>
         SmsTemplates.Render(NotificationEvents.OtpCode, new Dictionary<string, string>(StringComparer.Ordinal) { ["kod"] = "482193" })
             .ShouldBe("OMVILA giriş kodunuz: 482193. Bu kodu kimseyle paylaşmayın.");
+
+    [Fact]
+    public void StaffInvite_StartsWithSalonName() =>
+        SmsTemplates.Render(NotificationEvents.StaffInvite, new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["salon"] = "Kuaför Elif",
+            ["bağlantı"] = "https://omvila.com/giris",
+        }).ShouldBe("Kuaför Elif: Ekibimize eklendiniz. Bu numarayla OMVILA'ya giriş yapın: https://omvila.com/giris");
 
     [Fact]
     public void Render_WithMissingValue_Throws() =>

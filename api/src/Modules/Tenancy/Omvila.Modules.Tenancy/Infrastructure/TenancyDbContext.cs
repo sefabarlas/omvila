@@ -27,6 +27,8 @@ internal sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> option
 
     public DbSet<WorkingHoursOverride> Overrides => Set<WorkingHoursOverride>();
 
+    public DbSet<StaffWorkingHours> StaffHours => Set<StaffWorkingHours>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

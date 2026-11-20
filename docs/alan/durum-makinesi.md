@@ -152,7 +152,7 @@ Not: Teknik kurallardaki eski tabloya göre ReadOnly'de salon elle randevu ekley
 | Varlık | Durumlar |
 |---|---|
 | `Brand.Status` | `Onboarding` (kurulum adımları bitmedi) → `Active` → `Suspended` (platform askıya aldı) / `Archived` |
-| `UserMembership.Status` | `Invited` → `Active` → `Disabled` |
+| `UserMembership.Status` | `Invited` → `Active` → `Disabled`; `Invited` → `Disabled` (personel pasife alındı, davet kapanır) |
 | `BrandSmsSender.Status` | `Pending` → `Approved` / `Rejected` (yeniden başvuru yeni satır) |
 | `PaymentNotice.Status` | `Pending` → `Matched` / `NotFound` ("Bulunamadı, markaya yaz") / `Rejected` |
 | `DataDeletionRequest.Status` | `Pending` → `Completed` / `Rejected` |

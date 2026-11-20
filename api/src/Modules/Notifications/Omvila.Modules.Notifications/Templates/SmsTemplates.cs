@@ -11,6 +11,7 @@ internal static class SmsTemplates
     private static readonly Dictionary<string, string> Bodies = new(StringComparer.Ordinal)
     {
         [NotificationEvents.OtpCode] = "OMVILA giriş kodunuz: {kod}. Bu kodu kimseyle paylaşmayın.",
+        [NotificationEvents.StaffInvite] = "{salon}: Ekibimize eklendiniz. Bu numarayla OMVILA'ya giriş yapın: {bağlantı}",
     };
 
     public static IReadOnlyCollection<string> EventCodes => Bodies.Keys;

@@ -14,6 +14,9 @@ internal sealed class JsonBody(JsonElement root)
 
     public bool Has(string name) => IsObject && root.TryGetProperty(name, out _);
 
+    /// <summary>Ham değer (dizi gibi özel biçimler için); yoksa Undefined.</summary>
+    public JsonElement Raw(string name) => IsObject && root.TryGetProperty(name, out var value) ? value : default;
+
     /// <summary>Gelmediyse <paramref name="current"/>; null geldiyse null; metin değilse hata.</summary>
     public string? String(string name, string? current)
     {
