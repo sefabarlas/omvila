@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NodaTime;
+using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
+using Omvila.Modules.Identity.Infrastructure;
 using Omvila.Modules.Identity.Security;
 
 namespace Omvila.Modules.Identity;
@@ -22,6 +24,8 @@ public static class IdentityModule
         services.AddSingleton<SigningKeyStore>();
         services.AddSingleton<AccessTokenIssuer>();
         services.AddSingleton<IPermissionResolver, RolePermissionResolver>();
+        services.AddModuleDbContext<IdentityDbContext>(IdentityDbContext.Schema);
+        services.AddScoped<RefreshTokenService>();
 
         // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.
         var authentication = services.AddAuthentication();

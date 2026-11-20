@@ -5,6 +5,7 @@ using NodaTime;
 using Npgsql;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Identity;
 using Omvila.SharedKernel;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -37,7 +38,10 @@ public sealed class PostgresFixture : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
-        await using var services = CreateServices();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(Settings()).Build();
+
+        // Bütün modüllerin migration'ları (her modül kendi DbContext'ini AddModuleDbContext ile kaydeder).
+        await using var services = CreateServices(configure: s => s.AddIdentityModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
     }
 
@@ -82,6 +86,8 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Idempotency:PurgeIntervalMinutes"] = "60",
             ["Auth:Issuer"] = "omvila",
             ["Auth:AccessTokenMinutes"] = "15",
+            ["Auth:RefreshTokenDaysRemembered"] = "30",
+            ["Auth:RefreshTokenDaysSession"] = "1",
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
         };
