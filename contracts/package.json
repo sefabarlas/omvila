@@ -9,8 +9,9 @@
     "bundle": "redocly bundle openapi.yaml -o dist/openapi.json",
     "mock": "prism mock openapi.yaml --port 4010 --dynamic false",
     "generate": "pnpm generate:ts && pnpm generate:dart",
-    "generate:ts": "openapi-typescript openapi.yaml -o ../packages/api-client-ts/src/generated/schema.ts",
-    "generate:dart": "openapi-generator-cli generate -i openapi.yaml -g dart-dio -o ../packages/api-client-dart --additional-properties=pubName=omvila_api,serializationLibrary=json_serializable,enumUnknownDefaultCase=true"
+    "generate:ts": "openapi-typescript openapi.yaml -o ../packages/api-client-ts/src/generated/schema.ts --default-non-nullable false",
+    "generate:dart": "redocly bundle openapi.yaml -o dist/openapi.json && node scripts/dart-spec.mjs && openapi-generator-cli generate --generator-key dart && pnpm generate:dart:build",
+    "generate:dart:build": "cd ../packages/api-client-dart && dart pub get && dart run build_runner build --delete-conflicting-outputs"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.15.0",

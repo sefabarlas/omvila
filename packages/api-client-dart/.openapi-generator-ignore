@@ -1,0 +1,12 @@
+# Elle tutulan dosyalar: üretici bunlara dokunmaz.
+# Bu paketin geri kalanı contracts/openapi.yaml'dan üretilir ve elle düzenlenmez.
+AGENTS.md
+CLAUDE.md
+.gitignore
+build.yaml
+pubspec.yaml
+
+# Üretilmeyecek dosyalar (dokümantasyon ve boş test iskeletleri)
+README.md
+doc/**
+test/**

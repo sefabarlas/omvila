@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
+  "spaces": 2,
+  "generator-cli": {
+    "version": "7.27.0",
+    "generators": {
+      "dart": {
+        "generatorName": "dart-dio",
+        "inputSpec": "dist/openapi.dart.json",
+        "output": "../packages/api-client-dart",
+        "additionalProperties": {
+          "pubName": "omvila_api",
+          "pubVersion": "0.1.0",
+          "pubDescription": "OMVILA API istemcisi (contracts/openapi.yaml dosyasından üretilir)",
+          "pubHomepage": "",
+          "pubPublishTo": "none",
+          "serializationLibrary": "json_serializable",
+          "enumUnknownDefaultCase": true
+        }
+      }
+    }
+  }
+}

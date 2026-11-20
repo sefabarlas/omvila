@@ -1,0 +1,20 @@
+# Elle tutulur (.openapi-generator-ignore). Bağımlılıklar dart-dio üreticisinin
+# şablonuyla aynıdır; tek fark SDK alt sınırı: json_serializable'ın ürettiği kod
+# null-aware-elements (Dart 3.8) kullanır. Üretici sürümü değişince karşılaştırın.
+name: omvila_api
+version: 0.1.0
+description: OMVILA API istemcisi (contracts/openapi.yaml dosyasından üretilir)
+publish_to: none
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  dio: ^5.7.0
+  copy_with_extension: ^7.1.0
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  build_runner: ^2.4.0
+  copy_with_extension_gen: ^7.1.0
+  json_serializable: ^6.9.3
