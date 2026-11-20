@@ -1,0 +1,42 @@
+{
+  "name": "@omvila/ui-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OMVILA web bileşenleri, biçimlendirme, durum adları ve hata metinleri",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./format": "./src/format/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./status": "./src/status/index.ts",
+    "./panel": "./src/panel/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint --max-warnings=0 src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@omvila/api-client-ts": "workspace:*",
+    "@omvila/design-tokens": "workspace:*",
+    "lucide-react": "^0.511.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vitest": "^5.1.1"
+  }
+}
