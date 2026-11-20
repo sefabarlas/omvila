@@ -21,6 +21,7 @@ public static class CatalogModule
         services.AddModuleDbContext<CatalogDbContext>(CatalogDbContext.Schema);
         services.AddScoped<IOnboardingStepProvider, ServicesOnboardingStep>();
         services.AddScoped<IStaffServiceAssignments, StaffServiceAssignments>();
+        services.AddScoped<IServiceOffers, ServiceOffers>();
         services.AddIntegrationEventHandler<BranchCreated, CopyBranchPricesOnBranchCreated>();
         return services;
     }
