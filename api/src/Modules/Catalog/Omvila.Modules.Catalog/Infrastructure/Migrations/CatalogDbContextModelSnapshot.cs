@@ -341,6 +341,55 @@ namespace Omvila.Modules.Catalog.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Catalog.Domain.ServiceTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("category_name");
+
+                    b.Property<int>("DefaultDurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("default_duration_minutes");
+
+                    b.Property<string>("IndustryCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("industry_code");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.HasKey("Id")
+                        .HasName("pk_service_templates");
+
+                    b.HasIndex("IndustryCode", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_service_templates_industry_code_name");
+
+                    b.ToTable("service_templates", "catalog", t =>
+                        {
+                            t.HasCheckConstraint("ck_service_templates_duration", "default_duration_minutes BETWEEN 5 AND 720");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Catalog.Domain.BranchServicePrice", b =>
                 {
                     b.HasOne("Omvila.Modules.Catalog.Domain.Service", null)
