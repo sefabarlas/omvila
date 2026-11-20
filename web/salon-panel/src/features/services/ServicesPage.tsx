@@ -281,11 +281,15 @@ function EditService({
   onClose: () => void;
 }) {
   const api = useApi();
-  const service = useSuspenseQuery(serviceQuery(api, row.id)).data;
+  const query = useSuspenseQuery(serviceQuery(api, row.id));
+  const service = query.data;
   const branchText = branchPrice?.current != null ? moneyInputValue(branchPrice.current) : '';
+  // Sürüm değişince (Yenile) pencere güncel kayıtla yeniden kurulur (kabul kriteri 15).
   return (
     <ServiceModal
+      key={service.version}
       {...props}
+      onReload={() => void query.refetch()}
       service={service}
       defaults={serviceToForm(service, branchText)}
       {...(branchPrice ? { branchPrice } : {})}

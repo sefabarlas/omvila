@@ -12,12 +12,16 @@ export interface PageProps extends TopbarProps {
 
 /** Panel sayfası: üst bar, abonelik şeridi (salon-paneli/GenelBakisGecikti: üst barın altında), içerik. */
 export function Page({ children, ...topbar }: PageProps) {
-  const { session } = useSession();
+  const { session, can } = useSession();
   return (
     <>
       <Topbar {...topbar} />
       <div className={styles.content}>
-        <SubscriptionBanner subscription={session.subscription} timeZone={defaultTimeZone} />
+        <SubscriptionBanner
+          subscription={session.subscription}
+          timeZone={defaultTimeZone}
+          manages={can('settings.manage')}
+        />
         {children}
       </div>
     </>

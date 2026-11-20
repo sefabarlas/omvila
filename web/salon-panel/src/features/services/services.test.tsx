@@ -196,6 +196,17 @@ describe('hizmet listesi', () => {
     });
   });
 
+  it('412: "Kayıt çakışması · Yenile" şeridi (kabul kriteri 15)', async () => {
+    renderApp('/hizmetler', { withServices: true, saveError: 'concurrency_conflict' });
+    await screen.findByRole('table', { name: 'Hizmetler' });
+    await userEvent.click(screen.getByRole('button', { name: 'Saç kesimi düzenle' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Hizmeti düzenle' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Hizmeti kaydet' }));
+    expect(await within(dialog).findByText('Kayıt çakışması')).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Yenile' }));
+    expect(within(dialog).queryByText('Kayıt çakışması')).toBeNull();
+  });
+
   it('kategori ekle: aynı ad reddedilir, yeni kategori eklenir', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/hizmetler', { calls, withServices: true });
