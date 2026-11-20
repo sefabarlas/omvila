@@ -12,7 +12,7 @@ export function ConflictBanner({ onReload }: { onReload: () => void }) {
         </Button>
       }
     >
-      Bu ayarlar siz düzenlerken başka bir oturumda değişti. Yenileyip değişikliklerinizi tekrar
+      Bu kayıt siz düzenlerken başka bir oturumda değişti. Yenileyip değişikliklerinizi tekrar
       girin.
     </Banner>
   );

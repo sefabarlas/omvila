@@ -9,6 +9,7 @@ import { renderApp } from '../../test/render-app';
 afterEach(cleanup);
 
 const deniz = sessionFixture({
+  subscription: { status: 'Trialing', trialEndsOn: '2026-11-27' },
   user: {
     id: '0193a8f0-0000-7000-8000-000000000002',
     fullName: 'Deniz Kara',
@@ -36,7 +37,8 @@ describe('personel görünümü', () => {
     expect(
       screen.getByText('Onay bekleyen talepleri yalnızca yönetici ve işletme sahibi onaylar.'),
     ).toBeTruthy();
-    // Kurulum ekranı ve bağlantı paylaşma personelde yok.
+    // Kurulum ekranı, bağlantı paylaşma ve deneme şeridi personelde yok.
+    expect(screen.queryByText(/Deneme süren/)).toBeNull();
     expect(screen.queryByText(/İlk randevunuza/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Kopyala' })).toBeNull();
   });

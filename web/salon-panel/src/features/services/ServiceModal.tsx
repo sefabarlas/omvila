@@ -5,6 +5,7 @@ import { formatDuration, parseMoneyInput } from '@omvila/ui-web/format';
 import { Button, Modal, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { ConflictBanner } from '@/features/settings/ConflictBanner';
 import { CheckboxGroup } from '@/shared/CheckboxGroup';
 import { Segmented } from '@/shared/Segmented';
 import { useCreateService, useSetBranchPrice, useUpdateService } from './api';
@@ -30,6 +31,8 @@ export interface ServiceModalProps {
   depositAvailable: boolean;
   /** Birden çok şubede düzenlerken seçili şubenin fiyatı (kabul kriteri 9). */
   branchPrice?: BranchPriceContext;
+  /** 412 sonrası "Yenile": güncel kayıt okunur ve pencere onunla yeniden kurulur. */
+  onReload?: () => void;
   onClose: () => void;
 }
 
@@ -56,6 +59,7 @@ export function ServiceModal({
   staff,
   depositAvailable,
   branchPrice,
+  onReload,
   onClose,
 }: ServiceModalProps) {
   const toast = useToast();
@@ -63,6 +67,7 @@ export function ServiceModal({
   const update = useUpdateService();
   const setPrice = useSetBranchPrice();
   const [key] = useState(() => idempotencyKey()['Idempotency-Key']);
+  const [conflict, setConflict] = useState(false);
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
     defaultValues: defaults,
@@ -98,6 +103,11 @@ export function ServiceModal({
       onClose();
     } catch (problem) {
       const code = problem instanceof ApiProblem ? problem.code : undefined;
+      if (problem instanceof ApiProblem && problem.status === 412) {
+        setConflict(true);
+        return;
+      }
+
       if (code === 'deposit_unavailable_no_iban') {
         form.setError('depositMode', { message: errorMessage(code) });
         return;
@@ -131,6 +141,16 @@ export function ServiceModal({
       }
     >
       <form id="hizmet" className={styles.form} noValidate onSubmit={(e) => void onSubmit(e)}>
+        {conflict && onReload ? (
+          <div className={styles.full}>
+            <ConflictBanner
+              onReload={() => {
+                setConflict(false);
+                onReload();
+              }}
+            />
+          </div>
+        ) : null}
         <TextField
           className={styles.span4}
           label="Hizmet adı"

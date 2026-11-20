@@ -47,6 +47,7 @@ test('personel girişi: menüde yalnız kişisel bölümler, yönetim sayfaları
   const nav = page.getByRole('navigation', { name: 'Ana menü' });
   await expect(nav.getByRole('link')).toHaveText(['Takvimim']);
   await expect(nav.getByText('Yönetim')).toHaveCount(0);
+  await page.screenshot({ path: 'e2e-results/ekranlar/PersonelRolu.png', fullPage: true });
 
   await page.goto('/ayarlar/isletme');
   await expect(

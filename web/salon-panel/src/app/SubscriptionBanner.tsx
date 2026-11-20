@@ -9,14 +9,20 @@ const trialBannerDays = 7;
 interface SubscriptionBannerProps {
   subscription: ManageSession['subscription'];
   timeZone: string;
+  /** Deneme ve ödeme şeritleri yalnız işletmeyi yönetenlere (ayar yetkisi); salt okunur şeridi herkese. */
+  manages: boolean;
 }
 
 /**
  * Abonelik şeridi (durum-makinesi.md § Abonelik; salon-paneli/Durumlar). Ödeme ve plan sayfaları Dilim 6'da geldiği
  * için şeritlerde eylem butonu yoktur.
  */
-export function SubscriptionBanner({ subscription, timeZone }: SubscriptionBannerProps) {
+export function SubscriptionBanner({ subscription, timeZone, manages }: SubscriptionBannerProps) {
   const clock = useClock();
+  if (!manages && subscription.status !== 'ReadOnly') {
+    return null;
+  }
+
   const banner = content(subscription, daysLeft(subscription, clock, timeZone));
   return banner;
 }
