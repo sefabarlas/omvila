@@ -18,6 +18,23 @@ public sealed class RlsGuardTests(PostgresFixture db)
         (await RlsGuard.FindUnprotectedTablesAsync(connection, null, Ct)).ShouldBeEmpty();
     }
 
+    // Marka tablosunda kiracı sütunu brand_id değil kimliğin kendisidir; bekçi sütun adına baktığı için ayrıca denetlenir.
+    [Fact]
+    public async Task BrandsTable_IsProtectedByItsOwnId()
+    {
+        await using var connection = await db.OpenMigratorConnectionAsync(Ct);
+        await using var command = new NpgsqlCommand(
+            """
+            SELECT c.relrowsecurity AND c.relforcerowsecurity
+                   AND EXISTS (SELECT 1 FROM pg_policies p WHERE p.schemaname = 'tenancy' AND p.tablename = 'brands')
+            FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'tenancy' AND c.relname = 'brands'
+            """,
+            connection);
+
+        ((bool)(await command.ExecuteScalarAsync(Ct))!).ShouldBeTrue();
+    }
+
     [Fact]
     public async Task Guard_DetectsTableWithoutPolicyOrForcedRls()
     {
