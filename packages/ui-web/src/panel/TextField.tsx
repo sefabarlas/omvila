@@ -11,6 +11,8 @@ export interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
   /** Hata: ne olduğunu ve ne yapılacağını söyler ("Telefon numarası 10 haneli olmalı."). */
   error?: string | undefined;
+  /** Etiket ekranda başka yerde yazıyorsa (ayar satırı) yalnız ekran okuyucuya. */
+  hideLabel?: boolean;
   /** Arama ve telefon alanlarında ikon. */
   icon?: ReactNode;
   /** Birim: ₺, dk. */
@@ -22,6 +24,7 @@ export function TextField({
   label,
   hint,
   error,
+  hideLabel = false,
   icon,
   suffix,
   id,
@@ -34,7 +37,7 @@ export function TextField({
   const message = error ?? hint;
   return (
     <div className={classNames(styles.field, className)}>
-      <label className={styles.label} htmlFor={inputId}>
+      <label className={hideLabel ? styles.visuallyHidden : styles.label} htmlFor={inputId}>
         {label}
       </label>
       <div className={styles.wrap}>

@@ -3,4 +3,6 @@ export const queryKeys = {
   session: () => ['session'] as const,
   onboarding: () => ['onboarding'] as const,
   bookingPage: () => ['booking-page'] as const,
+  brand: () => ['brand'] as const,
+  brandSettings: () => ['brand-settings'] as const,
 };
