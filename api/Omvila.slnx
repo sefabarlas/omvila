@@ -20,6 +20,7 @@
     <Project Path="src/Modules/Tenancy/Omvila.Modules.Tenancy/Omvila.Modules.Tenancy.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Omvila.Api.IntegrationTests/Omvila.Api.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.ArchitectureTests/Omvila.ArchitectureTests.csproj" />
     <Project Path="tests/Omvila.Host.Tests/Omvila.Host.Tests.csproj" />
     <Project Path="tests/Omvila.Infrastructure.IntegrationTests/Omvila.Infrastructure.IntegrationTests.csproj" />

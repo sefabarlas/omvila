@@ -1,6 +1,6 @@
 using Omvila.SharedKernel;
 
-namespace Omvila.Modules.Tenancy.Domain;
+namespace Omvila.Modules.Identity.Domain;
 
 /// <summary>Üyelik geçişleri yalnız tablodakilerdir; diğerleri invalid_state_transition.</summary>
 internal static class MembershipTransitions

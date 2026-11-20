@@ -105,7 +105,8 @@ Kullanıcının bir markadaki rolü. (Eski adı `UserRole`.)
 | Alan | Tip | Not |
 |---|---|---|
 | UserId, BrandId, RoleId | uuid | |
-| BranchId | uuid? | `null` = tüm şubeler (Owner her zaman `null`). BranchManager ve Staff için şube kapsamı |
+| BranchIds | uuid[] | Boş = tüm şubeler (Owner her zaman boş). BranchManager ve Staff için şube kapsamı (bir veya birden çok şube; sözleşme `membership.branchIds`) |
+| StaffId | uuid? | Bağlı personel kaydı (jeton iddiası `staff_id`) |
 | Status | enum | `Invited`, `Active`, `Disabled` ("Davet gönderildi" rozeti) |
 
 Değişmezler: bir kullanıcının bir markada en fazla bir `Owner` üyeliği vardır. Her markada en az bir aktif `Owner` bulunur. v1'de bir kullanıcı yalnız bir markaya üye olabilir (çoklu marka hesabı v2).

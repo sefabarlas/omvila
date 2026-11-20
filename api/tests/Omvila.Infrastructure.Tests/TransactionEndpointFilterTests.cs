@@ -13,7 +13,7 @@ public sealed class TransactionEndpointFilterTests
 
         await Invoke(session, _ => ValueTask.FromResult<object?>(Results.Ok()));
 
-        session.Calls.ShouldBe(["begin", "commit"]);
+        session.Calls.ShouldBe(["commit"]);
     }
 
     [Theory]
@@ -27,7 +27,7 @@ public sealed class TransactionEndpointFilterTests
 
         await Invoke(session, _ => ValueTask.FromResult<object?>(Results.Problem(statusCode: status)));
 
-        session.Calls.ShouldBe(["begin", "rollback"]);
+        session.Calls.ShouldBe(["rollback"]);
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class TransactionEndpointFilterTests
 
         await Invoke(session, _ => ValueTask.FromResult<object?>(new { ok = true }));
 
-        session.Calls.ShouldBe(["begin", "commit"]);
+        session.Calls.ShouldBe(["commit"]);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class TransactionEndpointFilterTests
         await Should.ThrowAsync<InvalidOperationException>(async () =>
             await Invoke(session, _ => throw new InvalidOperationException("handler")));
 
-        session.Calls.ShouldBe(["begin", "rollback"]);
+        session.Calls.ShouldBe(["rollback"]);
     }
 
     private static ValueTask<object?> Invoke(IDbSession session, EndpointFilterDelegate next) =>

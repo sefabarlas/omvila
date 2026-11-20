@@ -82,6 +82,15 @@ internal sealed class RefreshTokenService(
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
     }
 
+    /// <summary>Üyeliğin belirtilen istemci türündeki bütün geçerli jetonlarını iptal eder (mobil çıkış).</summary>
+    public async Task RevokeMembershipAsync(Guid membershipId, RefreshClientType clientType, CancellationToken ct)
+    {
+        var now = clock.GetCurrentInstant();
+        await db.RefreshTokens
+            .Where(t => t.MembershipId == membershipId && t.ClientType == clientType && t.RevokedUtc == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
+    }
+
     internal static string Hash(string token) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 

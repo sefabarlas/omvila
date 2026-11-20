@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using NodaTime;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
+using Omvila.Modules.Identity.Features.ManageAuth;
 using Omvila.Modules.Identity.Infrastructure;
 using Omvila.Modules.Identity.Security;
 
@@ -31,6 +33,9 @@ public static class IdentityModule
             .Validate(o => o.IsValid(), "Auth:Otp ayarları eksik veya geçersiz.");
         services.AddSingleton<OtpHasher>();
         services.AddScoped<OtpService>();
+        services.AddSingleton<SignupTokenService>();
+        services.AddScoped<ManageSignInService>();
+        services.AddOtpRateLimiting();
 
         // Her yüzeyin kendi şeması: bir yüzeyin jetonu (aud) diğerinde geçmez.
         var authentication = services.AddAuthentication();
@@ -43,6 +48,13 @@ public static class IdentityModule
         }
 
         return services;
+    }
+
+    /// <summary>Identity uçlarını eşler (manage-auth).</summary>
+    public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
+    {
+        ManageAuthEndpoints.Map(app);
+        return app;
     }
 
     private static void Configure(JwtBearerOptions options, string audience, SigningKeyStore keys, IClock clock, AuthOptions auth)
