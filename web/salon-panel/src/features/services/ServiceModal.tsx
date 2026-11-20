@@ -2,9 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ApiProblem, idempotencyKey } from '@omvila/api-client-ts';
 import { errorMessage } from '@omvila/ui-web/errors';
 import { formatDuration, parseMoneyInput } from '@omvila/ui-web/format';
-import { Button, Checkbox, Modal, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
+import { Button, Modal, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { CheckboxGroup } from '@/shared/CheckboxGroup';
 import { Segmented } from '@/shared/Segmented';
 import { useCreateService, useSetBranchPrice, useUpdateService } from './api';
 import type { Service, ServiceCategory, StaffSummary } from './api';
@@ -210,14 +211,14 @@ export function ServiceModal({
           <legend className={styles.groupTitle}>Kimler veriyor?</legend>
           {staff.length > 0 ? (
             <div className={styles.checks}>
-              {staff.map((person) => (
-                <Checkbox
-                  key={person.id}
-                  label={person.displayName ?? person.fullName}
-                  value={person.id}
-                  {...form.register('staffIds')}
-                />
-              ))}
+              <CheckboxGroup
+                control={form.control}
+                name="staffIds"
+                options={staff.map((person) => ({
+                  value: person.id,
+                  label: person.displayName ?? person.fullName,
+                }))}
+              />
             </div>
           ) : (
             <p className={styles.groupHint}>Personel ekleyince burada seçersiniz.</p>
