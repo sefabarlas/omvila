@@ -41,7 +41,7 @@
 }
 
 # SMS günlüğü sayfası API kapsayıcısında sunulur (sahte sağlayıcının infra.dev_sms_log kayıtları).
-# SMS_LOG_PATH: API'deki yol; ayrı PR'da belirlenir, değişirse yalnız .env'deki değer değişir.
+# SMS_LOG_PATH: API'deki yol (/dev/sms; Sms:DevLog ayarları, T-76).
 {$SMS_HOST:test.sms.omvila.com.tr} {
 	import common
 	import protected

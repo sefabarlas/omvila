@@ -28,8 +28,9 @@ x-api-env: &api-env
   Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}/
   Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://test.salon.omvila.com.tr}
   Cors__Surfaces__Public__Origins__0: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}
-  # İstemci IP'si Caddy'nin X-Forwarded-For başlığından (OTP IP sınırı, T-07). API yalnız iç ağdan erişilebilir.
-  ASPNETCORE_FORWARDEDHEADERS_ENABLED: 'true'
+  # İstemci IP'si ve şeması Caddy'nin X-Forwarded-For/-Proto başlıklarından (OTP IP sınırı, T-07). Yalnız iç ağdan
+  # gelen başlığa güvenilir; ağ aşağıda sabit alt ağla tanımlıdır (T-76).
+  ForwardedHeaders__KnownNetworks__0: ${STAGING_SUBNET:-172.30.0.0/24}
 
 services:
   postgres:
@@ -151,6 +152,13 @@ services:
       - salon-panel
       - rezervasyon
       - mailpit
+
+# Sabit alt ağ: API yalnız bu ağdan gelen yönlendirme başlıklarına güvenir. Sunucuda çakışırsa STAGING_SUBNET değişir.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${STAGING_SUBNET:-172.30.0.0/24}
 
 volumes:
   pgdata:
