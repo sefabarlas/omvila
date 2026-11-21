@@ -42,7 +42,7 @@ Durum: 🟡 varsayımla ilerlendi · 🔴 karar bekliyor (iş başlamadan) · �
 |---|---|---|
 | T-01 | Veritabanı | ✅ PostgreSQL 17 (kullanıcının teknik kararı; ADR-0001) |
 | T-02 | Web çatısı | ✅ Paneller React + Vite SPA; rezervasyon ve tanıtım Next.js (ADR-0008) |
-| T-03 | SMS sağlayıcısı | 🔴 Seçilmedi. Kriterler: başlık (originator) onay süreci, İYS entegrasyonu, Türkçe karakter ve 155 sınırı, teslim raporu webhook'u, fiyat. Adaylar: Netgsm, İleti Merkezi, Mutlucell, Verimor. `ISmsSender` arkasında; geliştirmede sahte sağlayıcı |
+| T-03 | SMS sağlayıcısı | 🟡 Canlıya çıkışta seçilecek (ürün sahibi kararı, 21.11.2026): sağlayıcı sözleşmesi ve başlık onayı için şirket kuruluşu gerekiyor. O zamana kadar sahte sağlayıcıyla geliştirilir; dilimler bu karara bağlı değildir, gerçek adaptör canlı öncesi ayrı iştir. Kriterler: başlık (originator) onay süreci, İYS entegrasyonu, Türkçe karakter ve 155 sınırı, teslim raporu webhook'u, fiyat. Adaylar: Netgsm, İleti Merkezi, Mutlucell, Verimor. `ISmsSender` arkasında; geliştirmede sahte sağlayıcı |
 | T-04 | Push | 🟡 Firebase Cloud Messaging (iOS için APNs FCM üzerinden) |
 | T-05 | E-posta | 🟡 Amazon SES veya Postmark; `IEmailSender` arkasında |
 | T-06 | Abonelik kart çekimi sağlayıcısı | 🔴 Seçilmedi (adaylar: iyzico abonelik API'si, Param). Dilim 6'ya kadar gerekmiyor |
