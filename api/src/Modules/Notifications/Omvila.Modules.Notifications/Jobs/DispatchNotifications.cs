@@ -51,8 +51,6 @@ internal sealed partial class DispatchNotifications(
 
     public string Key => "DispatchNotifications";
 
-    public Duration Interval => Duration.FromSeconds(options.Value.DispatchIntervalSeconds);
-
     public async Task RunAsync(CancellationToken ct)
     {
         var now = clock.GetCurrentInstant();
