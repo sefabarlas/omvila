@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Diğer modüllere açılan sözleşme: kapora tahsilat kaydı (Scheduling). Public tipler XML belgesi taşır. -->
+  <!-- Diğer modüllere açılan sözleşme: kapora ve tamamlama tahsilatları, hizmet primi (Scheduling). Public tipler XML belgesi taşır. -->
   <PropertyGroup>
     <NoWarn>$(NoWarn.Replace('CS1591', ''))</NoWarn>
   </PropertyGroup>

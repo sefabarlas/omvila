@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadSources, outputs } from './build.ts';
+import { dartThemePath, loadSources, outputs } from './build.ts';
+import { camel, primitivePattern } from './generate-dart.ts';
 import { resolveColor, scales } from './generate.ts';
 import type { Theme, TokenSource } from './generate.ts';
 
@@ -94,6 +95,7 @@ describe.each(scales)('%s', (scale) => {
       ...source.spacing.tokens,
       ...source.radius.tokens,
       ...(source.boyut?.tokens ?? []),
+      ...(source.hareket?.tokens ?? []),
     ].map((t) => t.name);
     expect(new Set(names).size).toBe(names.length);
   });
@@ -106,7 +108,67 @@ it('çiftlerdeki tokenlar en az bir ölçekte var (yazım hatası yok)', () => {
   expect(missing).toEqual([]);
 });
 
-it('dist/ kaynakla güncel (pnpm --filter @omvila/design-tokens build)', () => {
+describe('Flutter teması (omvila_ui/lib/theme/omvila_theme.dart)', () => {
+  const dart = outputs()[dartThemePath] ?? '';
+  const mobil = sources.mobil;
+
+  it('referans dosyadaki sınıfları üretir', () => {
+    for (const name of [
+      'OmvilaRenkler',
+      'OmvilaBosluk',
+      'OmvilaKose',
+      'OmvilaBoyut',
+      'OmvilaYazi',
+      'OmvilaTema',
+    ]) {
+      expect(dart, name).toMatch(new RegExp(`class ${name}\\b`));
+    }
+  });
+
+  it('her semantik renk açık ve koyu temada alan olarak var', () => {
+    for (const token of mobil.color.tokens.filter((t) => !primitivePattern.test(t.name))) {
+      expect(dart, token.name).toContain(`final Color ${camel(token.name)};`);
+      expect(
+        dart.match(new RegExp(`^    ${camel(token.name)}: Color`, 'gm')),
+        token.name,
+      ).toHaveLength(2);
+    }
+  });
+
+  it('ham palet adları dışarı açılmaz', () => {
+    const primitives = mobil.color.tokens
+      .filter((t) => primitivePattern.test(t.name))
+      .map((t) => camel(t.name));
+    expect(primitives.length).toBeGreaterThan(0);
+    for (const name of primitives) {
+      expect(dart, name).not.toMatch(new RegExp(`\\b${name}\\b`));
+    }
+    expect(dart).not.toContain('OmvilaRampa');
+  });
+
+  it('boşluk, köşe, boyut ve hareket tokenlarının hepsi sabit olarak var', () => {
+    const names = [
+      ...mobil.spacing.tokens,
+      ...mobil.radius.tokens,
+      ...(mobil.boyut?.tokens ?? []),
+      ...(mobil.hareket?.tokens ?? []),
+    ].map((t) => camel(t.name));
+    expect(names).toContain('sureAnlik');
+    for (const name of names) {
+      expect(dart, name).toMatch(new RegExp(`static const \\w+ ${name} = `));
+    }
+    expect(dart).toContain('static const Duration sureOrta = Duration(milliseconds: 240);');
+    expect(dart).toContain('static const Cubic egriStandart = Cubic(0.2, 0, 0, 1);');
+  });
+
+  it('yazı stilleri: satır yüksekliği oranı ve em harf aralığı piksele çevrilir', () => {
+    expect(dart).toMatch(
+      /buyukBaslik = TextStyle\([^)]*fontSize: 34,\s+height: 1\.118,\s+fontWeight: FontWeight\.w800,\s+letterSpacing: -1\.19,/,
+    );
+  });
+});
+
+it('üretilen dosyalar kaynakla güncel (pnpm --filter @omvila/design-tokens build)', () => {
   for (const [path, content] of Object.entries(outputs())) {
     expect(readFileSync(join(root, path), 'utf8'), path).toBe(content);
   }

@@ -52,6 +52,14 @@ public interface ITenantQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyDictionary<Guid, StaffCard>> GetStaffCardsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
 
+    /// <summary>
+    /// Personelin "Hizmet primi" oranı (Staff.ServiceCommissionPercent, 0–100); etkin olmasa da döner, bulunmayan kimlikler yer almaz.
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffIds">Personel kimlikleri.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyDictionary<Guid, decimal>> GetServiceCommissionPercentsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
+
     /// <summary>Verilen personelin [<paramref name="fromUtc"/>, <paramref name="toUtc"/>) aralığına değen izinleri, başlangıca göre sıralı.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="staffIds">Personel kimlikleri.</param>

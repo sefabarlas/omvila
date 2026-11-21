@@ -1190,5 +1190,55 @@
     "usage": "Tasarım referans genişliği; rezervasyon sayfası masaüstünde en fazla 480px ortalanır."
    }
   ]
+ },
+ "hareket": {
+  "description": "Süre ve eğri tokenları (design/tasarim-sistemleri/mobil/README.md § Hareket ve geçiş). Sekmeler arası geçişte hareket yoktur.",
+  "tokens": [
+   {
+    "name": "sure-anlik",
+    "value": "80ms",
+    "usage": "Basma geri bildirimi."
+   },
+   {
+    "name": "sure-hizli",
+    "value": "150ms",
+    "usage": "Hover, çip, anahtar, sekme göstergesi."
+   },
+   {
+    "name": "sure-cikis",
+    "value": "180ms",
+    "usage": "Ekrandan çıkan öğe (alt sayfa kapanışı); girişten kısadır."
+   },
+   {
+    "name": "sure-orta",
+    "value": "240ms",
+    "usage": "Alt sayfa, çekmece, sayfa geçişi, menü daralması."
+   },
+   {
+    "name": "sure-yavas",
+    "value": "360ms",
+    "usage": "Tam ekran modal."
+   },
+   {
+    "name": "sure-azaltilmis",
+    "value": "120ms",
+    "usage": "Azaltılmış hareket açıkken kayma ve büyüme yerine kalan tek opaklık geçişi."
+   },
+   {
+    "name": "egri-standart",
+    "value": "cubic-bezier(0.2, 0, 0, 1)",
+    "usage": "Yerinde değişim."
+   },
+   {
+    "name": "egri-giris",
+    "value": "cubic-bezier(0, 0, 0, 1)",
+    "usage": "Ekrana giren öğe."
+   },
+   {
+    "name": "egri-cikis",
+    "value": "cubic-bezier(0.3, 0, 1, 1)",
+    "usage": "Ekrandan çıkan öğe."
+   }
+  ]
  }
 }

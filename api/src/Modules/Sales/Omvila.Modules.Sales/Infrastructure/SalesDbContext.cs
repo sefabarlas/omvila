@@ -11,6 +11,8 @@ internal sealed class SalesDbContext(DbContextOptions<SalesDbContext> options) :
 
     public DbSet<PaymentAllocation> PaymentAllocations => Set<PaymentAllocation>();
 
+    public DbSet<CommissionEntry> CommissionEntries => Set<CommissionEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

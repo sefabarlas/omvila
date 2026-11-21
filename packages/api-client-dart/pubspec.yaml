@@ -5,6 +5,7 @@ name: omvila_api
 version: 0.1.0
 description: OMVILA API istemcisi (contracts/openapi.yaml dosyasından üretilir)
 publish_to: none
+resolution: workspace
 
 environment:
   sdk: ^3.8.0

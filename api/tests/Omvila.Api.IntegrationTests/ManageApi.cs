@@ -30,7 +30,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;
             TRUNCATE scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;
-            TRUNCATE sales.payment_allocations, sales.payments;
+            TRUNCATE sales.payment_allocations, sales.payments, sales.commission_entries;
             TRUNCATE infra.outbox_events CASCADE;
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);
