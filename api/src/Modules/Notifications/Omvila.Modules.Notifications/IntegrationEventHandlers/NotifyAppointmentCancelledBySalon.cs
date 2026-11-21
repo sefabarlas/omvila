@@ -1,12 +1,13 @@
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Notifications.Contracts;
+using Omvila.Modules.Notifications.Templates;
 using Omvila.Modules.Scheduling.Contracts;
 
 namespace Omvila.Modules.Notifications.IntegrationEventHandlers;
 
 /// <summary>
 /// <c>appointment.cancelled_by_salon</c> (A7; "Müşteriye bildir" kapalıysa mesaj yok) ve bekleyen hatırlatmaların düşmesi.
-/// Kapora cümlesi ("Kapora iadesi için salon sizinle iletişime geçecek.") kapora alınan randevuda gerekir; kapora D4'te.
+/// Kapora alınmışsa (iade işaretlenmemiş) metne " Kapora iadesi için salon sizinle iletişime geçecek." eklenir (bildirimler.md).
 /// </summary>
 internal sealed class NotifyAppointmentCancelledBySalon(AppointmentSms sms) : IIntegrationEventHandler<AppointmentCancelledBySalon>
 {
@@ -27,6 +28,8 @@ internal sealed class NotifyAppointmentCancelledBySalon(AppointmentSms sms) : II
             ["saat"] = AppointmentSms.Time(context, integrationEvent.StartUtc),
             ["rezervasyon bağlantısı"] = sms.BookingLink(context),
         };
-        await sms.EnqueueAsync(context, NotificationEvents.AppointmentCancelledBySalon, values, ct);
+        await sms.EnqueueAsync(
+            context, NotificationEvents.AppointmentCancelledBySalon, values, ct,
+            variant: integrationEvent.DepositReceived ? SmsTemplates.DepositReceivedVariant : null);
     }
 }

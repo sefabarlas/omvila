@@ -148,7 +148,7 @@ internal sealed class AppointmentWriter(
         var now = clock.GetCurrentInstant();
         var plan = candidate.ToPlan();
         var approvalHold = command.Actor == ChangeActor.Customer ? command.Approval?.HoldFor(plan) : null;
-        var rescheduled = appointment.Reschedule(plan, command.Actor, now, command.RescheduleCutoff, ids, command.UserId, approvalHold);
+        var rescheduled = appointment.Reschedule(plan, command.Actor, now, command.RescheduleCutoff, ids, command.UserId, approvalHold, command.DepositWindow);
         if (!rescheduled.IsSuccess)
         {
             return rescheduled.Error;

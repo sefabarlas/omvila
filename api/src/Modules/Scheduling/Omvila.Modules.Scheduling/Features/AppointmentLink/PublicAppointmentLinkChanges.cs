@@ -29,6 +29,7 @@ internal sealed class PublicAppointmentLinkChanges(
     AvailabilitySnapshotLoader loader,
     ICustomerDirectory customers,
     ITenantQueries tenants,
+    IBrandBankAccounts bankAccounts,
     IOutbox outbox,
     IClock clock)
 {
@@ -91,7 +92,8 @@ internal sealed class PublicAppointmentLinkChanges(
     /// A14 (müşteri): public kip (pencere, ızgara, en az ön bildirim, online personel), kalemlerin personeli korunur,
     /// randevunun kendi eski dilimleri meşguliyet sayılmaz. Sunulmayan saat <c>slot_taken</c> + <c>meta.alternatives</c>.
     /// Onay gerektiren salonda randevu yeniden Onay bekliyor olur, yeni tutma şimdi + ApprovalTimeoutMinutes (A13, S-11;
-    /// olay <see cref="AppointmentRequested"/> IsReschedule). Kapora aktarımı Dilim 4.
+    /// olay <see cref="AppointmentRequested"/> IsReschedule). Kapora yeni saate aktarılır (alanlar değişmez); kapora hâlâ
+    /// bekleniyorsa yeni tutma havale süresidir (aktif hesap; yoksa varsayılan) ve müşteriye güncel kapora SMS'i gider (T-83).
     /// </summary>
     // Kural: durum-makinesi.md A14, musaitlik.md § Saat değişikliği, dilim-02 § Alan kuralları (RescheduleCutoffHours)
     public async Task<Result> RescheduleAsync(Appointment appointment, PublicRescheduleRequest body, uint expectedVersion, CancellationToken ct)
@@ -106,10 +108,13 @@ internal sealed class PublicAppointmentLinkChanges(
         var settings = await SettingsAsync(appointment.BrandId, ct);
         var previousStart = appointment.StartUtc;
         var previousHold = appointment.HoldExpiresUtc;
+        var depositWindow = appointment.DisplayStatus == DisplayStatus.DepositPending
+            ? Duration.FromMinutes((await bankAccounts.GetActiveAsync(appointment.BrandId, ct))?.TransferWindowMinutes ?? PlatformDefaults.TransferWindowMinutes)
+            : (Duration?)null;
         var moved = await writer.RescheduleAsync(
             new RescheduleAppointmentCommand(
                 appointment.Id, start, ChangeActor.Customer, Duration.FromHours(settings.RescheduleCutoffHours), UserId: null,
-                ExpectedVersion: expectedVersion, Approval: settings.Policy()),
+                ExpectedVersion: expectedVersion, Approval: settings.Policy(), DepositWindow: depositWindow),
             ct);
         if (!moved.IsSuccess)
         {
