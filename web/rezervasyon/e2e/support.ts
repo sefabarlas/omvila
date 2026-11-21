@@ -4,6 +4,8 @@ import {
   catalogFixture,
   challengeFixture,
   daysFixture,
+  depositCatalogFixture,
+  depositFixture,
   nowUtc,
   slotsFixture,
   tokenFixture,
@@ -14,6 +16,7 @@ import {
   accessCode,
   cancelledFixture,
   linkAppointmentFixture,
+  linkDepositFixture,
   rescheduledFixture,
   rescheduleSlotsFixture,
 } from '../src/test/appointment-fixtures';
@@ -45,6 +48,8 @@ export interface BookingOptions {
   slotTaken?: boolean;
   /** Onay gerektiren salon (Dilim 3, Talep): oluşturma PendingApproval, yanıt süresi 120 dk. */
   requiresApproval?: boolean;
+  /** Kaporalı hizmet (Dilim 4): katalogda ipucu, oluşturma DepositPending, "Havaleyi yaptım" CustomerReported. */
+  deposit?: boolean;
 }
 
 /** Onay bekleyen talep: tutma şimdi + 120 dk (sureler-ve-ayarlar.md ApprovalTimeoutMinutes varsayılanı). */
@@ -57,13 +62,15 @@ export const pendingRequest = (): PublicAppointment =>
 
 export interface BookingCalls {
   create: unknown[];
+  /** "Havaleyi yaptım" istekleri (yol). */
+  report: string[];
 }
 
 /** Sabit "şimdi" (24 Kasım 2026 Salı 10:00) ve akış uçlarının test yanıtları. Ön uçuş (OPTIONS) Prism'e gider. */
 export async function bookingApi(page: Page, options: BookingOptions = {}): Promise<BookingCalls> {
-  const calls: BookingCalls = { create: [] };
+  const calls: BookingCalls = { create: [], report: [] };
   await page.clock.setFixedTime(new Date(nowUtc));
-  const catalog = catalogFixture();
+  const catalog = options.deposit ? depositCatalogFixture() : catalogFixture();
   await page.route(`${api}/**`, async (route) => {
     const request = route.request();
     if (request.method() === 'OPTIONS') {
@@ -87,6 +94,9 @@ export async function bookingApi(page: Page, options: BookingOptions = {}): Prom
       }
     } else if (path.endsWith('/otp/verify')) {
       await fulfill(route, tokenFixture);
+    } else if (path.endsWith('/deposit/report')) {
+      calls.report.push(path);
+      await fulfill(route, depositFixture('CustomerReported'), 200, { ETag: 'W/"2"' });
     } else if (path.endsWith('/appointments')) {
       calls.create.push(request.postDataJSON());
       if (options.slotTaken) {
@@ -96,7 +106,11 @@ export async function bookingApi(page: Page, options: BookingOptions = {}): Prom
       } else {
         await fulfill(
           route,
-          options.requiresApproval ? pendingRequest() : appointmentFixture(),
+          options.deposit
+            ? depositFixture('Awaiting')
+            : options.requiresApproval
+              ? pendingRequest()
+              : appointmentFixture(),
           201,
         );
       }
@@ -108,6 +122,8 @@ export async function bookingApi(page: Page, options: BookingOptions = {}): Prom
 }
 
 export interface LinkCalls {
+  /** "Havaleyi yaptım" istek sayısı. */
+  report: number;
   cancel: { ifMatch: string | undefined; body: unknown }[];
   reschedule: { ifMatch: string | undefined; body: unknown }[];
 }
@@ -121,7 +137,7 @@ export async function appointmentApi(
   appointment: Partial<PublicAppointment> = {},
 ): Promise<LinkCalls> {
   await page.clock.setFixedTime(new Date(nowUtc));
-  const calls: LinkCalls = { cancel: [], reschedule: [] };
+  const calls: LinkCalls = { report: 0, cancel: [], reschedule: [] };
   let current = linkAppointmentFixture(appointment);
   const base = `/api/v1/public/appointments/${accessCode}`;
   await page.route(`${api}/appointments/**`, async (route) => {
@@ -136,6 +152,10 @@ export async function appointmentApi(
     } else if (path === `${base}/availability/slots`) {
       const { date } = request.postDataJSON() as { date: string };
       await fulfill(route, rescheduleSlotsFixture(date));
+    } else if (path === `${base}/deposit/report`) {
+      calls.report += 1;
+      current = linkDepositFixture('CustomerReported');
+      await fulfill(route, current, 200, { ETag: 'W/"8820"' });
     } else if (path === `${base}/cancel`) {
       calls.cancel.push({
         ifMatch: (await request.headerValue('If-Match')) ?? undefined,
