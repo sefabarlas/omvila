@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Omvila.Infrastructure.Health;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
@@ -71,6 +72,8 @@ public static class InfrastructureServiceCollectionExtensions
             .Validate(o => o.IsValid(), "Idempotency ayarları eksik veya geçersiz (appsettings \"Idempotency\").");
         services.AddPeriodicJob<PurgeIdempotencyKeys>();
 
+        services.AddSurfaceCors(configuration);
+
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
         return services;
     }
@@ -105,6 +108,7 @@ public static class InfrastructureServiceCollectionExtensions
 
     /// <summary>
     /// API yüzeyi grubu (ör. "/api/v1/manage", Audiences.Manage). Gruptaki her uç tek transaction'da çalışır.
+    /// Ön ekin yüzeyine göre (manage, admin, me, public) o yüzeyin CORS politikası bağlanır.
     /// Yüzey verilirse uçlar o yüzeyin jetonunu ister; açık uç <c>.AllowAnonymous()</c> + gerekçe taşır.
     /// </summary>
     public static RouteGroupBuilder MapApiGroup(this IEndpointRouteBuilder endpoints, string prefix, string? audience = null)
@@ -112,6 +116,7 @@ public static class InfrastructureServiceCollectionExtensions
         var group = endpoints.MapGroup(prefix);
         group.WithMetadata(new TransactionalEndpointMetadata());
         group.AddEndpointFilter<TransactionEndpointFilter>();
+        group.RequireSurfaceCors(prefix);
         if (audience is not null)
         {
             group.RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = audience });

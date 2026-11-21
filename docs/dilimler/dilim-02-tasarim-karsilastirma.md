@@ -58,7 +58,7 @@ Tam sayfa görüntülerde kenar menü pencere yüksekliğinde (900 px) biter; bu
 | Durumlar: bağlantı geçersiz | DurumBulunamadi | — | 390 | ✓ | |
 | Durumlar: kapora gelmedi; Talep, Havale | — | — | — | — | D3/D4. |
 
-Şube adımı sunucuda çizilir ve `branchOpenStatus` "şimdi"ye bakar ("Yarın 10:00'da açılır"). Testte tarayıcı saati sabit, sunucu saati gerçek olduğundan bu etiket hidrasyon uyuşmazlığı verir; test verisinde açılış saati boş bırakıldı. Üretimde sunucu ile tarayıcı gün dönümünde ayrışabilir (acik-sorular.md T-60 (3)).
+Şube adımı sunucuda çizilir ve `branchOpenStatus` "şimdi"ye bakar ("Yarın 10:00'da açılır"). Testte tarayıcı saati sabit, sunucu saati gerçek olduğundan bu etiket hidrasyon uyuşmazlığı verir; test verisinde açılış saati boş bırakıldı. Üretimde sunucu ile tarayıcı gün dönümünde ayrışabilir (acik-sorular.md T-61 (3)).
 
 ## Lighthouse (rezervasyon sayfası)
 
