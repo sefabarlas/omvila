@@ -24,6 +24,10 @@ public static class CatalogModule
         services.AddScoped<IStaffServiceAssignments, StaffServiceAssignments>();
         services.AddScoped<IServiceOffers, ServiceOffers>();
         services.AddIntegrationEventHandler<BranchCreated, CopyBranchPricesOnBranchCreated>();
+        // Demo verisi (--role=seed; T-74).
+        services.AddScoped(sp => new DemoData.CatalogDemoData(
+            sp.GetRequiredService<CatalogDbContext>(), sp.GetRequiredService<SharedKernel.IIdGenerator>(), sp.GetRequiredService<NodaTime.IClock>()));
+        services.AddBrandDataEraser<CatalogDbContext>();
         return services;
     }
 

@@ -66,6 +66,14 @@ if (args.Contains("migrate", StringComparer.Ordinal))
     return;
 }
 
+// `--role=seed [--reset]`: demo verisini yazar ve çıkar; Production'da hata ile çıkar (Seeding/DemoSeedCommand, T-74).
+if (role == HostRole.Seed)
+{
+    var reset = args.Contains("--reset", StringComparer.Ordinal);
+    Environment.ExitCode = await Omvila.Host.Seeding.DemoSeedCommand.RunAsync(app.Services, app.Environment, reset, Console.Out, CancellationToken.None);
+    return;
+}
+
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 // CORS kimlik doğrulama, hız sınırı ve idempotency'den önce: ön uçuş (OPTIONS) jetonsuz yanıtlanır.

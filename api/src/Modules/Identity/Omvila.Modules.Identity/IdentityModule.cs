@@ -47,6 +47,12 @@ public static class IdentityModule
         services.AddScoped<ManageSignupService>();
         services.AddScoped<IStaffMemberships, StaffMemberships>();
         services.AddScoped<IBrandUserDirectory, BrandUserDirectory>();
+        // Demo verisi (--role=seed; T-74): kayıt akışının adımları ve --reset için markanın üyelik satırları.
+        services.AddScoped(sp => new DemoData.IdentityDemoData(
+            sp.GetRequiredService<IdentityDbContext>(), sp.GetRequiredService<IDbSession>(), sp.GetRequiredService<Tenancy.Contracts.ITenantProvisioning>(),
+            sp.GetRequiredService<Platform.Contracts.ISubscriptionProvisioning>(), sp.GetRequiredService<IIdGenerator>(), sp.GetRequiredService<IClock>(),
+            sp.GetRequiredService<IOptions<LegalOptions>>()));
+        services.AddBrandDataEraser<IdentityDbContext>();
         // v1 kullanıcı başına tek üyelik: başka markadaki üyelik RLS nedeniyle görünmez, tek dizin yakalar.
         services.AddUniqueConstraintError("ix_user_memberships_user_id", ErrorCodes.PhoneAlreadyExists);
         services.AddOtpRateLimiting();
