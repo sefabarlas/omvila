@@ -37,7 +37,7 @@ Modüller: Identity, Tenancy, Catalog, Customers, Scheduling, Sales, Reviews, No
 - Zaman `IClock`; kimlik `IIdGenerator`; para `Money`; telefon `PhoneNumber`.
 - Hata kodları yalnız `ErrorCodes` sabitlerinden; yeni kod önce sözleşmeye.
 - Ayar ve süre sabitleri `PlatformDefaults` içinde, her biri `sureler-ve-ayarlar.md` satırına atıfla.
-- Dış servisler (`ISmsSender`, `IPushSender`, `IEmailSender`, `ICalendarProvider`, `IFileStorage`) arayüz arkasında. Geliştirme ve testte sahte uygulama (`Fake*`). Sahte SMS mesajları `infra.dev_sms_log` tablosuna ve konsola yazar.
+- Dış servisler (`ISmsSender`, `IPushSender`, `IEmailSender`, `ICalendarProvider`, `IFileStorage`) arayüz arkasında. Geliştirme ve testte sahte uygulama (`Fake*`). Sahte SMS mesajları `infra.dev_sms_log` tablosuna yazar (metin konsola yalnız Development'ta; test sunucusunda `/dev/sms`, [test-ortami.md](../docs/mimari/test-ortami.md)).
 - MediatR, AutoMapper, Hangfire, EF InMemory, SQLite kullanılmaz.
 
 ## Komutlar
