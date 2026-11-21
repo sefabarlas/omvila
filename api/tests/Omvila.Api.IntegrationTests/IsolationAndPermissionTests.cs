@@ -206,8 +206,13 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             allowOutsideWorkingHours = true,
         }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
         appointment.Status.ShouldBe(201, appointment.Body.ToString());
+        using var csv = new MultipartFormDataContent { { new StringContent("Ad;Telefon\nDerya Şahin;05550002118\n"), "file", "musteriler.csv" } };
+        var import = await _api.SendRawAsync(HttpMethod.Post, "/api/v1/manage/customers/imports", csv, token,
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
+        import.Status.ShouldBe(201, import.Text);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["importId"] = import.Json.GetProperty("importId").GetString()!,
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
             ["appointmentId"] = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!,

@@ -123,9 +123,11 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
 
         using var response = await client.SendAsync(request, Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
+        // JSON dışı yanıt (CSV dışa aktarma) metin olarak JSON dizesine sarılır.
+        var isJson = response.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) != false;
         return new Response(
             (int)response.StatusCode,
-            text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone(),
+            text.Length == 0 ? default : isJson ? JsonDocument.Parse(text).RootElement.Clone() : JsonSerializer.SerializeToElement(text),
             response.Headers.ETag?.ToString(),
             response.Headers.ToDictionary(h => h.Key, h => string.Join(',', h.Value), StringComparer.OrdinalIgnoreCase));
     }
