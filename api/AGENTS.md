@@ -33,7 +33,7 @@ Modüller: Identity, Tenancy, Catalog, Customers, Scheduling, Sales, Reviews, No
 - Katman ve modül sınırları: [mimari.md § Katman kuralları](../docs/mimari/mimari.md#katman-kuralları-mimari-testlerle-zorlanır). İhlal mimari testte kırılır.
 - Kiracı bağlamı JWT'den gelir. İstek gövdesinden veya başlıktan `brandId` okunmaz.
 - Durum yalnız aggregate metoduyla değişir. Geçiş tablosu: [durum-makinesi.md](../docs/alan/durum-makinesi.md). Her geçiş için test.
-- Randevu yazma yolu: kilitler (sıralı) → süresi dolmuş tutmaları iptal → müsaitliği yeniden hesapla → yaz → outbox → commit. `23P01` → `slot_taken`. Ayrıntı: [musaitlik.md](../docs/alan/musaitlik.md).
+- Randevu yazma yolu: kilitler (sıralı) → süresi dolmuş tutmaları iptal → müsaitliği yeniden hesapla → yaz → outbox → commit. `23P01` → `slot_taken`. Ayrıntı: [musaitlik.md](../docs/alan/musaitlik.md). Uygulaması `AppointmentWriter` (Scheduling `Features/Appointments`): uçlar randevuyu yalnız onunla yazar veya saatini değiştirir; kilit zaman aşımı `Error.Unavailable()` → 503 `try_again`.
 - Zaman `IClock`; kimlik `IIdGenerator`; para `Money`; telefon `PhoneNumber`.
 - Hata kodları yalnız `ErrorCodes` sabitlerinden; yeni kod önce sözleşmeye.
 - Ayar ve süre sabitleri `PlatformDefaults` içinde, her biri `sureler-ve-ayarlar.md` satırına atıfla.

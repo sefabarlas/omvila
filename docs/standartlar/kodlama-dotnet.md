@@ -78,6 +78,7 @@ internal static class CreateAppointmentEndpoint
 | `Error.Forbidden` | 403 | `forbidden` |
 | `DbUpdateConcurrencyException` | 412 | `concurrency_conflict` |
 | `PostgresException 23P01` | 409 | `slot_taken` |
+| `Error.Unavailable()` (randevu kilidi zaman aşımı) | 503 | `try_again` |
 | `PostgresException 23505` (bilinen indeks) | 409 | indekse eşlenen kod (`phone_already_exists`) |
 Hata kodları `SharedKernel/ErrorCodes.cs` içinde sabittir ve `ErrorCode` enum'uyla birebir aynıdır 🔒 (sözleşme testi).
 

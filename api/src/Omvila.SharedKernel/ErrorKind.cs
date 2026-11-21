@@ -11,4 +11,7 @@ public enum ErrorKind
     PreconditionFailed,
     Unprocessable,
     TooManyRequests,
+
+    /// <summary>Geçici yoğunluk (503 try_again; ör. randevu kilidi zaman aşımı, musaitlik.md § Katman 2).</summary>
+    Unavailable,
 }

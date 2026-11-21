@@ -49,6 +49,7 @@ public static class ResultHttpExtensions
         ErrorKind.PreconditionFailed => StatusCodes.Status412PreconditionFailed,
         ErrorKind.Unprocessable => StatusCodes.Status422UnprocessableEntity,
         ErrorKind.TooManyRequests => StatusCodes.Status429TooManyRequests,
+        ErrorKind.Unavailable => StatusCodes.Status503ServiceUnavailable,
         _ => throw new DomainException($"Eşlenmemiş hata türü: {kind}"),
     };
 }

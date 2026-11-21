@@ -30,4 +30,7 @@ public static class PlatformDefaults
 
     /// <summary>musaitlik.md § Çok kalemli randevu: v1'de aynı randevuda en fazla 5 kalem (sözleşme items maxItems 5).</summary>
     public const int MaxItemsPerAppointment = 5;
+
+    /// <summary>musaitlik.md § Katman 2: randevu yazma kilidinin zaman aşımı (lock_timeout = 5s); aşılırsa 503 try_again.</summary>
+    public const int AppointmentLockTimeoutSeconds = 5;
 }

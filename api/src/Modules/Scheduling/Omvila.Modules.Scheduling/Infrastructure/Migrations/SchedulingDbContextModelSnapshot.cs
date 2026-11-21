@@ -412,12 +412,6 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                     b.HasIndex("AppointmentItemId")
                         .HasDatabaseName("ix_appointment_item_segments_appointment_item_id");
 
-                    b.HasIndex("StaffId", "During")
-                        .HasDatabaseName("ix_appointment_item_segments_staff_during")
-                        .HasFilter("staff_busy AND is_active AND staff_id IS NOT NULL");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("StaffId", "During"), "gist");
-
                     b.HasIndex("BrandId", "AppointmentItemId", "SeqNo")
                         .IsUnique()
                         .HasDatabaseName("ix_appointment_item_segments_brand_id_item_id_seq_no")
