@@ -3,7 +3,10 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Features.Appointments;
 
-/// <summary>Sözleşme AppointmentDetail (randevu yan paneli). <c>deposit</c> kapora istenmemişse yazılmaz; havale talimatı panelde yoktur.</summary>
+/// <summary>
+/// Sözleşme AppointmentDetail (randevu yan paneli). <c>deposit</c> kapora istenmemişse yazılmaz; havale talimatı panelde yoktur.
+/// <c>payments</c> yalnız payment.collect yetkisinde yazılır.
+/// </summary>
 internal sealed record AppointmentDetail(
     Guid Id,
     Guid BranchId,
@@ -25,5 +28,7 @@ internal sealed record AppointmentDetail(
     Guid? SeriesId,
     Instant? NoShowAtUtc,
     AppointmentCancellationView? Cancellation,
+    Instant? CompletedUtc,
+    IReadOnlyList<PaymentView>? Payments,
     IReadOnlyList<AppointmentHistoryEntry> History,
     string Version);

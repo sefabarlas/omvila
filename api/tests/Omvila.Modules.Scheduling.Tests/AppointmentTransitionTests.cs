@@ -347,6 +347,59 @@ public sealed class AppointmentTransitionTests
         Create(AppointmentChannel.Online, Start - Duration.FromHours(3), approvalTimeout: Duration.FromMinutes(120)).CheckIn(Start, UserId)
             .Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
 
+    // ───────── A11 ─────────
+
+    [Fact]
+    public void A11_Complete_CheckedIn_PaidEqualsDue_IsCompleted_ItemsCompleted_AmountDueZero()
+    {
+        var appointment = Create(AppointmentChannel.WalkIn, Start);
+        var total = appointment.TotalAmountMinor;
+        var now = Start + Duration.FromMinutes(80);
+
+        appointment.Complete(total, now, UserId).IsSuccess.ShouldBeTrue();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Completed);
+        appointment.CompletedUtc.ShouldBe(now);
+        appointment.UpdatedUtc.ShouldBe(now);
+        appointment.UpdatedByUserId.ShouldBe(UserId);
+        appointment.Items.ShouldAllBe(i => i.Status == AppointmentItemStatus.Completed);
+        appointment.AmountDueMinor.ShouldBe(0, "tamamlanmışta salonda ödenecek kalmaz");
+        appointment.TotalAmountMinor.ShouldBe(total);
+        AllSegments(appointment).ShouldAllBe(s => s.IsActive, "Completed'da segmentler geçmiş olarak aktif kalır");
+    }
+
+    [Theory]
+    [InlineData(-100)]
+    [InlineData(100)]
+    public void A11_Complete_PaidDiffersFromDue_IsPaymentTotalMismatch_WithExpectedAmount(long delta)
+    {
+        var appointment = Create(AppointmentChannel.WalkIn, Start);
+        var due = appointment.AmountDueMinor;
+
+        var result = appointment.Complete(due + delta, Start, UserId);
+
+        result.Error!.Code.ShouldBe(ErrorCodes.PaymentTotalMismatch);
+        result.Error.Meta[Appointment.ExpectedAmountMeta].ShouldBe(due);
+        appointment.Status.ShouldBe(AppointmentStatus.CheckedIn);
+        appointment.CompletedUtc.ShouldBeNull();
+        appointment.Items.ShouldAllBe(i => i.Status == AppointmentItemStatus.Active);
+    }
+
+    [Fact]
+    public void A11_OnlyCheckedIn_CanBeCompleted()
+    {
+        var confirmed = Create(AppointmentChannel.Online, Start - Duration.FromDays(1));
+        confirmed.CanComplete().Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
+        confirmed.Complete(confirmed.AmountDueMinor, Start, UserId).Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
+
+        var completed = Create(AppointmentChannel.WalkIn, Start);
+        completed.CanComplete().IsSuccess.ShouldBeTrue();
+        completed.Complete(completed.TotalAmountMinor, Start, UserId).IsSuccess.ShouldBeTrue();
+        completed.Complete(0, Start, UserId).Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition, "Completed son durumdur");
+
+        NoShowAppointment().CanComplete().Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
+    }
+
     // ───────── A14 ─────────
 
     [Fact]
