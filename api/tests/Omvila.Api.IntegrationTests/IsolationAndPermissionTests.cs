@@ -206,8 +206,15 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             allowOutsideWorkingHours = true,
         }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
         appointment.Status.ShouldBe(201, appointment.Body.ToString());
+        var entryId = await PostIdAsync(token, "/api/v1/manage/waitlist", new
+        {
+            branchId,
+            brandCustomerId,
+            preferences = new { serviceIds = new[] { serviceId }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
+        });
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["entryId"] = entryId,
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
             ["appointmentId"] = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!,
