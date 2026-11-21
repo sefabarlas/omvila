@@ -49,6 +49,14 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
             row.MaskCustomerPhoneFromStaff, row.RiskyCustomerNoShowThreshold, row.DefaultCurrencyCode, timeZoneId ?? PlatformDefaults.DefaultTimeZoneId);
     }
 
+    // Kural: sureler-ve-ayarlar.md § Kapora; aktif hesap yoksa kapora yok (alan-modeli.md § BrandBankAccount).
+    public async Task<BrandDepositSettings?> GetDepositSettingsAsync(Guid brandId, CancellationToken ct) =>
+        await db.BrandSettings.AsNoTracking()
+            .Where(s => s.BrandId == brandId)
+            .Select(s => new BrandDepositSettings(
+                s.DepositPolicy, s.RiskyCustomerNoShowThreshold, db.BankAccounts.Any(a => a.BrandId == brandId && a.IsActive)))
+            .SingleOrDefaultAsync(ct);
+
     public Task<string?> GetBranchTimeZoneAsync(Guid brandId, Guid branchId, CancellationToken ct) =>
         db.Branches.AsNoTracking().Where(b => b.BrandId == brandId && b.Id == branchId).Select(b => (string?)b.TimeZoneId).SingleOrDefaultAsync(ct);
 

@@ -25,6 +25,11 @@ public interface ITenantQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<BrandCustomerSettings?> GetCustomerSettingsAsync(Guid brandId, CancellationToken ct);
 
+    /// <summary>Kapora çözümünün marka ayarları (sureler-ve-ayarlar.md § Kapora); marka yoksa null.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<BrandDepositSettings?> GetDepositSettingsAsync(Guid brandId, CancellationToken ct);
+
     /// <summary>Şubenin IANA saat dilimi; şube markada yoksa null.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="branchId">Şube.</param>

@@ -3,11 +3,13 @@ using NodaTime;
 using NodaTime.Text;
 using Npgsql;
 using Omvila.Infrastructure.Messaging;
+using Omvila.Modules.Catalog.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
 using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
+using Omvila.Modules.Scheduling.Infrastructure.Configurations;
 using Omvila.Modules.Scheduling.Infrastructure.ConflictGuard;
 using Omvila.SharedKernel;
 
@@ -25,8 +27,19 @@ namespace Omvila.Modules.Scheduling.Features.Appointments;
 /// </para>
 /// </summary>
 internal sealed class AppointmentWriter(
-    SchedulingDbContext db, AvailabilitySnapshotLoader loader, AppointmentLocks locks, IOutbox outbox, IIdGenerator ids, IClock clock)
+    SchedulingDbContext db,
+    AvailabilitySnapshotLoader loader,
+    AppointmentLocks locks,
+    IOutbox outbox,
+    IIdGenerator ids,
+    IClock clock,
+    IServiceDeposits deposits,
+    TransferCodeGenerator transferCodes)
 {
+    // Açıklama kodu çakışmasında (marka içinde benzersiz indeks) yeni kodla en çok bu kadar deneme; 32^4 olasılıkta
+    // art arda çakışma pratikte olmaz, sınır sonsuz döngüye karşıdır.
+    private const int TransferCodeAttempts = 5;
+
     private const SlotViolation Taken = SlotViolation.StaffBusy | SlotViolation.NoStaffAvailable | SlotViolation.ResourceUnavailable;
     private const SlotViolation Warnings = SlotViolation.OutsideWorkingHours | SlotViolation.StaffOnTimeOff;
 
@@ -44,6 +57,7 @@ internal sealed class AppointmentWriter(
         var (candidate, accepted) = guarded.Value;
         var now = clock.GetCurrentInstant();
         var plan = candidate.ToPlan();
+        var deposit = await DepositAsync(command, plan, ct);
         var appointment = Appointment.Create(
             new NewAppointment(
                 command.BrandId,
@@ -56,7 +70,8 @@ internal sealed class AppointmentWriter(
                 command.StaffNote,
                 command.SeriesId,
                 command.CreatedByUserId,
-                command.Approval?.HoldFor(plan)),
+                command.Approval?.HoldFor(plan),
+                deposit),
             plan,
             ids,
             now);
@@ -66,6 +81,29 @@ internal sealed class AppointmentWriter(
 
         var saved = await SaveAsync(appointment, accessCode, ct);
         return saved.IsSuccess ? new AppointmentWriteResult(appointment, accessCode, accepted) : saved.Error;
+    }
+
+    /// <summary>
+    /// Kural: durum-makinesi.md § Oluşturma kuralı — randevunun kaporası kalem kaporalarının toplamıdır; yalnız online
+    /// kanalda ve aktif hesap varken (<see cref="CreateAppointmentCommand.Deposit"/> dolu). Paket kalemi Dilim 5'tedir: plan
+    /// kalemleri henüz paketten düşülmez.
+    /// </summary>
+    private async Task<DepositHold?> DepositAsync(CreateAppointmentCommand command, AppointmentPlan plan, CancellationToken ct)
+    {
+        if (command.Deposit is not { } terms || command.Channel != AppointmentChannel.Online)
+        {
+            return null;
+        }
+
+        var resolved = await deposits.ResolveAsync(
+            command.BrandId,
+            new ServiceDepositRequest(
+                IsOnlineChannel: true,
+                terms.CustomerNoShowCount,
+                [.. plan.Items.Select(i => new ServiceDepositItem(i.Offer.ServiceId, i.Offer.Price, IsPackageRedemption: false))]),
+            ct);
+        var amount = resolved.Sum(d => d?.AmountMinor ?? 0);
+        return amount > 0 ? new DepositHold(amount, transferCodes.New(terms.TransferCodePrefix), terms.TransferWindow) : null;
     }
 
     /// <summary>
@@ -284,17 +322,27 @@ internal sealed class AppointmentWriter(
     /// savepoint içinde çalıştırır ve hatada ona geri döner; bu randevunun izlenen satırları bırakılır ki sonraki
     /// SaveChanges onları yeniden denemesin.
     /// </summary>
+    /// Kapora açıklama kodu marka içinde kullanılmışsa (23505, <see cref="AppointmentConfiguration.TransferCodeIndex"/>) aynı
+    /// savepoint geri dönüşüyle yeni kod üretilip yeniden kaydedilir.
     private async Task<Result> SaveAsync(Appointment appointment, AppointmentAccessCode? accessCode, CancellationToken ct)
     {
-        try
+        for (var attempt = 1; ; attempt++)
         {
-            await db.SaveChangesAsync(ct);
-            return Result.Success();
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation })
-        {
-            Detach(appointment, accessCode);
-            return Error.Conflict(ErrorCodes.SlotTaken);
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return Result.Success();
+            }
+            catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.ExclusionViolation })
+            {
+                Detach(appointment, accessCode);
+                return Error.Conflict(ErrorCodes.SlotTaken);
+            }
+            catch (DbUpdateException ex) when (attempt < TransferCodeAttempts && appointment.DepositTransferCode is { } code
+                && ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: AppointmentConfiguration.TransferCodeIndex })
+            {
+                appointment.ReplaceTransferCode(transferCodes.New(code[..code.LastIndexOf('-')]));
+            }
         }
     }
 

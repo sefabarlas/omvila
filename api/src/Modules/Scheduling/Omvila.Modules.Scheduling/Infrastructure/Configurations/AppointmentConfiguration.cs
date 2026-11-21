@@ -6,6 +6,8 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Configurations;
 
 internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
 {
+    public const string TransferCodeIndex = "ix_appointments_brand_id_deposit_transfer_code";
+
     public void Configure(EntityTypeBuilder<Appointment> builder)
     {
         builder.ToTable("appointments", table =>
@@ -18,6 +20,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
             table.HasCheckConstraint("ck_appointments_cancellation_reason", EnumCheck.NullOrIn<CancellationReason>("cancellation_reason"));
             table.HasCheckConstraint("ck_appointments_time", "end_utc > start_utc");
             table.HasCheckConstraint("ck_appointments_amounts", "total_amount_minor >= 0 AND (deposit_required_minor IS NULL OR deposit_required_minor >= 0)");
+            table.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
             // Değişmez: HoldExpiresUtc yalnız PendingApproval'da doludur (durum-makinesi.md § Değişmezler).
             table.HasCheckConstraint("ck_appointments_hold", "hold_expires_utc IS NULL OR status = 'PendingApproval'");
             table.HasCheckConstraint("ck_appointments_cancellation", "status <> 'Cancelled' OR (cancelled_utc IS NOT NULL AND cancelled_by IS NOT NULL AND cancellation_reason IS NOT NULL)");
@@ -37,6 +40,9 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.Property(x => x.Version).IsRowVersion();
         builder.Ignore(x => x.DisplayStatus);
         builder.Ignore(x => x.DepositCustomerReported);
+        builder.Ignore(x => x.DepositStatus);
+        builder.Ignore(x => x.AmountDueMinor);
+        builder.Property(x => x.DepositTransferCode).HasMaxLength(TransferCodeGenerator.MaxLength);
 
         builder.HasMany(x => x.Items).WithOne().HasForeignKey(i => i.AppointmentId).OnDelete(DeleteBehavior.Restrict);
         builder.Navigation(x => x.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -46,6 +52,10 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasIndex(x => new { x.BrandId, x.BranchId, x.StartUtc });
         builder.HasIndex(x => new { x.BrandId, x.BrandCustomerId, x.StartUtc });
         builder.HasIndex(x => new { x.BrandId, x.SeriesId });
+        // Kapora açıklama kodu marka içinde benzersiz (alan-modeli.md § Appointment.DepositTransferCode); çakışmada yazma yolu
+        // yeni kod üretir (AppointmentWriter).
+        builder.HasIndex(x => new { x.BrandId, x.DepositTransferCode }).IsUnique()
+            .HasFilter("deposit_transfer_code IS NOT NULL").HasDatabaseName(TransferCodeIndex);
         // MarkNoShows platform kapsamında her dakika tarar: yalnız Geldi denmemiş onaylı randevular.
         builder.HasIndex(x => x.StartUtc).HasFilter("status = 'Confirmed' AND checked_in_utc IS NULL").HasDatabaseName("ix_appointments_no_show_candidates");
         // ExpireAppointmentHolds platform kapsamında her dakika tarar: yalnız onay bekleyen talepler.

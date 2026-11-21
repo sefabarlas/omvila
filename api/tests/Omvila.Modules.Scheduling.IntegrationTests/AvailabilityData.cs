@@ -58,7 +58,7 @@ internal sealed class AvailabilityData
 
     public Guid Color { get; private set; }
 
-    public static ServiceProvider CreateServices(PostgresFixture db, IInterceptor? interceptor = null) =>
+    public static ServiceProvider CreateServices(PostgresFixture db, IInterceptor? interceptor = null, Action<IServiceCollection>? configure = null) =>
         db.CreateServices(configure: s =>
         {
             s.AddTenancyModule(db.Configuration()).AddCatalogModule().AddSchedulingModule(db.Configuration());
@@ -66,6 +66,8 @@ internal sealed class AvailabilityData
             {
                 s.AddSingleton(interceptor);
             }
+
+            configure?.Invoke(s);
         });
 
     public static async Task<AvailabilityData> SeedAsync(PostgresFixture db, ServiceProvider services, CancellationToken ct)

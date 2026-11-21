@@ -81,8 +81,11 @@ internal sealed class Appointment
 
     public string? CancellationNote { get; private set; }
 
-    /// <summary>İstenen kapora; <c>null</c> = kapora yok (Dilim 4'te yazılır).</summary>
+    /// <summary>İstenen kapora; <c>null</c> = kapora yok.</summary>
     public long? DepositRequiredMinor { get; private set; }
+
+    /// <summary>Havale açıklama kodu ("OMV-7K2X"); marka içinde benzersiz. Kapora yoksa <c>null</c>.</summary>
+    public string? DepositTransferCode { get; private set; }
 
     /// <summary>Müşteri "Havaleyi yaptım" dedi (Dilim 4).</summary>
     public Instant? DepositCustomerReportedUtc { get; private set; }
@@ -107,6 +110,20 @@ internal sealed class Appointment
 
     /// <summary>"Havaleyi yaptım" dendi mi (sözleşme depositCustomerReported).</summary>
     public bool DepositCustomerReported => DepositCustomerReportedUtc is not null;
+
+    /// <summary>Kapora durumu (sözleşme DepositStatus); kapora istenmemişse <c>null</c>.</summary>
+    public DepositStatus? DepositStatus => DepositRequiredMinor switch
+    {
+        null => null,
+        _ when DepositReceivedUtc is not null => Domain.DepositStatus.Received,
+        _ when DepositCustomerReportedUtc is not null => Domain.DepositStatus.CustomerReported,
+        _ => Domain.DepositStatus.Awaiting,
+    };
+
+    /// <summary>"Salonda ödenecek": toplam − alınmış kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden toplamdır.</summary>
+    public long AmountDueMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
+        ? Math.Max(0, TotalAmountMinor - deposit)
+        : TotalAmountMinor;
 
     // Kural: docs/alan/durum-makinesi.md#oluşturma-kuralı (A1)
     public static Appointment Create(NewAppointment input, AppointmentPlan plan, IIdGenerator ids, Instant now)
@@ -139,12 +156,20 @@ internal sealed class Appointment
 
         appointment.Summarize();
 
-        // Kapıda sıradan başlatılan randevu doğrudan Geldi'dir; panel ve telefon onay istemez; online yalnız onay
-        // gerekiyorsa bekler (kapora Dilim 4).
+        // Kapıda sıradan başlatılan randevu doğrudan Geldi'dir; panel ve telefon onay ve kapora istemez; online kapora veya
+        // onay gerekiyorsa bekler. Kapora ve onay birlikte gerekiyorsa tek tutma süresi havale süresidir.
         if (input.Channel == AppointmentChannel.WalkIn)
         {
             appointment.Status = AppointmentStatus.CheckedIn;
             appointment.CheckedInUtc = now;
+        }
+        else if (input.Channel == AppointmentChannel.Online && input.Deposit is { AmountMinor: > 0 } deposit)
+        {
+            appointment.Status = AppointmentStatus.PendingApproval;
+            appointment.HoldExpiresUtc = now + deposit.TransferWindow;
+            appointment.HoldReason = input.ApprovalTimeout is null ? Domain.HoldReason.Deposit : Domain.HoldReason.ApprovalAndDeposit;
+            appointment.DepositRequiredMinor = deposit.AmountMinor;
+            appointment.DepositTransferCode = deposit.TransferCode;
         }
         else if (input.Channel == AppointmentChannel.Online && input.ApprovalTimeout is { } timeout)
         {
@@ -159,6 +184,21 @@ internal sealed class Appointment
         }
 
         return appointment;
+    }
+
+    /// <summary>
+    /// Açıklama kodu marka içinde başka bir randevuda kullanılmışsa (benzersiz indeks) yazma yolu yeni kodla yeniden dener.
+    /// Yalnız kapora bekleyen, henüz kaydedilmemiş randevuda anlamlıdır.
+    /// </summary>
+    public void ReplaceTransferCode(string code)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+        if (DepositTransferCode is null)
+        {
+            throw new DomainException("Kapora istenmeyen randevuda açıklama kodu yok.");
+        }
+
+        DepositTransferCode = code;
     }
 
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A6)
@@ -364,7 +404,10 @@ internal sealed class Appointment
         {
             Status = AppointmentStatus.PendingApproval;
             HoldExpiresUtc = now + hold;
-            HoldReason = Domain.HoldReason.Approval;
+            // Kapora hâlâ bekleniyorsa süre dolumu DepositNotReceived kalır (A5); kapora yeni saate aktarılır (A14).
+            HoldReason = DepositStatus is Domain.DepositStatus.Awaiting or Domain.DepositStatus.CustomerReported
+                ? Domain.HoldReason.ApprovalAndDeposit
+                : Domain.HoldReason.Approval;
         }
 
         Touch(now, userId);
