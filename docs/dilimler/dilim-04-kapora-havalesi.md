@@ -27,3 +27,9 @@ Salon IBAN'ını tanımlar ve kapora politikasını seçer. Kapora gereken onlin
 8. Paketten düşülen kalemde kapora istenmez.
 9. Müşteri uygulamasında Ödemelerim: "Salon onayı bekleniyor" → "Alındı" → (iade sonrası) "Salon iade etti".
 10. Hiçbir ekranda ve bağımlılıkta kart formu veya ödeme SDK'sı yok (bağımlılık taraması + kod araması CI kontrolü).
+
+## Uçtan uca ve tasarım
+- Durum: uygulandı (#87–#95 ve kapanış); ürün sahibi demosu ve varsayımların (`acik-sorular.md` T-78…T-85) onayı bekleniyor.
+- Kritik akış 4 ve 5 (`test-stratejisi.md`): `web/rezervasyon/e2e/kapora.e2e.ts`, `web/salon-panel/e2e/onay.e2e.ts` (Kapora); API ve SMS `DepositBookingTests`, `DepositReceivedTests`, `DepositFollowUpTests`, `BankAccountTests`.
+- Kabul kriterlerinin test eşlemesi ve tasarım karşılaştırması: [dilim-04-tasarim-karsilastirma.md](dilim-04-tasarim-karsilastirma.md). Kriter 9 (Ödemelerim) Dilim 5'te (V8); kriter 8 alan testinde, paket kullanımı Dilim 5'te.
+- Demo verisi kapora hesabı, politikası ve dört kapora durumunu içerir (T-85).

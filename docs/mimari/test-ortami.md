@@ -93,7 +93,7 @@ Test sunucusu 21 Kasım 2026'da bu adımlarla kuruldu. Yeniden kurmak veya ikinc
 
 ## Demo verisi
 
-`--role=seed` "Kuaför Elif" markasını kurar (`kuafor-elif`; Kadıköy ve Nişantaşı şubeleri, 10 hizmet, 15 müşteri, son ve gelecek iki haftanın randevuları, 1000 kontör). Kişiler uydurmadır.
+`--role=seed` "Kuaför Elif" markasını kurar (`kuafor-elif`; Kadıköy ve Nişantaşı şubeleri, 10 hizmet, 15 müşteri, son ve gelecek iki haftanın randevuları, kapora hesabı, 1000 kontör). Kişiler uydurmadır.
 
 | Telefon | Kişi | Rol |
 |---|---|---|
@@ -103,6 +103,11 @@ Test sunucusu 21 Kasım 2026'da bu adımlarla kuruldu. Yeniden kurmak veya ikinc
 | 0555 000 00 04 | Zeynep Aksoy | Şube yöneticisi |
 
 Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com.tr`'den okuyun (en yeni üstte; `?telefon=05550000001` ile süzülür).
+
+**Kapora (Dilim 4, T-85):** Kapora ve IBAN'da aktif hesap (Elif Kaya, Ziraat Bankası, uydurma test IBAN'ı `TR29 0006 4000 0011 2345 6789 01`, havale süresi 2 saat); politika "Yalnızca riskli müşterilerde", eşik 2 gelmeme; Balyaj %30, Keratin 150 ₺ kapora. Demo randevularında yarından sonraki ilk iki çalışma gününde Elif Kaya ve Zeynep Aksoy'un günün ikinci randevusu sırayla Kapora bekleniyor, Havale bildirildi, Kapora alındı ve Kaporasız onaylandı'dır. Kapora bekleyen ikisi seed'den 2 saat sonra otomatik iptal olur ve müşteriye "kapora gelmedi" SMS'i gider; demodan hemen önce `--reset` çalıştırın.
+
+- **KK2'yi denemek:** Gizem Arslan (0555 001 00 01) ve Ece Koç (0555 001 00 02) 2 kez gelmemiştir. Rezervasyon sayfasında bu numarayla Balyaj veya Keratin alın: Havale ekranı açılır; başka numarayla aynı hizmette kapora istenmez. Kod SMS günlüğündedir.
+- IBAN şifreli yazılır: seed, API ve worker'la aynı `TENANCY_IBAN_KEY`'i kullanır (compose'da ortak). Anahtar değişirse demo IBAN'ı okunamaz; `--reset` ile yeniden kurun.
 
 - Komut idempotenttir: marka varsa bir şey yazmaz.
 - **Demodan önce sıfırlama:** randevu tarihleri çalıştırma anına göre yazıldığından demodan önce yenileyin. `--reset` yalnız demo markasını silip yeniden kurar; başka markalara dokunmaz:
