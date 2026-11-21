@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { brandFixture, json, mockApi, problem } from '@/test/api-mock';
+import { catalogFixture } from '@/test/booking-mock';
 import SalonPage, { generateMetadata } from './page';
 
 vi.mock('next/navigation', () => ({
@@ -16,14 +17,17 @@ const props = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
 describe('salon sayfası', () => {
   it('salon kartını gösterir ve isteği X-Client ile yapar', async () => {
-    const calls = mockApi(() => json(200, brandFixture()));
+    const calls = mockApi((request) =>
+      request.url.endsWith('/catalog') ? json(200, catalogFixture()) : json(200, brandFixture()),
+    );
 
     render(await SalonPage(props('kuafor-elif')));
+    expect(await screen.findByRole('heading', { name: 'Hizmet seçin' })).toBeTruthy();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Kuaför Elif' })).toBeTruthy();
     expect(screen.getByText('Kuaför · Saç, bakım, makyaj')).toBeTruthy();
     expect(screen.getByText('Moda Cad. 42, Kadıköy · İstanbul')).toBeTruthy();
-    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByText(/online randevu almıyor/)).toBeNull();
     expect(calls[0]?.url).toBe('http://localhost:4010/api/v1/public/brands/kuafor-elif');
     expect(calls[0]?.headers.get('X-Client')).toBe('booking-page');
   });

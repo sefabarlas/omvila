@@ -23,7 +23,8 @@ Next.js (App Router), React 19, TypeScript strict, CSS Modules + `@omvila/design
 - Personel adımında ilk seçenek "Fark etmez" (marka ayarı kapalıysa gösterilmez; personel seçimi kapalıysa adım atlanır).
 - Gün şeridi `POST …/availability/days`, saat ızgarası `POST …/availability/slots`. Dolu gün: "Perşembe dolu · en yakın uygun saat …" + "Bekleme listesine katılın".
 - Telefon → `public/otp/request` → kod → `verify` → `bookingToken` (bellekte). `AlreadyVerified` gelirse kod adımı atlanır. "Tekrar hoş geldiniz, Ayşe" `knownCustomerFirstName`'den.
-- Onay ekranı: özet, paketten düşme anahtarı (`my-packages`), kapora kutusu (hizmette kapora varsa bilgi), aydınlatma metni onayı (zorunlu), kampanya izni (isteğe bağlı, varsayılan kapalı). Alt not: "Ödeme sayfadan alınmaz; havaleyi kendi bankanızdan yaparsınız."
+- Bilgiler ekranı (Telefon.png): ad, telefon, not, aydınlatma metni onayı (zorunlu), kampanya izni (isteğe bağlı, varsayılan kapalı).
+- Onay ekranı: özet, paketten düşme anahtarı (`my-packages`), kapora kutusu (hizmette kapora varsa bilgi). Alt not: "Ödeme sayfadan alınmaz; havaleyi kendi bankanızdan yaparsınız."
 - `Randevuyu oluştur` → `Idempotency-Key` ile. Sonuç:
   - `Confirmed` → Başarı ("Randevunuz onaylandı").
   - `PendingApproval` + kapora yok → Talep ("Talebiniz alındı", "en geç 2 saat içinde").

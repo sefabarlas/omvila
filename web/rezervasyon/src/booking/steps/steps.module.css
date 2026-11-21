@@ -1,0 +1,213 @@
+/* Adımların ortak düzeni (rezervasyon-sayfasi/*). */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.grid {
+  composes: list;
+}
+
+@media (width >= 960px) {
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-buyuk-baslik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-buyuk-baslik-satir);
+  letter-spacing: var(--yazi-buyuk-baslik-harf);
+}
+
+.titleMedium {
+  margin: 0;
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.groupTitle {
+  margin: var(--bosluk-2) var(--bosluk-1) 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.text {
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.note {
+  margin: 0;
+  padding: 0 var(--bosluk-1);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.center {
+  text-align: center;
+}
+
+.linkButton {
+  min-height: var(--dokunma-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--metin-marka);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.linkButton:focus-visible {
+  border-radius: var(--kose-xs);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.inlineLink {
+  min-height: auto;
+}
+
+.infoBox {
+  display: flex;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.infoBox p {
+  margin: 0;
+}
+
+.staffHint {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-secili);
+  color: var(--metin-marka);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.skeleton {
+  min-height: calc(var(--bosluk-12) * 1.5);
+  border-radius: var(--kose-lg);
+  background: var(--iskelet);
+}
+
+/* Şube kartı (Sube.png) */
+.branch {
+  display: flex;
+  gap: var(--bosluk-4);
+  align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  color: var(--metin);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.branch:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.branchSwatch {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--kose-md);
+  background: var(--zemin-secili);
+}
+
+.branchSwatchAlt {
+  background: var(--blok-kum);
+}
+
+.branchText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  min-width: 0;
+}
+
+.branchName {
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.pill {
+  align-self: flex-start;
+  padding: var(--bosluk-1) var(--bosluk-2);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.pillOpen {
+  background: var(--basari-zemin);
+  color: var(--basari);
+}
+
+.chevron {
+  flex: none;
+  color: var(--metin);
+}
+
+/* Başarı (Basari.png) */
+.doneIcon {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--kose-xl);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--bosluk-2);
+}
+
+.welcome strong {
+  font-weight: 800;
+}
