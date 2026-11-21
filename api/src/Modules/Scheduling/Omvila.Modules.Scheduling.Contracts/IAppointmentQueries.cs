@@ -34,6 +34,12 @@ public interface IAppointmentQueries
     Task<IReadOnlyDictionary<Guid, Instant>> GetNextAppointmentsAsync(
         Guid brandId, IReadOnlyCollection<Guid> brandCustomerIds, Instant fromUtc, CancellationToken ct);
 
+    /// <summary>Randevuların başlangıcı (paket seans kullanımlarının görünümü); markada olmayanlar yer almaz.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="appointmentIds">Randevular.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyDictionary<Guid, Instant>> GetStartTimesAsync(Guid brandId, IReadOnlyCollection<Guid> appointmentIds, CancellationToken ct);
+
     /// <summary>Bildirim metni için randevu bilgisi; randevu markada yoksa null.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="appointmentId">Randevu.</param>

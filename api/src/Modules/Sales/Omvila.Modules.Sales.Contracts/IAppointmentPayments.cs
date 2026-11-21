@@ -8,10 +8,11 @@ namespace Omvila.Modules.Sales.Contracts;
 public interface IAppointmentPayments
 {
     /// <summary>
-    /// "Tamamla ve ödeme al": her satır için <c>Payment(Recorded)</c> + randevu tahsisi; personelli her kalem için
-    /// <c>CommissionEntry(Service, Accrued)</c>. Oran personele özel hizmet oranı ?? personelin hizmet primi; taban tahsil
-    /// edilen tutarın (satırlar + salonda kalan kapora) kalemlere tutarları oranında dağıtılmış payı (T-88, W2). Oranı 0 olan
-    /// personele kayıt yazılmaz. Toplam doğrulaması çağırandadır.
+    /// "Tamamla ve ödeme al": her satır için <c>Payment(Recorded)</c> + randevu tahsisi; paketten düşülen her kalem için 0 TL'lik
+    /// <c>Payment(PackageRedemption)</c> + randevu tahsisi (W1); personelli her kalem için <c>CommissionEntry(Service, Accrued)</c>.
+    /// Oran personele özel hizmet oranı ?? personelin hizmet primi; taban paketsiz kalemlerde tahsil edilen tutarın (satırlar +
+    /// salonda kalan kapora) bu kalemlere tutarları oranında dağıtılmış payı, paketten düşülen kalemde paket fiyatının seans payı
+    /// (T-88, W2). Oranı 0 olan personele kayıt yazılmaz. Toplam doğrulaması ve seans ayırma çağırandadır.
     /// </summary>
     /// <param name="request">Girdi.</param>
     /// <param name="ct">İptal belirteci.</param>

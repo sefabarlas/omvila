@@ -21,6 +21,7 @@ internal sealed class AppointmentItemConfiguration : IEntityTypeConfiguration<Ap
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
         builder.Property(x => x.ServiceNameSnapshot).HasMaxLength(120);
         builder.Ignore(x => x.NetAmountMinor);
+        builder.Ignore(x => x.IsFromPackage);
         builder.Ignore(x => x.CurrentSegments);
 
         builder.HasMany(x => x.Segments).WithOne().HasForeignKey(s => s.AppointmentItemId).OnDelete(DeleteBehavior.Restrict);

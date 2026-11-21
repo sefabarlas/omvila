@@ -4,6 +4,7 @@ using NodaTime.Text;
 using Npgsql;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Catalog.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
 using Omvila.Modules.Scheduling.Features.Approvals;
@@ -34,6 +35,7 @@ internal sealed class AppointmentWriter(
     IIdGenerator ids,
     IClock clock,
     IServiceDeposits deposits,
+    IPackageSessions packageSessions,
     TransferCodeGenerator transferCodes)
 {
     // Açıklama kodu çakışmasında (marka içinde benzersiz indeks) yeni kodla en çok bu kadar deneme; 32^4 olasılıkta
@@ -57,7 +59,13 @@ internal sealed class AppointmentWriter(
         var (candidate, accepted) = guarded.Value;
         var now = clock.GetCurrentInstant();
         var plan = candidate.ToPlan();
-        var deposit = await DepositAsync(command, plan, ct);
+        var packageItems = MapPackageUses(command.PackageUses, plan);
+        if (!packageItems.IsSuccess)
+        {
+            return packageItems.Error;
+        }
+
+        var deposit = await DepositAsync(command, plan, packageItems.Value, ct);
         var appointment = Appointment.Create(
             new NewAppointment(
                 command.BrandId,
@@ -71,7 +79,8 @@ internal sealed class AppointmentWriter(
                 command.SeriesId,
                 command.CreatedByUserId,
                 command.Approval?.HoldFor(plan),
-                deposit),
+                deposit,
+                packageItems.Value),
             plan,
             ids,
             now);
@@ -84,11 +93,35 @@ internal sealed class AppointmentWriter(
     }
 
     /// <summary>
-    /// Kural: durum-makinesi.md § Oluşturma kuralı — randevunun kaporası kalem kaporalarının toplamıdır; yalnız online
-    /// kanalda ve aktif hesap varken (<see cref="CreateAppointmentCommand.Deposit"/> dolu). Paket kalemi Dilim 5'tedir: plan
-    /// kalemleri henüz paketten düşülmez.
+    /// Paket kullanımlarını plan kalemlerine eşler: her kullanım aynı hizmetli, henüz eşlenmemiş ilk kaleme düşer. Planda o
+    /// hizmet yoksa 409 <c>package_session_unavailable</c> (sözleşme usePackageItems: "hizmet uyuşmuyorsa").
     /// </summary>
-    private async Task<DepositHold?> DepositAsync(CreateAppointmentCommand command, AppointmentPlan plan, CancellationToken ct)
+    private static Result<IReadOnlyDictionary<int, Guid>> MapPackageUses(IReadOnlyList<PackageUse>? uses, AppointmentPlan plan)
+    {
+        var mapped = new Dictionary<int, Guid>();
+        foreach (var use in uses ?? [])
+        {
+            var item = plan.Items.FirstOrDefault(i => i.Offer.ServiceId == use.ServiceId && !mapped.ContainsKey(i.SeqNo));
+            if (item is null)
+            {
+                return Error.Conflict(
+                    ErrorCodes.PackageSessionUnavailable,
+                    new Dictionary<string, object?>(StringComparer.Ordinal) { [IPackageSessions.CustomerPackageItemMeta] = use.CustomerPackageItemId });
+            }
+
+            mapped[item.SeqNo] = use.CustomerPackageItemId;
+        }
+
+        return mapped;
+    }
+
+    /// <summary>
+    /// Kural: durum-makinesi.md § Oluşturma kuralı — randevunun kaporası kalem kaporalarının toplamıdır; yalnız online
+    /// kanalda ve aktif hesap varken (<see cref="CreateAppointmentCommand.Deposit"/> dolu). Paketten düşülen kalemde kapora
+    /// yoktur (sureler-ve-ayarlar.md § Kapora; dilim-05 kabul kriteri 8).
+    /// </summary>
+    private async Task<DepositHold?> DepositAsync(
+        CreateAppointmentCommand command, AppointmentPlan plan, IReadOnlyDictionary<int, Guid> packageItems, CancellationToken ct)
     {
         if (command.Deposit is not { } terms || command.Channel != AppointmentChannel.Online)
         {
@@ -100,7 +133,7 @@ internal sealed class AppointmentWriter(
             new ServiceDepositRequest(
                 IsOnlineChannel: true,
                 terms.CustomerNoShowCount,
-                [.. plan.Items.Select(i => new ServiceDepositItem(i.Offer.ServiceId, i.Offer.Price, IsPackageRedemption: false))]),
+                [.. plan.Items.Select(i => new ServiceDepositItem(i.Offer.ServiceId, i.Offer.Price, IsPackageRedemption: packageItems.ContainsKey(i.SeqNo)))]),
             ct);
         var amount = resolved.Sum(d => d?.AmountMinor ?? 0);
         return amount > 0 ? new DepositHold(amount, transferCodes.New(terms.TransferCodePrefix), terms.TransferWindow) : null;
@@ -311,6 +344,11 @@ internal sealed class AppointmentWriter(
             .ToListAsync(ct);
         var cancelled = expired.Where(a => a.ExpireHold(now).IsSuccess).ToList();
         await db.SaveChangesAsync(ct);
+        foreach (var brand in cancelled.GroupBy(a => a.BrandId))
+        {
+            await packageSessions.ReleaseAsync(brand.Key, brand, ct);
+        }
+
         foreach (var appointment in cancelled)
         {
             await outbox.EnqueueAsync(ApprovalEvents.Expired(appointment), ct);

@@ -2,6 +2,7 @@ using NodaTime;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
@@ -31,6 +32,7 @@ internal sealed class PublicAppointmentLinkChanges(
     ITenantQueries tenants,
     IBrandBankAccounts bankAccounts,
     IOutbox outbox,
+    IPackageSessions packageSessions,
     IClock clock)
 {
     private const int CancelNoteMaxLength = 300;
@@ -75,6 +77,7 @@ internal sealed class PublicAppointmentLinkChanges(
         }
 
         await db.SaveChangesAsync(ct);
+        await packageSessions.ReleaseAsync(appointment.BrandId, [appointment], ct);
         var counters = await customers.ApplyCountersAsync(appointment.BrandId, appointment.BrandCustomerId, new CustomerCounterChange(Cancels: 1), ct);
         if (!counters.IsSuccess)
         {

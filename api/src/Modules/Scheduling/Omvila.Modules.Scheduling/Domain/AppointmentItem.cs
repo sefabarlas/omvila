@@ -1,4 +1,5 @@
 using NodaTime;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Domain;
 
@@ -39,7 +40,11 @@ internal sealed class AppointmentItem
 
     public long DiscountMinor { get; private set; }
 
+    /// <summary>Paketten düşülüyorsa müşterinin paket kalemi; tahsil edilecek tutarı 0'dır ("Paketten").</summary>
     public Guid? CustomerPackageItemId { get; private set; }
+
+    /// <summary>Kalem paketten düşülüyor mu.</summary>
+    public bool IsFromPackage => CustomerPackageItemId is not null;
 
     public AppointmentItemStatus Status { get; private set; }
 
@@ -86,6 +91,18 @@ internal sealed class AppointmentItem
     }
 
     internal void Complete() => Status = AppointmentItemStatus.Completed;
+
+    /// <summary>Kalemi paketten düşer (seans Sales'te ayrılır). Fiyat kopyası korunur, tahsil edilecek tutar 0 olur.</summary>
+    // Kural: alan-modeli.md § AppointmentItem ("Paketten düşülen kalemde PriceMinor yine yazılır, tahsil edilecek tutar 0 olur")
+    internal void UsePackage(Guid customerPackageItemId)
+    {
+        if (customerPackageItemId == Guid.Empty || CustomerPackageItemId is not null)
+        {
+            throw new DomainException("Kalem zaten paketten düşülüyor veya paket kalemi boş.");
+        }
+
+        CustomerPackageItemId = customerPackageItemId;
+    }
 
     internal void Cancel()
     {

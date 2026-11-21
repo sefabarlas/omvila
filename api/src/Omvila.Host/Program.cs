@@ -103,6 +103,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapCatalogEndpoints();
     app.MapCustomersEndpoints();
     app.MapSchedulingEndpoints();
+    app.MapSalesEndpoints();
     app.MapReviewsEndpoints();
     app.MapNotificationsEndpoints();
     // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).

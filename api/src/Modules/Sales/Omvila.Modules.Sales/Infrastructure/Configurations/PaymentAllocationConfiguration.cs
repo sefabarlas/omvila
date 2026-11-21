@@ -11,7 +11,8 @@ internal sealed class PaymentAllocationConfiguration : IEntityTypeConfiguration<
         builder.ToTable("payment_allocations", table =>
         {
             table.HasCheckConstraint("ck_payment_allocations_target_type", EnumCheck.In<AllocationTargetType>("target_type"));
-            table.HasCheckConstraint("ck_payment_allocations_amount", "amount_minor > 0");
+            // 0 yalnız PackageRedemption kaydının tahsisinde (W1).
+            table.HasCheckConstraint("ck_payment_allocations_amount", "amount_minor >= 0");
         });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();

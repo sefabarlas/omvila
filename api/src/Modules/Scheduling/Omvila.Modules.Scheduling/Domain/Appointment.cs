@@ -153,19 +153,29 @@ internal sealed class Appointment
     };
 
     /// <summary>
-    /// "Salonda ödenecek": toplam − salonda kalan kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden ve kaporasız
-    /// onayda toplamdır; iade işaretinden sonra iade edilen kısım yeniden salonda ödenir (tam iadede toplam; T-83).
+    /// "Salonda ödenecek": toplam − paketten düşülen kalemler − salonda kalan kapora (dilim-04 § Kapsam; kabul kriteri 5;
+    /// sözleşme manageCompleteAppointment tutar kuralı). Kapora gelmeden ve kaporasız onayda paketsiz kalemlerin toplamıdır; iade
+    /// işaretinden sonra iade edilen kısım yeniden salonda ödenir (tam iadede toplam; T-83).
     /// </summary>
     public long AmountDueMinor => Status switch
     {
         // "Tamamla ve ödeme al"dan sonra salonda ödenecek kalmaz (A11).
         AppointmentStatus.Completed => 0,
-        _ => TotalAmountMinor - RetainedDepositMinor,
+        _ => PayableAmountMinor - RetainedDepositMinor,
     };
 
-    /// <summary>Salonda kalan kapora: alınan − iade edilen, toplamı aşmaz; kapora alınmadıysa 0.</summary>
+    /// <summary>Paketten düşülen kalemlerin tutarı ("Paketten"; tahsil edilmez).</summary>
+    public long PackageCoveredMinor => _items.Where(i => i.IsFromPackage && i.Status != AppointmentItemStatus.Cancelled).Sum(i => i.NetAmountMinor);
+
+    /// <summary>Tahsil edilecek kalemlerin tutarı: toplam − paketten düşülenler.</summary>
+    public long PayableAmountMinor => TotalAmountMinor - PackageCoveredMinor;
+
+    /// <summary>Kalemlerden biri paketten düşülüyor mu (iptalde seans geri döner).</summary>
+    public bool UsesPackage => _items.Any(i => i.IsFromPackage);
+
+    /// <summary>Salonda kalan kapora: alınan − iade edilen, tahsil edilecek tutarı aşmaz; kapora alınmadıysa 0.</summary>
     public long RetainedDepositMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
-        ? Math.Min(TotalAmountMinor, deposit - (DepositRefundedAmountMinor ?? 0))
+        ? Math.Min(PayableAmountMinor, deposit - (DepositRefundedAmountMinor ?? 0))
         : 0;
 
     // Kural: docs/alan/durum-makinesi.md#oluşturma-kuralı (A1)
@@ -196,6 +206,8 @@ internal sealed class Appointment
         {
             appointment._items.Add(AppointmentItem.Create(ids.New(), input.BrandId, appointment.Id, itemPlan, ids.New));
         }
+
+        appointment.UsePackages(input.PackageItemsBySeqNo);
 
         appointment.Summarize();
 
@@ -564,6 +576,30 @@ internal sealed class Appointment
         return Result.Success();
     }
 
+    /// <summary>
+    /// "Paketten" (tamamlamada; sözleşme PackageRedemptionRequest): randevu oluşurken paketten düşülmemiş etkin bir kalemi
+    /// müşterinin paket kaleminden düşer. Yalnız tamamlanabilir randevuda; kalem yoksa, etkin değilse veya zaten paketten
+    /// düşülüyorsa 400 (<paramref name="field"/> = out_of_range). Seansın uygunluğu Sales'te denetlenir.
+    /// </summary>
+    // Kural: durum-makinesi.md A11; sözleşme manageCompleteAppointment (packageRedemptions)
+    public Result RedeemFromPackage(Guid appointmentItemId, Guid customerPackageItemId, string field)
+    {
+        var allowed = CanComplete();
+        if (!allowed.IsSuccess)
+        {
+            return allowed;
+        }
+
+        var item = _items.SingleOrDefault(i => i.Id == appointmentItemId);
+        if (item is null || item.Status != AppointmentItemStatus.Active || item.IsFromPackage)
+        {
+            return Error.Validation(field, "out_of_range");
+        }
+
+        item.UsePackage(customerPackageItemId);
+        return Result.Success();
+    }
+
     /// <summary>A11 koruması: yalnız <c>CheckedIn</c> randevu tamamlanır.</summary>
     public Result CanComplete() => Status == AppointmentStatus.CheckedIn ? Result.Success() : InvalidTransition();
 
@@ -686,6 +722,15 @@ internal sealed class Appointment
         foreach (var item in _items)
         {
             item.Cancel();
+        }
+    }
+
+    /// <summary>A1: paketten düşülen kalemler (sıra numarası → müşterinin paket kalemi).</summary>
+    private void UsePackages(IReadOnlyDictionary<int, Guid>? packageItemsBySeqNo)
+    {
+        foreach (var item in _items.Where(i => packageItemsBySeqNo?.ContainsKey(i.SeqNo) == true))
+        {
+            item.UsePackage(packageItemsBySeqNo![item.SeqNo]);
         }
     }
 
