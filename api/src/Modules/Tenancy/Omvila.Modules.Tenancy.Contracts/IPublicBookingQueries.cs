@@ -39,4 +39,8 @@ public interface IPublicBookingQueries
     /// <summary>Rezervasyon sayfası bağlantısı: <c>{Tenancy:BookingPageBaseUrl}{slug}</c> (SMS'teki "rezervasyon bağlantısı").</summary>
     /// <param name="brandSlug">Markanın güncel bağlantı adı.</param>
     Uri BookingPageUrl(string brandSlug);
+
+    /// <summary>Bekleme teklifi bağlantısı (<c>{BookingPageBaseUrl}/b/{code}</c>; bildirimler.md § Bağlantılar).</summary>
+    /// <param name="accessCode">Teklifin erişim kodu.</param>
+    Uri WaitlistOfferPageUrl(string accessCode);
 }

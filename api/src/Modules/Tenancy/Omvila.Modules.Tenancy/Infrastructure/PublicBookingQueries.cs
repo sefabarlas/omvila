@@ -79,6 +79,12 @@ internal sealed class PublicBookingQueries(
         return new Uri(options.Value.BookingPageBaseUrl!, $"r/{accessCode}");
     }
 
+    public Uri WaitlistOfferPageUrl(string accessCode)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(accessCode);
+        return new Uri(options.Value.BookingPageBaseUrl!, $"b/{accessCode}");
+    }
+
     public Uri BookingPageUrl(string brandSlug)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(brandSlug);

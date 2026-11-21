@@ -46,6 +46,9 @@ public sealed record Error
 
     public static Error NotFound() => new(ErrorCodes.NotFound, ErrorKind.NotFound, null, null);
 
+    /// <summary>404 ve koda özgü neden (ör. <see cref="ErrorCodes.AccessCodeInvalid"/>).</summary>
+    public static Error NotFound(string code) => new(code, ErrorKind.NotFound, null, null);
+
     public static Error Forbidden(string code = ErrorCodes.Forbidden, IReadOnlyDictionary<string, object?>? meta = null) =>
         new(code, ErrorKind.Forbidden, null, meta);
 
