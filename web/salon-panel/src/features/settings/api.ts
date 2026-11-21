@@ -103,7 +103,11 @@ export function brandSettingsBody(
     depositPolicy: pick('depositPolicy'),
     riskyCustomerNoShowThreshold: pick('riskyCustomerNoShowThreshold'),
     maskCustomerPhoneFromStaff: pick('maskCustomerPhoneFromStaff'),
+    // Sözleşmede deprecated ama PUT gövdesinde hâlâ zorunlu: okunan değer olduğu gibi geri gönderilir; düzenleme
+    // notification-settings ile yapılır (acik-sorular.md T-62 (4)).
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     reminderOffsetsMinutes: pick('reminderOffsetsMinutes'),
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     reviewInviteEnabled: pick('reviewInviteEnabled'),
   };
 }
