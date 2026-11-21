@@ -69,6 +69,15 @@ internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry 
                       select b.DisplayName ?? c.FullName).SingleOrDefaultAsync(ct);
     }
 
+    public async Task<Guid?> FindBrandCustomerIdAsync(Guid brandId, PhoneNumber phone, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(phone);
+        return await (from b in db.BrandCustomers.AsNoTracking()
+                      join c in db.Customers.AsNoTracking() on b.CustomerId equals c.Id
+                      where b.BrandId == brandId && c.PhoneE164 == phone.E164
+                      select (Guid?)b.Id).SingleOrDefaultAsync(ct);
+    }
+
     public async Task RecordConsentAsync(ConsentEntry entry, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entry);

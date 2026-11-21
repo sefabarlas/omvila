@@ -61,6 +61,9 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.Ignore(x => x.DepositCustomerReported);
         builder.Ignore(x => x.DepositStatus);
         builder.Ignore(x => x.AmountDueMinor);
+        builder.Ignore(x => x.PackageCoveredMinor);
+        builder.Ignore(x => x.PayableAmountMinor);
+        builder.Ignore(x => x.UsesPackage);
         builder.Property(x => x.DepositTransferCode).HasMaxLength(TransferCodeGenerator.MaxLength);
 
         builder.HasMany(x => x.Items).WithOne().HasForeignKey(i => i.AppointmentId).OnDelete(DeleteBehavior.Restrict);

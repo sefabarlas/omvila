@@ -7,6 +7,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Security;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
@@ -15,7 +16,7 @@ namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 
 /// <summary>
 /// Rezervasyon sayfasında randevu oluşturma ve paket listesi (sözleşme publicCreateAppointment, publicListMyPackages).
-/// İkisi de telefon doğrulama jetonu (aud=public-booking, ADR-0007) ister; müşteri uygulaması jetonu (aud=me) Dilim 5'te
+/// İkisi de telefon doğrulama jetonu (aud=public-booking, ADR-0007) ister; müşteri uygulaması jetonu (aud=me) /me yüzeyiyle
 /// eklenir. Oluşturma Idempotency-Key ister; anahtar şubenin markası kapsamında saklanır.
 /// </summary>
 internal static class PublicAppointmentEndpoints
@@ -30,10 +31,34 @@ internal static class PublicAppointmentEndpoints
             .AddEndpointFilter<PublicBranchFilter>()
             .RequireIdempotencyKey();
 
-        // Paket kullanımı Dilim 5'tedir: D2'de kullanılabilir paket kalemi yoktur, liste boş döner.
-        group.MapGet("/{branchId:guid}/my-packages", () => TypedResults.Ok(new PackageList([])))
+        group.MapGet("/{branchId:guid}/my-packages", ListMyPackagesAsync)
             .WithName("publicListMyPackages")
-            .RequireAuthenticated(Audiences.PublicBooking);
+            .RequireAuthenticated(Audiences.PublicBooking)
+            .AddEndpointFilter<PublicBranchFilter>();
+    }
+
+    /// <summary>
+    /// Doğrulanmış telefonun bu şubede kullanabileceği paket kalemleri ("Fön paketinizden düşülsün"). Telefonun markada kartı
+    /// yoksa liste boştur; başka markanın paketi görünmez (kiracı bağlamı şubenin markası).
+    /// </summary>
+    private static async Task<IResult> ListMyPackagesAsync(
+        HttpContext http, ICustomerDirectory customers, IPackageSessions packageSessions, ITenantQueries tenants, IClock clock, CancellationToken ct)
+    {
+        if (!PhoneNumber.TryParse(http.User.FindFirst(OmvilaClaims.Phone)?.Value, out var phone))
+        {
+            return Error.Unauthorized().ToProblem();
+        }
+
+        var scope = PublicBranchFilter.ScopeOf(http);
+        if (await customers.FindBrandCustomerIdAsync(scope.BrandId, phone, ct) is not { } brandCustomerId)
+        {
+            return TypedResults.Ok(new PackageList([]));
+        }
+
+        var zoneId = await tenants.GetBranchTimeZoneAsync(scope.BrandId, scope.BranchId, ct) ?? PlatformDefaults.DefaultTimeZoneId;
+        var zone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(zoneId) ?? DateTimeZoneProviders.Tzdb[PlatformDefaults.DefaultTimeZoneId];
+        var today = clock.GetCurrentInstant().InZone(zone).Date;
+        return TypedResults.Ok(new PackageList(await packageSessions.ListUsableAsync(scope.BrandId, scope.BranchId, brandCustomerId, today, ct)));
     }
 
     private static async Task<IResult> CreateAsync(
