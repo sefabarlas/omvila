@@ -5,6 +5,7 @@ using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
 using Omvila.Modules.Scheduling.Features.Appointments;
+using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
 
@@ -14,13 +15,16 @@ namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 /// Online randevu (sözleşme publicCreateAppointment; dilim-02 § Alan kuralları, kabul kriterleri 1, 2, 4, 6). Sıra: biçim
 /// → personel seçimi ayarları → müşteri (telefonla bul/oluştur: kart Source=Online, kişi IsVerified) → engelli müşteri 403
 /// → <see cref="AppointmentWriter"/> (public kip; sunulmayan her saat slot_taken + meta.alternatives) → rıza kayıtları
-/// (aydınlatma metni okundu, isteğe bağlı kampanya izni) → <see cref="AppointmentConfirmed"/> outbox olayı. Hata olursa
-/// transaction (müşteri kartı dahil) geri alınır. Onay gerektiren salon Dilim 3, kapora Dilim 4: D2'de randevu Onaylandı başlar.
+/// (aydınlatma metni okundu, isteğe bağlı kampanya izni) → outbox olayı. Hata olursa transaction (müşteri kartı dahil) geri
+/// alınır. Onay gerekiyorsa (hizmet ?? marka <c>RequiresApproval</c>, kalemlerden biri yeter) randevu Onay bekliyor başlar,
+/// tutma şimdi + <c>ApprovalTimeoutMinutes</c>, olay <see cref="AppointmentRequested"/>; değilse Onaylandı ve
+/// <see cref="AppointmentConfirmed"/> (dilim-03 kabul kriteri 1). Kapora Dilim 4.
 /// </summary>
 internal sealed class PublicAppointmentCreator(
     AppointmentWriter writer,
     ICustomerDirectory customers,
     IPublicBookingQueries booking,
+    ITenantQueries tenants,
     IOutbox outbox,
     IClock clock)
 {
@@ -59,11 +63,12 @@ internal sealed class PublicAppointmentCreator(
             return Error.Forbidden(ErrorCodes.CustomerBlocked);
         }
 
+        var settings = await tenants.GetAppointmentSettingsAsync(brandId, ct) ?? throw new DomainException("Markanın randevu ayarları yok.");
         var slot = new SlotRequest(context.Scope.BranchId, body.StartUtc!.Value, items.Value, sameStaff, AvailabilityMode.Public);
         var written = await writer.CreateAsync(
             new CreateAppointmentCommand(
                 brandId, slot, customer.CustomerId, customer.BrandCustomerId, AppointmentChannel.Online, context.ClientApp, body.CustomerNote,
-                StaffNote: null, SeriesId: null, CreatedByUserId: null),
+                StaffNote: null, SeriesId: null, CreatedByUserId: null, settings.Policy()),
             ct);
         if (!written.IsSuccess)
         {
@@ -72,6 +77,13 @@ internal sealed class PublicAppointmentCreator(
 
         await RecordConsentsAsync(context, body, customer.CustomerId, ct);
         var appointment = written.Value.Appointment;
+        if (appointment.Status == AppointmentStatus.PendingApproval)
+        {
+            // Onay gerekli: "Talebiniz alındı" ve staff.approval_needed; onay mesajı ve hatırlatmalar onayda (A2).
+            await outbox.EnqueueAsync(ApprovalEvents.Requested(appointment, isReschedule: false), ct);
+            return written.Value;
+        }
+
         await outbox.EnqueueAsync(
             new AppointmentConfirmed(
                 brandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,

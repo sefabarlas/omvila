@@ -55,7 +55,8 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
     public Task<BrandAppointmentSettings?> GetAppointmentSettingsAsync(Guid brandId, CancellationToken ct) =>
         db.BrandSettings.AsNoTracking()
             .Where(s => s.BrandId == brandId)
-            .Select(s => new BrandAppointmentSettings(s.NoShowAfterMinutes, s.CancellationCutoffHours, s.RescheduleCutoffHours, s.MaskCustomerPhoneFromStaff))
+            .Select(s => new BrandAppointmentSettings(s.NoShowAfterMinutes, s.CancellationCutoffHours, s.RescheduleCutoffHours, s.MaskCustomerPhoneFromStaff,
+                s.RequiresApproval, s.ApprovalTimeoutMinutes))
             .SingleOrDefaultAsync(ct);
 
     public async Task<IReadOnlyDictionary<Guid, StaffCard>> GetStaffCardsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)

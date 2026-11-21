@@ -339,7 +339,7 @@ public sealed class ConflictGuardTests(PostgresFixture db) : IAsyncLifetime
         StaffNote: null,
         SeriesId: null,
         CreatedByUserId: null,
-        approvalTimeout);
+        approvalTimeout is { } timeout ? new ApprovalPolicy(BrandRequiresApproval: true, timeout) : null);
 
     private Func<IServiceProvider, Task<Result<AppointmentWriteResult>>> Create(SlotRequest slot, Duration? approvalTimeout = null) =>
         sp => sp.GetRequiredService<AppointmentWriter>().CreateAsync(Command(slot, approvalTimeout), Ct);
