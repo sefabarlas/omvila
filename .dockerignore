@@ -1,0 +1,30 @@
+# Kök bağlam yalnız web imajları içindir (web/salon-panel/Dockerfile, web/rezervasyon/Dockerfile).
+# İzin listesi: her şey dışarıda, yalnız pnpm çalışma alanının gereken parçaları içeride.
+# api/ kendi bağlamını ve .dockerignore'unu kullanır (api/Dockerfile).
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!packages/api-client-ts/
+!packages/design-tokens/
+!packages/ui-web/
+!web/salon-panel/
+!web/rezervasyon/
+
+# İzin verilen klasörlerin içindeki üretilmiş ve yerel dosyalar.
+**/node_modules/
+**/.next/
+**/.turbo/
+**/coverage/
+**/e2e-results/
+**/e2e-report/
+**/test-results/
+**/playwright-report/
+**/.lighthouseci/
+**/next-env.d.ts
+web/*/dist/
+**/Dockerfile
+**/*.log
+**/.env
+**/.env.*
