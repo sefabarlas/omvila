@@ -66,4 +66,7 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Kapora: TransferWindowMinutes varsayılanı (havale süresi 120 dk).</summary>
     public const int TransferWindowMinutes = 120;
+
+    /// <summary>sureler-ve-ayarlar.md § Paketler: PackageExpiringSoonDays 30 ("Süresi yaklaşan": 30 gün içinde biten Active paketler).</summary>
+    public const int PackageExpiringSoonDays = 30;
 }
