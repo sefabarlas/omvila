@@ -28,6 +28,10 @@ public static class SalesModule
         services.AddScoped<CashDays>();
         services.AddScoped<CustomerPaymentReader>();
         services.AddUniqueConstraintError(CashDayCloseConfiguration.BranchDayIndex, ErrorCodes.CashDayAlreadyClosed);
+        // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
+        services.AddScoped<CustomerPaymentsParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
         // Demo verisi --reset (T-74): markanın tahsilat kayıtları.
         services.AddBrandDataEraser<SalesDbContext>();
         return services;

@@ -28,6 +28,8 @@ public static class ReviewsModule
         services.AddScoped<IReviewRatings, ReviewRatings>();
         services.AddScoped<ReviewInviteViews>();
         services.AddScoped<ReviewReader>();
+        // Müşteri birleştirmede değerlendirmeler kalan karta taşınır (T-92).
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant, CustomerReviewsParticipant>();
         // Aynı bağlantıdan eşzamanlı iki gönderim: ikincisi randevu benzersizliğine takılır.
         services.AddUniqueConstraintError(ReviewConfiguration.AppointmentIndex, ErrorCodes.AlreadyReviewed);
         // Demo verisi --reset (T-74): markanın değerlendirmeleri ve davetleri.
