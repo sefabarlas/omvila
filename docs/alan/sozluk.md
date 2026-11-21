@@ -86,7 +86,16 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Tamamla ve ödeme al | `POST /manage/appointments/{id}/complete` |
 | Saati değiştir | `POST …/appointments/{id}/reschedule` |
 | Randevuyu iptal et | `POST …/appointments/{id}/cancel` |
-| Sıraya ekle / Başlat | `POST /manage/walk-in-tickets`, `POST …/{id}/start` |
+| Sıraya ekle / Randevuya çevir / Sıradan çıkar | `POST /manage/walk-in-tickets`, `POST …/{id}/start`, `POST …/{id}/leave` |
+| Saat öner / Teklifi geri al (bekleme listesi) | `POST /manage/waitlist/{id}/offer` / `POST …/{id}/offer/withdraw` |
+| Listeye ekle (panel) | `POST /manage/waitlist` |
+| Listeden çık | `POST /public/waitlist/{code}/leave` |
+| Günü kapat | `POST /manage/cash/close` |
+| Paket oluştur / Müşteriye paket sat | `POST /manage/packages` / `POST /manage/customers/{id}/packages` |
+| Yanıtla (değerlendirme) | `POST /manage/reviews/{id}/reply` |
+| Kayıtları birleştir | `POST /manage/customers/{id}/merge` |
+| İçe aktar / Dışa aktar | `POST /manage/customers/imports` + `…/imports/{id}/commit` / `GET /manage/customers/export` |
+| Kalıcı olarak anonimleştir (KVKK silme talebi) | `POST /manage/customers/{id}/deletion` |
 | Listeye katıl | `POST /public/branches/{branchId}/waitlist` |
 | Randevuyu al / Bu saat olmaz (teklif) | `POST /public/waitlist-offers/{code}/accept` / `decline` |
 

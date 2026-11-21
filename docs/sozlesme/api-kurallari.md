@@ -80,12 +80,15 @@ RFC 9457 `application/problem+json`:
 | 409 | `invalid_state_transition` | Durum buna izin vermiyor | Yeniden yükle |
 | 409 | `cutoff_passed` | İptal veya erteleme süresi geçti | "Salonu arayın" |
 | 409 | `hold_expired` | Bekleme teklifi veya tutma süresi doldu | "Bu saatin süresi doldu" |
-| 409 | `already_reviewed` | Randevu zaten değerlendirildi | |
+| 409 | `already_reviewed` | Randevu zaten değerlendirildi | "Bu randevuyu zaten değerlendirdiniz" |
 | 409 | `phone_already_exists` | Bu numara markada kayıtlı | "Bu numara zaten kayıtlı" + `meta.brandCustomerId` |
 | 409 | `slug_unavailable` | Bağlantı adı başka işletmede, başka işletmenin yönlendirmesi süren eski bağlantısı veya ayrılmış ad | Alan altında "Bu bağlantı adı kullanılamıyor" |
 | 409 | `deposit_unavailable_no_iban` | IBAN yokken kapora ayarı | "Kapora alınamaz" |
 | 409 | `deposit_required` | Kapora bekleniyorken `waiveDeposit` olmadan "Onayla" | "Kapora henüz gelmedi" + "Kapora geldi" / "Kaporasız onayla" seçenekleri |
 | 409 | `deposit_reminder_already_sent` | Bu randevu için kapora hatırlatması zaten gönderildi (randevu başına bir kez) | "Hatırlatma zaten gönderildi" |
+| 409 | `payment_total_mismatch` | "Tamamla ve ödeme al"da ödeme satırlarının toplamı alınacak tutara eşit değil | "Ödemelerin toplamı alınacak tutarla aynı olmalı" + `meta.expectedAmountMinor` |
+| 409 | `package_session_unavailable` | Paketten düşülmek istenen seans kullanılamıyor (paket başka müşterinin, aktif değil, süresi geçmiş, seansı bitmiş, hizmet uyuşmuyor veya şubede geçersiz) | "Bu paketten seans düşülemiyor" + `meta.customerPackageItemId` |
+| 409 | `cash_day_already_closed` | Kapatılmış kasa günü yeniden kapatılmak istendi | "Bu gün zaten kapatıldı" · yenile |
 | 409 | `outside_working_hours` | Panelde çalışma saati dışı (onaysız) | Uyarı + "Yine de ekle" |
 | 409 | `staff_on_time_off` | Personel izinli (onaysız) | Uyarı |
 | 409 | `insufficient_credits` | Kontör yetersiz | "Kontör az" şeridi |

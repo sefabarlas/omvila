@@ -14,10 +14,17 @@ import 'package:omvila_api/src/api/manage_calendar_api.dart';
 import 'package:omvila_api/src/api/manage_catalog_api.dart';
 import 'package:omvila_api/src/api/manage_customers_api.dart';
 import 'package:omvila_api/src/api/manage_notifications_api.dart';
+import 'package:omvila_api/src/api/manage_packages_api.dart';
+import 'package:omvila_api/src/api/manage_reviews_api.dart';
+import 'package:omvila_api/src/api/manage_sales_api.dart';
 import 'package:omvila_api/src/api/manage_session_api.dart';
 import 'package:omvila_api/src/api/manage_staff_api.dart';
+import 'package:omvila_api/src/api/manage_waitlist_api.dart';
+import 'package:omvila_api/src/api/manage_walk_ins_api.dart';
 import 'package:omvila_api/src/api/public_appointment_link_api.dart';
 import 'package:omvila_api/src/api/public_booking_api.dart';
+import 'package:omvila_api/src/api/public_review_api.dart';
+import 'package:omvila_api/src/api/public_waitlist_api.dart';
 import 'package:omvila_api/src/api/webhooks_api.dart';
 
 class OmvilaApi {
@@ -153,6 +160,24 @@ class OmvilaApi {
     return ManageNotificationsApi(dio);
   }
 
+  /// Get ManagePackagesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManagePackagesApi getManagePackagesApi() {
+    return ManagePackagesApi(dio);
+  }
+
+  /// Get ManageReviewsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageReviewsApi getManageReviewsApi() {
+    return ManageReviewsApi(dio);
+  }
+
+  /// Get ManageSalesApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageSalesApi getManageSalesApi() {
+    return ManageSalesApi(dio);
+  }
+
   /// Get ManageSessionApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   ManageSessionApi getManageSessionApi() {
@@ -165,6 +190,18 @@ class OmvilaApi {
     return ManageStaffApi(dio);
   }
 
+  /// Get ManageWaitlistApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageWaitlistApi getManageWaitlistApi() {
+    return ManageWaitlistApi(dio);
+  }
+
+  /// Get ManageWalkInsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageWalkInsApi getManageWalkInsApi() {
+    return ManageWalkInsApi(dio);
+  }
+
   /// Get PublicAppointmentLinkApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   PublicAppointmentLinkApi getPublicAppointmentLinkApi() {
@@ -175,6 +212,18 @@ class OmvilaApi {
   /// by doing that all interceptors will not be executed
   PublicBookingApi getPublicBookingApi() {
     return PublicBookingApi(dio);
+  }
+
+  /// Get PublicReviewApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  PublicReviewApi getPublicReviewApi() {
+    return PublicReviewApi(dio);
+  }
+
+  /// Get PublicWaitlistApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  PublicWaitlistApi getPublicWaitlistApi() {
+    return PublicWaitlistApi(dio);
   }
 
   /// Get WebhooksApi instance, base route and serializer can be overridden by a given but be careful,

@@ -107,6 +107,7 @@ Ek bayrak: `depositCustomerReported: bool` ("Havaleyi yaptım" dendi; salon pane
 | Pending | Accepted | Müşteri "Randevuyu al" | Randevu oluşur (A1, online kuralları); entry `Converted` |
 | Pending | Declined | Müşteri "Bu saat olmaz" | Sıradakine teklif |
 | Pending | Expired | Sistem (`ExpireWaitlistOffers`, her dakika) | Sıradakine teklif; kişi listede kalır |
+| Pending | Withdrawn | Salon "Teklifi geri al" (`waitlist.manage`) | Tutma kalkar, saat yeniden online görünür; otomatik olarak sıradakine teklif edilmez; kişi listede kalır; müşteriye bildirim yok |
 
 ## 4. Kapıda sıra (`WalkInTicket.Status`)
 `Waiting` → `Called` (isteğe bağlı; "Sırası geldi" SMS'i) → `Served` (randevuya çevrildi) | `Left` ("Sıradan çıkar"). `Waiting` → `Served` doğrudan da olabilir ("Başlat").
