@@ -1,0 +1,49 @@
+.page {
+  box-sizing: border-box;
+  min-height: 100dvh;
+  max-width: var(--ekran-genislik);
+  margin: 0 auto;
+  padding: var(--bosluk-12) var(--bosluk-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-6) var(--bosluk-4);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: var(--kontrol-lg);
+  height: var(--kontrol-lg);
+  margin-bottom: var(--bosluk-2);
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  line-height: var(--yazi-baslik-3-satir);
+  font-weight: 700;
+}
+
+.description {
+  margin: 0;
+  max-width: 32ch;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.action {
+  margin-top: var(--bosluk-3);
+}

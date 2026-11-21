@@ -1,0 +1,20 @@
+.retry {
+  min-height: var(--dokunma-min);
+  padding: 0 var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-sm);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  font: inherit;
+  font-weight: var(--yazi-etiket-agirlik);
+  cursor: pointer;
+}
+
+.retry:hover {
+  background: var(--zemin-hover);
+}
+
+.retry:focus-visible {
+  outline: none;
+  box-shadow: var(--odak-halkasi);
+}
