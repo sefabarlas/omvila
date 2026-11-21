@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
+import { queuesDemo } from './queues-demo';
 import { depositSetup } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
@@ -244,6 +245,34 @@ const screens: ScreenCase[] = [
     heading: 'Selin Öztürk',
     setup: customersDemo,
     act: (page) => expect(page.getByRole('table', { name: 'Randevular' })).toBeVisible(),
+  },
+  {
+    path: '/bekleme',
+    name: 'BeklemeListesi',
+    heading: 'Bekleme listesi',
+    setup: queuesDemo,
+    act: (page) => expect(page.getByText('Perşembe 11:00 boşaldı.')).toBeVisible(),
+  },
+  {
+    path: '/bekleme',
+    name: 'BeklemeListesiBos',
+    heading: 'Bekleme listesi',
+    setup: (page) => queuesDemo(page, { empty: true }),
+    act: (page) => expect(page.getByRole('heading', { name: 'Bekleme listesi boş' })).toBeVisible(),
+  },
+  {
+    path: '/takvim/kapida-sira',
+    name: 'KapidaSira',
+    heading: 'Kapıda sıra',
+    setup: queuesDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Sıradakiler' })).toBeVisible(),
+  },
+  {
+    path: '/takvim/kapida-sira',
+    name: 'KapidaSiraBos',
+    heading: 'Kapıda sıra',
+    setup: (page) => queuesDemo(page, { empty: true }),
+    act: (page) => expect(page.getByRole('heading', { name: 'Sırada kimse yok' })).toBeVisible(),
   },
 ];
 

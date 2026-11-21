@@ -12,6 +12,8 @@ import { approvalQueueQuery, splitQueue } from '@/features/approvals/api';
 import { firstExpiresLabel, remainingMinutes } from '@/features/approvals/remaining';
 import { calendarQuery } from '@/features/calendar/api';
 import { AppointmentDrawer } from '@/features/calendar/AppointmentDrawer';
+import { WalkInBlock } from '@/features/calendar/CalendarSummaryBlocks';
+import { walkInsQuery } from '@/features/walk-ins/api';
 import { bookingPageQuery } from '@/shared/booking-link';
 import { Page } from '@/shared/Page';
 import { onboardingQuery } from './api';
@@ -26,7 +28,7 @@ import { ShareLinkCard } from './ShareLinkCard';
 /**
  * Genel bakış: marka kurulumdayken adımlar (KayitKurulum). Sonra bugün randevu veya onay bekleyen talep varsa
  * GenelBakis (bento, "Gün akışı", "Dikkat isteyenler"); hiçbiri yoksa ilk hafta görünümü (GenelBakisBos, bağlantıyı
- * paylaş). Ciro ve kapıda sıra Dilim 5'te, doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
+ * paylaş). Kapıda sıra manageListWalkIns'ten (T-98); ciro kasa ile, doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
  */
 export function OverviewPage() {
   const api = useApi();
@@ -49,6 +51,11 @@ export function OverviewPage() {
   const dayQuery = useQuery({
     ...calendarQuery(api, { branchId: activeBranch, from: today, to: today }),
     enabled: !onboardingView && can('calendar.view') && activeBranch !== '',
+  });
+  const managesWalkIns = can('walkin.manage');
+  const walkIns = useQuery({
+    ...walkInsQuery(api, activeBranch),
+    enabled: !onboardingView && managesWalkIns && activeBranch !== '',
   });
   const queueQuery = useQuery({
     ...approvalQueueQuery(api, branchId ?? undefined),
@@ -136,6 +143,14 @@ export function OverviewPage() {
               label="Onay bekliyor"
               value={queue ? String(pendingCount) : '—'}
               sub={firstExpiry > 0 ? firstExpiresLabel(firstExpiry) : 'Bekleyen talep yok'}
+            />
+          ) : null}
+          {managesWalkIns ? (
+            <WalkInBlock
+              summary={{
+                waitingCount: walkIns.data?.waitingCount ?? null,
+                estimatedWaitMinutesForNew: walkIns.data?.estimatedWaitMinutesForNew ?? null,
+              }}
             />
           ) : null}
           <BentoBlock label="Bu hafta doluluk" value="—" sub="henüz veri yok" />

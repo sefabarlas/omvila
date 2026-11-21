@@ -12,7 +12,7 @@ import { Banner, Button, EmptyState, IconButton, Select, Skeleton } from '@omvil
 import { addDays, branchToday } from '@omvila/ui-web/time';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { CalendarPlus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { CalendarPlus, ChevronLeft, ChevronRight, DoorOpen, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
@@ -25,6 +25,7 @@ import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal
 import type { NewAppointmentPrefill } from '@/features/appointments/NewAppointmentModal';
 import { ConflictBanner } from '@/shared/ConflictBanner';
 import { OutsideHoursDialog } from '@/shared/OutsideHoursDialog';
+import { walkInsQuery } from '@/features/walk-ins/api';
 import { Page } from '@/shared/Page';
 import { Segmented } from '@/shared/Segmented';
 import { dative } from '@/shared/turkish';
@@ -113,6 +114,11 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
   const [openingDay, setOpeningDay] = useState(false);
   const [creating, setCreating] = useState<NewAppointmentPrefill | null>(null);
   const canCreate = can('appointment.create');
+  const managesWalkIns = can('walkin.manage');
+  const walkIns = useQuery({
+    ...walkInsQuery(api, branchId),
+    enabled: managesWalkIns && branchId !== '',
+  });
   const readOnly = session.subscription.status === 'ReadOnly';
 
   // Bloğa tıklama yerel seçimdir; bildirimden gelen ?randevu= de yan paneli açar (kapanınca adresten silinir).
@@ -219,6 +225,14 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           view={todayQuery.data}
           now={clock.now()}
           showPending={can('appointment.approve')}
+          walkIns={
+            managesWalkIns
+              ? {
+                  waitingCount: walkIns.data?.waitingCount ?? null,
+                  estimatedWaitMinutesForNew: walkIns.data?.estimatedWaitMinutesForNew ?? null,
+                }
+              : undefined
+          }
         />
       ) : null}
       {problem?.kind === 'conflict' ? (
@@ -287,6 +301,17 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           </h2>
         </div>
         <div className={styles.nav}>
+          {managesWalkIns ? (
+            <Button
+              size="sm"
+              icon={<DoorOpen size={16} aria-hidden="true" />}
+              onClick={() => {
+                void navigate({ to: '/takvim/kapida-sira' });
+              }}
+            >
+              Kapıda sıra
+            </Button>
+          ) : null}
           {mode === 'hafta' && staffOptions.length > 1 ? (
             <Select
               className={styles.staffSelect}
