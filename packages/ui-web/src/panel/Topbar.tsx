@@ -11,8 +11,17 @@ export interface TopbarProps {
   context?: string;
   /** Genel arama; verilmezse alan gösterilmez. ⌘K / Ctrl+K odaklar. */
   search?: { placeholder: string; label: string; onSearch: (query: string) => void };
-  /** Okunmamış bildirim sayısı; boş veya 0 ise rozet yok. */
-  notifications?: { count?: number; onOpen: () => void };
+  /**
+   * Okunmamış bildirim sayısı; boş veya 0 ise rozet yok. `panel` zilin altında açılan bildirim paneli
+   * (salon-paneli/BildirimPaneli); `expanded` ve `controls` zilin aria-expanded / aria-controls değerleridir.
+   */
+  notifications?: {
+    count?: number;
+    onOpen: () => void;
+    expanded?: boolean;
+    controls?: string;
+    panel?: ReactNode;
+  };
   /** Sayfanın tek primary eylemi ("Randevu ekle"). */
   action?: ReactNode;
 }
@@ -73,12 +82,17 @@ export function Topbar({ title, context, search, notifications, action }: Topbar
               label={count > 0 ? `Bildirimler, ${String(count)} okunmamış` : 'Bildirimler'}
               icon={<Bell size={18} />}
               onClick={notifications.onOpen}
+              {...(notifications.expanded === undefined
+                ? {}
+                : { 'aria-expanded': notifications.expanded, 'aria-haspopup': 'dialog' as const })}
+              {...(notifications.controls ? { 'aria-controls': notifications.controls } : {})}
             />
             {count > 0 ? (
               <span className={styles.badge} aria-hidden="true">
                 {count > 99 ? '99+' : count}
               </span>
             ) : null}
+            {notifications.panel}
           </span>
         ) : null}
         {action}

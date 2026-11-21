@@ -3,6 +3,8 @@ import { createCalendarFake } from './fake-calendar';
 import type { CalendarFakeOptions } from './fake-calendar';
 import { createCustomersFake } from './fake-customers';
 import type { CustomersFakeOptions } from './fake-customers';
+import { createNotificationsFake } from './fake-notifications';
+import type { NotificationsFakeOptions } from './fake-notifications';
 import { createNotificationSettingsFake } from './fake-notification-settings';
 import type { NotificationSettingsFakeOptions } from './fake-notification-settings';
 
@@ -84,8 +86,10 @@ export interface FakeApiOptions {
   calendar?: CalendarFakeOptions;
   /** Müşteri uçları (boş marka). */
   customers?: CustomersFakeOptions;
+  /** Bildirim paneli uçları. */
+  notifications?: NotificationsFakeOptions;
   /** Bildirim ve SMS ayarları uçları. */
-  notifications?: NotificationSettingsFakeOptions;
+  notificationSettings?: NotificationSettingsFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -346,10 +350,12 @@ export function fakeFetch({
   calendar = {},
   customers = {},
   notifications = {},
+  notificationSettings = {},
 }: FakeApiOptions = {}) {
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
-  const notificationsFake = createNotificationSettingsFake(notifications);
+  const notificationsFake = createNotificationsFake(notifications);
+  const notificationSettingsFake = createNotificationSettingsFake(notificationSettings);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -391,6 +397,11 @@ export function fakeFetch({
     const notificationsResponse = await notificationsFake(request);
     if (notificationsResponse) {
       return notificationsResponse;
+    }
+
+    const notificationSettingsResponse = await notificationSettingsFake(request);
+    if (notificationSettingsResponse) {
+      return notificationSettingsResponse;
     }
 
     if (path === '/api/v1/manage/auth/otp/request') {

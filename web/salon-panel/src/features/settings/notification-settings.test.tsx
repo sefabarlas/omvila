@@ -39,7 +39,7 @@ describe('Bildirimler ve SMS', () => {
   });
 
   it('tahmin yoksa alt satır yazılmaz (sahte sayı yok)', async () => {
-    await open({ notifications: { noEstimate: true } });
+    await open({ notificationSettings: { noEstimate: true } });
     const credits = screen.getByRole('region', { name: 'SMS kontörü' });
     expect(within(credits).queryByText(/gün yeter/)).toBeNull();
   });
@@ -126,7 +126,7 @@ describe('Bildirimler ve SMS', () => {
   });
 
   it('sunucu metni uzun bulursa satırın altında yazar', async () => {
-    await open({ notifications: { saveError: 'template_too_long' } });
+    await open({ notificationSettings: { saveError: 'template_too_long' } });
     await userEvent.click(screen.getByRole('button', { name: 'Hatırlatma şablonunu düzenle' }));
     const dialog = await screen.findByRole('dialog', { name: 'Hatırlatma' });
     await userEvent.type(
@@ -141,7 +141,7 @@ describe('Bildirimler ve SMS', () => {
   });
 
   it('412: "Kayıt çakışması" şeridi, Yenile ile kalkar ve form sunucu değerine döner', async () => {
-    await open({ notifications: { saveError: 'concurrency_conflict' } });
+    await open({ notificationSettings: { saveError: 'concurrency_conflict' } });
     await userEvent.click(
       screen.getByRole('button', { name: '2 saat önce hatırlatmasını kaldır' }),
     );
@@ -154,7 +154,7 @@ describe('Bildirimler ve SMS', () => {
 
   it('gönderen adı başvurusu: giriş büyük Latin harfe çevrilir, durum "onay bekleniyor" olur', async () => {
     const calls: Record<string, unknown[]> = {};
-    await open({ calls, notifications: { senderStatus: 'None' } });
+    await open({ calls, notificationSettings: { senderStatus: 'None' } });
     const sender = screen.getByRole('region', { name: 'Gönderen adı' });
     expect(within(sender).getByText('OMVILA')).toBeTruthy();
     await userEvent.click(within(sender).getByRole('button', { name: 'Başvur' }));
@@ -174,7 +174,7 @@ describe('Bildirimler ve SMS', () => {
 
   it('kısa gönderen adı gönderilmez', async () => {
     const calls: Record<string, unknown[]> = {};
-    await open({ calls, notifications: { senderStatus: 'Rejected' } });
+    await open({ calls, notificationSettings: { senderStatus: 'Rejected' } });
     const sender = screen.getByRole('region', { name: 'Gönderen adı' });
     expect(within(sender).getByText('Ad, işletme unvanıyla eşleşmiyor.')).toBeTruthy();
     await userEvent.click(within(sender).getByRole('button', { name: 'Başvur' }));
