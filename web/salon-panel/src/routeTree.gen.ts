@@ -17,6 +17,7 @@ import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 import { Route as PanelAyarlarRouteImport } from './routes/_panel/ayarlar'
 import { Route as PanelDegerlendirmelerRouteImport } from './routes/_panel/degerlendirmeler'
 import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
+import { Route as PanelKasaRouteImport } from './routes/_panel/kasa'
 import { Route as PanelPersonelRouteImport } from './routes/_panel/personel'
 import { Route as PanelTakvimRouteImport } from './routes/_panel/takvim'
 import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/index'
@@ -67,6 +68,11 @@ const PanelDegerlendirmelerRoute = PanelDegerlendirmelerRouteImport.update({
 const PanelHizmetlerRoute = PanelHizmetlerRouteImport.update({
   id: '/hizmetler',
   path: '/hizmetler',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelKasaRoute = PanelKasaRouteImport.update({
+  id: '/kasa',
+  path: '/kasa',
   getParentRoute: () => PanelRoute,
 } as any)
 const PanelPersonelRoute = PanelPersonelRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/ayarlar': typeof PanelAyarlarRouteWithChildren
   '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
+  '/kasa': typeof PanelKasaRoute
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/$': typeof PanelSplatRoute
   '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
+  '/kasa': typeof PanelKasaRoute
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
   '/': typeof PanelIndexRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/_panel/ayarlar': typeof PanelAyarlarRouteWithChildren
   '/_panel/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/_panel/hizmetler': typeof PanelHizmetlerRoute
+  '/_panel/kasa': typeof PanelKasaRoute
   '/_panel/personel': typeof PanelPersonelRoute
   '/_panel/takvim': typeof PanelTakvimRoute
   '/_panel/': typeof PanelIndexRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/ayarlar'
     | '/degerlendirmeler'
     | '/hizmetler'
+    | '/kasa'
     | '/personel'
     | '/takvim'
     | '/ayarlar/bildirimler'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/degerlendirmeler'
     | '/hizmetler'
+    | '/kasa'
     | '/personel'
     | '/takvim'
     | '/'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_panel/ayarlar'
     | '/_panel/degerlendirmeler'
     | '/_panel/hizmetler'
+    | '/_panel/kasa'
     | '/_panel/personel'
     | '/_panel/takvim'
     | '/_panel/'
@@ -323,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/hizmetler'
       fullPath: '/hizmetler'
       preLoaderRoute: typeof PanelHizmetlerRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/kasa': {
+      id: '/_panel/kasa'
+      path: '/kasa'
+      fullPath: '/kasa'
+      preLoaderRoute: typeof PanelKasaRouteImport
       parentRoute: typeof PanelRoute
     }
     '/_panel/personel': {
@@ -443,6 +462,7 @@ interface PanelRouteChildren {
   PanelAyarlarRoute: typeof PanelAyarlarRouteWithChildren
   PanelDegerlendirmelerRoute: typeof PanelDegerlendirmelerRoute
   PanelHizmetlerRoute: typeof PanelHizmetlerRoute
+  PanelKasaRoute: typeof PanelKasaRoute
   PanelPersonelRoute: typeof PanelPersonelRoute
   PanelTakvimRoute: typeof PanelTakvimRoute
   PanelIndexRoute: typeof PanelIndexRoute
@@ -455,6 +475,7 @@ const PanelRouteChildren: PanelRouteChildren = {
   PanelAyarlarRoute: PanelAyarlarRouteWithChildren,
   PanelDegerlendirmelerRoute: PanelDegerlendirmelerRoute,
   PanelHizmetlerRoute: PanelHizmetlerRoute,
+  PanelKasaRoute: PanelKasaRoute,
   PanelPersonelRoute: PanelPersonelRoute,
   PanelTakvimRoute: PanelTakvimRoute,
   PanelIndexRoute: PanelIndexRoute,

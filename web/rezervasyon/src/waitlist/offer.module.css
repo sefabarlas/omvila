@@ -1,0 +1,185 @@
+/* Bekleme teklifi (rezervasyon-sayfasi/BeklemeTeklif, BeklemeDoldu) ve değerlendirme sayfası. Mobil ölçek. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  box-sizing: border-box;
+  min-height: 100dvh;
+  max-width: var(--ekran-genislik);
+  margin: 0 auto;
+  padding: var(--bosluk-4);
+  outline: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.brand {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: center;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-govde-guclu-satir);
+}
+
+.skeleton {
+  display: block;
+  min-height: calc(var(--bosluk-12) * 2);
+  border-radius: var(--kose-lg);
+  background: var(--iskelet);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: calc(var(--kontrol-lg) + var(--bosluk-4));
+  height: calc(var(--kontrol-lg) + var(--bosluk-4));
+  margin-top: var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-buyuk-baslik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-buyuk-baslik-satir);
+  letter-spacing: var(--yazi-buyuk-baslik-harf);
+}
+
+.lead {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin-top: auto;
+  padding-top: var(--bosluk-6);
+}
+
+.error,
+.notice {
+  margin: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.error {
+  color: var(--hata);
+}
+
+.notice {
+  color: var(--metin-ikincil);
+}
+
+/* Geri sayım bloğu (BeklemeTeklif üstü). */
+.timer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--blok-vurgu);
+  color: var(--blok-vurgu-metin);
+}
+
+.timerHead {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-etiket-kucuk-satir);
+}
+
+.timerHead > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.held {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+}
+
+.clock {
+  margin: var(--bosluk-2) 0 0;
+  font-size: var(--yazi-metrik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-metrik-satir);
+  letter-spacing: var(--yazi-metrik-harf);
+  font-variant-numeric: tabular-nums;
+}
+
+.timerNote {
+  margin: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.bar {
+  display: block;
+  height: var(--bosluk-2);
+  margin-top: var(--bosluk-3);
+  overflow: hidden;
+  border-radius: var(--kose-tam);
+  background: color-mix(in srgb, var(--blok-vurgu-metin) 30%, transparent);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blok-vurgu-metin);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--bosluk-1) var(--bosluk-4);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.facts > div {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  padding: var(--bosluk-3) 0;
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.facts > div + div {
+  border-top: 1px solid var(--cizgi);
+}
+
+.facts dt {
+  color: var(--metin-ikincil);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: end;
+}

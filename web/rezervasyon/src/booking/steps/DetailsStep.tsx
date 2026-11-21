@@ -41,6 +41,8 @@ interface DetailsStepProps {
   onVerified: (token: BookingToken, phone: string) => void;
   /** Özet kartı (Telefon.png üstü). */
   summary: ReactNode;
+  /** Bekleme listesine katılım: salon notu ve kampanya izni sorulmaz (katılma gövdesinde yok). */
+  waitlist?: boolean;
 }
 
 function validate(form: DetailsForm): Errors {
@@ -66,6 +68,7 @@ export function DetailsStep({
   onCodeSent,
   onVerified,
   summary,
+  waitlist = false,
 }: DetailsStepProps) {
   const [errors, setErrors] = useState<Errors>({});
   const [failure, setFailure] = useState<unknown>(null);
@@ -152,16 +155,18 @@ export function DetailsStep({
           set('phone', event.target.value);
         }}
       />
-      <TextField
-        label="Salona notunuz (isteğe bağlı)"
-        name="note"
-        placeholder="Saçım omuz hizasında"
-        maxLength={500}
-        value={form.note}
-        onChange={(event) => {
-          set('note', event.target.value);
-        }}
-      />
+      {waitlist ? null : (
+        <TextField
+          label="Salona notunuz (isteğe bağlı)"
+          name="note"
+          placeholder="Saçım omuz hizasında"
+          maxLength={500}
+          value={form.note}
+          onChange={(event) => {
+            set('note', event.target.value);
+          }}
+        />
+      )}
       <CheckboxField
         checked={form.privacy}
         required
@@ -177,16 +182,19 @@ export function DetailsStep({
         ) : (
           'Aydınlatma metnini'
         )}{' '}
-        okudum; randevu için bilgilerimin {brandName} ile paylaşılmasını onaylıyorum.
+        okudum; {waitlist ? 'bekleme listesi' : 'randevu'} için bilgilerimin {brandName} ile
+        paylaşılmasını onaylıyorum.
       </CheckboxField>
-      <CheckboxField
-        checked={form.marketing}
-        onCheckedChange={(checked) => {
-          set('marketing', checked);
-        }}
-      >
-        {brandName} kampanyaları için SMS ve e-posta almak istiyorum. (İsteğe bağlı)
-      </CheckboxField>
+      {waitlist ? null : (
+        <CheckboxField
+          checked={form.marketing}
+          onCheckedChange={(checked) => {
+            set('marketing', checked);
+          }}
+        >
+          {brandName} kampanyaları için SMS ve e-posta almak istiyorum. (İsteğe bağlı)
+        </CheckboxField>
+      )}
       {failure ? (
         limited ? (
           <StateBanner

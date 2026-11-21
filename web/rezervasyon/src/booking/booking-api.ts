@@ -21,6 +21,7 @@ export type BookingToken = Schemas['BookingTokenResult'];
 export type AppointmentCreate = Schemas['PublicAppointmentCreate'];
 export type PublicAppointment = Schemas['PublicAppointment'];
 export type Money = Schemas['Money'];
+export type UsablePackageItem = Schemas['UsablePackageItem'];
 
 let plain: ReturnType<typeof createApi> | undefined;
 let withCookies: ReturnType<typeof createApi> | undefined;
@@ -82,4 +83,18 @@ export function createAppointment(
       body,
     }),
   );
+}
+
+/** Doğrulanmış telefonun bu şubede kullanabileceği paket seansları ("Fön paketinizden düşülsün", T-95). */
+export async function listMyPackages(
+  branchId: string,
+  bookingToken: string,
+): Promise<UsablePackageItem[]> {
+  const result = await unwrap(
+    api().GET('/api/v1/public/branches/{branchId}/my-packages', {
+      params: { path: { branchId } },
+      headers: { Authorization: `Bearer ${bookingToken}` },
+    }),
+  );
+  return result.items;
 }

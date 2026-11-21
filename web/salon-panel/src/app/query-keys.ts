@@ -32,8 +32,14 @@ export const queryKeys = {
   customer: (brandCustomerId: string) => ['customers', brandCustomerId] as const,
   customerAppointments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'appointments'] as const,
+  /** Müşterinin paketleri ("Paketten" seçeneği); önek ['customers'] ile birlikte geçersizlenir. */
   customerPackages: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'packages'] as const,
+  /** Kasa (şube + yerel gün); önek ['cash'] bütün kasa sorgularını geçersizler. */
+  cashDay: (branchId: string, date: string) => ['cash', branchId, date] as const,
+  /** Müşteri kartı Paketler sekmesi (imleçli); "Paketten" sorgusundan ayrı anahtar, aynı önek. */
+  customerPackageList: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'packages', 'list'] as const,
   customerPayments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'payments'] as const,
   customerReviews: (brandCustomerId: string) => ['customers', brandCustomerId, 'reviews'] as const,

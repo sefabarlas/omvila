@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { bookingApi } from './support';
+import { offerCode, reviewCode, reviewedFixture } from '../src/test/d5-fixtures';
+import { bookingApi, offerApi, reviewApi } from './support';
 import type { BookingOptions } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): akış ekranlarının açık ve koyu görüntüleri e2e-results/ekranlar altına
@@ -13,6 +14,10 @@ interface ScreenCase {
   /** Salon bağlantı adı; varsayılan kuafor-elif (tek şube). */
   slug?: string;
   api?: BookingOptions;
+  /** Salon sayfası yerine açılacak adres (SMS bağlantıları: /b/, /d/). */
+  path?: string;
+  /** Akış uçları yerine kurulacak test yanıtları (path ile). */
+  setup?: (page: Page) => Promise<unknown>;
   /** Ekrana kadar akışı yürütür. */
   reach: (page: Page) => Promise<void>;
 }
@@ -142,6 +147,66 @@ const screens: ScreenCase[] = [
       await expect(page.getByText('Çok fazla deneme yaptınız.')).toBeVisible();
     },
   },
+  // Dilim 5: DoluGun bekleme listesi formu (yukarıda), katılım sonucu, Onay paket kutusu, BeklemeTeklif, BeklemeDoldu,
+  // değerlendirme (/d/; web tasarımı yok, musteri-uygulamasi/Degerlendir ile karşılaştırılır).
+  {
+    name: 'BeklemeKatildi',
+    reach: async (page) => {
+      await time(page);
+      await page.getByRole('radio', { name: '26 Kasım Perşembe, boş saat yok' }).click();
+      await page.getByRole('button', { name: 'Öğleden sonra' }).click();
+      await page.getByRole('button', { name: 'Akşam' }).click();
+      await page.getByRole('button', { name: 'Bekleme listesine katıl' }).click();
+      await page.getByLabel('Ad soyad').fill('Ayşe Yılmaz');
+      await page.getByLabel('Telefon numaranız').fill('532 123 45 67');
+      await page.getByText(/okudum; bekleme listesi için/).click();
+      await page.getByRole('button', { name: 'Doğrulama kodu gönder' }).click();
+      await page.getByRole('textbox', { name: 'Doğrulama kodu, hane 1' }).fill('482193');
+      await expect(
+        page.getByRole('heading', { name: 'Bekleme listesine katıldınız' }),
+      ).toBeVisible();
+    },
+  },
+  {
+    name: 'OnayPaket',
+    api: { deposit: true, packages: true },
+    reach: async (page) => {
+      await confirm(page);
+      await expect(page.getByRole('switch', { name: 'Fön paketinizden düşülsün' })).toBeChecked();
+    },
+  },
+  {
+    name: 'BeklemeTeklif',
+    path: `/b/${offerCode}`,
+    setup: (page) => offerApi(page),
+    reach: (page) =>
+      expect(page.getByRole('heading', { name: 'Merve, beklediğiniz saat boşaldı' })).toBeVisible(),
+  },
+  {
+    name: 'BeklemeDoldu',
+    path: `/b/${offerCode}`,
+    setup: (page) => offerApi(page, { status: 'Expired' }),
+    reach: (page) =>
+      expect(page.getByRole('heading', { name: 'Bu saatin süresi doldu' })).toBeVisible(),
+  },
+  {
+    name: 'Degerlendir',
+    path: `/d/${reviewCode}`,
+    setup: (page) => reviewApi(page),
+    reach: async (page) => {
+      await expect(page.getByRole('heading', { name: "Kuaför Elif'te nasıldı?" })).toBeVisible();
+      await page.getByRole('radio', { name: '4 yıldız, Çok iyi' }).check({ force: true });
+    },
+  },
+  {
+    name: 'DegerlendirZaten',
+    path: `/d/${reviewCode}`,
+    setup: (page) => reviewApi(page, reviewedFixture()),
+    reach: (page) =>
+      expect(
+        page.getByRole('heading', { name: 'Bu randevuyu zaten değerlendirdiniz' }),
+      ).toBeVisible(),
+  },
   {
     name: 'DurumOnlineKapali',
     slug: 'kuafor-elif-kapali',
@@ -156,9 +221,12 @@ for (const theme of ['light', 'dark'] as const) {
       page.on('pageerror', (error) => errors.push(error.message));
       if (screen.desktop) await page.setViewportSize({ width: 1280, height: 1000 });
       await page.emulateMedia({ colorScheme: theme });
-      await bookingApi(page, screen.api);
-      await page.goto(`/${screen.slug ?? 'kuafor-elif'}`);
-      await expect(page.getByRole('heading', { level: 1, name: 'Kuaför Elif' })).toBeAttached();
+      if (screen.setup) await screen.setup(page);
+      else await bookingApi(page, screen.api);
+      await page.goto(screen.path ?? `/${screen.slug ?? 'kuafor-elif'}`);
+      if (!screen.path) {
+        await expect(page.getByRole('heading', { level: 1, name: 'Kuaför Elif' })).toBeAttached();
+      }
       await screen.reach(page);
       await page.screenshot({
         path: `e2e-results/ekranlar/${screen.name}${theme === 'dark' ? 'Koyu' : ''}.png`,

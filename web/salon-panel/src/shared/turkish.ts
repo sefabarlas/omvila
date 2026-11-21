@@ -25,6 +25,28 @@ export function dative(word: string, properNoun = true): string {
   return `${trimmed}${properNoun ? "'" : ''}${suffix}`;
 }
 
+const genitiveVowel: Record<string, string> = {
+  a: 'ı',
+  ı: 'ı',
+  o: 'u',
+  u: 'u',
+  e: 'i',
+  i: 'i',
+  ö: 'ü',
+  ü: 'ü',
+};
+
+/**
+ * İlgi hâli (-ın/-in/-un/-ün): "Elif Kaya" → "Elif Kaya'nın", "Mert Demir" → "Mert Demir'in", "Can Yücel" →
+ * "Can Yücel'in", "Zeynep Aksoy" → "Zeynep Aksoy'un". Ünlüyle biten kelimeye kaynaştırma "n" gelir.
+ */
+export function genitive(word: string): string {
+  const trimmed = word.trim();
+  const last = trimmed.split(/\s+/).at(-1) ?? '';
+  const vowel = genitiveVowel[lastVowel(last) ?? 'e'] ?? 'i';
+  return `${trimmed}'${endsWithVowel(last) ? 'n' : ''}${vowel}n`;
+}
+
 // Sayıların okunuşundaki son kelimeye göre bulunma eki: bir'de, üç'te, altı'da, on'da, kırk'ta…
 const unitLocative = ['da', 'de', 'de', 'te', 'te', 'te', 'da', 'de', 'de', 'da'];
 const tensLocative = ['da', 'da', 'de', 'da', 'ta', 'de'];
@@ -85,17 +107,6 @@ function highVowel(vowel: string): string {
   }
 
   return 'ouû'.includes(vowel) ? 'u' : 'ü';
-}
-
-/**
- * Özel adın tamlayan eki (-ın/-in/-un/-ün): "Selin Öztürk" → "Selin Öztürk'ün", "Elif Kaya" → "Elif Kaya'nın".
- * Ünlüyle biten kelimeye kaynaştırma "n" gelir.
- */
-export function genitive(name: string): string {
-  const trimmed = name.trim();
-  const last = trimmed.split(/\s+/).at(-1) ?? '';
-  const vowel = highVowel(lastVowel(last) ?? 'e');
-  return `${trimmed}'${endsWithVowel(last) ? 'n' : ''}${vowel}n`;
 }
 
 /** Sayının belirtme hâli, okunuşa göre: 38 → "38'i", 40 → "40'ı", 6 → "6'yı", 100 → "100'ü". */

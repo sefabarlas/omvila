@@ -42,6 +42,8 @@ function open(path: string, options: FakeApiOptions = {}) {
 }
 
 const selinCard = `/musteriler/${customerIds.selin}`;
+/** Selin'in etkin paketi fake-sales'ten (Kesim paketi, 3/5, son gün 31 Aralık). */
+const withPackage: FakeApiOptions = { sales: { packageCustomerId: customerIds.selin } };
 const managerPermissions = ownerPermissions.filter(
   (p) => !['customer.import', 'customer.export', 'customer.kvkk'].includes(p),
 );
@@ -53,10 +55,10 @@ const staff = sessionFixture({
 
 describe('müşteri kartı sekmeleri', () => {
   it('etkin paket kartı ve dört sekme', async () => {
-    open(selinCard);
-    expect(await screen.findByText('2/5')).toBeTruthy();
+    open(selinCard, withPackage);
+    expect(await screen.findByText('3/5')).toBeTruthy();
     expect(screen.getByText('seans kaldı · 31 Ara')).toBeTruthy();
-    expect(screen.getByText('Fön paketi')).toBeTruthy();
+    expect(screen.getByText('Kesim paketi')).toBeTruthy();
     const tabs = screen.getByRole('tablist', { name: 'Müşteri kartı' });
     expect(
       within(tabs)
@@ -66,14 +68,21 @@ describe('müşteri kartı sekmeleri', () => {
   });
 
   it('Paketler: kalan seans, son gün, durum', async () => {
-    open(selinCard);
+    open(selinCard, withPackage);
     await userEvent.click(await screen.findByRole('tab', { name: 'Paketler' }));
     const table = await screen.findByRole('table', { name: 'Paketler' });
-    expect(within(table).getByText('2/5 seans')).toBeTruthy();
-    expect(within(table).getByText('Fön 2/5')).toBeTruthy();
+    expect(within(table).getByText('3/5 seans')).toBeTruthy();
+    expect(within(table).getByText('Saç kesimi 3/5')).toBeTruthy();
+    expect(within(table).getByText('31 Ara')).toBeTruthy();
     expect(within(table).getByText('Etkin')).toBeTruthy();
-    expect(within(table).getByText('Süresi doldu')).toBeTruthy();
     expect(within(table).getByText('1.700 ₺')).toBeTruthy();
+  });
+
+  it('paketi olmayan müşteride paket kartı yok, sekmede boş hâl', async () => {
+    open(selinCard);
+    await userEvent.click(await screen.findByRole('tab', { name: 'Paketler' }));
+    expect(await screen.findByRole('heading', { name: 'Paketi yok' })).toBeTruthy();
+    expect(screen.queryByText(/seans kaldı/)).toBeNull();
   });
 
   it('Ödemeler: kalem metni, yöntem, iade işareti', async () => {
@@ -121,12 +130,12 @@ describe('müşteri kartı sekmeleri', () => {
 
 describe('kayıtları birleştir', () => {
   it('birleşecek kayıt aranır, notlar birleşir; kalacak kart güncellenir', async () => {
-    const { calls } = open(selinCard);
+    const { calls } = open(selinCard, withPackage);
     await userEvent.click(await screen.findByRole('button', { name: 'Başka kayıtla birleştir' }));
     const dialog = await screen.findByRole('dialog', { name: 'Kayıtları birleştir' });
     const keep = within(dialog).getByRole('region', { name: 'Kalacak kayıt' });
     expect(within(keep).getByText('Selin Öztürk')).toBeTruthy();
-    expect(await within(keep).findByText('Fön paketi · 2 seans')).toBeTruthy();
+    expect(await within(keep).findByText('Kesim paketi · 3 seans')).toBeTruthy();
     const submit = within(dialog).getByRole('button', { name: 'Kayıtları birleştir' });
     expect((submit as HTMLButtonElement).disabled).toBe(true);
     await userEvent.type(

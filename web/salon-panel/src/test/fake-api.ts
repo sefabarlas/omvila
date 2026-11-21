@@ -7,6 +7,8 @@ import { createNotificationsFake } from './fake-notifications';
 import type { NotificationsFakeOptions } from './fake-notifications';
 import { createNotificationSettingsFake } from './fake-notification-settings';
 import type { NotificationSettingsFakeOptions } from './fake-notification-settings';
+import { createSalesFake } from './fake-sales';
+import type { SalesFakeOptions } from './fake-sales';
 import { createReviewsFake } from './fake-reviews';
 import type { ReviewsFakeOptions } from './fake-reviews';
 
@@ -24,6 +26,9 @@ export const ownerPermissions = [
   'appointment.approve',
   'appointment.checkin',
   'appointment.deposit.mark',
+  'appointment.complete',
+  'payment.collect',
+  'cash.close',
   'customer.view',
   'customer.phone.view',
   'customer.edit',
@@ -105,6 +110,8 @@ export interface FakeApiOptions {
   notifications?: NotificationsFakeOptions;
   /** Bildirim ve SMS ayarları uçları. */
   notificationSettings?: NotificationSettingsFakeOptions;
+  /** Kasa ve müşteri paketi uçları. */
+  sales?: SalesFakeOptions;
   /** Değerlendirme uçları. */
   reviews?: ReviewsFakeOptions;
 }
@@ -392,8 +399,10 @@ export function fakeFetch({
   customers = {},
   notifications = {},
   notificationSettings = {},
+  sales = {},
   reviews = {},
 }: FakeApiOptions = {}) {
+  const salesFake = createSalesFake(session, sales);
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
   const notificationsFake = createNotificationsFake(notifications);
@@ -430,6 +439,11 @@ export function fakeFetch({
     const calendarResponse = await calendarFake(request);
     if (calendarResponse) {
       return calendarResponse;
+    }
+
+    const salesResponse = await salesFake(request);
+    if (salesResponse) {
+      return salesResponse;
     }
 
     const customersResponse = await customersFake(request);

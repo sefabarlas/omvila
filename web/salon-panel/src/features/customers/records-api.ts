@@ -16,7 +16,7 @@ import type { CustomerFilter } from './api';
 /** Müşteri kartı · Paketler (Active önce, sonra yeniden eskiye); üstteki paket kartı ilk etkin paketten. */
 export function customerPackagesQuery(api: Api, brandCustomerId: string) {
   return infiniteQueryOptions({
-    queryKey: queryKeys.customerPackages(brandCustomerId),
+    queryKey: queryKeys.customerPackageList(brandCustomerId),
     queryFn: ({ pageParam }) =>
       unwrap(
         api.GET('/api/v1/manage/customers/{brandCustomerId}/packages', {

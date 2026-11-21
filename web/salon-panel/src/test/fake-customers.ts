@@ -145,7 +145,9 @@ const packageBase = {
   soldByStaffName: 'Elif Kaya',
 };
 
-/** Selin'in paketleri: etkin Fön paketi (2/5, son gün 31 Aralık) ve süresi dolmuş manikür paketi. */
+/**
+ * Selin'in paketleri (KVKK silme önizlemesi). Paketler sekmesi fake-sales'ten gelir (sales.packageCustomerId).
+ */
 export const selinPackages: CustomerPackage[] = [
   {
     ...packageBase,
@@ -436,7 +438,7 @@ export function createCustomersFake(session: ManageSession, options: CustomersFa
     }
 
     const match =
-      /^\/api\/v1\/manage\/customers\/([^/]+)(\/appointments|\/packages|\/payments|\/merge|\/deletion)?$/.exec(
+      /^\/api\/v1\/manage\/customers\/([^/]+)(\/appointments|\/payments|\/merge|\/deletion)?$/.exec(
         path,
       );
     if (!match) {
@@ -452,8 +454,6 @@ export function createCustomersFake(session: ManageSession, options: CustomersFa
     switch (match[2]) {
       case '/appointments':
         return json(200, { items: isSelin ? selinAppointments : [], nextCursor: null });
-      case '/packages':
-        return json(200, { items: isSelin ? selinPackages : [], nextCursor: null });
       case '/payments':
         return session.permissions.includes('payment.collect')
           ? json(200, { items: isSelin ? selinPayments : [], nextCursor: null })

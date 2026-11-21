@@ -9,6 +9,7 @@ import {
   branchOpenStatus,
   defaultBookingSteps,
 } from '@omvila/ui-web/booking';
+import { formatDate } from '@omvila/ui-web/format';
 import { branchToday, systemClock } from '@omvila/ui-web/time';
 import type { Clock } from '@omvila/ui-web/time';
 import { ArrowLeft, CalendarX, WifiOff } from 'lucide-react';
@@ -23,6 +24,9 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { BookingDisabled } from '@/components/BookingDisabled';
+import type { WaitlistChoice } from '@/waitlist/WaitlistForm';
+import type { WaitlistEntry } from '@/waitlist/waitlist-api';
+import { windowsLabel } from '@/waitlist/windows';
 import { depositHintTotal } from '@/lib/deposit';
 import { StateBanner } from '@/components/StateBanner';
 import type { PublicBrand } from '@/lib/brand';
@@ -30,6 +34,7 @@ import { fetchCatalog, searchSlots } from './booking-api';
 import type {
   BookingToken,
   OtpChallenge,
+  Money,
   PublicAppointment,
   SlotSearchRequest,
 } from './booking-api';
@@ -73,6 +78,12 @@ const RequestStep = lazy(() =>
 const DepositStep = lazy(() =>
   import('./steps/DepositStep').then((m) => ({ default: m.DepositStep })),
 );
+const WaitlistJoin = lazy(() =>
+  import('@/waitlist/WaitlistJoin').then((m) => ({ default: m.WaitlistJoin })),
+);
+const WaitlistJoined = lazy(() =>
+  import('@/waitlist/WaitlistJoin').then((m) => ({ default: m.WaitlistJoined })),
+);
 
 function preloadSteps() {
   void import('./steps/StaffStep');
@@ -83,7 +94,11 @@ function preloadSteps() {
   void import('./steps/DoneStep');
   void import('./steps/RequestStep');
   void import('./steps/DepositStep');
+  void import('@/waitlist/WaitlistJoin');
 }
+
+/** Bekleme listesi formunun seçimi ve dolu gün (telefon doğrulanana kadar bellekte). */
+type WaitlistDraft = WaitlistChoice & { date: string };
 
 const loadCatalog = (request: { branchId: string }) => fetchCatalog(request.branchId);
 const loadSlots = (request: { branchId: string; body: SlotSearchRequest }) =>
@@ -149,6 +164,8 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
   const [appointment, setAppointment] = useState<PublicAppointment | null>(null);
   const [disabled, setDisabled] = useState(false);
   const [expiredNotice, setExpiredNotice] = useState(false);
+  const [waitlist, setWaitlist] = useState<WaitlistDraft | null>(null);
+  const [joined, setJoined] = useState<WaitlistEntry | null>(null);
   const desktop = useDesktop();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -171,11 +188,25 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
 
   // Kataloğa göre düzeltilmiş seçim; bellekteki adımlar (kod, onay, başarı) durumları yoksa geri çekilir.
   let selection = raw;
-  if (catalog && raw.step !== 'branch' && raw.step !== 'done') selection = reconcile(raw, catalog);
+  const waitlistDay = waitlist !== null && waitlist.date === raw.date && raw.time === null;
+  if (catalog && raw.step !== 'branch' && raw.step !== 'done' && raw.step !== 'waitlisted') {
+    selection = reconcile(raw, catalog, waitlistDay);
+  }
+  // Bekleme listesi kipi: dolu gün için form gönderildi, saat seçilmedi (bilgiler → kod → katılım).
+  const waitlistMode =
+    waitlist !== null && waitlist.date === selection.date && selection.time === null;
+  if (
+    ['details', 'code', 'confirm'].includes(selection.step) &&
+    selection.time === null &&
+    !waitlistMode
+  ) {
+    selection = { ...selection, step: 'time' };
+  }
   if ((selection.step === 'code' && !challenge) || (selection.step === 'confirm' && !token)) {
     selection = { ...selection, step: 'details' };
   }
   if (selection.step === 'done' && !appointment) selection = { ...selection, step: 'services' };
+  if (selection.step === 'waitlisted' && !joined) selection = { ...selection, step: 'services' };
   const step = selection.step;
 
   // Sonraki adımların parçaları ilk hizmet seçilince indirilir (ilk yüklemenin JS'ine girmez).
@@ -301,12 +332,21 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
 
   const place = branch ? `${brand.name} · ${branch.addressLine}, ${branch.district}` : brand.name;
   // Kapora ipucu (bilgi amaçlı); kesin kapora oluşturma yanıtında, müşteriye göre (sureler-ve-ayarlar.md § Kapora).
-  const depositHint = catalog
-    ? depositHintTotal(
-        catalog.services.filter((service) => selection.serviceIds.includes(service.id)),
-      )
-    : null;
-  const summaryCard = (action?: ReactNode, deposit: typeof depositHint = null) =>
+  // Paketten düşülen kalemde kapora yok (KK8, publicCreateAppointment usePackageItems).
+  const depositHintFor = (packaged: readonly string[] = []) =>
+    catalog
+      ? depositHintTotal(
+          catalog.services.filter(
+            (service) =>
+              selection.serviceIds.includes(service.id) && !packaged.includes(service.id),
+          ),
+        )
+      : null;
+  const summaryCard = (
+    action?: ReactNode,
+    deposit: Money | null = null,
+    packaged: readonly string[] = [],
+  ) =>
     summary && slot && date ? (
       <SummaryCard
         summary={summary}
@@ -314,8 +354,56 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
         place={place}
         action={action}
         deposit={deposit}
+        packaged={packaged}
       />
     ) : null;
+  // Bekleme listesi bilgiler adımının özeti: hizmetler, dolu gün ve seçilen saat dilimleri.
+  const waitlistCard =
+    summary && waitlist ? (
+      <SummaryCard
+        summary={summary}
+        when={`${formatDate(waitlist.date, 'panel')} · ${windowsLabel(waitlist.timeWindows)}`}
+        place={`Bekleme listesi · ${place}`}
+        action={
+          <button
+            type="button"
+            className={styles.change}
+            onClick={() => {
+              go('time');
+            }}
+          >
+            Değiştir
+          </button>
+        }
+      />
+    ) : null;
+
+  const onTokenExpired = () => {
+    setToken(null);
+    setExpiredNotice(true);
+    go('details', 'replace');
+  };
+  const onBookingDisabled = () => {
+    setDisabled(true);
+  };
+  const onJoined = (entry: WaitlistEntry) => {
+    setJoined(entry);
+    setWaitlist(null);
+    setRaw({ ...base, step: 'waitlisted' });
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+  };
+  const waitlistPreferences = (draft: WaitlistDraft) => {
+    // Tek personel seçildiyse tercih o kişi; "Fark etmez" veya hizmet başına ayrı kişi seçildiyse tercih yok (T-100).
+    const first = selection.staff[0];
+    const preferred = sameStaff && first && first !== ANY_STAFF ? first : null;
+    return {
+      serviceIds: selection.serviceIds,
+      preferredStaffId: preferred,
+      acceptOtherStaff: preferred ? draft.acceptOtherStaff : true,
+      dates: [draft.date],
+      timeWindows: draft.timeWindows,
+    };
+  };
 
   const loadError = (onRetry: () => void) => (
     <StateBanner
@@ -419,6 +507,12 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
                 onJump={(value, time) => {
                   update({ date: value, time });
                 }}
+                onJoinWaitlist={(choice) => {
+                  if (!date) return;
+                  preload();
+                  setWaitlist({ ...choice, date });
+                  commit({ ...base, date, time: null, step: 'details' }, 'push');
+                }}
               />
             )}
           </>
@@ -437,17 +531,22 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
               form={form}
               onFormChange={setForm}
               existingToken={token}
-              summary={summaryCard(
-                <button
-                  type="button"
-                  className={styles.change}
-                  onClick={() => {
-                    go('time');
-                  }}
-                >
-                  Değiştir
-                </button>,
-              )}
+              waitlist={waitlistMode}
+              summary={
+                waitlistMode
+                  ? waitlistCard
+                  : summaryCard(
+                      <button
+                        type="button"
+                        className={styles.change}
+                        onClick={() => {
+                          go('time');
+                        }}
+                      >
+                        Değiştir
+                      </button>,
+                    )
+              }
               onCodeSent={(next, phone) => {
                 setChallenge({ challenge: next, phone });
                 go('code');
@@ -481,6 +580,19 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
           />
         ) : null;
       case 'confirm':
+        if (token && waitlistMode) {
+          return (
+            <WaitlistJoin
+              branchId={branch.id}
+              bookingToken={token.bookingToken}
+              preferences={waitlistPreferences(waitlist)}
+              fullName={form.fullName}
+              onJoined={onJoined}
+              onTokenExpired={onTokenExpired}
+              onBookingDisabled={onBookingDisabled}
+            />
+          );
+        }
         return token ? (
           <ConfirmStep
             branchId={branch.id}
@@ -502,8 +614,9 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
             fullName={form.fullName}
             note={form.note}
             marketingConsent={form.marketing}
-            summary={summaryCard(undefined, depositHint)}
-            depositHint={depositHint}
+            services={summary.lines.map((line) => ({ id: line.serviceId, name: line.name }))}
+            summary={(packaged) => summaryCard(undefined, depositHintFor(packaged), packaged)}
+            depositHintFor={depositHintFor}
             onCreated={(created) => {
               setAppointment(created);
               setRaw({ ...base, step: 'done' });
@@ -517,16 +630,12 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
               slotsQuery.reload();
               go('time');
             }}
-            onTokenExpired={() => {
-              setToken(null);
-              setExpiredNotice(true);
-              go('details', 'replace');
-            }}
-            onBookingDisabled={() => {
-              setDisabled(true);
-            }}
+            onTokenExpired={onTokenExpired}
+            onBookingDisabled={onBookingDisabled}
           />
         ) : null;
+      case 'waitlisted':
+        return joined ? <WaitlistJoined entry={joined} brandSlug={brand.slug} /> : null;
       case 'done':
         if (!appointment) return null;
         // Kapora isteyen randevu Havale ekranına (KK3); onay gerektiren salonda talep (A1); onaylı randevu Başarı.
@@ -551,8 +660,13 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
     }
   })();
 
+  // Dolu günde alt çubuk yok: ekranın eylemi bekleme listesi formudur (DoluGun.png).
+  const fullDay = days.days.some(
+    (day) => day.date === date && !day.hasAvailability && !day.isClosed,
+  );
   const showFooter =
     !bookingDisabled &&
+    !(shownStep === 'time' && fullDay) &&
     catalog !== undefined &&
     summary !== null &&
     catalog.services.length > 0 &&
@@ -568,7 +682,7 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
   const hasLines = summary !== null && summary.lines.length > 0;
   const showHeaderOnMobile = shownStep === 'services' || shownStep === 'branch';
   const showProgress = !bookingDisabled && progressIndex[shownStep] !== undefined;
-  const title = stepTitles[shownStep];
+  const title = waitlistMode && shownStep === 'confirm' ? 'Bekleme listesi' : stepTitles[shownStep];
   const showTopBar =
     !bookingDisabled && previous[shownStep] !== undefined && shownStep !== 'services';
 
@@ -605,6 +719,7 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
         summary &&
         shownStep !== 'branch' &&
         shownStep !== 'done' &&
+        shownStep !== 'waitlisted' &&
         !bookingDisabled ? (
           <aside className={styles.aside}>
             <AsideSummary summary={summary} staff={staffLabel} when={when} showStaff={allowStaff} />

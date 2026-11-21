@@ -28,6 +28,21 @@ describe('yönelme eki', () => {
   });
 });
 
+// Kural: salon-paneli/OdemeAl ("Elif Kaya'nın primi hak edilir").
+describe('ilgi eki', () => {
+  it.each([
+    ['Elif Kaya', "Elif Kaya'nın"],
+    ['Mert Demir', "Mert Demir'in"],
+    ['Can Yücel', "Can Yücel'in"],
+    ['Zeynep Aksoy', "Zeynep Aksoy'un"],
+    ['Gül', "Gül'ün"],
+    ['Ece', "Ece'nin"],
+    ['Okan', "Okan'ın"],
+  ])('%s → %s', (name, expected) => {
+    expect(genitive(name)).toBe(expected);
+  });
+});
+
 describe('saatin bulunma eki', () => {
   it.each([
     ['13:15', "13:15'te"],
