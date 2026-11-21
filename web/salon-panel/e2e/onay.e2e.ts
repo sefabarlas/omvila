@@ -356,7 +356,10 @@ for (const theme of ['light', 'dark'] as const) {
 const depositId = demoDepositQueueItem.appointmentId;
 const depositHold = demoDepositQueueItem.holdExpiresUtc;
 
-type DepositState = 'Awaiting' | 'CustomerReported' | 'Received' | 'Waived';
+type DepositState = 'Awaiting' | 'CustomerReported' | 'Received' | 'Waived' | 'Refunded';
+
+/** "Salon iade etti" e2e'sinde girilen kısmi tutar (alınan 150 ₺'nin 100 ₺'si). */
+const refundedMinor = 10000;
 
 interface DepositCall {
   action: string;
@@ -365,9 +368,11 @@ interface DepositCall {
   body: unknown;
 }
 
-function depositDetail(state: DepositState) {
+function depositDetail(state: DepositState, remindedUtc: string | null = null) {
   const pending = state === 'Awaiting' || state === 'CustomerReported';
   const reported = state !== 'Awaiting' && state !== 'Waived';
+  const received = state === 'Received' || state === 'Refunded';
+  const refunded = state === 'Refunded';
   return {
     id: depositId,
     reference: 'A-20512',
@@ -405,12 +410,16 @@ function depositDetail(state: DepositState) {
       status: state,
       transferCode: 'OMV-7K2X',
       customerReportedUtc: reported ? '2026-11-25T08:52:00Z' : null,
-      receivedUtc: state === 'Received' ? nowUtc : null,
-      remindedUtc: null,
-      refundedUtc: null,
+      receivedUtc: received ? nowUtc : null,
+      remindedUtc,
+      refundedUtc: refunded ? nowUtc : null,
+      ...(refunded ? { refundedAmount: { amountMinor: refundedMinor, currency: 'TRY' } } : {}),
     },
     total: { amountMinor: 45000, currency: 'TRY' },
-    amountDue: { amountMinor: state === 'Received' ? 30000 : 45000, currency: 'TRY' },
+    amountDue: {
+      amountMinor: refunded ? 45000 - (15000 - refundedMinor) : received ? 30000 : 45000,
+      currency: 'TRY',
+    },
     customerNote: null,
     isRecurring: false,
     noShowAtUtc: null,
@@ -432,8 +441,21 @@ function depositDetail(state: DepositState) {
             },
           ]
         : []),
-      ...(state === 'Received'
+      ...(remindedUtc
+        ? [
+            {
+              kind: 'DepositReminded',
+              occurredUtc: remindedUtc,
+              actorName: 'Elif Kaya',
+              detail: null,
+            },
+          ]
+        : []),
+      ...(received
         ? [{ kind: 'DepositReceived', occurredUtc: nowUtc, actorName: 'Elif Kaya', detail: null }]
+        : []),
+      ...(refunded
+        ? [{ kind: 'DepositRefunded', occurredUtc: nowUtc, actorName: 'Elif Kaya', detail: null }]
         : []),
       ...(state === 'Waived'
         ? [{ kind: 'DepositWaived', occurredUtc: nowUtc, actorName: 'Elif Kaya', detail: null }]
@@ -448,6 +470,7 @@ async function depositDemo(page: Page, initial: DepositState = 'Awaiting'): Prom
   await overviewDemo(page);
   const calls: DepositCall[] = [];
   let state: DepositState = initial;
+  let remindedUtc: string | null = null;
   const pending = () => state === 'Awaiting' || state === 'CustomerReported';
   await page.route(/\/api\/v1\/manage\/calendar\?/, async (route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -486,10 +509,12 @@ async function depositDemo(page: Page, initial: DepositState = 'Awaiting'): Prom
   await page.route(`**/api/v1/manage/appointments/${depositId}`, (route) =>
     route.request().method() === 'OPTIONS'
       ? route.fallback()
-      : route.fulfill(json(depositDetail(state))),
+      : route.fulfill(json(depositDetail(state, remindedUtc))),
   );
   await page.route(
-    new RegExp(`/api/v1/manage/appointments/${depositId}/(approve|deposit/mark-received)$`),
+    new RegExp(
+      `/api/v1/manage/appointments/${depositId}/(approve|deposit/(mark-received|remind|refund))$`,
+    ),
     async (route) => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -497,7 +522,9 @@ async function depositDemo(page: Page, initial: DepositState = 'Awaiting'): Prom
         return;
       }
 
-      const action = request.url().endsWith('/approve') ? 'approve' : 'mark-received';
+      const action = request.url().endsWith('/approve')
+        ? 'approve'
+        : (request.url().split('/deposit/')[1] ?? '');
       const body = request.postData() ? (request.postDataJSON() as unknown) : null;
       calls.push({
         action,
@@ -505,8 +532,15 @@ async function depositDemo(page: Page, initial: DepositState = 'Awaiting'): Prom
         idempotencyKey: (await request.headerValue('Idempotency-Key')) ?? undefined,
         body,
       });
-      state = action === 'approve' ? 'Waived' : 'Received';
-      await route.fulfill(json(depositDetail(state)));
+      if (action === 'remind') {
+        // manageRemindDeposit: 204, remindedUtc ayrıntı tazelenince görünür.
+        remindedUtc = nowUtc;
+        await route.fulfill({ status: 204 });
+        return;
+      }
+
+      state = action === 'approve' ? 'Waived' : action === 'refund' ? 'Refunded' : 'Received';
+      await route.fulfill(json(depositDetail(state, remindedUtc)));
     },
   );
   return calls;
@@ -575,6 +609,52 @@ test.describe('Kapora: panelde kapora bekleyen randevu', () => {
     expect(calls.map((call) => [call.action, call.ifMatch])).toEqual([['mark-received', '4']]);
     await expect(page.getByText('Dikkat isteyen bir şey yok')).toBeVisible();
   });
+
+  test('Hatırlat: bir kez gider, sonra "Hatırlatıldı · 12:10" ve pasif (V6)', async ({ page }) => {
+    const calls = await depositDemo(page);
+    const drawer = await openDeposit(page);
+    await drawer.getByRole('button', { name: 'Hatırlat' }).click();
+    await expect(page.getByText('Hatırlatma gönderildi')).toBeVisible();
+    expect(calls.map(({ action, body }) => ({ action, body }))).toEqual([
+      { action: 'remind', body: null },
+    ]);
+    const reminded = drawer.getByRole('button', { name: 'Hatırlatıldı · 12:10' });
+    await expect(reminded).toBeDisabled();
+    await expect(drawer.getByText('Kapora hatırlatması gönderildi')).toBeVisible();
+    // Durum değişmez: hâlâ kapora bekleniyor, "Kapora geldi" duruyor.
+    await expect(drawer.getByRole('button', { name: 'Kapora geldi' })).toBeVisible();
+  });
+
+  test('Salon iade etti: kısmi tutar, If-Match ve Idempotency-Key gider (V7)', async ({ page }) => {
+    const calls = await depositDemo(page, 'Received');
+    await page.goto('/takvim');
+    await page
+      .getByRole('region', { name: 'Günlük takvim' })
+      .getByRole('button', { name: /^Gizem Arslan, Fön, 14:30–15:00, Onaylandı/ })
+      .click();
+    const drawer = page.getByRole('dialog', { name: 'Randevu · #A-20512 · Online' });
+    await drawer.getByRole('button', { name: /Kapora 150 ₺ · havale ile alındı/ }).click();
+    const modal = page.getByRole('dialog', { name: 'Kapora iadesini işaretle' });
+    const amount = modal.getByLabel('İade edilen tutar');
+    await expect(amount).toHaveValue('150');
+    await amount.fill('200');
+    await modal.getByRole('button', { name: 'Salon iade etti' }).click();
+    await expect(modal.getByText("Tutar 0'dan büyük ve en fazla 150 ₺ olmalı.")).toBeVisible();
+    expect(calls).toEqual([]);
+
+    await amount.fill('100');
+    await modal.getByLabel('Not (isteğe bağlı)').fill('Müşteri iptal etti');
+    await modal.getByRole('button', { name: 'Salon iade etti' }).click();
+    await expect(page.getByText('Kapora iadesi işaretlendi')).toBeVisible();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      action: 'refund',
+      ifMatch: '5',
+      body: { amount: { amountMinor: refundedMinor, currency: 'TRY' }, note: 'Müşteri iptal etti' },
+    });
+    expect(calls[0]?.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(drawer.getByText('Salon iade etti · 100 ₺')).toBeVisible();
+  });
 });
 
 const depositScreens: { name: string; state: DepositState; ready: string }[] = [
@@ -592,6 +672,11 @@ const depositScreens: { name: string; state: DepositState; ready: string }[] = [
     name: 'RandevuPanelKaporaAlindi',
     state: 'Received',
     ready: 'Kapora 150 ₺ · havale ile alındı',
+  },
+  {
+    name: 'RandevuPanelKaporaIade',
+    state: 'Refunded',
+    ready: 'Salon iade etti · 100 ₺',
   },
 ];
 
