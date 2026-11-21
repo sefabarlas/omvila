@@ -17,6 +17,22 @@ public sealed class AppointmentTransitionTests
 
     private readonly SequentialIds _ids = new();
 
+    // ───────── Seri ─────────
+
+    [Fact]
+    public void AssignSeries_LinksAppointment_EmptyIdIsProgrammerError()
+    {
+        var now = Start - Duration.FromDays(1);
+        var appointment = Create(AppointmentChannel.Panel, now);
+        var seriesId = Guid.Parse("0193a8f0-0000-7000-8000-0000000000b1");
+
+        appointment.AssignSeries(seriesId, now);
+
+        appointment.SeriesId.ShouldBe(seriesId);
+        appointment.UpdatedUtc.ShouldBe(now);
+        Should.Throw<DomainException>(() => appointment.AssignSeries(Guid.Empty, now));
+    }
+
     // ───────── A1 ─────────
 
     [Fact]

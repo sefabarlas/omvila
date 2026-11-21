@@ -109,6 +109,24 @@ internal static class AvailabilityEngine
     public static bool IsSlotAvailable(AvailabilitySnapshot snapshot, AvailabilityRequest request, Instant start) =>
         Evaluate(snapshot, request, start).IsAvailable;
 
+    /// <summary>
+    /// Personelin o günkü yerel saatleri (takvimdeki çalışma saati gösterimi de bunu kullanır). Kural: musaitlik.md M7,
+    /// dilim-02 kabul kriteri 16 ("Yalnızca bu gün için aç"): şube haftalık düzende kapalı olduğu bir günü özel günle
+    /// açmışsa, o hafta günü için saati ve o güne ezmesi olmayan personel şubenin özel gün saatlerinde çalışıyor sayılır.
+    /// O gün saati olan personelde normal kesişim geçerlidir; izin ve meşguliyet her durumda çıkarılır (T-48).
+    /// </summary>
+    public static IReadOnlyList<LocalTimeRange> StaffHoursOn(AvailabilitySnapshot snapshot, StaffSchedule staff, LocalDate date)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(staff);
+        var ranges = staff.Hours.RangesOn(date);
+        var isExtraOpening = ranges.Count == 0
+            && !staff.Hours.Overrides.ContainsKey(date)
+            && snapshot.BranchHours.Overrides.TryGetValue(date, out var branchOverride) && branchOverride.Count > 0
+            && !(snapshot.BranchHours.Days.TryGetValue(date.DayOfWeek, out var weekly) && weekly.Count > 0);
+        return isExtraOpening ? snapshot.BranchHours.Overrides[date] : ranges;
+    }
+
     /// <summary>Bir hesabın önbellekleri (şube günü, personel günü, meşguliyet kümeleri, şablonlar).</summary>
     private sealed class Run
     {
@@ -508,21 +526,7 @@ internal static class AvailabilityEngine
             return day;
         }
 
-        /// <summary>
-        /// Personelin o günkü yerel saatleri. Kural: musaitlik.md M7, dilim-02 kabul kriteri 16 ("Yalnızca bu gün için aç"):
-        /// şube haftalık düzende kapalı olduğu bir günü özel günle açmışsa, o hafta günü için saati ve o güne ezmesi olmayan
-        /// personel şubenin özel gün saatlerinde çalışıyor sayılır. O gün saati olan personelde normal kesişim geçerlidir;
-        /// izin ve meşguliyet her durumda çıkarılır (T-48).
-        /// </summary>
-        private IReadOnlyList<LocalTimeRange> StaffRanges(StaffSchedule staff, LocalDate date)
-        {
-            var ranges = staff.Hours.RangesOn(date);
-            var isExtraOpening = ranges.Count == 0
-                && !staff.Hours.Overrides.ContainsKey(date)
-                && _s.BranchHours.Overrides.TryGetValue(date, out var branchOverride) && branchOverride.Count > 0
-                && !(_s.BranchHours.Days.TryGetValue(date.DayOfWeek, out var weekly) && weekly.Count > 0);
-            return isExtraOpening ? _s.BranchHours.Overrides[date] : ranges;
-        }
+        private IReadOnlyList<LocalTimeRange> StaffRanges(StaffSchedule staff, LocalDate date) => StaffHoursOn(_s, staff, date);
 
         /// <summary>
         /// Kural: musaitlik.md § 3–5 ve M17, M18. Süresi geçmiş tutma, sorana ayrılmış teklif ve saati değişen randevunun

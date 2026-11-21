@@ -11,7 +11,10 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    public sealed record Response(int Status, JsonElement Body, string? ETag);
+    public sealed record Response(int Status, JsonElement Body, string? ETag, IReadOnlyDictionary<string, string>? Headers = null)
+    {
+        public string? Header(string name) => Headers is not null && Headers.TryGetValue(name, out var value) ? value : null;
+    }
 
     /// <summary>Tabloları boşaltır (kayıt akışının dokunduğu her şey).</summary>
     public static async Task ResetAsync(PostgresFixture db)
@@ -24,6 +27,8 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;
+            TRUNCATE scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;
+            TRUNCATE infra.outbox_events CASCADE;
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);
     }
@@ -117,7 +122,8 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         return new Response(
             (int)response.StatusCode,
             text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone(),
-            response.Headers.ETag?.ToString());
+            response.Headers.ETag?.ToString(),
+            response.Headers.ToDictionary(h => h.Key, h => string.Join(',', h.Value), StringComparer.OrdinalIgnoreCase));
     }
 
     public async Task<T> ScalarAsync<T>(string sql)

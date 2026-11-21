@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- Diğer modüllere açılan sözleşme (randevu sorguları ve olayları sonraki dilim parçalarında eklenir). Public tipler XML belgesi taşır. -->
+  <!-- Diğer modüllere açılan sözleşme: randevu sorguları (IAppointmentQueries) ve olaylar (AppointmentConfirmed…). Public tipler XML belgesi taşır. -->
   <PropertyGroup>
     <NoWarn>$(NoWarn.Replace('CS1591', ''))</NoWarn>
   </PropertyGroup>

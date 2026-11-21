@@ -9,7 +9,7 @@ namespace Omvila.Modules.Customers.Domain;
 internal static class CustomerSegments
 {
     /// <summary>"Yeni": ilk ziyaret son 30 günde veya hiç tamamlanan randevusu yok.</summary>
-    public const int NewCustomerDays = 30;
+    public const int NewCustomerDays = Contracts.CustomerDisplayInfo.NewCustomerDays;
 
     /// <summary>"Düzenli": son 180 günde en az 3 tamamlanan randevu.</summary>
     public const int RegularWindowDays = 180;

@@ -24,13 +24,13 @@ internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry 
         var rows = await (from b in db.BrandCustomers.AsNoTracking()
                           join c in db.Customers.AsNoTracking() on b.CustomerId equals c.Id
                           where b.BrandId == brandId && brandCustomerIds.Contains(b.Id)
-                          select new { b.Id, b.CustomerId, Name = b.DisplayName ?? c.FullName, c.PhoneE164, b.NoShowCount, b.IsBlocked, b.AppointmentSmsEnabled })
+                          select new { b.Id, b.CustomerId, Name = b.DisplayName ?? c.FullName, c.PhoneE164, b.NoShowCount, b.IsBlocked, b.AppointmentSmsEnabled, b.VisitCount, b.FirstVisitOn, b.LastVisitOn })
             .ToListAsync(ct);
         return rows.ToDictionary(
             r => r.Id,
             r => new CustomerDisplayInfo(
                 r.Id, r.CustomerId, r.Name, r.PhoneE164, CustomerPhoneDisplay.For(r.PhoneE164, canSeeFullPhone: false).PhoneMasked,
-                r.NoShowCount, r.IsBlocked, r.AppointmentSmsEnabled));
+                r.NoShowCount, r.IsBlocked, r.AppointmentSmsEnabled, r.VisitCount, r.FirstVisitOn, r.LastVisitOn));
     }
 
     public async Task<Result> ApplyCountersAsync(Guid brandId, Guid brandCustomerId, CustomerCounterChange change, CancellationToken ct)

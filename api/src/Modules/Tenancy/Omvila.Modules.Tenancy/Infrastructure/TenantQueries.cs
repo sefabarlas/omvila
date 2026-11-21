@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
 
@@ -46,5 +47,43 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
             .OrderBy(b => b.CreatedUtc).Select(b => b.TimeZoneId).FirstOrDefaultAsync(ct);
         return new BrandCustomerSettings(
             row.MaskCustomerPhoneFromStaff, row.RiskyCustomerNoShowThreshold, row.DefaultCurrencyCode, timeZoneId ?? PlatformDefaults.DefaultTimeZoneId);
+    }
+
+    public Task<string?> GetBranchTimeZoneAsync(Guid brandId, Guid branchId, CancellationToken ct) =>
+        db.Branches.AsNoTracking().Where(b => b.BrandId == brandId && b.Id == branchId).Select(b => (string?)b.TimeZoneId).SingleOrDefaultAsync(ct);
+
+    public Task<BrandAppointmentSettings?> GetAppointmentSettingsAsync(Guid brandId, CancellationToken ct) =>
+        db.BrandSettings.AsNoTracking()
+            .Where(s => s.BrandId == brandId)
+            .Select(s => new BrandAppointmentSettings(s.NoShowAfterMinutes, s.CancellationCutoffHours, s.RescheduleCutoffHours, s.MaskCustomerPhoneFromStaff))
+            .SingleOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyDictionary<Guid, StaffCard>> GetStaffCardsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)
+    {
+        if (staffIds.Count == 0)
+        {
+            return new Dictionary<Guid, StaffCard>();
+        }
+
+        // Fotoğraf alanı modelde henüz yok (StaffSummary.photoUrl da null döner).
+        return await db.Staff.AsNoTracking()
+            .Where(s => s.BrandId == brandId && staffIds.Contains(s.Id))
+            .Select(s => new StaffCard(s.Id, s.FullName, s.DisplayName, s.CalendarColor, null))
+            .ToDictionaryAsync(s => s.StaffId, ct);
+    }
+
+    public async Task<IReadOnlyList<StaffTimeOffDetail>> GetTimeOffsAsync(
+        Guid brandId, IReadOnlyCollection<Guid> staffIds, Instant fromUtc, Instant toUtc, CancellationToken ct)
+    {
+        if (staffIds.Count == 0)
+        {
+            return [];
+        }
+
+        var rows = await db.TimeOffs.AsNoTracking()
+            .Where(t => t.BrandId == brandId && staffIds.Contains(t.StaffId) && t.StartUtc < toUtc && t.EndUtc > fromUtc)
+            .OrderBy(t => t.StartUtc).ThenBy(t => t.Id)
+            .ToListAsync(ct);
+        return [.. rows.Select(t => new StaffTimeOffDetail(t.Id, t.StaffId, t.Type.ToString(), t.StartUtc, t.EndUtc, t.IsAllDay, t.Note))];
     }
 }
