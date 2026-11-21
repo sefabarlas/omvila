@@ -78,7 +78,7 @@ internal static class BrandEndpoints
     private static async Task<IResult> GetSettingsAsync(HttpContext http, ITenantContext tenant, TenancyDbContext db, CancellationToken ct)
     {
         var settings = await db.BrandSettings.AsNoTracking().SingleAsync(s => s.BrandId == BrandOf(tenant), ct);
-        return Versioned(http, settings.Version, BrandSettingsResponse.From(settings, DepositAvailable));
+        return Versioned(http, settings.Version, BrandSettingsResponse.From(settings, await DepositAvailableAsync(db, settings.BrandId, ct)));
     }
 
     private static async Task<IResult> UpdateSettingsAsync(
@@ -97,8 +97,9 @@ internal static class BrandEndpoints
             return Error.Validation(errors).ToProblem();
         }
 
-        // S-22: IBAN (Dilim 4) yokken kapora açılamaz; var olan değer (kayıt varsayılanı dahil) korunabilir.
-        if (!DepositAvailable && !string.Equals(values!.DepositPolicy, settings.DepositPolicy, StringComparison.Ordinal)
+        // S-22: aktif kapora hesabı (IBAN) yokken kapora açılamaz; var olan değer (kayıt varsayılanı dahil) korunabilir.
+        var depositAvailable = await DepositAvailableAsync(db, settings.BrandId, ct);
+        if (!depositAvailable && !string.Equals(values!.DepositPolicy, settings.DepositPolicy, StringComparison.Ordinal)
             && !string.Equals(values.DepositPolicy, "None", StringComparison.Ordinal))
         {
             return Error.Conflict(ErrorCodes.DepositUnavailableNoIban).ToProblem();
@@ -107,7 +108,7 @@ internal static class BrandEndpoints
         settings.Apply(values!);
         db.Entry(settings).State = EntityState.Modified;
         await db.SaveChangesAsync(ct);
-        return Versioned(http, settings.Version, BrandSettingsResponse.From(settings, DepositAvailable));
+        return Versioned(http, settings.Version, BrandSettingsResponse.From(settings, depositAvailable));
     }
 
     private static async Task<IResult> GetBookingPageAsync(
@@ -172,8 +173,9 @@ internal static class BrandEndpoints
         return Versioned(http, page.Version, BookingPageResponse.From(brand.Slug, page, options.Value.BookingPageBaseUrl!));
     }
 
-    // Kapora için salon IBAN'ı (BrandBankAccount) Dilim 4'te gelir; o zamana kadar kapora kullanılamaz (S-22).
-    private static bool DepositAvailable => false;
+    // Kural: alan-modeli.md § BrandBankAccount — aktif hesap yoksa kapora konamaz (sözleşme BrandSettings.depositAvailable).
+    private static Task<bool> DepositAvailableAsync(TenancyDbContext db, Guid brandId, CancellationToken ct) =>
+        db.BankAccounts.AsNoTracking().AnyAsync(a => a.BrandId == brandId && a.IsActive, ct);
 
     private static BrandProfile ReadProfile(JsonBody input, Domain.Brand brand)
     {
