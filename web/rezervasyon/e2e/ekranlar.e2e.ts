@@ -1,13 +1,18 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { bookingApi } from './support';
+import type { BookingOptions } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): akış ekranlarının açık ve koyu görüntüleri e2e-results/ekranlar altına
-// yazılır; design/ekranlar/rezervasyon-sayfasi ile yan yana insan gözüyle karşılaştırılır. Otomatik piksel
-// karşılaştırması yok: salon kartı Prism örneğinden gelir (adres, açıklama "string"), akış verisi test verisidir.
+// yazılır; design/ekranlar/rezervasyon-sayfasi ile yan yana insan gözüyle karşılaştırılır (sonuç:
+// docs/dilimler/dilim-02-tasarim-karsilastirma.md). Otomatik piksel karşılaştırması yok. Salon kartları e2e/api-stub.mjs,
+// akış verisi test verisidir. Telefon 390 px, masaüstü 1280 px.
 interface ScreenCase {
   name: string;
   desktop?: boolean;
+  /** Salon bağlantı adı; varsayılan kuafor-elif (tek şube). */
+  slug?: string;
+  api?: BookingOptions;
   /** Ekrana kadar akışı yürütür. */
   reach: (page: Page) => Promise<void>;
 }
@@ -48,6 +53,12 @@ async function confirm(page: Page) {
 }
 
 const screens: ScreenCase[] = [
+  {
+    name: 'Sube',
+    slug: 'kuafor-elif-subeler',
+    reach: (page) =>
+      expect(page.getByRole('heading', { name: 'Hangi şubeye gelmek istersiniz?' })).toBeVisible(),
+  },
   { name: 'Main', reach: services },
   {
     name: 'Personel',
@@ -79,6 +90,31 @@ const screens: ScreenCase[] = [
   },
   { name: 'Masaustu', desktop: true, reach: services },
   { name: 'MasaustuSaat', desktop: true, reach: time },
+  { name: 'MasaustuOnay', desktop: true, reach: confirm },
+  // Durumlar.png: saat az önce doldu, SMS kodu deneme sınırı, online randevu kapalı.
+  {
+    name: 'DurumSaatDoldu',
+    api: { slotTaken: true },
+    reach: async (page) => {
+      await confirm(page);
+      await page.getByRole('button', { name: 'Randevuyu oluştur' }).click();
+      await expect(page.getByText('14:30 artık boş değil.')).toBeVisible();
+    },
+  },
+  {
+    name: 'DurumKodSiniri',
+    api: { otpLimited: true },
+    reach: async (page) => {
+      await details(page);
+      await page.getByRole('button', { name: 'Doğrulama kodu gönder' }).click();
+      await expect(page.getByText('Çok fazla deneme yaptınız.')).toBeVisible();
+    },
+  },
+  {
+    name: 'DurumOnlineKapali',
+    slug: 'kuafor-elif-kapali',
+    reach: (page) => expect(page.getByRole('link', { name: 'Salonu ara' })).toBeVisible(),
+  },
 ];
 
 for (const theme of ['light', 'dark'] as const) {
@@ -88,8 +124,8 @@ for (const theme of ['light', 'dark'] as const) {
       page.on('pageerror', (error) => errors.push(error.message));
       if (screen.desktop) await page.setViewportSize({ width: 1280, height: 1000 });
       await page.emulateMedia({ colorScheme: theme });
-      await bookingApi(page);
-      await page.goto('/kuafor-elif');
+      await bookingApi(page, screen.api);
+      await page.goto(`/${screen.slug ?? 'kuafor-elif'}`);
       await expect(page.getByRole('heading', { level: 1, name: 'Kuaför Elif' })).toBeAttached();
       await screen.reach(page);
       await page.screenshot({

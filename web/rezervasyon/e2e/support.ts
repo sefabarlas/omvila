@@ -9,16 +9,17 @@ import {
   tokenFixture,
 } from '../src/test/booking-fixtures';
 import type { DaySearchRequest, SlotSearchRequest } from '../src/booking/booking-api';
+import type { PublicAppointment } from '../src/appointment/appointment-api';
 import {
   accessCode,
   cancelledFixture,
-  etag,
   linkAppointmentFixture,
   rescheduledFixture,
   rescheduleSlotsFixture,
 } from '../src/test/appointment-fixtures';
 
-const api = 'http://localhost:4010/api/v1/public';
+// Uygulamanın API kökü e2e/api-stub.mjs'tir (playwright.config.ts).
+const api = 'http://localhost:4011/api/v1/public';
 
 const fulfill = (route: Route, body: unknown, status = 200, headers: Record<string, string> = {}) =>
   route.fulfill({
@@ -34,8 +35,23 @@ const fulfill = (route: Route, body: unknown, status = 200, headers: Record<stri
     body: JSON.stringify(body),
   });
 
+const problem = (route: Route, status: number, code: string, meta: Record<string, unknown> = {}) =>
+  fulfill(route, { type: 'about:blank', title: code, status, code, meta }, status);
+
+export interface BookingOptions {
+  /** Kod isteği 429 döner (Durumlar: SMS kodu deneme sınırı). */
+  otpLimited?: boolean;
+  /** Oluşturma 409 slot_taken döner (Durumlar: saat az önce doldu). */
+  slotTaken?: boolean;
+}
+
+export interface BookingCalls {
+  create: unknown[];
+}
+
 /** Sabit "şimdi" (24 Kasım 2026 Salı 10:00) ve akış uçlarının test yanıtları. Ön uçuş (OPTIONS) Prism'e gider. */
-export async function bookingApi(page: Page) {
+export async function bookingApi(page: Page, options: BookingOptions = {}): Promise<BookingCalls> {
+  const calls: BookingCalls = { create: [] };
   await page.clock.setFixedTime(new Date(nowUtc));
   const catalog = catalogFixture();
   await page.route(`${api}/**`, async (route) => {
@@ -54,27 +70,46 @@ export async function bookingApi(page: Page) {
     } else if (path.endsWith('/availability/slots')) {
       await fulfill(route, slotsFixture(request.postDataJSON() as SlotSearchRequest, catalog));
     } else if (path.endsWith('/otp/request')) {
-      await fulfill(route, { status: 'CodeSent', challenge: challengeFixture });
+      if (options.otpLimited) {
+        await problem(route, 429, 'otp_attempts_exceeded', { retryAfterSeconds: 300 });
+      } else {
+        await fulfill(route, { status: 'CodeSent', challenge: challengeFixture });
+      }
     } else if (path.endsWith('/otp/verify')) {
       await fulfill(route, tokenFixture);
     } else if (path.endsWith('/appointments')) {
-      await fulfill(route, appointmentFixture(), 201);
+      calls.create.push(request.postDataJSON());
+      if (options.slotTaken) {
+        await problem(route, 409, 'slot_taken', {
+          alternatives: ['2026-11-24T11:45:00Z', '2026-11-24T12:15:00Z'],
+        });
+      } else {
+        await fulfill(route, appointmentFixture(), 201);
+      }
     } else {
       await route.fallback();
     }
   });
+  return calls;
 }
 
 export interface LinkCalls {
   cancel: { ifMatch: string | undefined; body: unknown }[];
+  reschedule: { ifMatch: string | undefined; body: unknown }[];
 }
 
-/** SMS bağlantısı (/r/{kod}) uçlarının test yanıtları; iptalden sonra GET iptal edilmiş randevuyu döner. */
-export async function appointmentApi(page: Page): Promise<LinkCalls> {
+/**
+ * SMS bağlantısı (/r/{kod}) uçlarının test yanıtları; iptal veya saat değişikliğinden sonra GET yeni hâli döner.
+ * `appointment` ilk okumanın alanlarını değiştirir (ör. süresi geçmiş randevu).
+ */
+export async function appointmentApi(
+  page: Page,
+  appointment: Partial<PublicAppointment> = {},
+): Promise<LinkCalls> {
   await page.clock.setFixedTime(new Date(nowUtc));
-  const calls: LinkCalls = { cancel: [] };
+  const calls: LinkCalls = { cancel: [], reschedule: [] };
+  let current = linkAppointmentFixture(appointment);
   const base = `/api/v1/public/appointments/${accessCode}`;
-  let cancelled = false;
   await page.route(`${api}/appointments/**`, async (route) => {
     const request = route.request();
     if (request.method() === 'OPTIONS') {
@@ -83,9 +118,7 @@ export async function appointmentApi(page: Page): Promise<LinkCalls> {
     }
     const path = new URL(request.url()).pathname;
     if (path === base) {
-      await fulfill(route, cancelled ? cancelledFixture() : linkAppointmentFixture(), 200, {
-        ETag: etag,
-      });
+      await fulfill(route, current, 200, { ETag: `W/"${current.version}"` });
     } else if (path === `${base}/availability/slots`) {
       const { date } = request.postDataJSON() as { date: string };
       await fulfill(route, rescheduleSlotsFixture(date));
@@ -94,10 +127,15 @@ export async function appointmentApi(page: Page): Promise<LinkCalls> {
         ifMatch: (await request.headerValue('If-Match')) ?? undefined,
         body: request.postDataJSON(),
       });
-      cancelled = true;
-      await fulfill(route, cancelledFixture(), 200, { ETag: 'W/"8813"' });
+      current = cancelledFixture();
+      await fulfill(route, current, 200, { ETag: 'W/"8813"' });
     } else if (path === `${base}/reschedule`) {
-      await fulfill(route, rescheduledFixture(), 200, { ETag: 'W/"8814"' });
+      calls.reschedule.push({
+        ifMatch: (await request.headerValue('If-Match')) ?? undefined,
+        body: request.postDataJSON(),
+      });
+      current = rescheduledFixture();
+      await fulfill(route, current, 200, { ETag: 'W/"8814"' });
     } else {
       await fulfill(
         route,

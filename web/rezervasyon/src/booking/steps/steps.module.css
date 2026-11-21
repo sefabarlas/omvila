@@ -163,6 +163,11 @@
   min-width: 0;
 }
 
+/* Adres satırı şube adıyla aynı hizada (Sube.png); .note'un yan boşluğu burada yok. */
+.branchText .note {
+  padding: 0;
+}
+
 .branchName {
   font-size: var(--yazi-baslik-3-boyut);
   font-weight: 800;

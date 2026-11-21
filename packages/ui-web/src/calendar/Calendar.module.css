@@ -24,13 +24,11 @@
   text-overflow: ellipsis;
 }
 
+/* Dar kolonda (tablet dikey) alt satır kesilmez, alta kayar (salon-paneli/TabletDikeyTakvim). */
 .staffText small {
-  overflow: hidden;
   color: var(--metin-ikincil);
   font-size: var(--yazi-aciklama-boyut);
   line-height: var(--yazi-aciklama-satir);
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .weekHead > div + div {

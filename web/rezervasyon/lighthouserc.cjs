@@ -7,7 +7,8 @@ module.exports = {
     collect: {
       startServerCommand: 'pnpm start',
       startServerReadyPattern: 'Ready in',
-      url: ['http://localhost:3000/kuafor-elif'],
+      // Salon sayfası ve SMS bağlantısı (/r/{kod}; Prism örnek randevuyu döner, kod sözleşme desenine uyar).
+      url: ['http://localhost:3000/kuafor-elif', 'http://localhost:3000/r/7Kx2Pq9a'],
       numberOfRuns: 3,
       settings: {
         // Yerelde ve CI'da kök olmayan kapsayıcıda Chrome'un açılabilmesi için.

@@ -15,7 +15,14 @@ interface ScreenCase {
   setup?: (page: Page) => Promise<void>;
   /** Ekran görüntüsünden önce (yan paneli açmak gibi). */
   act?: (page: Page) => Promise<void>;
+  /** Tablet kırılımları (web/salon-panel/AGENTS.md: 1199 → ikon şeridi, 899 → tek sütun); varsayılan 1440×900. */
+  viewport?: { width: number; height: number };
 }
+
+const dayCalendar = (page: Page) =>
+  expect(page.getByRole('region', { name: 'Günlük takvim' })).toBeVisible();
+const customerTable = (page: Page) =>
+  expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible();
 
 const screens: ScreenCase[] = [
   { path: '/', name: 'GenelBakis', heading: /^(Hoş geldiniz|Günaydın|İyi günler|İyi akşamlar)/ },
@@ -30,7 +37,40 @@ const screens: ScreenCase[] = [
     name: 'Main',
     heading: 'Takvim',
     setup: calendarDemo,
-    act: (page) => expect(page.getByRole('region', { name: 'Günlük takvim' })).toBeVisible(),
+    act: dayCalendar,
+  },
+  // Tablet tasarımları 1024×768 ve 768×1024; kırılım sınırları (1199, 899) ayrıca denenir.
+  {
+    path: '/takvim',
+    name: 'TabletTakvim',
+    heading: 'Takvim',
+    setup: calendarDemo,
+    act: dayCalendar,
+    viewport: { width: 1024, height: 768 },
+  },
+  {
+    path: '/takvim',
+    name: 'TabletTakvim1199',
+    heading: 'Takvim',
+    setup: calendarDemo,
+    act: dayCalendar,
+    viewport: { width: 1199, height: 900 },
+  },
+  {
+    path: '/takvim',
+    name: 'TabletDikeyTakvim',
+    heading: 'Takvim',
+    setup: calendarDemo,
+    act: dayCalendar,
+    viewport: { width: 768, height: 1024 },
+  },
+  {
+    path: '/takvim',
+    name: 'TabletDikeyTakvim899',
+    heading: 'Takvim',
+    setup: calendarDemo,
+    act: dayCalendar,
+    viewport: { width: 899, height: 1100 },
   },
   {
     path: '/takvim?gorunum=hafta',
@@ -88,7 +128,23 @@ const screens: ScreenCase[] = [
     name: 'Musteriler',
     heading: 'Müşteriler',
     setup: customersDemo,
-    act: (page) => expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible(),
+    act: customerTable,
+  },
+  {
+    path: '/musteriler',
+    name: 'TabletDikeyMusteriler',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: customerTable,
+    viewport: { width: 768, height: 1024 },
+  },
+  {
+    path: '/musteriler',
+    name: 'TabletDikeyMusteriler899',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: customerTable,
+    viewport: { width: 899, height: 1100 },
   },
   {
     path: '/musteriler',
@@ -137,6 +193,7 @@ for (const theme of ['light', 'dark'] as const) {
     test(`${screen.name} (${theme === 'light' ? 'açık' : 'koyu'})`, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
+      if (screen.viewport) await page.setViewportSize(screen.viewport);
       await page.emulateMedia({ colorScheme: theme });
       await page.addInitScript((value) => {
         try {
