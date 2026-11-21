@@ -206,11 +206,21 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             allowOutsideWorkingHours = true,
         }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
         appointment.Status.ShouldBe(201, appointment.Body.ToString());
+        var appointmentId = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!;
+
+        // Değerlendirme: tamamla ucu (T-88) ve /d/ gönderimi bu testin konusu değil; satır doğrudan yazılır.
+        var brandId = session.GetProperty("brand").GetProperty("id").GetString()!;
+        var reviewId = await _api.ScalarAsync<string>($"""
+            INSERT INTO reviews.reviews (id, brand_id, branch_id, appointment_id, brand_customer_id, rating, service_names, is_published, created_utc)
+            VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
+            RETURNING id::text
+            """);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
-            ["appointmentId"] = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!,
+            ["appointmentId"] = appointmentId,
+            ["reviewId"] = reviewId,
             ["categoryId"] = categoryId,
             ["serviceId"] = serviceId,
             ["staffId"] = staffId,
