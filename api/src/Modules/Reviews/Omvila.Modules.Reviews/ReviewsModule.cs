@@ -1,3 +1,5 @@
+using Omvila.Infrastructure.Messaging;
+using Omvila.Modules.Scheduling.Contracts;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Omvila.Infrastructure.Http;
@@ -22,6 +24,7 @@ public static class ReviewsModule
     {
         services.AddModuleDbContext<ReviewsDbContext>(ReviewsDbContext.Schema);
         services.AddScoped<IReviewInvitations, ReviewInvitations>();
+        services.AddIntegrationEventHandler<AppointmentCompleted, IntegrationEventHandlers.ScheduleReviewInvite>();
         services.AddScoped<IReviewRatings, ReviewRatings>();
         services.AddScoped<ReviewInviteViews>();
         services.AddScoped<ReviewReader>();

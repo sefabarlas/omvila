@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
+using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Reviews.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
@@ -13,7 +14,7 @@ namespace Omvila.Api.IntegrationTests;
 // şube yöneticisi; personel almaz, W8); roller-yetkiler.md review.view / review.reply (Owner, BranchManager Ş, personel 403);
 // sureler-ve-ayarlar.md ReviewInviteEnabled, ReviewInviteDelayMinutes, ReviewPublicThreshold; sözleşme publicGetReviewInvite,
 // publicCreateReview, manageListReviews, manageReplyReview, manageListCustomerReviews, PublicBrand.rating.
-// Saat: 2026-11-25 09:00Z (12:00 İstanbul). Tamamla ucu (T-88) henüz yok: randevu SQL ile Completed yapılır.
+// Saat: 2026-11-25 09:00Z (12:00 İstanbul). Testlerin çoğunda randevu SQL ile Completed yapılır; olayla planlama ayrı testte (ScheduleReviewInvite).
 [Trait("Category", "Integration")]
 [Collection(PostgresTests.Name)]
 public sealed class ReviewTests(PostgresFixture db) : IAsyncLifetime
@@ -91,6 +92,24 @@ public sealed class ReviewTests(PostgresFixture db) : IAsyncLifetime
         await _api.RunJobAsync(DispatchSmsJob);
         (await _api.ScalarAsync<string>($"SELECT body FROM infra.dev_sms_log WHERE phone_e164 = '{CustomerPhone}' AND body LIKE '%nasıldı%'"))
             .ShouldBe($"Kuaför Elif'teki randevunuz nasıldı? 10 saniyenizi alır: omvila.com/d/{code}");
+    }
+
+    // T-88 → T-89: tamamla ucunun outbox'a yazdığı AppointmentCompleted olayı daveti planlar (ScheduleReviewInvite işleyicisi).
+    [Fact]
+    public async Task AppointmentCompleted_Event_SchedulesInvite()
+    {
+        var id = await CreateCompletedAsync("2026-11-25T06:00:00Z");
+        var now = _factory.Clock.GetCurrentInstant();
+
+        await InSessionAsync(async sp =>
+        {
+            await sp.GetRequiredService<IOutbox>().EnqueueAsync(
+                new AppointmentCompleted(_brandId, Guid.Parse(id), Guid.Empty, Guid.Empty, now, [], null), Ct);
+            return true;
+        });
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        (await ScheduleInviteAsync(id, now)).ShouldBeFalse("olay işleyicisi daveti zaten planladı");
     }
 
     [Fact]
