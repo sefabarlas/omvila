@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { StateBanner } from '@/components/StateBanner';
 import { alternatives, messageFor, problemCode } from '@/booking/problem';
 import { useRemote } from '@/booking/use-remote';
+import { carriesDeposit } from '@/lib/deposit';
 import type { Outcome } from './AppointmentManager';
 import { rescheduleAppointment, searchRescheduleSlots } from './appointment-api';
 import type { PublicAppointment } from './appointment-api';
@@ -53,7 +54,7 @@ interface RescheduleViewProps {
 }
 
 /**
- * Saat değiştir (Ertele.png): aynı hizmetler ve personelle yeni gün ve saat. Kapora aktarımı notu Dilim 4'te.
+ * Saat değiştir (Ertele.png): aynı hizmetler ve personelle yeni gün ve saat. Kapora varsa yeni saate aktarılır (A14).
  * `409 slot_taken` → alternatif saat çipleri; `cutoff_passed` ve `412` Randevum'a döner (T-52 (6)).
  */
 export function RescheduleView({
@@ -232,6 +233,9 @@ export function RescheduleView({
           />
         )}
         {rule ? <p className={styles.muted}>{rule}</p> : null}
+        {carriesDeposit(appointment) ? (
+          <p className={styles.muted}>Kapora yeni saate aktarılır.</p>
+        ) : null}
       </div>
       <StickyFooter
         summary={slot ? `${formatDate(date, 'compact')} · ${slot.localTime}` : undefined}

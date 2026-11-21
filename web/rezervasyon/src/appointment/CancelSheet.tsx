@@ -1,7 +1,9 @@
 import { BookingButton } from '@omvila/ui-web/booking';
+import { formatMoney } from '@omvila/ui-web/format';
 import { CalendarClock, CalendarX2, Check, ChevronRight } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { messageFor, problemCode } from '@/booking/problem';
+import { receivedDeposit } from '@/lib/deposit';
 import fieldStyles from '@/booking/fields/fields.module.css';
 import type { Outcome } from './AppointmentManager';
 import { cancelAppointment } from './appointment-api';
@@ -39,7 +41,8 @@ interface CancelSheetProps {
 }
 
 /**
- * İptal (Iptal.png): alt sayfa, neden zorunlu, "Diğer"de not zorunlu (T-52 (5)). Kapora uyarısı Dilim 4'te.
+ * İptal (Iptal.png): alt sayfa, neden zorunlu, "Diğer"de not zorunlu (T-52 (5)). Kapora alındıysa iadenin salonun
+ * koşullarına bağlı olduğu uyarısı (OMVILA para almaz; iadeyi salon yapar).
  * Sağlık bilgisi istenmez (ürün kuralı 4): "Hastayım" yalnız neden kodudur, açıklama alanı açılmaz.
  */
 export function CancelSheet({
@@ -57,6 +60,7 @@ export function CancelSheet({
   const [busy, setBusy] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const id = useId();
+  const deposit = receivedDeposit(appointment);
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -115,6 +119,12 @@ export function CancelSheet({
             {appointment.brand.name} · {whenLabel(appointment)}.
           </p>
         </div>
+        {deposit?.status === 'Received' ? (
+          <p className={styles.depositWarning}>
+            {formatMoney(deposit.required)} kaporanın iadesi salonun iade koşullarına bağlıdır.
+            Ödeme salonun hesabına yapıldığı için iadeyi salon yapar.
+          </p>
+        ) : null}
         <fieldset
           className={styles.reasons}
           aria-describedby={errors.reason ? `${id}-neden-hata` : undefined}
