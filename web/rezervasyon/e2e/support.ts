@@ -43,7 +43,17 @@ export interface BookingOptions {
   otpLimited?: boolean;
   /** Oluşturma 409 slot_taken döner (Durumlar: saat az önce doldu). */
   slotTaken?: boolean;
+  /** Onay gerektiren salon (Dilim 3, Talep): oluşturma PendingApproval, yanıt süresi 120 dk. */
+  requiresApproval?: boolean;
 }
+
+/** Onay bekleyen talep: tutma şimdi + 120 dk (sureler-ve-ayarlar.md ApprovalTimeoutMinutes varsayılanı). */
+export const pendingRequest = (): PublicAppointment =>
+  appointmentFixture({
+    status: 'PendingApproval',
+    displayStatus: 'PendingApproval',
+    holdExpiresUtc: new Date(new Date(nowUtc).getTime() + 120 * 60_000).toISOString(),
+  });
 
 export interface BookingCalls {
   create: unknown[];
@@ -84,7 +94,11 @@ export async function bookingApi(page: Page, options: BookingOptions = {}): Prom
           alternatives: ['2026-11-24T11:45:00Z', '2026-11-24T12:15:00Z'],
         });
       } else {
-        await fulfill(route, appointmentFixture(), 201);
+        await fulfill(
+          route,
+          options.requiresApproval ? pendingRequest() : appointmentFixture(),
+          201,
+        );
       }
     } else {
       await route.fallback();
