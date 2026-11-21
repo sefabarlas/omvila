@@ -9,6 +9,7 @@ public sealed class HostRoleParserTests
     [InlineData("API", "Api")]
     [InlineData(" worker ", "Worker")]
     [InlineData("migrate", "Migrate")]
+    [InlineData("seed", "Seed")]
     public void Parse_ReturnsRole(string? value, string expected) =>
         HostRoleParser.Parse(value).ToString().ShouldBe(expected);
 

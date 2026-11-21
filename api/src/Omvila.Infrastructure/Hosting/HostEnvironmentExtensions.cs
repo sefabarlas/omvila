@@ -29,6 +29,13 @@ public static class HostEnvironmentExtensions
         return environment.IsDevelopmentOrTesting() || (environment.IsStaging() && staging.AllowFakeProviders);
     }
 
+    /// <summary>Demo verisi (--role=seed, T-74) yazılabilir mi: Development, Testing ve Staging; Production'da ve diğer ortamlarda hayır.</summary>
+    public static bool AllowsDemoData(this IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        return environment.IsDevelopmentOrTesting() || environment.IsStaging();
+    }
+
     /// <summary>
     /// SMS metni (giriş kodu dahil) günlüğe yazılabilir mi: yalnız Development (kodlama-dotnet.md § Günlük). Test sunucusunda
     /// metin günlüğe değil sahte SMS günlüğü sayfasına (/dev/sms, T-76) bakılarak okunur.

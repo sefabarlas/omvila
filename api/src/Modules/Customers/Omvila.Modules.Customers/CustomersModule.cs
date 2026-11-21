@@ -22,6 +22,8 @@ public static class CustomersModule
         services.AddScoped<ICustomerDirectory, CustomerDirectory>();
         // Aynı numarayla eşzamanlı iki ekleme: ikincisi kart benzersizliğine takılır (meta'sız phone_already_exists).
         services.AddUniqueConstraintError(BrandCustomerConfiguration.BrandCustomerIndex, ErrorCodes.PhoneAlreadyExists);
+        // Demo verisi --reset (T-74): markanın kartları ve rızaları; global kişi kalır.
+        services.AddBrandDataEraser<CustomersDbContext>();
         return services;
     }
 
