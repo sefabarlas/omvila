@@ -10,7 +10,9 @@ info:
     OMVILA'nın tek HTTP sözleşmesi. Kurallar: docs/sozlesme/api-kurallari.md.
 
     Kapsam (v0.1): Dilim 1 (giriş + salon kurulumu), Dilim 2 (müsaitlik + rezervasyon sayfası + panel takvimi), Dilim 3 (onay akışı + SMS + bildirimler)
-    ve Dilim 4 (kapora havalesi: IBAN, Kapora geldi, hatırlatma, iade işareti, havale bildirimi).
+    Dilim 4 (kapora havalesi: IBAN, Kapora geldi, hatırlatma, iade işareti, havale bildirimi) ve Dilim 5'in web/backend bölümü
+    (tamamla ve ödeme al, kasa, paketler, değerlendirmeler, bekleme listesi, kapıda sıra, müşteri kartı sekmeleri, birleştirme, içe/dışa aktarma, KVKK silme).
+    Dilim 5'in /me uçları ve işletme uygulamasına özel uçlar sonraki sözleşme PR'ındadır.
     Sonraki dilimlerin uçları contracts/yol-haritasi.md içinde listelidir; eklenince bu dosyaya girer.
 
     Yüzeyler:
@@ -41,15 +43,29 @@ tags:
   - name: manage-staff
     description: Personel, çalışma saatleri, izinler
   - name: manage-customers
-    description: Salonun müşterileri (Dilim 2 için asgari kapsam)
+    description: Salonun müşterileri, müşteri kartı sekmeleri (paket, ödeme, değerlendirme), paket satışı, birleştirme, CSV içe/dışa aktarma, KVKK silme
   - name: manage-calendar
     description: Takvim ve randevular
+  - name: manage-sales
+    description: Kasa (günün tahsilatları) ve gün kapatma
+  - name: manage-packages
+    description: Paket tanımları, müşteri paketleri, paket iadesi
+  - name: manage-reviews
+    description: Değerlendirmeler ve yanıtlar
+  - name: manage-waitlist
+    description: Bekleme listesi, "Saat öner", "Teklifi geri al"
+  - name: manage-walk-ins
+    description: Kapıda sıra
   - name: manage-notifications
     description: Bildirim paneli, bildirim ve SMS ayarları, gönderen adı, cihaz kaydı, kişisel bildirim tercihleri
   - name: public-booking
     description: Rezervasyon sayfası (üyeliksiz randevu)
   - name: public-appointment-link
     description: SMS bağlantısıyla açılan randevu yönetimi
+  - name: public-waitlist
+    description: Bekleme listesine katılma ve bekleme teklifi bağlantısı (omvila.com/b/{code})
+  - name: public-review
+    description: Değerlendirme bağlantısı (omvila.com/d/{code})
   - name: webhooks
     description: Dış sağlayıcıların geri çağrıları (JWT yok; sağlayıcı imzasıyla doğrulanır)
 
@@ -1203,7 +1219,7 @@ paths:
     get:
       tags: [manage-customers]
       operationId: manageGetCustomer
-      summary: Müşteri kartı (Dilim 2 kapsamı; paket, ödeme ve değerlendirme sekmeleri sonraki dilimlerde)
+      summary: Müşteri kartı (sekmeler ayrı uçlarda; customers/{brandCustomerId}/appointments, packages, payments, reviews)
       security: [ { manageBearer: [] } ]
       responses:
         '200':
@@ -1241,6 +1257,413 @@ paths:
                   nextCursor: { type: [string, 'null'] }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/manage/customers/{brandCustomerId}/packages:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageListCustomerPackages
+      summary: Müşteri kartı · Paketler sekmesi
+      description: |
+        MusteriKarti "Paketler" sekmesi ve üstteki "Fön paketi 2/5" kartı. Bütün durumlar (Active önce, sonra yeniden eskiye); usages alanı
+        seans kullanımlarını gösterir (iptal edilen randevunun seansı revertedUtc ile "geri döndü"). İzin: customer.view
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Müşterinin paketleri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPackagePage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [manage-customers]
+      operationId: manageSellPackage
+      summary: Müşteriye paket sat ("1.700 ₺ al ve paketi tanımla")
+      description: |
+        PaketSat penceresi. Satışta paketin adı, içeriği ve fiyatı kopyalanır; expiresOn = satış günü + validityDays (şubenin yerel takvimi).
+        Yan etkiler: CustomerPackage(Active) + kalemleri; Payment(method = paymentMethod, tutar = paket fiyatı) ve CustomerPackage tahsisi (Kasa'da
+        "Fön paketi · 5 seans"); satan personele CommissionEntry(Sale, Accrued) (yüzde: paketin saleCommissionPercent'i, yoksa personelin
+        SaleCommissionPercent'i). Paket satışı tahsilattır; seanslar kullanıldıkça gelir sayılır.
+        Paket satışta değilse (isActive = false) 409 invalid_state_transition. Satan personel satış şubesinde çalışmıyorsa 400 validation_failed
+        (errors.soldByStaffId). isAvailableAllBranches = false olan paket yalnız satıldığı şubede kullanılır.
+        Para kaydettiği için Idempotency-Key ister. İzin: package.sell (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageSaleRequest'
+      responses:
+        '201':
+          description: Paket satıldı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPackage'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f7a01
+                customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b13, fullName: Melis Tunç, phoneMasked: '0532 *** ** 64' }
+                packageId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f7b01
+                packageName: Manikür · 6 seans
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                isAvailableAllBranches: true
+                price: { amountMinor: 170000, currency: TRY }
+                purchasedUtc: '2026-11-22T09:15:00Z'
+                expiresOn: '2027-02-20'
+                soldByStaffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                soldByStaffName: Elif Kaya
+                status: Active
+                items:
+                  - { customerPackageItemId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f7c01, serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d35, serviceName: Manikür, totalSessions: 6, remainingSessions: 6 }
+                totalSessions: 6
+                remainingSessions: 6
+                version: 'W/"9301"'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/customers/{brandCustomerId}/payments:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageListCustomerPayments
+      summary: Müşteri kartı · Ödemeler sekmesi
+      description: "MusteriKarti \"Ödemeler\" sekmesi: randevu tahsilatları, kaporalar ve paket satışları, yeniden eskiye. İzin: payment.collect (personel 403)"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Ödemeler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPaymentPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/customers/{brandCustomerId}/reviews:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageListCustomerReviews
+      summary: Müşteri kartı · Değerlendirmeler sekmesi
+      description: "MusteriKarti \"Değerlendirmeler\" sekmesi, yeniden eskiye. İzin: review.view (personel 403)"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Değerlendirmeler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerReviewPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/customers/{brandCustomerId}/merge:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-customers]
+      operationId: manageMergeCustomers
+      summary: Kayıtları birleştir
+      description: |
+        MusteriBirlestir penceresi. Yoldaki müşteri "Kalacak kayıt", sourceBrandCustomerId "Birleşecek kayıt"tır. Randevular, paketler, ödemeler,
+        değerlendirmeler ve bekleme kayıtları hedefe taşınır; sayaçlar yeniden hesaplanır; mergeNotes açıksa notlar tarih sırasıyla eklenir.
+        Kaynak kayıt arşivlenir (BrandCustomer.MergedIntoId); farklı telefonlu iki global Customer birleştirilmez, yalnız markadaki görünüm birleşir.
+        Aynı kayıt verilirse 400 validation_failed; kaynak zaten birleştirilmiş veya anonimleştirilmişse 409 invalid_state_transition.
+        Yanıt hedef müşterinin güncel kartıdır. İzin: customer.merge (Owner, BranchManager).
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerMergeRequest'
+      responses:
+        '200':
+          description: Birleştirildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSummary'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/customers/imports:
+    post:
+      tags: [manage-customers]
+      operationId: managePreviewImport
+      summary: CSV içe aktarma önizlemesi
+      description: |
+        MusteriIceAktar penceresi. CSV yüklenir, satırlar ayrıştırılır, hiçbir kayıt değişmez. Sütunlar başlıktan eşlenir (Ad, Telefon, Not,
+        Doğum yılı, E-posta). Telefonlar E.164'e çevrilir ("0532 123 45 67", "5321234567" ve "+90 532 123 4567" aynı kişidir); markada kayıtlı
+        numara "Birleşecek" sayılır (mevcut notlar korunur). Kampanya izni içe aktarılmaz.
+        Boyut veya satır sınırı aşılırsa ya da dosya CSV değilse 400 validation_failed (errors.file = [too_large] / [invalid_format]); sınırlar yapılandırmadadır.
+        Önizleme kaydı (CustomerImport, Previewed) oluşturduğu için Idempotency-Key ister. İzin: customer.import (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: 'UTF-8 CSV (virgül veya noktalı virgül ayraçlı), ilk satır başlık' }
+      responses:
+        '201':
+          description: Önizleme
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerImportPreview'
+              example:
+                importId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f8a01
+                fileName: musteriler-eski-program.csv
+                totalRows: 1248
+                toCreate: 1204
+                toMerge: 38
+                invalidRows: 6
+                mappedColumns: [FullName, Phone, Notes]
+                errors:
+                  - { rowNumber: 14, column: Telefon, code: invalid_phone }
+                status: Previewed
+                expiresUtc: '2026-11-22T10:15:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/customers/imports/{importId}/commit:
+    parameters:
+      - { name: importId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-customers]
+      operationId: manageCommitImport
+      summary: İçe aktarmayı uygula ("1.242 kaydı içe aktar")
+      description: |
+        Önizlemedeki geçerli satırları uygular: yeni müşteriler Source = Import ile eklenir, kayıtlı numaralar birleşir, hatalı satırlar atlanır.
+        sendInfoSms açıksa içe aktarılanların sonraki randevu bilgilendirme SMS'leri açık olur (kampanya izni verilmez).
+        Kendiliğinden idempotenttir: uygulanmış önizleme tekrar gönderilirse aynı sonuç 200 ile döner. Önizlemenin süresi dolmuşsa 409 hold_expired.
+        İzin: customer.import (Owner).
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerImportCommitRequest'
+      responses:
+        '200':
+          description: İçe aktarıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerImportResult'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/customers/export:
+    get:
+      tags: [manage-customers]
+      operationId: manageExportCustomers
+      summary: Müşterileri CSV olarak dışa aktar ("Dışa aktar")
+      description: |
+        Musteriler ekranı "Dışa aktar". Markanın müşterileri (anonimleştirilmiş ve birleşmiş kayıtlar hariç), filter verilirse yalnız o filtredekiler.
+        Sütunlar: Ad, Telefon, Doğum yılı, İlk kanal, İlk ziyaret, Son ziyaret, Ziyaret, Gelmedi, Toplam harcama (TL), Etiketler, Not.
+        Her dışa aktarma denetim kaydına yazılır. "Tüm verileri dışa aktar" (AyarlarKvkk, e-postayla) Dilim 6'dadır.
+        İzin: customer.export (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [All, Regular, New, WithPackage, NoShowRisk, Lapsed60]
+      responses:
+        '200':
+          description: CSV dosyası (UTF-8, BOM'lu; Content-Disposition attachment)
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="musteriler-2026-11-22.csv"' }
+          content:
+            text/csv:
+              schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/customers/{brandCustomerId}/deletion:
+    parameters:
+      - { name: brandCustomerId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-customers]
+      operationId: manageGetCustomerDeletionPreview
+      summary: KVKK silme talebi önizlemesi
+      description: "MusteriSil penceresindeki \"Korunacak (anonim)\" ve \"Aktif paket\" bilgileri. İzin: customer.kvkk (Owner)"
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Önizleme
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDeletionPreview'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [manage-customers]
+      operationId: manageRequestCustomerDeletion
+      summary: Kalıcı olarak anonimleştir (KVKK silme talebi)
+      description: |
+        MusteriSil "Kalıcı olarak anonimleştir". Geri alınamaz. Bu markadaki müşteri kaydı hemen anonimleştirilir: ad, telefon, e-posta ve notlar
+        maskelenir veya silinir; randevu, ödeme ve prim kayıtları anonim olarak kalır; yaklaşan randevular iptal edilir (neden AccountDeleted,
+        müşteriye bildirim gitmez); bekleme kayıtları kapanır. Global Customer kaydı ve başka markalardaki kayıtlar etkilenmez.
+        DataDeletionRequest(RequestedVia = Panel, Completed) yazılır; bu müşterinin bekleyen talebi varsa o da Completed olur.
+        confirmFullName müşterinin adıyla eşleşmezse 400 validation_failed (errors.confirmFullName = [mismatch]). Zaten anonimleştirilmişse 409 invalid_state_transition.
+        İzin: customer.kvkk (Owner).
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerDeletionRequest'
+            example:
+              confirmFullName: Selin Öztürk
+      responses:
+        '200':
+          description: Anonimleştirildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataDeletionRequestView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/customer-deletion-requests:
+    get:
+      tags: [manage-customers]
+      operationId: manageListDeletionRequests
+      summary: KVKK silme talepleri ("Silme talepleri")
+      description: |
+        AyarlarKvkk "Silme talepleri" tablosu ("30 gün içinde yanıtlanmalı"): müşteri uygulamasından gelen ve panelden yapılan talepler, yeniden eskiye.
+        Bekleyen talep MusteriSil ile işlenir. Aydınlatma metni, saklama süresi ve "Tüm verileri dışa aktar" Dilim 6'dadır.
+        İzin: customer.kvkk (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { type: string, enum: [Pending, Completed, Rejected] }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Talepler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataDeletionRequestPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/customer-packages:
+    get:
+      tags: [manage-packages]
+      operationId: manageListAllCustomerPackages
+      summary: Müşteri paketleri ("Müşteri paketleri" sekmesi, "Süresi yaklaşanlar")
+      description: |
+        Paketler ekranı "Müşteri paketleri" sekmesi ve "Süresi yaklaşanlar" kartı. filter: Active (varsayılan), ExpiringSoon (30 gün içinde biten
+        Active paketler, en yakın önce), Expired, All. branchId verilirse o şubede satılan ve bütün şubelerde geçerli paketler.
+        İzin: package.manage veya package.sell.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - name: filter
+          in: query
+          required: false
+          schema: { type: string, enum: [Active, ExpiringSoon, Expired, All], default: Active }
+        - { name: q, in: query, required: false, schema: { type: string, maxLength: 80 } }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Müşteri paketleri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPackagePage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/customer-packages/{customerPackageId}/refund:
+    parameters:
+      - { name: customerPackageId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-packages]
+      operationId: manageRefundCustomerPackage
+      summary: Paketi iade et
+      description: |
+        Salon paketi iade ettiğini işaretler; parayı kendisi öder, OMVILA yalnız kaydeder. Tutarı salon elle girer (S-10); ödenen tutarı aşamaz
+        (aşarsa veya 0 ise 400 validation_failed, errors.amount = [out_of_range]).
+        Yan etkiler: CustomerPackage Refunded (kalan seanslar kullanılamaz, ayrılmış seanslı yaklaşan randevular değişmez); satış ödemesi
+        PartiallyRefunded veya Refunded (iade, satışın yöntemiyle kasaya o gün yazılır); satış primi için iade oranında eksi tutarlı ters kayıt.
+        Paket Active veya Expired değilse 409 invalid_state_transition. Para kaydettiği için If-Match ve Idempotency-Key ister.
+        İzin: package.sell (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageRefundRequest'
+      responses:
+        '200':
+          description: İade işaretlendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPackage'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
   # ───────────────────────────── manage-calendar ─────────────────────────────
   /api/v1/manage/calendar:
     get:
@@ -1679,6 +2102,142 @@ paths:
         '412': { $ref: '#/components/responses/PreconditionFailed' }
         '422': { $ref: '#/components/responses/Unprocessable' }
 
+  /api/v1/manage/appointments/{appointmentId}/complete:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageCompleteAppointment
+      summary: Tamamla ve ödeme al ("Tamamla ve kaydet")
+      description: |
+        "Tamamla ve ödeme al" penceresi (OdemeAl). Geçiş A11: CheckedIn → Completed. OMVILA para almaz; ödeme satırları salonun kendi
+        tahsilatının kaydıdır ("Kart" salonun POS'udur).
+        Tutar kuralı: alınacak = amountDue (kalemler − alınmış kapora − randevu oluşurken paketten düşülen kalemler) − packageRedemptions ile şimdi
+        paketten düşülen kalemlerin fiyatı. payments toplamı alınacak tutara eşit değilse 409 payment_total_mismatch (meta.expectedAmountMinor);
+        alınacak tutar 0 ise payments boş gönderilir. En fazla iki satır önerilir ("İkinci ödeme ekle"), üç satıra kadar kabul edilir.
+        packageRedemptions: kalemin hizmeti paket kalemindeki hizmetle aynı olmalı, paket bu müşterinin, Active, süresi geçmemiş, kalan seansı olan
+        ve şubede kullanılabilir olmalı; değilse 409 package_session_unavailable (meta.customerPackageItemId).
+        Yan etkiler: kalemler Completed; her ödeme satırı için Payment + randevu tahsisi; paketten düşülen her kalem için seans kullanımı ve
+        0 TL'lik PackageRedemption kaydı (docs/acik-sorular.md T-86); kalem başına CommissionEntry(Service, Accrued) (taban: kapora ve paket payı
+        dağıtılmış tahsilat); BrandCustomer sayaçları (VisitCount, LastVisitOn, TotalSpentMinor); geçmişe Completed; ReviewInviteEnabled açıksa
+        ReviewInviteDelayMinutes sonra review.invite planlanır. Yanıttaki payments listesi kapora dahil bütün tahsilatlardır.
+        Durum CheckedIn değilse 409 invalid_state_transition. Para kaydettiği için If-Match ile birlikte Idempotency-Key ister.
+        İzin: appointment.complete (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageCompleteRequest'
+            example:
+              payments:
+                - method: Card
+                  amount: { amountMinor: 124000, currency: TRY }
+      responses:
+        '200':
+          description: Tamamlandı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a72
+                reference: A-20498
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                status: Completed
+                displayStatus: Completed
+                channel: Online
+                startUtc: '2026-11-25T07:30:00Z'
+                endUtc: '2026-11-25T09:00:00Z'
+                timeZone: Europe/Istanbul
+                holdExpiresUtc: null
+                customer:
+                  brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b12
+                  fullName: Selin Öztürk
+                  phoneMasked: '0532 *** ** 21'
+                  visitCount: 12
+                  lastVisitOn: '2026-11-25'
+                  isNew: false
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5c22
+                    serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d32
+                    serviceName: Boya
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                    staffName: Elif Kaya
+                    startUtc: '2026-11-25T07:30:00Z'
+                    endUtc: '2026-11-25T08:30:00Z'
+                    price: { amountMinor: 125000, currency: TRY }
+                    paidFromPackage: false
+                    status: Completed
+                    segments:
+                      - { startUtc: '2026-11-25T07:30:00Z', endUtc: '2026-11-25T08:30:00Z', staffBusy: true }
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5c23
+                    serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33
+                    serviceName: Fön
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                    staffName: Elif Kaya
+                    startUtc: '2026-11-25T08:30:00Z'
+                    endUtc: '2026-11-25T09:00:00Z'
+                    price: { amountMinor: 19000, currency: TRY }
+                    paidFromPackage: false
+                    status: Completed
+                    segments:
+                      - { startUtc: '2026-11-25T08:30:00Z', endUtc: '2026-11-25T09:00:00Z', staffBusy: true }
+                deposit:
+                  required: { amountMinor: 20000, currency: TRY }
+                  status: Received
+                  transferCode: OMV-4H8Q
+                  customerReportedUtc: '2026-11-11T09:02:00Z'
+                  receivedUtc: '2026-11-11T09:40:00Z'
+                total: { amountMinor: 144000, currency: TRY }
+                amountDue: { amountMinor: 0, currency: TRY }
+                customerNote: null
+                staffNote: null
+                isRecurring: false
+                completedUtc: '2026-11-25T09:05:00Z'
+                payments:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6a01
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    method: Transfer
+                    amount: { amountMinor: 20000, currency: TRY }
+                    isDeposit: true
+                    status: Recorded
+                    paidUtc: '2026-11-11T09:40:00Z'
+                    collectedByName: Elif Kaya
+                    reference: OMV-4H8Q
+                    purpose: Appointment
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a72
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6a02
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    method: Card
+                    amount: { amountMinor: 124000, currency: TRY }
+                    isDeposit: false
+                    status: Recorded
+                    paidUtc: '2026-11-25T09:05:00Z'
+                    collectedByName: Elif Kaya
+                    reference: null
+                    purpose: Appointment
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a72
+                    isBalanceAfterDeposit: true
+                history:
+                  - { occurredUtc: '2026-11-11T09:00:00Z', kind: Created, actorName: null, detail: 'Online talep oluşturuldu, SMS ile doğrulandı' }
+                  - { occurredUtc: '2026-11-11T09:40:00Z', kind: DepositReceived, actorName: Elif Kaya, detail: null }
+                  - { occurredUtc: '2026-11-25T07:28:00Z', kind: CheckedIn, actorName: Elif Kaya, detail: null }
+                  - { occurredUtc: '2026-11-25T09:05:00Z', kind: Completed, actorName: Elif Kaya, detail: null }
+                version: 'W/"9120"'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
   /api/v1/manage/approval-queue:
     get:
       tags: [manage-calendar]
@@ -2076,6 +2635,657 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
+  # ───────────────────────────── manage-sales (kasa) ─────────────────────────────
+  /api/v1/manage/cash:
+    get:
+      tags: [manage-sales]
+      operationId: manageGetCashDay
+      summary: Kasa (günün tahsilatları)
+      description: |
+        Kasa ve KasaBos ekranları. Şubenin bir yerel günündeki bütün tahsilat kayıtları (randevu, kapora, paket satışı), yöntem bazında toplamlar,
+        beklenen nakit ve gün kapatma kaydı. date verilmezse şubenin bugünü. "Önceki günler" aynı uçla date değiştirilerek açılır.
+        Kayıt yoksa payments boş, toplamlar 0 döner (KasaBos). İzin: payment.collect (Owner, BranchManager kendi şubesinde); personel 403.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQuery'
+        - { name: date, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Günün kasası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashDay'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                date: '2026-11-25'
+                timeZone: Europe/Istanbul
+                status: Open
+                total: { amount: { amountMinor: 1044000, currency: TRY }, count: 14 }
+                cash: { amount: { amountMinor: 345000, currency: TRY }, count: 6 }
+                card: { amount: { amountMinor: 589000, currency: TRY }, count: 5 }
+                transfer:
+                  amount: { amountMinor: 110000, currency: TRY }
+                  count: 2
+                  depositAmount: { amountMinor: 60000, currency: TRY }
+                  otherAmount: { amountMinor: 50000, currency: TRY }
+                cashRefunded: { amountMinor: 0, currency: TRY }
+                expectedCash: { amountMinor: 345000, currency: TRY }
+                payments:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6a02
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    method: Card
+                    amount: { amountMinor: 124000, currency: TRY }
+                    isDeposit: false
+                    status: Recorded
+                    paidUtc: '2026-11-25T09:05:00Z'
+                    collectedByName: Elif Kaya
+                    purpose: Appointment
+                    customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b12, fullName: Selin Öztürk }
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a72
+                    appointmentStartUtc: '2026-11-25T07:30:00Z'
+                    serviceNames: [Boya, Fön]
+                    isBalanceAfterDeposit: true
+                    staffName: Elif Kaya
+                    recordedAfterDayClose: false
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6a05
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    method: PackageRedemption
+                    amount: { amountMinor: 0, currency: TRY }
+                    isDeposit: false
+                    status: Recorded
+                    paidUtc: '2026-11-25T08:35:00Z'
+                    collectedByName: Zeynep Ak
+                    purpose: Appointment
+                    customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b13, fullName: Melis Tunç }
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a75
+                    serviceNames: [Manikür ve pedikür]
+                    staffName: Zeynep Ak
+                    recordedAfterDayClose: false
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6a09
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    method: Transfer
+                    amount: { amountMinor: 50000, currency: TRY }
+                    isDeposit: false
+                    status: Recorded
+                    paidUtc: '2026-11-25T06:50:00Z'
+                    collectedByName: Can Yücel
+                    purpose: CustomerPackage
+                    customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b18, fullName: Hande Er }
+                    customerPackageId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f7a03
+                    packageName: Fön paketi
+                    packageSessionCount: 5
+                    staffName: Can Yücel
+                    recordedAfterDayClose: false
+                closing: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/cash/close:
+    post:
+      tags: [manage-sales]
+      operationId: manageCloseCashDay
+      summary: Günü kapat ("Günü kapat", Kasa sayımı)
+      description: |
+        Kasa ekranı "Kasa sayımı" + "Günü kapat". Beklenen nakit sunucuda hesaplanır (nakit tahsilatlar − o gün işaretlenen nakit iadeler,
+        docs/acik-sorular.md T-86); fark = sayılan − beklenen. Fark 0 değilse differenceNote zorunludur (yoksa 400 validation_failed,
+        errors.differenceNote = [required]). Gün bugünden sonraysa 400 validation_failed (errors.date = [out_of_range]).
+        Gün zaten kapatılmışsa 409 cash_day_already_closed. Kapanmış güne yeni tahsilat yazılabilir; raporda recordedAfterDayClose ile işaretlenir.
+        Para kaydı oluşturduğu için Idempotency-Key ister. İzin: cash.close (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashDayCloseRequest'
+            example:
+              branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+              date: '2026-11-25'
+              countedCash: { amountMinor: 340000, currency: TRY }
+              differenceNote: Bozuk para verildi
+      responses:
+        '200':
+          description: Gün kapatıldı; güncel kasa döner (status Closed, closing dolu)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashDay'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                date: '2026-11-25'
+                timeZone: Europe/Istanbul
+                status: Closed
+                total: { amount: { amountMinor: 1044000, currency: TRY }, count: 14 }
+                cash: { amount: { amountMinor: 345000, currency: TRY }, count: 6 }
+                card: { amount: { amountMinor: 589000, currency: TRY }, count: 5 }
+                transfer:
+                  amount: { amountMinor: 110000, currency: TRY }
+                  count: 2
+                  depositAmount: { amountMinor: 60000, currency: TRY }
+                  otherAmount: { amountMinor: 50000, currency: TRY }
+                cashRefunded: { amountMinor: 0, currency: TRY }
+                expectedCash: { amountMinor: 345000, currency: TRY }
+                payments: []
+                closing:
+                  expectedCash: { amountMinor: 345000, currency: TRY }
+                  countedCash: { amountMinor: 340000, currency: TRY }
+                  differenceMinor: -5000
+                  difference: Shortage
+                  differenceNote: Bozuk para verildi
+                  closedByName: Elif Kaya
+                  closedUtc: '2026-11-25T17:10:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ───────────────────────────── manage-packages ─────────────────────────────
+  /api/v1/manage/packages:
+    get:
+      tags: [manage-packages]
+      operationId: manageListPackages
+      summary: Paket tanımları ve üst kartlar (Paketler)
+      description: |
+        Paketler ve PaketlerBos ekranları: paket tanımları ("Paket tanımları" sekmesi, satışta olanlar önce) ve üst kartlar (overview).
+        branchId verilirse sayılar ve kartlar o şubeye göredir. PaketSat'taki paket listesi için isActive = true olanlar kullanılır.
+        İzin: package.manage veya package.sell.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+      responses:
+        '200':
+          description: Paketler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageList'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [manage-packages]
+      operationId: manageCreatePackage
+      summary: Paket oluştur ("Paketi oluştur")
+      description: |
+        PaketOlustur penceresi. Hizmetler markanın aktif hizmetleri olmalı ve tekrar etmemeli (400 validation_failed, errors.items).
+        İzin: package.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageWrite'
+            example:
+              name: Manikür · 6 seans
+              price: { amountMinor: 170000, currency: TRY }
+              items:
+                - { serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d35, sessionCount: 6 }
+                - { serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d36, sessionCount: 2 }
+              validityDays: 90
+              saleCommissionPercent: 10
+              isAvailableAllBranches: true
+              isActive: true
+      responses:
+        '201':
+          description: Oluşturuldu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageDefinition'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/packages/{packageId}:
+    parameters:
+      - { name: packageId, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [manage-packages]
+      operationId: manageGetPackage
+      summary: Paket tanımı
+      description: "Düzenleme penceresi için; ETag döner. İzin: package.manage veya package.sell"
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Paket
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageDefinition'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [manage-packages]
+      operationId: manageUpdatePackage
+      summary: Paket tanımını düzenle
+      description: |
+        Satır menüsü "Düzenle" ve "Satıştan kaldır" (isActive = false). Değişiklik yalnız sonraki satışları etkiler; satılmış paketlerin içeriği,
+        fiyatı ve son kullanım tarihi değişmez. Paketler silinmez. İzin: package.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackageWrite'
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageDefinition'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── manage-reviews ─────────────────────────────
+  /api/v1/manage/reviews:
+    get:
+      tags: [manage-reviews]
+      operationId: manageListReviews
+      summary: Değerlendirmeler
+      description: |
+        Degerlendirmeler ve DegerlendirmelerBos ekranları. filter: AwaitingReply ("Yanıt bekleyen", düşük puanlılar önce, sonra eskiden yeniye),
+        All ("Tümü", yeniden eskiye), LowRating ("3 yıldız ve altı", yeniden eskiye). overview filtreden bağımsızdır ve şube filtresine uyar.
+        Panelde müşterinin tam adı görünür; rezervasyon sayfasında ad + soyadın baş harfi gösterilir.
+        İzin: review.view (Owner, BranchManager kendi şubesinde); personel 403.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - name: filter
+          in: query
+          required: false
+          schema: { type: string, enum: [AwaitingReply, All, LowRating], default: AwaitingReply }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Değerlendirmeler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewPage'
+              example:
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9a01
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a80
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    rating: 3
+                    comment: İşlem güzeldi ama 20 dakika bekledim.
+                    customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b19, fullName: Ece Koç }
+                    serviceNames: [Kaş ve kirpik]
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e44
+                    staffName: Zeynep Ak
+                    createdUtc: '2026-11-22T13:20:00Z'
+                    isPublished: true
+                    reply: null
+                nextCursor: null
+                overview:
+                  averageRating: 4.8
+                  ratingCount: 214
+                  totalCount: 214
+                  awaitingReplyCount: 2
+                  thisMonthCount: 31
+                  thisMonthInviteResponsePercent: 38
+                  topStaff: { staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42, fullName: Elif Kaya, averageRating: 4.9, count: 96 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/reviews/{reviewId}/reply:
+    parameters:
+      - { name: reviewId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-reviews]
+      operationId: manageReplyReview
+      summary: Değerlendirmeye yanıt ver ("Yanıtla")
+      description: |
+        Degerlendirmeler kartındaki yanıt alanı ("Yanıtınızı yazın, müşteri görür"). Yanıt varsa yenisiyle değiştirilir (repliedUtc güncellenir).
+        Müşteriye bildirim gitmez; yanıt müşteri uygulamasında ve rezervasyon sayfasında yorumun altında görünür.
+        İzin: review.reply (Owner, BranchManager kendi şubesinde); personel 403.
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewReplyRequest'
+            example:
+              text: Geri bildiriminiz için teşekkür ederiz, bekleme süresini kısaltmak için çalışıyoruz.
+      responses:
+        '200':
+          description: Yanıt kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-waitlist ─────────────────────────────
+  /api/v1/manage/waitlist:
+    get:
+      tags: [manage-waitlist]
+      operationId: manageListWaitlist
+      summary: Bekleme listesi
+      description: |
+        BeklemeListesi ve BeklemeListesiBos ekranları. Şubenin Waiting kayıtları, öncelik ve kayıt sırasıyla (teklifin gideceği sıra);
+        bekleyen teklifi olanlarda pendingOffer dolu ("Teklif gönderildi", "11 dakika içinde yanıt bekleniyor"). Sayfalanmaz: liste kısadır.
+        Kalan süre istemcide pendingOffer.holdExpiresUtc − generatedUtc ile sayılır (cihaz saati kullanılmaz).
+        İzin: waitlist.manage (Owner, BranchManager kendi şubesinde); personel 403.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQuery'
+      responses:
+        '200':
+          description: Bekleyenler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistList'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                timeZone: Europe/Istanbul
+                generatedUtc: '2026-11-25T09:04:00Z'
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa001
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    status: Waiting
+                    customer: { brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b21, fullName: Nur Ateş, phoneMasked: '0530 *** ** 12' }
+                    serviceIds: [0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33]
+                    serviceNames: [Fön]
+                    preferredStaffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                    preferredStaffName: Elif Kaya
+                    acceptOtherStaff: false
+                    dates: ['2026-11-27', '2026-11-28']
+                    timeWindows: [Morning]
+                    note: null
+                    joinedUtc: '2026-11-22T10:00:00Z'
+                    source: Online
+                    pendingOffer:
+                      id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101
+                      status: Pending
+                      startUtc: '2026-11-27T08:00:00Z'
+                      endUtc: '2026-11-27T08:45:00Z'
+                      staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                      staffName: Elif Kaya
+                      offeredUtc: '2026-11-25T09:00:00Z'
+                      holdExpiresUtc: '2026-11-25T09:15:00Z'
+                    version: 'W/"9410"'
+                overview:
+                  waitingCount: 4
+                  oldestJoinedUtc: '2026-11-19T12:30:00Z'
+                  convertedThisMonth: 11
+                  offerHoldMinutes: 15
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [manage-waitlist]
+      operationId: manageAddToWaitlist
+      summary: Bekleme listesine ekle ("Listeye ekle")
+      description: |
+        Panelden bekleme kaydı (Source = Panel). newCustomer verilirse müşteri kaydı açılır (numara kayıtlıysa 409 phone_already_exists +
+        meta.brandCustomerId). Müşteriye bildirim gitmez. Uygun saat boşalınca teklif motoru bu kaydı da sıraya alır.
+        İzin: waitlist.manage (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageWaitlistCreate'
+      responses:
+        '201':
+          description: Eklendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntryView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/waitlist/{entryId}/offer:
+    parameters:
+      - { name: entryId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-waitlist]
+      operationId: manageOfferSlot
+      summary: Saat öner ("Saat öner")
+      description: |
+        BeklemeListesi "Saat öner": salon bekleyen kişiye elle bir saat teklif eder. Teklif motorundaki teklifle aynıdır: WaitlistOffer(Pending),
+        holdExpiresUtc = şimdi + WaitlistOfferHoldMinutes, saat bu süre boyunca online müşteriye gösterilmez, müşteriye waitlist.offer gider
+        (push → SMS, sessiz saate kaydırılmaz). Saat dolu veya personel müsait değilse 409 slot_taken; kayıt Waiting değilse veya bekleyen teklifi
+        varsa 409 invalid_state_transition; SMS gerekip kontör yoksa 409 insufficient_credits (teklif oluşmaz).
+        İzin: waitlist.manage (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaitlistOfferRequest'
+      responses:
+        '200':
+          description: Teklif gönderildi; pendingOffer dolu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntryView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/waitlist/{entryId}/offer/withdraw:
+    parameters:
+      - { name: entryId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-waitlist]
+      operationId: manageWithdrawWaitlistOffer
+      summary: Teklifi geri al ("Teklifi geri al")
+      description: |
+        BeklemeListesi "Teklifi geri al": bekleyen teklif Withdrawn olur, saatin tutması kalkar (saat yeniden online görünür, otomatik olarak
+        sıradakine teklif edilmez). Kişi listede kalır (Waiting). Müşteriye bildirim gitmez; teklif bağlantısı "Bu saatin süresi doldu" gösterir.
+        Bekleyen teklif yoksa (kabul, ret veya süre dolması daha önce olduysa) 409 invalid_state_transition.
+        İzin: waitlist.manage (Owner, BranchManager kendi şubesinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Teklif geri alındı; pendingOffer null
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaitlistEntryView'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── manage-walk-ins ─────────────────────────────
+  /api/v1/manage/walk-in-tickets:
+    get:
+      tags: [manage-walk-ins]
+      operationId: manageListWalkIns
+      summary: Kapıda sıra
+      description: |
+        KapidaSira ve KapidaSiraBos ekranları, işletme uygulaması Sıra. Şubenin bugünkü (şubenin yerel günü) Waiting ve Called biletleri, numara
+        sırasıyla; numaralar her gün 1'den başlar. Bekleme süreleri istemcide generatedUtc − joinedUtc ile sayılır.
+        Tahmini bekleme = öndekilerin kalan hizmet süreleri / müsait personel (WalkInAverageServiceMinutes).
+        İzin: walkin.manage (Owner, BranchManager kendi şubesinde, personel kendi şubelerinde).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQuery'
+      responses:
+        '200':
+          description: Sıra
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkInQueue'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                date: '2026-11-25'
+                timeZone: Europe/Istanbul
+                generatedUtc: '2026-11-25T09:10:00Z'
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fb001
+                    branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                    queueDate: '2026-11-25'
+                    queueNumber: 8
+                    status: Waiting
+                    customerName: Okan Er
+                    brandCustomerId: null
+                    phoneMasked: '0533 *** ** 40'
+                    serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d37
+                    serviceName: Saç kesimi
+                    preferredStaffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e43
+                    preferredStaffName: Mert Demir
+                    joinedUtc: '2026-11-25T08:58:00Z'
+                    estimatedWaitMinutes: 0
+                    appointmentId: null
+                    version: 'W/"9501"'
+                waitingCount: 3
+                oldestJoinedUtc: '2026-11-25T08:58:00Z'
+                estimatedWaitMinutesForNew: 35
+                servedCount: 7
+                nextQueueNumber: 11
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [manage-walk-ins]
+      operationId: manageCreateWalkIn
+      summary: Sıraya ekle ("Sıraya ekle")
+      description: |
+        Kapıda sıra "Sıraya ekle" (salon paneli, işletme uygulaması SiraEkle). Numara şube + gün bazında atomik verilir (BranchQueueCounter).
+        Telefon isteğe bağlıdır; verilirse önünde 1 kişi kalınca walkin.almost_turn SMS'i gider ("Sıranız yaklaştı"). Müşteri kaydı bilet
+        oluşurken açılmaz, "Başlat"ta açılır (telefonsuz bilet adla açılır, docs/acik-sorular.md T-86).
+        İzin: walkin.manage.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkInCreate'
+            example:
+              branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+              fullName: Burak
+              serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d37
+              preferredStaffId: null
+      responses:
+        '201':
+          description: Sıraya eklendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkInTicketView'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '503': { $ref: '#/components/responses/TryAgain' }
+
+  /api/v1/manage/walk-in-tickets/{ticketId}/start:
+    parameters:
+      - { name: ticketId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-walk-ins]
+      operationId: manageStartWalkIn
+      summary: Başlat / Randevuya çevir ("Randevuya çevir")
+      description: |
+        Bileti randevuya çevirir (A1, kapıda kanal): şimdi başlayan, Channel = WalkIn ve Status = CheckedIn bir randevu oluşur, takvimde "Kapıdan"
+        görünür; bilet Served olur. Müşteri: bilette brandCustomerId varsa o; telefon varsa numarayla bulunur veya açılır (Source = WalkIn);
+        telefon yoksa adla telefonsuz müşteri kaydı açılır (docs/acik-sorular.md T-86). Müşteriye bildirim gitmez.
+        Personel "Fark etmez" ise veya bilette hizmet yoksa ilgili alan gövdede zorunludur (400 validation_failed). Personel o an meşgulse
+        409 slot_taken; bilet Waiting veya Called değilse 409 invalid_state_transition.
+        İzin: walkin.manage ve appointment.create (personel yalnız kendine).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalkInStartRequest'
+      responses:
+        '200':
+          description: Randevu oluştu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkInStarted'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '503': { $ref: '#/components/responses/TryAgain' }
+
+  /api/v1/manage/walk-in-tickets/{ticketId}/leave:
+    parameters:
+      - { name: ticketId, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [manage-walk-ins]
+      operationId: manageLeaveWalkIn
+      summary: Sıradan çıkar ("Sıradan çıkar")
+      description: "Bilet Left olur; arkadakilerin tahmini beklemesi yeniden hesaplanır. Bilet Waiting veya Called değilse 409 invalid_state_transition. İzin: walkin.manage"
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Sıradan çıkarıldı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkInTicketView'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
   # ───────────────────────────── public-booking ─────────────────────────────
   /api/v1/public/brands/{brandSlug}:
     get:
@@ -2458,6 +3668,238 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
+  # ───────────────────────────── public-waitlist ─────────────────────────────
+  /api/v1/public/branches/{branchId}/waitlist:
+    parameters:
+      - $ref: '#/components/parameters/BranchIdPath'
+    post:
+      tags: [public-waitlist]
+      operationId: publicJoinWaitlist
+      summary: Bekleme listesine katıl ("Bekleme listesine katıl")
+      description: |
+        Rezervasyon sayfası DoluGun ve müşteri uygulaması BeklemeKatil. Telefon doğrulamasından sonra çağrılır (publicBookingBearer veya meBearer).
+        Kayıt WaitlistEntry(Waiting, Source = Online) olur; müşteri kaydı yoksa açılır (aydınlatma metni onayı randevudaki gibi kaydedilir).
+        Aynı müşterinin aynı şubede aynı hizmetler için Waiting kaydı varsa yenisi açılmaz; tercihleri güncellenir ve 200 ile döner.
+        Uygun saat boşalınca waitlist.offer gider (push → SMS) ve 15 dk tutulur. Engellenmiş müşteri 403 customer_blocked; online randevu kapalıysa
+        403 booking_disabled.
+      security: [ { publicBookingBearer: [] }, { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicWaitlistJoin'
+            example:
+              preferences:
+                serviceIds: [0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33]
+                preferredStaffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                acceptOtherStaff: false
+                dates: ['2026-11-27']
+                timeWindows: [Afternoon, Evening]
+              fullName: Merve Yıldız
+              privacyNoticeAcknowledged: true
+              privacyNoticeVersion: '2026-11-01'
+      responses:
+        '201':
+          description: Listeye katıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWaitlistEntry'
+        '200':
+          description: Zaten listedeydi; tercihler güncellendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWaitlistEntry'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/public/waitlist-offers/{accessCode}:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    get:
+      tags: [public-waitlist]
+      operationId: publicGetWaitlistOffer
+      summary: Bekleme teklifi ("Beklediğiniz saat boşaldı")
+      description: |
+        Teklif bağlantısı (omvila.com/b/{accessCode}; BeklemeTeklif, BeklemeDoldu). Bağlantı telefonu doğrular, kod istenmez.
+        Süresi dolmuş, reddedilmiş veya geri alınmış teklif de 200 ile döner (status Expired, Declined, Withdrawn); ekran BeklemeDoldu gösterir.
+        Kod geçersizse 404 access_code_invalid.
+      responses:
+        '200':
+          description: Teklif
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWaitlistOffer'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa102
+                status: Pending
+                brand: { name: Spa Moda, slug: spa-moda, logoUrl: null }
+                branch: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a09, name: Moda }
+                customerFirstName: Merve
+                startUtc: '2026-11-28T13:00:00Z'
+                endUtc: '2026-11-28T14:00:00Z'
+                timeZone: Europe/Istanbul
+                holdExpiresUtc: '2026-11-25T09:15:00Z'
+                generatedUtc: '2026-11-25T09:05:55Z'
+                items:
+                  - { serviceName: Masaj, staffName: Seda Kurt, durationMinutes: 60, price: { amountMinor: 90000, currency: TRY } }
+                total: { amountMinor: 90000, currency: TRY }
+                amountDue: { amountMinor: 90000, currency: TRY }
+                requiresApproval: false
+                appointmentAccessCode: null
+                waitlistAccessCode: W3nB8xQ2
+                version: 'W/"9420"'
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/public/waitlist-offers/{accessCode}/accept:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-waitlist]
+      operationId: publicAcceptWaitlistOffer
+      summary: Teklifi kabul et ("Randevuyu al")
+      description: |
+        Teklif Accepted, bekleme kaydı Converted olur ve randevu online kurallarıyla oluşur (A1, docs/acik-sorular.md T-86): salon onay veya kapora
+        istiyorsa randevu PendingApproval oluşur ve yanıtta depositInstructions bulunur; değilse Confirmed. Müşteriye appointment.confirmed veya
+        appointment.requested gider. Kendiliğinden idempotenttir: kabul edilmiş teklif tekrar gelirse aynı randevu 200 ile döner.
+        Süre dolmuşsa 409 hold_expired; reddedilmiş veya geri alınmışsa 409 invalid_state_transition; engellenmiş müşteri 403 customer_blocked.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/ClientHeader'
+      responses:
+        '200':
+          description: Randevu oluştu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '503': { $ref: '#/components/responses/TryAgain' }
+
+  /api/v1/public/waitlist-offers/{accessCode}/decline:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-waitlist]
+      operationId: publicDeclineWaitlistOffer
+      summary: Teklifi reddet ("Bu saat olmaz")
+      description: |
+        Teklif Declined olur, saat sıradaki uygun kişiye teklif edilir. Kişi listede kalır (Waiting). Zaten reddedilmişse aynı sonuç 200 ile döner;
+        kabul edilmiş veya geri alınmışsa 409 invalid_state_transition; süresi dolmuşsa 409 hold_expired.
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Reddedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWaitlistOffer'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/public/waitlist/{accessCode}/leave:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-waitlist]
+      operationId: publicLeaveWaitlist
+      summary: Listeden çık ("Listeden çık")
+      description: |
+        BeklemeDoldu "Listeden çık". accessCode bekleme kaydının kodudur (PublicWaitlistOffer.waitlistAccessCode, PublicWaitlistEntry.accessCode).
+        Kayıt Cancelled olur; bekleyen teklif varsa Declined olur ve saat sıradakine geçer. Kendiliğinden idempotenttir (zaten çıkmışsa 200).
+        Kayıt Converted veya Expired ise 409 invalid_state_transition. Kod geçersizse 404 access_code_invalid.
+      responses:
+        '200':
+          description: Listeden çıkıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWaitlistEntry'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  # ───────────────────────────── public-review ─────────────────────────────
+  /api/v1/public/reviews/{accessCode}:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    get:
+      tags: [public-review]
+      operationId: publicGetReviewInvite
+      summary: Değerlendirme bağlantısı ("Kuaför Elif'te nasıldı?")
+      description: |
+        review.invite bağlantısı (omvila.com/d/{accessCode}); müşteri uygulamasındaki Degerlendir ekranının web karşılığı. Giriş istemez.
+        Değerlendirilmişse alreadyReviewed = true ve review dolu döner. Kod geçersiz veya süresi dolmuşsa 404 access_code_invalid.
+      responses:
+        '200':
+          description: Değerlendirme formu bilgisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicReviewInvite'
+              example:
+                brand: { name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                branchName: Kadıköy
+                appointmentStartUtc: '2026-11-12T11:00:00Z'
+                timeZone: Europe/Istanbul
+                serviceNames: [Boya ve fön]
+                staff: { name: Elif Kaya, photoUrl: null }
+                customerDisplayName: Merve Y.
+                alreadyReviewed: false
+                review: null
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [public-review]
+      operationId: publicCreateReview
+      summary: Değerlendirmeyi gönder ("Gönder")
+      description: |
+        Yalnız Completed randevu ve bir kez değerlendirilir: değerlendirilmişse 409 already_reviewed; randevu Completed değilse 409 invalid_state_transition.
+        Değerlendirme yayınlanmış olarak kaydedilir (yorumda ad + soyadın baş harfi görünür); salonun Owner ve BranchManager kullanıcılarına
+        staff.review_received gider (personele gitmez, docs/acik-sorular.md T-86). Rezervasyon sayfasındaki puan, yayınlanmış değerlendirme sayısı
+        ReviewPublicThreshold'u geçince ve salon gösteriyorsa (showReviews) PublicBrand.rating ile döner.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicReviewCreate'
+            example:
+              rating: 4
+              comment: Boya tam istediğim gibi oldu.
+      responses:
+        '201':
+          description: Değerlendirme kaydedildi; güncel form bilgisi döner (alreadyReviewed = true)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicReviewInvite'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
   # ───────────────────────────── webhooks ─────────────────────────────
   /api/v1/webhooks/sms/{provider}:
     parameters:
@@ -2578,7 +4020,7 @@ components:
       name: accessCode
       in: path
       required: true
-      description: SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+      description: SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
       schema: { type: string, pattern: '^[A-Za-z0-9]{8,10}$' }
     Limit:
       name: limit
@@ -2613,7 +4055,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
-      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, insufficient_credits)
+      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, payment_total_mismatch, package_session_unavailable, cash_day_already_closed, insufficient_credits, already_reviewed)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -2696,6 +4138,9 @@ components:
         - deposit_unavailable_no_iban
         - deposit_required
         - deposit_reminder_already_sent
+        - payment_total_mismatch
+        - package_session_unavailable
+        - cash_day_already_closed
         - outside_working_hours
         - staff_on_time_off
         - insufficient_credits
@@ -3636,6 +5081,11 @@ components:
                 cancelledBy: { type: string, enum: [Customer, Salon, System] }
                 reason: { $ref: '#/components/schemas/CancellationReason' }
                 note: { type: [string, 'null'] }
+        completedUtc: { type: [string, 'null'], format: date-time, description: '"Tamamla ve ödeme al" anı' }
+        payments:
+          type: array
+          description: Randevuya tahsis edilen bütün tahsilatlar (kapora havalesi, salonda alınanlar, paketten düşülen kalemlerin 0 TL kaydı), eskiden yeniye. Yetkisi olmayan (payment.collect yok) kullanıcıda dönmez
+          items: { $ref: '#/components/schemas/PaymentView' }
         history:
           type: array
           items: { $ref: '#/components/schemas/AppointmentHistoryEntry' }
@@ -3717,7 +5167,7 @@ components:
         note: { type: [string, 'null'], maxLength: 300 }
         scope: { type: string, enum: [ThisOnly, ThisAndFollowing], default: ThisOnly }
         notifyCustomer: { type: boolean, default: true, description: '"Müşteriye bildir"' }
-        offerToWaitlist: { type: boolean, default: true, description: Boşalan saat bekleme listesine teklif edilsin (Dilim 5) }
+        offerToWaitlist: { type: boolean, default: true, description: 'Boşalan saat bekleme listesindeki sıradaki uygun kişiye teklif edilsin (waitlist.offer, 15 dk tutma); false ise teklif motoru bu saat için çalışmaz' }
 
     ManageApproveRequest:
       type: object
@@ -3863,6 +5313,7 @@ components:
         - appointment.rescheduled
         - appointment.cancelled_by_salon
         - waitlist.offer
+        - walkin.almost_turn
         - review.invite
     NotificationTemplateSetting:
       type: object
@@ -4144,7 +5595,7 @@ components:
         showPrices: { type: boolean }
         bookingEnabled: { type: boolean }
         rating:
-          description: Yalnız yayınlanmış değerlendirme sayısı eşiği geçtiyse ve salon gösteriyorsa
+          description: Yalnız yayınlanmış değerlendirme sayısı ReviewPublicThreshold'u (5) geçtiyse ve salon gösteriyorsa (showReviews); ortalama son 90 gün değil tüm yayınlanmış değerlendirmelerdendir
           oneOf:
             - type: 'null'
             - type: object
@@ -4283,7 +5734,10 @@ components:
         customerNote: { type: [string, 'null'], maxLength: 500, description: '"Salona notunuz"' }
         usePackageItems:
           type: array
-          description: Paketten düşülecek kalemler
+          description: |
+            Paketten düşülecek kalemler ("Fön paketinizden düşülsün"; seçenekler publicListMyPackages'tan). Seans randevu oluşurken ayrılır, randevu iptal
+            olursa geri döner, gelmedi olursa dönmez. Paketten düşülen kalem kapora ve "Salonda ödenecek" tutarına girmez. Paket kalemi bu müşterinin değilse,
+            Active değilse, süresi geçmişse, kalan seansı yoksa, hizmet uyuşmuyorsa veya şubede kullanılamıyorsa 409 package_session_unavailable
           items:
             type: object
             required: [serviceId, customerPackageItemId]
@@ -4378,3 +5832,790 @@ components:
       properties:
         reason: { type: string, enum: [PlanChanged, Sick, WantsDifferentTime, Other] }
         note: { type: [string, 'null'], maxLength: 300, description: reason = Other ise zorunlu }
+
+    # ───────── Dilim 5: tahsilat ve kasa ─────────
+    PaymentMethod:
+      type: string
+      description: |
+        Tahsilat yöntemi. OMVILA para almaz; bu yalnız salonun kendi tahsilatının kaydıdır. Cash = nakit, Card = salonun kendi POS'u,
+        Transfer = havale/EFT, PackageRedemption = paketten düşülen kalem (0 TL'lik kayıt, docs/acik-sorular.md T-86). İstemciler bilinmeyen değeri genel yöntem olarak gösterir.
+      enum: [Cash, Card, Transfer, PackageRedemption]
+    CollectedPaymentMethod:
+      type: string
+      description: Salonda elle seçilen tahsilat yöntemi ("Nakit", "Kart", "Havale"); paketten düşüm ayrı alanla istenir
+      enum: [Cash, Card, Transfer]
+    PaymentStatus:
+      type: string
+      description: Recorded = kayıtlı; PartiallyRefunded / Refunded = "Salon iade etti" (para hareketi yok, yalnız işaret); Voided = yanlış giriş iptali
+      enum: [Recorded, PartiallyRefunded, Refunded, Voided]
+    PaymentPurpose:
+      type: string
+      description: Tahsilatın hedefi (PaymentAllocation.TargetType). v1'de bir tahsilat tek hedefe tahsis edilir
+      enum: [Appointment, CustomerPackage]
+    CustomerRef:
+      type: object
+      description: Listelerdeki müşteri özeti. Personel rolünde ve MaskCustomerPhoneFromStaff açıkken phone dönmez
+      required: [brandCustomerId, fullName]
+      properties:
+        brandCustomerId: { type: string, format: uuid }
+        fullName: { type: string, example: Selin Öztürk }
+        phone: { $ref: '#/components/schemas/PhoneE164' }
+        phoneMasked: { type: string, example: '0532 *** ** 21' }
+    PaymentView:
+      type: object
+      description: |
+        Bir tahsilat kaydı (Payment + tahsisi). Randevu ayrıntısında, Kasa tablosunda ve müşteri kartı Ödemeler sekmesinde aynı biçimde döner.
+        Kasa satırının "Kalem" metni istemcide üretilir: purpose = Appointment ve isDeposit → "Kapora · 14:30 randevusu"; purpose = Appointment ve
+        isBalanceAfterDeposit → "Boya ve fön · kalan"; purpose = CustomerPackage → "Fön paketi · 5 seans".
+      required: [id, branchId, method, amount, isDeposit, status, paidUtc, purpose]
+      properties:
+        id: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        amount: { $ref: '#/components/schemas/Money' }
+        isDeposit: { type: boolean, description: Kapora havalesi ("Kapora geldi" ile yazılan kayıt) }
+        status: { $ref: '#/components/schemas/PaymentStatus' }
+        refundedAmount: { $ref: '#/components/schemas/Money', description: '"Salon iade etti" ile işaretlenen tutar; yalnız iade varsa bulunur' }
+        paidUtc: { type: string, format: date-time }
+        collectedByName: { type: [string, 'null'], description: Tahsilatı kaydeden kullanıcı, example: Elif Kaya }
+        reference: { type: [string, 'null'], description: Havale açıklama kodu vb., example: OMV-7K2X }
+        purpose: { $ref: '#/components/schemas/PaymentPurpose' }
+        customer: { $ref: '#/components/schemas/CustomerRef' }
+        appointmentId: { type: [string, 'null'], format: uuid }
+        appointmentStartUtc: { type: [string, 'null'], format: date-time }
+        serviceNames:
+          type: array
+          description: Randevu tahsilatında randevunun hizmetleri
+          items: { type: string }
+          example: [Boya, Fön]
+        isBalanceAfterDeposit: { type: boolean, description: Randevuda önceden kapora alınmıştı; bu tahsilat kalan tutardır ("kalan") }
+        staffName: { type: [string, 'null'], description: 'Randevuda hizmeti veren (birden çok personelde ilk kalemin personeli), paket satışında satan personel', example: Elif Kaya }
+        customerPackageId: { type: [string, 'null'], format: uuid }
+        packageName: { type: [string, 'null'], example: Fön paketi }
+        packageSessionCount: { type: [integer, 'null'], description: Paketteki toplam seans, example: 5 }
+        recordedAfterDayClose: { type: boolean, description: Gün kapatıldıktan sonra yazıldı ("kapanıştan sonra") }
+    CompletionPayment:
+      type: object
+      description: '"Tamamla ve ödeme al" ödeme satırı; ikinci satır "İkinci ödeme ekle"'
+      required: [method, amount]
+      properties:
+        method: { $ref: '#/components/schemas/CollectedPaymentMethod' }
+        amount: { $ref: '#/components/schemas/Money', description: 0'dan büyük olmalı }
+    PackageRedemptionRequest:
+      type: object
+      description: '"Paketten": randevu oluşurken paketten düşülmemiş bir kalemi tamamlarken müşterinin paketinden düş'
+      required: [appointmentItemId, customerPackageItemId]
+      properties:
+        appointmentItemId: { type: string, format: uuid }
+        customerPackageItemId: { type: string, format: uuid }
+    ManageCompleteRequest:
+      type: object
+      description: |
+        "Tamamla ve ödeme al" (OdemeAl) gövdesi. payments toplamı, randevunun kalan tutarına (amountDue) eşit olmalıdır; packageRedemptions ile
+        paketten düşülen kalemlerin fiyatı kalan tutardan önce çıkarılır. Kalan tutar 0 ise payments boş gönderilir.
+      required: [payments]
+      properties:
+        payments:
+          type: array
+          maxItems: 3
+          items: { $ref: '#/components/schemas/CompletionPayment' }
+        packageRedemptions:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/PackageRedemptionRequest' }
+    CashMethodTotal:
+      type: object
+      required: [amount, count]
+      properties:
+        amount: { $ref: '#/components/schemas/Money' }
+        count: { type: integer, description: Ödeme sayısı, example: 6 }
+    CashDayClosing:
+      type: object
+      description: Gün kapatma kaydı (CashDayClose)
+      required: [expectedCash, countedCash, differenceMinor, difference, closedUtc]
+      properties:
+        expectedCash: { $ref: '#/components/schemas/Money' }
+        countedCash: { $ref: '#/components/schemas/Money' }
+        differenceMinor: { type: integer, format: int64, description: 'Sayılan − beklenen, kuruş; eksi olabilir (Money eksi taşımadığı için tamsayı)', example: -5000 }
+        difference: { type: string, enum: [None, Shortage, Surplus], description: 'None = fark yok, Shortage = kasada eksik, Surplus = kasada fazla' }
+        differenceNote: { type: [string, 'null'], example: Bozuk para verildi }
+        closedByName: { type: [string, 'null'], example: Elif Kaya }
+        closedUtc: { type: string, format: date-time }
+    CashDay:
+      type: object
+      description: |
+        Kasa ekranı (Kasa, KasaBos): şubenin bir yerel günündeki tahsilat kayıtları. Gün şubenin saat diliminde hesaplanır.
+        Beklenen nakit = nakit tahsilatlar − o gün işaretlenen nakit iadeler (docs/acik-sorular.md T-86, W3). PackageRedemption kayıtları
+        tabloda "Paketten · 0 ₺" olarak görünür, toplamlara tutar katmaz.
+      required: [branchId, date, timeZone, status, total, cash, card, transfer, expectedCash, payments, closing]
+      properties:
+        branchId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        status: { type: string, enum: [Open, Closed], description: '"gün açık" / gün kapatıldı' }
+        total: { $ref: '#/components/schemas/CashMethodTotal', description: '"Bugün tahsil edilen" (PackageRedemption hariç tutar; sayı tüm kayıtlar)' }
+        cash: { $ref: '#/components/schemas/CashMethodTotal' }
+        card: { $ref: '#/components/schemas/CashMethodTotal' }
+        transfer:
+          allOf:
+            - $ref: '#/components/schemas/CashMethodTotal'
+            - type: object
+              required: [depositAmount, otherAmount]
+              properties:
+                depositAmount: { $ref: '#/components/schemas/Money', description: '"600 kapora"' }
+                otherAmount: { $ref: '#/components/schemas/Money', description: '"500 ödeme"' }
+        cashRefunded: { $ref: '#/components/schemas/Money', description: O gün işaretlenen nakit iadeler }
+        expectedCash: { $ref: '#/components/schemas/Money', description: '"kasada olmalı" / "Beklenen"' }
+        payments:
+          type: array
+          description: Yeniden eskiye; sayfalanmaz (bir gün)
+          items: { $ref: '#/components/schemas/PaymentView' }
+        closing:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/CashDayClosing'
+    CashDayCloseRequest:
+      type: object
+      description: '"Günü kapat" gövdesi (Kasa sayımı)'
+      required: [branchId, date, countedCash]
+      properties:
+        branchId: { type: string, format: uuid }
+        date: { type: string, format: date, description: Kapatılan yerel gün; bugünden sonra olamaz }
+        countedCash: { $ref: '#/components/schemas/Money', description: '"Sayılan nakit"' }
+        differenceNote: { type: [string, 'null'], maxLength: 300, description: '"Fark açıklaması"; sayılan ile beklenen farklıysa zorunlu' }
+
+    # ───────── Dilim 5: paketler ─────────
+    PackageItemWrite:
+      type: object
+      required: [serviceId, sessionCount]
+      properties:
+        serviceId: { type: string, format: uuid }
+        sessionCount: { type: integer, minimum: 1, maximum: 100, example: 6 }
+    PackageWrite:
+      type: object
+      description: '"Paket oluştur" gövdesi. Değişiklik satılmış paketleri etkilemez (satışta ad, içerik ve fiyat kopyalanır)'
+      required: [name, price, items, validityDays, isAvailableAllBranches, isActive]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 80, example: Manikür · 6 seans }
+        price: { $ref: '#/components/schemas/Money' }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 10
+          description: '"İçerik"; aynı hizmet iki kez yazılmaz'
+          items: { $ref: '#/components/schemas/PackageItemWrite' }
+        validityDays: { type: integer, minimum: 1, maximum: 1095, description: '"Geçerlilik", satış tarihinden itibaren gün (3 ay = 90)', example: 90 }
+        saleCommissionPercent:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 100
+          description: '"Satış primi" (Package.SaleCommissionPercentOverride); null ise satan personelin SaleCommissionPercent değeri'
+          example: 10
+        isAvailableAllBranches: { type: boolean, description: '"Bütün şubelerde kullanılabilir"; kapalıysa yalnız satıldığı şubede' }
+        isActive: { type: boolean, description: '"Satışta" / "Satışta değil"' }
+    PackageDefinition:
+      type: object
+      description: Paket tanımı satırı (Paketler · Paket tanımları)
+      required: [id, name, price, items, totalSessions, validityDays, isAvailableAllBranches, isActive, soldCount, activeCount, version]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Fön paketi }
+        price: { $ref: '#/components/schemas/Money' }
+        items:
+          type: array
+          items:
+            type: object
+            required: [serviceId, serviceName, sessionCount]
+            properties:
+              serviceId: { type: string, format: uuid }
+              serviceName: { type: string, example: Fön }
+              sessionCount: { type: integer, example: 5 }
+        totalSessions: { type: integer, description: '"Seans" sütunu', example: 5 }
+        validityDays: { type: integer, example: 90 }
+        saleCommissionPercent: { type: [number, 'null'], example: 10 }
+        isAvailableAllBranches: { type: boolean }
+        isActive: { type: boolean }
+        soldCount: { type: integer, description: '"Satılan"', example: 64 }
+        activeCount: { type: integer, description: '"Aktif" (Active müşteri paketi sayısı)', example: 18 }
+        version: { $ref: '#/components/schemas/Version' }
+    PackageOverview:
+      type: object
+      description: Paketler üst kartları
+      required: [activeCustomerPackages, remainingSessions, soldThisMonth, soldThisMonthAmount, expiringSoon]
+      properties:
+        activeCustomerPackages: { type: integer, description: '"Aktif müşteri paketi"', example: 46 }
+        remainingSessions: { type: integer, description: '"kalan 182 seans"', example: 182 }
+        soldThisMonth: { type: integer, description: '"Bu ay satılan" (şubenin yerel takvim ayı)', example: 12 }
+        soldThisMonthAmount: { $ref: '#/components/schemas/Money' }
+        expiringSoon: { type: integer, description: '"Süresi yaklaşan": 30 gün içinde biten Active paketler', example: 5 }
+        usageRatePercent: { type: [number, 'null'], description: '"Kullanım oranı": süresi biten paketlerde kullanılan seans / toplam seans; süresi biten paket yoksa null', example: 81 }
+    PackageList:
+      type: object
+      required: [items, overview]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PackageDefinition' }
+        overview: { $ref: '#/components/schemas/PackageOverview' }
+    CustomerPackageStatus:
+      type: string
+      description: Active; Expired (son kullanım tarihi geçti, günlük iş); Refunded ("İade et"); Transferred (başka müşteriye devredildi; v1'de devir ucu yok)
+      enum: [Active, Expired, Refunded, Transferred]
+    CustomerPackageItemView:
+      type: object
+      required: [customerPackageItemId, serviceId, serviceName, totalSessions, remainingSessions]
+      properties:
+        customerPackageItemId: { type: string, format: uuid }
+        serviceId: { type: string, format: uuid }
+        serviceName: { type: string, example: Fön }
+        totalSessions: { type: integer, example: 5 }
+        remainingSessions: { type: integer, description: Defterden hesaplanır (geri dönen kullanım sayılmaz), example: 2 }
+    PackageSessionUsageView:
+      type: object
+      description: Seans kullanımı; randevu iptal edildiyse revertedUtc dolu ("seans geri döndü")
+      required: [appointmentId, serviceName, appointmentStartUtc, usedUtc]
+      properties:
+        appointmentId: { type: string, format: uuid }
+        serviceName: { type: string, example: Fön }
+        appointmentStartUtc: { type: string, format: date-time }
+        usedUtc: { type: string, format: date-time }
+        revertedUtc: { type: [string, 'null'], format: date-time }
+    CustomerPackage:
+      type: object
+      description: Müşterinin satın aldığı paket ("Fön paketi · 2/5 seans kaldı · 31 Ara")
+      required: [id, customer, packageId, packageName, branchId, isAvailableAllBranches, price, purchasedUtc, expiresOn, status, items, totalSessions, remainingSessions, version]
+      properties:
+        id: { type: string, format: uuid }
+        customer: { $ref: '#/components/schemas/CustomerRef' }
+        packageId: { type: string, format: uuid }
+        packageName: { type: string, example: Fön paketi }
+        branchId: { type: string, format: uuid, description: Satıldığı şube }
+        isAvailableAllBranches: { type: boolean }
+        price: { $ref: '#/components/schemas/Money', description: Ödenen tutar }
+        purchasedUtc: { type: string, format: date-time }
+        expiresOn: { type: string, format: date, description: Son kullanım günü (şubenin yerel takvimi) }
+        soldByStaffId: { type: [string, 'null'], format: uuid }
+        soldByStaffName: { type: [string, 'null'], example: Elif Kaya }
+        status: { $ref: '#/components/schemas/CustomerPackageStatus' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CustomerPackageItemView' }
+        totalSessions: { type: integer, example: 5 }
+        remainingSessions: { type: integer, example: 2 }
+        refundedAmount: { $ref: '#/components/schemas/Money', description: Yalnız iade edildiyse }
+        refundedUtc: { type: [string, 'null'], format: date-time }
+        usages:
+          type: array
+          description: Yalnız müşteri kartı Paketler sekmesinde döner (yeniden eskiye)
+          items: { $ref: '#/components/schemas/PackageSessionUsageView' }
+        version: { $ref: '#/components/schemas/Version' }
+    CustomerPackagePage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CustomerPackage' }
+        nextCursor: { type: [string, 'null'] }
+    PackageSaleRequest:
+      type: object
+      description: '"Müşteriye paket sat" (PaketSat) gövdesi. Tutar paket fiyatıdır; indirim yoktur'
+      required: [packageId, branchId, soldByStaffId, paymentMethod]
+      properties:
+        packageId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid, description: Satışın yapıldığı şube (kasaya bu şubede yazılır) }
+        soldByStaffId: { type: string, format: uuid, description: '"Satan personel"; satış primi ona yazılır' }
+        paymentMethod: { $ref: '#/components/schemas/CollectedPaymentMethod' }
+    PackageRefundRequest:
+      type: object
+      description: Paket iadesi gövdesi; salon iadeyi kendisi yapar, OMVILA yalnız kaydeder. Tutarı salon elle girer (S-10)
+      required: [amount]
+      properties:
+        amount: { $ref: '#/components/schemas/Money', description: '0''dan büyük, ödenen tutardan küçük veya eşit' }
+        note: { type: [string, 'null'], maxLength: 300, description: Salon içi not }
+
+    # ───────── Dilim 5: değerlendirmeler ─────────
+    ReviewView:
+      type: object
+      description: Değerlendirme kartı (Degerlendirmeler, müşteri kartı Değerlendirmeler sekmesi)
+      required: [id, appointmentId, branchId, rating, customer, serviceNames, createdUtc, isPublished, reply]
+      properties:
+        id: { type: string, format: uuid }
+        appointmentId: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5, example: 3 }
+        comment: { type: [string, 'null'], example: İşlem güzeldi ama 20 dakika bekledim. }
+        customer: { $ref: '#/components/schemas/CustomerRef' }
+        serviceNames:
+          type: array
+          items: { type: string }
+          example: [Kaş ve kirpik]
+        staffId: { type: [string, 'null'], format: uuid }
+        staffName: { type: [string, 'null'], example: Zeynep Ak }
+        createdUtc: { type: string, format: date-time }
+        isPublished: { type: boolean, description: Rezervasyon sayfasında gösterilebilir }
+        reply:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [text, repliedUtc]
+              properties:
+                text: { type: string, example: 'Teşekkür ederiz Ayşe Hanım, tekrar bekleriz.' }
+                repliedUtc: { type: string, format: date-time }
+                repliedByName: { type: [string, 'null'], example: Elif Kaya }
+    ReviewOverview:
+      type: object
+      description: Değerlendirmeler üst kartları
+      required: [averageRating, ratingCount, totalCount, awaitingReplyCount, thisMonthCount]
+      properties:
+        averageRating: { type: [number, 'null'], description: '"Ortalama · son 90 gün"; değerlendirme yoksa null', example: 4.8 }
+        ratingCount: { type: integer, description: Son 90 gündeki değerlendirme sayısı, example: 214 }
+        totalCount: { type: integer, description: Başlıktaki "214 değerlendirme", example: 214 }
+        awaitingReplyCount: { type: integer, description: '"Yanıt bekleyen"', example: 2 }
+        thisMonthCount: { type: integer, description: '"Bu ay"', example: 31 }
+        thisMonthInviteResponsePercent: { type: [number, 'null'], description: '"davet edilenlerin %38''i"; bu ay davet yoksa null', example: 38 }
+        topStaff:
+          description: '"En çok övülen" (son 90 gün, en az ReviewPublicThreshold değerlendirme alan personel arasında en yüksek ortalama); yoksa null'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [staffId, fullName, averageRating, count]
+              properties:
+                staffId: { type: string, format: uuid }
+                fullName: { type: string, example: Elif Kaya }
+                averageRating: { type: number, example: 4.9 }
+                count: { type: integer, example: 96 }
+    ReviewPage:
+      type: object
+      required: [items, nextCursor, overview]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewView' }
+        nextCursor: { type: [string, 'null'] }
+        overview: { $ref: '#/components/schemas/ReviewOverview' }
+    ReviewReplyRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, minLength: 2, maxLength: 1000, description: '"Yanıtınızı yazın, müşteri görür"' }
+    CustomerReviewPage:
+      type: object
+      description: Müşteri kartı Değerlendirmeler sekmesi
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ReviewView' }
+        nextCursor: { type: [string, 'null'] }
+    PublicReviewInvite:
+      type: object
+      description: Değerlendirme bağlantısı (omvila.com/d/{accessCode}) açılışı ("Kuaför Elif'te nasıldı?")
+      required: [brand, branchName, appointmentStartUtc, timeZone, serviceNames, customerDisplayName, alreadyReviewed]
+      properties:
+        brand:
+          type: object
+          required: [name, slug]
+          properties:
+            name: { type: string, example: Kuaför Elif }
+            slug: { type: string, example: kuafor-elif }
+            logoUrl: { type: [string, 'null'] }
+        branchName: { type: string, example: Kadıköy }
+        appointmentStartUtc: { type: string, format: date-time }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        serviceNames:
+          type: array
+          items: { type: string }
+          example: [Boya ve fön]
+        staff:
+          description: '"Sizi bu randevuda ağırlayan kişi"; personelsiz randevuda null'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [name]
+              properties:
+                name: { type: string, example: Elif Kaya }
+                photoUrl: { type: [string, 'null'] }
+        customerDisplayName: { type: string, description: 'Yorumda görünecek ad ("Merve Y."): ad + soyadın baş harfi', example: Merve Y. }
+        alreadyReviewed: { type: boolean, description: true ise form yerine gönderilmiş değerlendirme gösterilir }
+        review:
+          description: Gönderilmiş değerlendirme; yoksa null
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [rating, createdUtc]
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5, example: 4 }
+                comment: { type: [string, 'null'] }
+                createdUtc: { type: string, format: date-time }
+    PublicReviewCreate:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5, example: 4 }
+        comment: { type: [string, 'null'], maxLength: 1000, description: '"Yorum (isteğe bağlı)"' }
+
+    # ───────── Dilim 5: bekleme listesi ─────────
+    WaitlistTimeWindow:
+      type: string
+      description: '"Hangi saatler size uyar?" Morning = Sabah, Afternoon = Öğleden sonra, Evening = Akşam (aralıklar şubenin yerel saatiyle sunucuda tanımlıdır)'
+      enum: [Morning, Afternoon, Evening]
+    WaitlistEntryStatus:
+      type: string
+      description: Waiting = bekliyor; Converted = teklif kabul edildi, randevu oluştu; Cancelled = "Listeden çık"; Expired = istenen günlerin hepsi geçti
+      enum: [Waiting, Converted, Cancelled, Expired]
+    WaitlistOfferStatus:
+      type: string
+      description: Pending = teklif gönderildi, saat tutuluyor; Accepted = "Randevuyu al"; Declined = "Bu saat olmaz"; Expired = 15 dk doldu; Withdrawn = salon "Teklifi geri al" dedi
+      enum: [Pending, Accepted, Declined, Expired, Withdrawn]
+    WaitlistPreferences:
+      type: object
+      description: Bekleme tercihi. dates boşsa "Herhangi bir gün", timeWindows boşsa her saat uyar
+      required: [serviceIds, acceptOtherStaff, dates, timeWindows]
+      properties:
+        serviceIds:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items: { type: string, format: uuid }
+        preferredStaffId: { type: [string, 'null'], format: uuid, description: null = fark etmez }
+        acceptOtherStaff: { type: boolean, description: '"Başka personel de olur"' }
+        dates:
+          type: array
+          maxItems: 14
+          description: İstenen yerel günler
+          items: { type: string, format: date }
+        timeWindows:
+          type: array
+          maxItems: 3
+          items: { $ref: '#/components/schemas/WaitlistTimeWindow' }
+    WaitlistOfferView:
+      type: object
+      required: [id, status, startUtc, endUtc, holdExpiresUtc, offeredUtc]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WaitlistOfferStatus' }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        staffId: { type: [string, 'null'], format: uuid }
+        staffName: { type: [string, 'null'], example: Elif Kaya }
+        offeredUtc: { type: string, format: date-time }
+        holdExpiresUtc: { type: string, format: date-time }
+    WaitlistEntryView:
+      type: object
+      description: Bekleme listesi satırı (BeklemeListesi)
+      required: [id, branchId, status, customer, serviceIds, serviceNames, acceptOtherStaff, dates, timeWindows, joinedUtc, source, pendingOffer, version]
+      properties:
+        id: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WaitlistEntryStatus' }
+        customer: { $ref: '#/components/schemas/CustomerRef' }
+        serviceIds:
+          type: array
+          items: { type: string, format: uuid }
+        serviceNames:
+          type: array
+          items: { type: string }
+          example: [Fön]
+        preferredStaffId: { type: [string, 'null'], format: uuid }
+        preferredStaffName: { type: [string, 'null'], description: null ise "Fark etmez", example: Elif Kaya }
+        acceptOtherStaff: { type: boolean }
+        dates:
+          type: array
+          items: { type: string, format: date }
+        timeWindows:
+          type: array
+          items: { $ref: '#/components/schemas/WaitlistTimeWindow' }
+        note: { type: [string, 'null'] }
+        joinedUtc: { type: string, format: date-time, description: '"3 gündür bekliyor"' }
+        source: { type: string, enum: [Online, Panel] }
+        pendingOffer:
+          description: Bekleyen teklif ("Teklif gönderildi"); yoksa null
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/WaitlistOfferView'
+        version: { $ref: '#/components/schemas/Version' }
+    WaitlistOverview:
+      type: object
+      required: [waitingCount, convertedThisMonth, offerHoldMinutes]
+      properties:
+        waitingCount: { type: integer, description: '"Bekleyen"', example: 4 }
+        oldestJoinedUtc: { type: [string, 'null'], format: date-time, description: '"en eskisi 6 gündür"' }
+        convertedThisMonth: { type: integer, description: '"Bu ay yerleşen · boşalan saatlerden"', example: 11 }
+        offerHoldMinutes: { type: integer, description: '"Teklif süresi" (WaitlistOfferHoldMinutes)', example: 15 }
+    WaitlistList:
+      type: object
+      required: [branchId, timeZone, generatedUtc, items, overview]
+      properties:
+        branchId: { type: string, format: uuid }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        generatedUtc: { type: string, format: date-time, description: Sunucunun "şimdi"si; kalan teklif süresi buna göre sayılır }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/WaitlistEntryView' }
+        overview: { $ref: '#/components/schemas/WaitlistOverview' }
+    ManageWaitlistCreate:
+      type: object
+      description: '"Listeye ekle" gövdesi'
+      required: [branchId, preferences]
+      properties:
+        branchId: { type: string, format: uuid }
+        brandCustomerId: { type: string, format: uuid, description: Var olan müşteri; newCustomer ile XOR }
+        newCustomer:
+          type: object
+          required: [fullName, phone]
+          properties:
+            fullName: { type: string, minLength: 2, maxLength: 120 }
+            phone: { $ref: '#/components/schemas/PhoneInput' }
+        preferences: { $ref: '#/components/schemas/WaitlistPreferences' }
+        note: { type: [string, 'null'], maxLength: 300 }
+    WaitlistOfferRequest:
+      type: object
+      description: '"Saat öner" gövdesi'
+      required: [startUtc, staffId]
+      properties:
+        startUtc: { type: string, format: date-time }
+        staffId: { type: string, format: uuid }
+    PublicWaitlistJoin:
+      type: object
+      description: '"Bekleme listesine katıl" gövdesi (DoluGun, BeklemeKatil); telefon doğrulamasından sonra'
+      required: [preferences, fullName, privacyNoticeAcknowledged, privacyNoticeVersion]
+      properties:
+        preferences: { $ref: '#/components/schemas/WaitlistPreferences' }
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        privacyNoticeAcknowledged: { type: boolean, const: true, description: Aydınlatma metni okundu }
+        privacyNoticeVersion: { type: string }
+    PublicWaitlistEntry:
+      type: object
+      required: [id, accessCode, status, branchId, timeZone, serviceNames, acceptOtherStaff, dates, timeWindows]
+      properties:
+        id: { type: string, format: uuid }
+        accessCode: { type: string, description: '"Listeden çık" bağlantısının kodu', example: W3nB8xQ2 }
+        status: { $ref: '#/components/schemas/WaitlistEntryStatus' }
+        branchId: { type: string, format: uuid }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        serviceNames:
+          type: array
+          items: { type: string }
+        preferredStaffName: { type: [string, 'null'] }
+        acceptOtherStaff: { type: boolean }
+        dates:
+          type: array
+          items: { type: string, format: date }
+        timeWindows:
+          type: array
+          items: { $ref: '#/components/schemas/WaitlistTimeWindow' }
+    PublicWaitlistOffer:
+      type: object
+      description: Bekleme teklifi sayfası (omvila.com/b/{accessCode}; BeklemeTeklif, BeklemeDoldu)
+      required: [id, status, brand, branch, startUtc, endUtc, timeZone, holdExpiresUtc, generatedUtc, items, total, amountDue, waitlistAccessCode, version]
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/WaitlistOfferStatus' }
+        brand:
+          type: object
+          required: [name, slug]
+          properties:
+            name: { type: string, example: Spa Moda }
+            slug: { type: string, example: spa-moda }
+            logoUrl: { type: [string, 'null'] }
+        branch:
+          type: object
+          required: [id, name]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string, example: Moda }
+        customerFirstName: { type: [string, 'null'], description: '"Merve, beklediğiniz saat boşaldı"', example: Merve }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        holdExpiresUtc: { type: string, format: date-time }
+        generatedUtc: { type: string, format: date-time, description: Sunucunun "şimdi"si; geri sayım holdExpiresUtc − generatedUtc ile başlar (cihaz saati kullanılmaz) }
+        items:
+          type: array
+          items:
+            type: object
+            required: [serviceName, durationMinutes, price]
+            properties:
+              serviceName: { type: string, example: Masaj }
+              staffName: { type: [string, 'null'], example: Seda Kurt }
+              durationMinutes: { type: integer, example: 60 }
+              price: { $ref: '#/components/schemas/Money' }
+        total: { $ref: '#/components/schemas/Money' }
+        amountDue: { $ref: '#/components/schemas/Money', description: '"Salonda ödenecek"' }
+        requiresApproval: { type: boolean, description: Kabulde randevu PendingApproval oluşur (salon onayı veya kapora) }
+        depositAmount: { $ref: '#/components/schemas/Money', description: Kabulde istenecek kapora; yoksa bulunmaz }
+        appointmentAccessCode: { type: [string, 'null'], description: 'Kabul edildiyse oluşan randevunun kodu (omvila.com/r/{code})' }
+        waitlistAccessCode: { type: string, description: '"Listeden çık" için bekleme kaydının kodu', example: W3nB8xQ2 }
+        version: { $ref: '#/components/schemas/Version' }
+
+    # ───────── Dilim 5: kapıda sıra ─────────
+    WalkInTicketStatus:
+      type: string
+      description: Waiting = sırada; Called = çağrıldı; Served = randevuya çevrildi; Left = "Sıradan çıkar"
+      enum: [Waiting, Called, Served, Left]
+    WalkInTicketView:
+      type: object
+      description: Kapıda sıra satırı (KapidaSira, işletme uygulaması Sıra)
+      required: [id, branchId, queueDate, queueNumber, status, customerName, joinedUtc, version]
+      properties:
+        id: { type: string, format: uuid }
+        branchId: { type: string, format: uuid }
+        queueDate: { type: string, format: date, description: Şubenin yerel günü }
+        queueNumber: { type: integer, description: Şube + gün bazında 1'den, example: 8 }
+        status: { $ref: '#/components/schemas/WalkInTicketStatus' }
+        customerName: { type: string, example: Okan Er }
+        brandCustomerId: { type: [string, 'null'], format: uuid, description: Var olan müşteri seçildiyse veya bilet randevuya çevrildiyse }
+        phoneMasked: { type: [string, 'null'], description: Telefon verildiyse ("sıra gelince SMS") }
+        serviceId: { type: [string, 'null'], format: uuid }
+        serviceName: { type: [string, 'null'], example: Saç kesimi }
+        preferredStaffId: { type: [string, 'null'], format: uuid }
+        preferredStaffName: { type: [string, 'null'], description: null ise "Fark etmez", example: Mert Demir }
+        joinedUtc: { type: string, format: date-time, description: '"Bekliyor 12 dk"' }
+        estimatedWaitMinutes: { type: [integer, 'null'], description: Bu kişinin tahmini beklemesi (öndekilerin kalan süreleri / müsait personel) }
+        appointmentId: { type: [string, 'null'], format: uuid, description: Randevuya çevrildiyse }
+        version: { $ref: '#/components/schemas/Version' }
+    WalkInQueue:
+      type: object
+      required: [branchId, date, timeZone, generatedUtc, items, waitingCount, servedCount, nextQueueNumber]
+      properties:
+        branchId: { type: string, format: uuid }
+        date: { type: string, format: date }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        generatedUtc: { type: string, format: date-time, description: Sunucunun "şimdi"si; bekleme süreleri buna göre sayılır }
+        items:
+          type: array
+          description: Sırada bekleyenler (Waiting, Called), numara sırasıyla
+          items: { $ref: '#/components/schemas/WalkInTicketView' }
+        waitingCount: { type: integer, description: '"Sırada"', example: 3 }
+        oldestJoinedUtc: { type: [string, 'null'], format: date-time, description: '"en eskisi 12 dk"' }
+        estimatedWaitMinutesForNew: { type: [integer, 'null'], description: '"Yeni gelen için ~35 dk"; müsait personel yoksa null', example: 35 }
+        servedCount: { type: integer, description: '"Bugün sıradan · randevuya çevrildi"', example: 7 }
+        nextQueueNumber: { type: integer, description: Sıraya ekle ekranındaki "No 11" (gösterim; numara oluşturmada atomik verilir), example: 11 }
+    WalkInCreate:
+      type: object
+      description: '"Sıraya ekle" gövdesi'
+      required: [branchId, fullName]
+      properties:
+        branchId: { type: string, format: uuid }
+        brandCustomerId: { type: string, format: uuid, description: Var olan müşteri seçildiyse }
+        fullName: { type: string, minLength: 2, maxLength: 120, example: Burak }
+        phone: { $ref: '#/components/schemas/PhoneInput', description: İsteğe bağlı; girilirse sırası yaklaşınca SMS gider }
+        serviceId: { type: [string, 'null'], format: uuid }
+        preferredStaffId: { type: [string, 'null'], format: uuid, description: null = fark etmez }
+    WalkInStartRequest:
+      type: object
+      description: '"Başlat / Randevuya çevir" gövdesi (isteğe bağlı); verilmeyen alan biletteki değerdir'
+      properties:
+        staffId: { type: string, format: uuid, description: Bilette personel "Fark etmez" ise zorunlu }
+        serviceId: { type: string, format: uuid, description: Bilette hizmet yoksa zorunlu }
+    WalkInStarted:
+      type: object
+      required: [ticket, appointment]
+      properties:
+        ticket: { $ref: '#/components/schemas/WalkInTicketView' }
+        appointment: { $ref: '#/components/schemas/AppointmentDetail' }
+
+    # ───────── Dilim 5: müşteri kartı ve KVKK ─────────
+    CustomerPaymentPage:
+      type: object
+      description: Müşteri kartı Ödemeler sekmesi
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentView' }
+        nextCursor: { type: [string, 'null'] }
+    CustomerMergeRequest:
+      type: object
+      description: '"Kayıtları birleştir" gövdesi; yoldaki müşteri "Kalacak kayıt"tır'
+      required: [sourceBrandCustomerId]
+      properties:
+        sourceBrandCustomerId: { type: string, format: uuid, description: '"Birleşecek kayıt"; arşive kalkar' }
+        mergeNotes: { type: boolean, default: true, description: '"Notları birleştir": iki kaydın notları tarih sırasıyla eklenir' }
+    CustomerImportRowError:
+      type: object
+      required: [rowNumber, code]
+      properties:
+        rowNumber: { type: integer, description: CSV satır numarası (başlık 1), example: 14 }
+        column: { type: [string, 'null'], example: Telefon }
+        code: { type: string, enum: [invalid_phone, missing_name, duplicate_in_file, too_long], description: '"telefon okunamadı" vb.' }
+    CustomerImportPreview:
+      type: object
+      description: İçe aktarma önizlemesi (MusteriIceAktar). Hatalı satırlar istemcide CSV olarak indirilir ("Hatalı satırları indir")
+      required: [importId, fileName, totalRows, toCreate, toMerge, invalidRows, mappedColumns, errors, status]
+      properties:
+        importId: { type: string, format: uuid }
+        fileName: { type: string, example: musteriler-eski-program.csv }
+        totalRows: { type: integer, example: 1248 }
+        toCreate: { type: integer, description: '"Eklenecek · yeni müşteri"', example: 1204 }
+        toMerge: { type: integer, description: '"Birleşecek · numarası zaten kayıtlı"; mevcut notlar korunur', example: 38 }
+        invalidRows: { type: integer, description: '"Hatalı satır"', example: 6 }
+        mappedColumns:
+          type: array
+          description: Eşlenen sütunlar
+          items: { type: string, enum: [FullName, Phone, Notes, BirthYear, Email] }
+          example: [FullName, Phone, Notes]
+        errors:
+          type: array
+          items: { $ref: '#/components/schemas/CustomerImportRowError' }
+        status: { type: string, enum: [Previewed, Committed, Failed] }
+        expiresUtc: { type: [string, 'null'], format: date-time, description: Önizleme bu andan sonra içe aktarılamaz }
+    CustomerImportCommitRequest:
+      type: object
+      properties:
+        sendInfoSms: { type: boolean, default: false, description: '"İçe aktarılanlara randevu bilgilendirme SMS''i gönderilebilir" (kampanya izni içe aktarılmaz)' }
+    CustomerImportResult:
+      type: object
+      required: [importId, status, created, merged, skipped]
+      properties:
+        importId: { type: string, format: uuid }
+        status: { type: string, enum: [Committed, Failed] }
+        created: { type: integer, example: 1204 }
+        merged: { type: integer, example: 38 }
+        skipped: { type: integer, example: 6 }
+    CustomerDeletionPreview:
+      type: object
+      description: KVKK silme talebi penceresi (MusteriSil) bilgileri
+      required: [fullName, appointmentCount, paymentCount, upcomingAppointmentCount, activePackages]
+      properties:
+        fullName: { type: string, description: Onay için yazılması gereken ad, example: Selin Öztürk }
+        appointmentCount: { type: integer, description: '"Korunacak (anonim): 12 randevu"', example: 12 }
+        paymentCount: { type: integer, description: '"9 ödeme"', example: 9 }
+        upcomingAppointmentCount: { type: integer, description: İptal edilecek yaklaşan randevular (neden AccountDeleted) }
+        activePackages:
+          type: array
+          description: '"Aktif paket" uyarısı'
+          items:
+            type: object
+            required: [customerPackageId, packageName, remainingSessions]
+            properties:
+              customerPackageId: { type: string, format: uuid }
+              packageName: { type: string, example: Fön paketi }
+              remainingSessions: { type: integer, example: 2 }
+    CustomerDeletionRequest:
+      type: object
+      required: [confirmFullName]
+      properties:
+        confirmFullName: { type: string, maxLength: 120, description: '"Onaylamak için müşterinin adını yazın"; ad ile birebir (büyük/küçük harf ve baştaki/sondaki boşluk yok sayılarak) eşleşmeli' }
+    DataDeletionRequestView:
+      type: object
+      description: Silme talebi satırı (AyarlarKvkk · Silme talepleri)
+      required: [id, customerDisplayName, requestedVia, requestedUtc, dueOn, status]
+      properties:
+        id: { type: string, format: uuid }
+        brandCustomerId: { type: [string, 'null'], format: uuid, description: Tamamlanan talepte null }
+        customerDisplayName: { type: string, description: 'Tamamlanan talepte maskeli ("A•••• K••••")', example: Tuna Oral }
+        requestedVia: { type: string, enum: [CustomerApp, Panel], description: '"Uygulamadan hesap silme" / "Panelden anonimleştirme"' }
+        requestedUtc: { type: string, format: date-time }
+        dueOn: { type: string, format: date, description: 'Son gün (DeletionRequestDueDays); "Bekliyor · 28 gün"' }
+        status: { type: string, enum: [Pending, Completed, Rejected] }
+        completedUtc: { type: [string, 'null'], format: date-time }
+    DataDeletionRequestPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DataDeletionRequestView' }
+        nextCursor: { type: [string, 'null'] }

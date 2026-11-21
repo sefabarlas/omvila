@@ -487,12 +487,12 @@ SMS'teki `omvila.com/r/{code}` bağlantısı. Bağlantıyı açan kişi o randev
 
 ### WaitlistEntry, WaitlistOffer (Bekleme listesi)
 `WaitlistEntry`: `BranchId`, `CustomerId`, `ServiceIds`, `PreferredStaffId?` (`null` = fark etmez), `AcceptOtherStaff`, `Dates` (LocalDate listesi) veya tarih aralığı, `TimeWindows` (`Morning`, `Afternoon`, `Evening`), `Priority`, `Status` (`Waiting`, `Converted`, `Cancelled`, `Expired`).
-`WaitlistOffer`: boşalan bir saatin bir kişiye teklifi. `WaitlistEntryId`, `OfferedStartUtc`, `OfferedEndUtc`, `OfferedStaffId`, `HoldExpiresUtc` (15 dk), `Status` (`Pending`, `Accepted`, `Declined`, `Expired`), `AppointmentId?`.
+`WaitlistOffer`: boşalan bir saatin bir kişiye teklifi. `WaitlistEntryId`, `OfferedStartUtc`, `OfferedEndUtc`, `OfferedStaffId`, `HoldExpiresUtc` (15 dk), `Status` (`Pending`, `Accepted`, `Declined`, `Expired`, `Withdrawn` = salon "Teklifi geri al"), `AppointmentId?`.
 Kural: bir saat boşalınca uygun bekleyenler öncelik ve kayıt sırasına göre sıralanır, yalnız ilk kişiye teklif gider. Teklif süresince saat başka online müşteriye gösterilmez (geçici tutma). Teklif reddedilir veya süresi dolarsa sıradakine geçer. Kişi listede kalır ("Listede kalmaya devam ediyorsunuz").
 
 ### WalkInTicket (Kapıda sıra)
 `BranchId`, `QueueDate` (yerel), `QueueNumber` (şube + gün bazında 1'den), `CustomerId?`, `CustomerName?`, `PhoneE164?` (isteğe bağlı; sıra gelince SMS için), `ServiceId?`, `PreferredStaffId?`, `Status` (`Waiting`, `Called`, `Served`, `Left`), `JoinedUtc`, `CalledUtc?`, `AppointmentId?`.
-"Başlat / Randevuya çevir" → `Channel = WalkIn` ve `Status = CheckedIn` olan bir randevu oluşturur. Bilet `Served` olur.
+"Başlat / Randevuya çevir" → `Channel = WalkIn` ve `Status = CheckedIn` olan bir randevu oluşturur. Bilet `Served` olur. Müşteri kaydı bilet oluşurken değil, "Başlat"ta açılır: telefon varsa numarayla bulunur veya açılır; telefonsuz bilette adla, telefonsuz bir müşteri kaydı açılır (`Customer.PhoneE164` yalnız bu durumda boş olabilir; benzersizlik dolu değerler içindir). Ayrıntı: `docs/acik-sorular.md` T-86.
 `BranchQueueCounter` (`BranchId`, `Date`, `LastNumber`) numarayı atomik olarak verir (`UPDATE … RETURNING`).
 
 ---
