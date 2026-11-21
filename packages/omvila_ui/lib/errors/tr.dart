@@ -31,6 +31,13 @@ const Map<ErrorCode, String> errorMessages = {
       'onaylayın.',
   ErrorCode.depositReminderAlreadySent:
       'Bu randevu için hatırlatma zaten gönderildi.',
+  ErrorCode.paymentTotalMismatch:
+      'Ödemelerin toplamı alınacak tutarla aynı olmalı. Tutarları kontrol '
+      'edin.',
+  ErrorCode.packageSessionUnavailable:
+      'Bu paketten seans düşülemiyor. Paketin süresini ve kalan seansını '
+      'kontrol edin.',
+  ErrorCode.cashDayAlreadyClosed: 'Bu gün zaten kapatıldı. Sayfayı yenileyin.',
   ErrorCode.outsideWorkingHours: 'Seçilen saat çalışma saatleri dışında.',
   ErrorCode.staffOnTimeOff: 'Personel bu saatte izinli.',
   ErrorCode.insufficientCredits: 'SMS kontörünüz az.',
