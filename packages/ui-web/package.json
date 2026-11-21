@@ -9,6 +9,7 @@
   ],
   "exports": {
     ".": "./src/index.ts",
+    "./booking": "./src/booking/index.ts",
     "./format": "./src/format/index.ts",
     "./errors": "./src/errors/index.ts",
     "./status": "./src/status/index.ts",

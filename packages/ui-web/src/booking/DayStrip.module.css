@@ -1,0 +1,140 @@
+/* design/tasarim-sistemleri/mobil/components/DayStrip (om-days); rezervasyon-sayfasi/Saat, DoluGun, Ertele. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.month {
+  margin: 0;
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.hint {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.strip {
+  position: relative;
+  display: flex;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-1);
+  margin: calc(var(--bosluk-1) * -1);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.day {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  align-items: center;
+  box-sizing: border-box;
+  width: 56px;
+  min-height: 74px;
+  padding: var(--bosluk-2) 0;
+  border: 0;
+  border-radius: 18px;
+  background: var(--zemin-yukseltilmis);
+  box-shadow: inset 0 0 0 1px var(--cizgi);
+  color: var(--metin);
+  font: inherit;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.day:hover {
+  background: var(--zemin-hover);
+}
+
+.day:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.weekday {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.number {
+  font-size: var(--yazi-baslik-2-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-2-satir);
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--kose-tam);
+}
+
+.dotOn {
+  background: var(--marka);
+}
+
+.closed {
+  color: var(--metin-devre-disi);
+  font-size: var(--yazi-sekme-boyut);
+  line-height: var(--yazi-sekme-satir);
+}
+
+.selected,
+.selected:hover {
+  background: var(--blok-marka);
+  box-shadow: none;
+  color: var(--metin-ters);
+}
+
+.selected .weekday {
+  color: var(--metin-ters);
+}
+
+.selected .dotOn {
+  background: var(--metin-ters);
+}
+
+.day:disabled {
+  background: var(--zemin-ikincil);
+  box-shadow: none;
+  color: var(--metin-devre-disi);
+  cursor: not-allowed;
+}
+
+.day:disabled .weekday {
+  color: var(--metin-devre-disi);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day {
+    transition: none;
+  }
+
+  .strip {
+    scroll-behavior: auto;
+  }
+}

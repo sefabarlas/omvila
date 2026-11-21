@@ -1,0 +1,32 @@
+// Rezervasyon sayfası bileşenleri (mobil tasarım sisteminin web karşılıkları). Tokenlar mobil ölçekten:
+// uygulama kökünde `@omvila/design-tokens/mobil.css` yüklenir. API çağrısı yapmazlar.
+export { AppointmentTicket, appointmentWhen } from './AppointmentTicket';
+export type { AppointmentTicketProps } from './AppointmentTicket';
+export { BookingAvatar } from './BookingAvatar';
+export type { BookingAvatarProps } from './BookingAvatar';
+export { BookingButton } from './BookingButton';
+export type { BookingButtonProps, BookingButtonSize, BookingButtonVariant } from './BookingButton';
+export { BookingSteps, defaultBookingSteps } from './BookingSteps';
+export type { BookingStepsProps } from './BookingSteps';
+export { CategoryChips } from './CategoryChips';
+export type { CategoryChipsProps, CategoryOption } from './CategoryChips';
+export { CopyField, CopyList } from './CopyField';
+export type { CopyFieldProps, CopyListProps } from './CopyField';
+export { DayStrip } from './DayStrip';
+export type { DayOption, DayStripProps } from './DayStrip';
+export { FullDayNotice } from './FullDayNotice';
+export type { FullDayNoticeProps } from './FullDayNotice';
+export { branchOpenStatus } from './openStatus';
+export type { BranchOpenInfo, OpenStatus } from './openStatus';
+export { SalonHeader, formatRating } from './SalonHeader';
+export type { CoverColor, SalonHeaderProps, SalonRating } from './SalonHeader';
+export { ServiceItem, serviceMeta } from './ServiceItem';
+export type { ServiceItemProps } from './ServiceItem';
+export { ANY_STAFF, StaffPicker } from './StaffPicker';
+export type { StaffOption, StaffPickerProps } from './StaffPicker';
+export { StickyFooter } from './StickyFooter';
+export type { StickyFooterProps } from './StickyFooter';
+export { SwitchCard } from './SwitchCard';
+export type { SwitchCardProps } from './SwitchCard';
+export { TimeSlotGrid, slotPeriod, slotPeriodLabels } from './TimeSlotGrid';
+export type { SlotPeriod, TimeSlot, TimeSlotGridProps } from './TimeSlotGrid';
