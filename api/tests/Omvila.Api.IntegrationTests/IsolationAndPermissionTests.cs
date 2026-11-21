@@ -220,6 +220,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         var (packageId, customerPackageId) = await SeedPackageAsync(token, serviceId, branchId, ownerStaffId, brandCustomerId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["entryId"] = await WaitlistEntryAsync(token, branchId, brandCustomerId, serviceId),
             ["packageId"] = packageId,
             ["customerPackageId"] = customerPackageId,
             ["branchId"] = branchId,
@@ -234,6 +235,14 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["ticketId"] = ticketId,
         };
     }
+
+    private Task<string> WaitlistEntryAsync(string token, string branchId, string brandCustomerId, string serviceId) =>
+        PostIdAsync(token, "/api/v1/manage/waitlist", new
+        {
+            branchId,
+            brandCustomerId,
+            preferences = new { serviceIds = new[] { serviceId }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
+        });
 
     /// <summary>Paket tanımı ve müşteriye satılmış paketi (packageId, customerPackageId).</summary>
     private async Task<(string PackageId, string CustomerPackageId)> SeedPackageAsync(

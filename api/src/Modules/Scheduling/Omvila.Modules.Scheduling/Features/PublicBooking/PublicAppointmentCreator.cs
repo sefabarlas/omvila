@@ -75,7 +75,7 @@ internal sealed class PublicAppointmentCreator(
 
         var settings = await tenants.GetAppointmentSettingsAsync(brandId, ct) ?? throw new DomainException("Markanın randevu ayarları yok.");
         var slot = new SlotRequest(context.Scope.BranchId, body.StartUtc!.Value, items.Value, sameStaff, AvailabilityMode.Public);
-        var deposit = await DepositTermsAsync(brandId, customer.NoShowCount, ct);
+        var deposit = await DepositTermsAsync(bankAccounts, brandId, customer.NoShowCount, ct);
         var written = await writer.CreateAsync(
             new CreateAppointmentCommand(
                 brandId, slot, customer.CustomerId, customer.BrandCustomerId, AppointmentChannel.Online, context.ClientApp, body.CustomerNote,
@@ -93,20 +93,38 @@ internal sealed class PublicAppointmentCreator(
         }
 
         await RecordConsentsAsync(context, body, customer.CustomerId, ct);
-        await PublishAsync(written.Value.Appointment, ct);
+        await PublishCreatedAsync(outbox, written.Value.Appointment, ct);
         return written.Value;
     }
 
-    private Task PublishAsync(Appointment appointment, CancellationToken ct) =>
-        appointment.Status == AppointmentStatus.PendingApproval
-            // Onay veya kapora gerekli: "Talebiniz alındı" (kaporada deposit.awaiting) ve staff.approval_needed; onay mesajı
-            // ve hatırlatmalar onayda (A2) veya kapora gelince (A3).
-            ? outbox.EnqueueAsync(ApprovalEvents.Requested(appointment, isReschedule: false), ct)
-            : outbox.EnqueueAsync(
-                new AppointmentConfirmed(
-                    appointment.BrandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,
-                    appointment.Channel.ToString(), NotifyCustomer: true, SeriesId: null, IsSeriesStart: false),
-                ct);
+    /// <summary>
+    /// Online oluşan randevunun olayı (rezervasyon sayfası ve bekleme teklifi kabulü; W4). Onay veya kapora gerekiyorsa
+    /// <see cref="AppointmentRequested"/> ("Talebiniz alındı", kaporada deposit.awaiting, staff.approval_needed; onay mesajı ve
+    /// hatırlatmalar onayda veya kapora gelince), değilse <see cref="AppointmentConfirmed"/>.
+    /// </summary>
+    internal static async Task PublishCreatedAsync(IOutbox outbox, Appointment appointment, CancellationToken ct)
+    {
+        if (appointment.Status == AppointmentStatus.PendingApproval)
+        {
+            await outbox.EnqueueAsync(ApprovalEvents.Requested(appointment, isReschedule: false), ct);
+            return;
+        }
+
+        await outbox.EnqueueAsync(
+            new AppointmentConfirmed(
+                appointment.BrandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,
+                appointment.Channel.ToString(), NotifyCustomer: true, SeriesId: null, IsSeriesStart: false),
+            ct);
+    }
+
+    /// <summary>Kural: sureler-ve-ayarlar.md § Kapora — aktif hesap yoksa kapora yok; varsa kalem kaporaları yazma yolunda çözülür.</summary>
+    internal static async Task<DepositTerms?> DepositTermsAsync(IBrandBankAccounts bankAccounts, Guid brandId, int customerNoShowCount, CancellationToken ct)
+    {
+        var account = await bankAccounts.GetActiveAsync(brandId, ct);
+        return account is null
+            ? null
+            : new DepositTerms(customerNoShowCount, account.TransferCodePrefix, Duration.FromMinutes(account.TransferWindowMinutes));
+    }
 
     /// <summary>
     /// Aydınlatma metni okundu (zorunlu) ve kampanya izni (verildiyse SMS ve e-posta; "Salonun kampanyalarından SMS ve
@@ -151,15 +169,6 @@ internal sealed class PublicAppointmentCreator(
             new PackageSessionReservation(
                 appointment.BrandId, appointment.BranchId, appointment.BrandCustomerId, appointment.Id, appointment.StartUtc.InZone(zone).Date, claims),
             ct);
-    }
-
-    /// <summary>Kural: sureler-ve-ayarlar.md § Kapora — aktif hesap yoksa kapora yok.</summary>
-    private async Task<DepositTerms?> DepositTermsAsync(Guid brandId, int noShowCount, CancellationToken ct)
-    {
-        var account = await bankAccounts.GetActiveAsync(brandId, ct);
-        return account is null
-            ? null
-            : new DepositTerms(noShowCount, account.TransferCodePrefix, Duration.FromMinutes(account.TransferWindowMinutes));
     }
 
     private static List<PackageUse>? PackageUses(PublicAppointmentCreate body) =>

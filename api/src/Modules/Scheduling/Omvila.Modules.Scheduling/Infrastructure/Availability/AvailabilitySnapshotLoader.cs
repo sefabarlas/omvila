@@ -60,6 +60,7 @@ internal sealed class AvailabilitySnapshotLoader(
         var rangeStart = zone.AtStartOfDay(from).ToInstant() - pad;
         var rangeEnd = zone.AtStartOfDay(to.PlusDays(1)).ToInstant() + pad;
         var busy = staffList.Count == 0 ? [] : await LoadBusyAsync(staffList, rangeStart, rangeEnd, ct);
+        var holds = staffList.Count == 0 ? [] : await LoadHoldsAsync(staffList, rangeStart, rangeEnd, now, ct);
 
         return new AvailabilitySnapshot(
             branchId,
@@ -67,15 +68,16 @@ internal sealed class AvailabilitySnapshotLoader(
             now,
             new AvailabilitySettings(schedule.Rules.MinNoticeMinutes, schedule.Rules.MaxAdvanceDays, schedule.Rules.SlotIntervalMinutes),
             ToSchedule(schedule.Hours, schedule.Overrides),
-            BuildStaff(schedule, busy),
+            BuildStaff(schedule, busy, holds),
             BuildServices(requests, resolved, staffList),
             transfers,
             ResourceInventory.None);
     }
 
-    private static Dictionary<Guid, StaffSchedule> BuildStaff(BranchSchedule schedule, List<BusyRow> busy)
+    private static Dictionary<Guid, StaffSchedule> BuildStaff(BranchSchedule schedule, List<BusyRow> busy, List<HoldRow> holds)
     {
         var busyByStaff = busy.ToLookup(b => b.StaffId);
+        var holdsByStaff = holds.ToLookup(h => h.StaffId);
         var timeOffsByStaff = schedule.TimeOffs.ToLookup(t => t.StaffId);
         return schedule.Staff.ToDictionary(
             s => s.StaffId,
@@ -88,7 +90,8 @@ internal sealed class AvailabilitySnapshotLoader(
                     b.AppointmentId,
                     b.BranchId,
                     b.During,
-                    b.Status == AppointmentStatus.PendingApproval ? b.HoldExpiresUtc : null))]));
+                    b.Status == AppointmentStatus.PendingApproval ? b.HoldExpiresUtc : null)),
+                    .. holdsByStaff[s.StaffId].Select(h => new BusySegment(null, h.BranchId, h.During, h.HoldExpiresUtc, h.CustomerId))]));
     }
 
     /// <summary>İstekler hizmet başına [personelsiz, personel1, personel2…] sırasındadır; yanıt aynı sıradadır.</summary>
@@ -141,6 +144,19 @@ internal sealed class AvailabilitySnapshotLoader(
                      && segment.During.Start < rangeEnd && segment.During.End > rangeStart
                select new BusyRow(segment.StaffId!.Value, appointment.Id, appointment.BranchId, segment.During, appointment.Status, appointment.HoldExpiresUtc))
             .ToListAsync(ct);
+
+    /// <summary>
+    /// Bekleme teklifinin tuttuğu saatler (musaitlik.md § 4, M18; T-90): bekleyen ve süresi geçmemiş teklif, teklif sahibi
+    /// dışındaki herkes için personel meşguliyetidir. Tutma süresi geçince saat kendiliğinden boşalır.
+    /// </summary>
+    private async Task<List<HoldRow>> LoadHoldsAsync(List<Guid> staffIds, Instant rangeStart, Instant rangeEnd, Instant now, CancellationToken ct) =>
+        await db.WaitlistOffers.AsNoTracking()
+            .Where(o => o.Status == Domain.Waitlist.WaitlistOfferStatus.Pending && o.HoldExpiresUtc > now && staffIds.Contains(o.OfferedStaffId)
+                        && o.OfferedStartUtc < rangeEnd && o.OfferedEndUtc > rangeStart)
+            .Select(o => new HoldRow(o.OfferedStaffId, o.BranchId, new Interval(o.OfferedStartUtc, o.OfferedEndUtc), o.HoldExpiresUtc, o.CustomerId))
+            .ToListAsync(ct);
+
+    private sealed record HoldRow(Guid StaffId, Guid BranchId, Interval During, Instant HoldExpiresUtc, Guid CustomerId);
 
     private sealed record BusyRow(Guid StaffId, Guid AppointmentId, Guid BranchId, Interval During, AppointmentStatus Status, Instant? HoldExpiresUtc);
 }

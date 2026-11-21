@@ -173,13 +173,15 @@ internal sealed class ManageAppointmentChanges(
         await db.SaveChangesAsync(ct);
         await packageSessions.ReleaseAsync(brandId, all, ct);
         var notify = body.NotifyCustomer ?? true;
+        var offerToWaitlist = body.OfferToWaitlist ?? true;
         foreach (var a in all)
         {
             // "Bu ve sonrakiler" iptalinde müşteriye tek SMS gider (seçilen randevu); hepsinin hatırlatmaları düşer (T-53).
             var notifyThis = notify && ReferenceEquals(a, appointment);
             await outbox.EnqueueAsync(
                 new AppointmentCancelledBySalon(
-                    a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notifyThis, DepositReceived: a.DepositStatus == DepositStatus.Received),
+                    a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notifyThis,
+                    DepositReceived: a.DepositStatus == DepositStatus.Received, OfferToWaitlist: offerToWaitlist),
                 ct);
         }
 

@@ -124,7 +124,7 @@ public sealed class AvailabilitySnapshotLoaderTests(PostgresFixture db) : IAsync
 
         TestContext.Current.TestOutputHelper?.WriteLine($"Sorgu sayısı: küçük {small}, büyük {large}");
         large.ShouldBe(small, "döngüde sorgu yok (N+1)");
-        large.ShouldBeLessThanOrEqualTo(11, "Tenancy 6 + Catalog 4 + Scheduling 1");
+        large.ShouldBeLessThanOrEqualTo(12, "Tenancy 6 + Catalog 4 + Scheduling 2 (meşguliyet, bekleme teklifi tutmaları; T-90)");
     }
 
     private Task<AvailabilitySnapshot?> LoadAsync(LocalDate from, LocalDate to, IReadOnlyCollection<Guid> services, IReadOnlyCollection<Guid>? staff) =>
