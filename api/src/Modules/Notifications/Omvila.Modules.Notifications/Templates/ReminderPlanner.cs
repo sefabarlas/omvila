@@ -1,6 +1,4 @@
 using NodaTime;
-using NodaTime.TimeZones;
-using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Notifications.Templates;
 
@@ -13,9 +11,6 @@ namespace Omvila.Modules.Notifications.Templates;
 /// </summary>
 internal static class ReminderPlanner
 {
-    private static readonly LocalTime QuietStart = new(PlatformDefaults.QuietHoursStartHour, 0);
-    private static readonly LocalTime QuietEnd = new(PlatformDefaults.QuietHoursEndHour, 0);
-
     public static IReadOnlyList<PlannedReminder> Plan(Instant startUtc, Instant now, DateTimeZone zone, IEnumerable<int> offsetsMinutes)
     {
         ArgumentNullException.ThrowIfNull(zone);
@@ -24,7 +19,7 @@ internal static class ReminderPlanner
         var byVariant = new Dictionary<string, PlannedReminder>(StringComparer.Ordinal);
         foreach (var offset in offsetsMinutes.Where(o => o > 0).Distinct().OrderDescending())
         {
-            var at = OutOfQuietHours(startUtc - Duration.FromMinutes(offset), zone);
+            var at = QuietHours.Defer(startUtc - Duration.FromMinutes(offset), zone);
             if (at <= now || at >= startUtc)
             {
                 continue;
@@ -50,19 +45,4 @@ internal static class ReminderPlanner
 
         return [.. byVariant.Values.OrderBy(r => r.ScheduledUtc)];
     }
-
-    private static Instant OutOfQuietHours(Instant at, DateTimeZone zone)
-    {
-        var local = at.InZone(zone);
-        var time = local.TimeOfDay;
-        if (time >= QuietStart)
-        {
-            return MorningOf(local.Date.PlusDays(1), zone);
-        }
-
-        return time < QuietEnd ? MorningOf(local.Date, zone) : at;
-    }
-
-    private static Instant MorningOf(LocalDate date, DateTimeZone zone) =>
-        zone.ResolveLocal(date.At(QuietEnd), Resolvers.LenientResolver).ToInstant();
 }

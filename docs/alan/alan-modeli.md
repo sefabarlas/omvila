@@ -41,14 +41,14 @@ Backend modüler monolittir. Her modül kendi PostgreSQL şemasına (schema) sah
 
 | Modül | DB şeması | Sahip olduğu varlıklar |
 |---|---|---|
-| Identity | `identity` | User, Role, Permission, RolePermission, UserMembership, TermsAcceptance, OtpChallenge, RefreshToken, CustomerSession, TrustedDevice, Device |
+| Identity | `identity` | User, Role, Permission, RolePermission, UserMembership, TermsAcceptance, OtpChallenge, RefreshToken, CustomerSession, TrustedDevice |
 | Tenancy | `tenancy` | Brand, BrandSettings, Branch, BranchWorkingHours, WorkingHoursOverride, PublicHoliday, BranchTransferTime, Staff, StaffBranch, StaffWorkingHours, TimeOff, BrandBankAccount, BookingPageSettings |
 | Catalog | `catalog` | Industry, ServiceTemplate, ServiceCategory, Service, ServiceStage, ServiceStaff, BranchServicePrice, ResourceType, Resource, ResourceDowntime, ServiceResourceRule, Package, PackageItem |
 | Customers | `customers` | Customer, BrandCustomer, Tag, BrandCustomerTag, ConsentRecord, CustomerSavedBrand, DataDeletionRequest, CustomerImport |
 | Scheduling | `scheduling` | Appointment, AppointmentItem, AppointmentItemSegment, AppointmentItemResource, AppointmentSeries, AppointmentAccessCode, WaitlistEntry, WaitlistOffer, WalkInTicket, BranchQueueCounter |
 | Sales | `sales` | Payment, PaymentAllocation, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
 | Reviews | `reviews` | Review |
-| Notifications | `notifications` | NotificationOutbox, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference |
+| Notifications | `notifications` | NotificationOutbox, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
 | Integrations | `integrations` | CalendarLink, AppointmentCalendarSync |
 | Platform | `platform` | Plan, CreditPackage, Subscription, SubscriptionInvoice, PaymentNotice, PlatformBankTransaction, AuditLog |
 
@@ -133,7 +133,7 @@ Salon kullanıcısının kullanım koşulları ve aydınlatma metni onayı: `Use
 Rezervasyon sayfasında bir telefon bir kez doğrulandıktan sonra aynı tarayıcıdan tekrar randevuda kod istenmez. Alanlar: `PhoneE164`, `TokenHash` (çerezde saklanan rastgele değerin hash'i), `ExpiresUtc`, `LastUsedUtc`.
 
 ### Device
-Push bildirimi için cihaz kaydı. Hem müşteri hem işletme uygulaması kullanır.
+Push bildirimi için cihaz kaydı. Hem müşteri hem işletme uygulaması kullanır. Notifications modülündedir (gönderim işi cihazları okur; T-66). İşletme cihazı kaydedildiği markanın kiracı bağlamındadır (`BrandId`, RLS); ayrıca `AppVersion`, `CreatedUtc`.
 
 | Alan | Tip | Not |
 |---|---|---|
