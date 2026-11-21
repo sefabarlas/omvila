@@ -9,11 +9,12 @@ import {
   PersonCell,
   Skeleton,
   TextField,
+  useToast,
 } from '@omvila/ui-web/panel';
 import { branchToday } from '@omvila/ui-web/time';
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Phone, Plus, Search, ShieldCheck, UserPlus, Users, X } from 'lucide-react';
+import { Phone, Plus, Search, ShieldCheck, Upload, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
@@ -27,6 +28,7 @@ import { customersQuery } from './api';
 import type { CustomerSummary } from './api';
 import styles from './Customers.module.css';
 import { FilterChips } from './FilterChips';
+import { ImportCustomersModal } from './ImportCustomersModal';
 import {
   customerPhone,
   dayLabel,
@@ -38,6 +40,7 @@ import {
   looksLikePhone,
   tagTone,
 } from './labels';
+import { downloadFile, exportCustomers } from './records-api';
 
 export interface CustomersSearch {
   q?: string;
@@ -49,7 +52,8 @@ const searchDelayMs = 300;
 
 /**
  * Müşteriler (salon-paneli/Musteriler, MusterilerBos, MusterilerAramaYok): filtre çipleri, ad veya telefonla arama
- * ("4418" son 4 hane), imleçli liste. Özet blokları, sıralama, içe/dışa aktarma sözleşmede yok (T-57).
+ * ("4418" son 4 hane), imleçli liste. İçe aktar (MusteriIceAktar) ve Dışa aktar (seçili filtreyle CSV) yalnız
+ * customer.import / customer.export ile (sahip; T-99). Özet blokları ve sıralama sözleşmede yok (T-57).
  */
 export function CustomersPage({ search }: { search: CustomersSearch }) {
   const api = useApi();
@@ -70,6 +74,26 @@ export function CustomersPage({ search }: { search: CustomersSearch }) {
   });
   const today = branchToday(clock, defaultTimeZone);
   const canAdd = can('customer.edit');
+  const canImport = can('customer.import');
+  const canExport = can('customer.export');
+  const toast = useToast();
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const runExport = async () => {
+    setExporting(true);
+    try {
+      const { blob, fileName } = await exportCustomers(api, filter);
+      downloadFile(blob, fileName ?? `musteriler-${today}.csv`);
+    } catch (error) {
+      toast.show({
+        tone: 'hata',
+        title: 'Dışa aktarılamadı',
+        message: errorMessage(error instanceof ApiProblem ? error.code : undefined),
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const setSearch = (next: { q?: string | undefined; filtre?: string | undefined }) => {
     void navigate({
@@ -119,25 +143,60 @@ export function CustomersPage({ search }: { search: CustomersSearch }) {
       title="Müşteriler"
       {...(branchName ? { context: branchName } : {})}
       action={
-        canAdd ? (
-          <Button
-            variant="primary"
-            icon={<Plus size={16} aria-hidden="true" />}
-            onClick={() => {
-              setAdding({});
-            }}
-          >
-            Müşteri ekle
-          </Button>
-        ) : null
+        <>
+          {canImport ? (
+            <Button
+              icon={<Upload size={16} aria-hidden="true" />}
+              onClick={() => {
+                setImporting(true);
+              }}
+            >
+              İçe aktar
+            </Button>
+          ) : null}
+          {canExport && !noCustomersAtAll ? (
+            <Button
+              loading={exporting}
+              loadingLabel="Hazırlanıyor…"
+              onClick={() => void runExport()}
+            >
+              Dışa aktar
+            </Button>
+          ) : null}
+          {canAdd ? (
+            <Button
+              variant="primary"
+              icon={<Plus size={16} aria-hidden="true" />}
+              onClick={() => {
+                setAdding({});
+              }}
+            >
+              Müşteri ekle
+            </Button>
+          ) : null}
+        </>
       }
     >
+      {importing ? (
+        <ImportCustomersModal
+          onClose={() => {
+            setImporting(false);
+          }}
+        />
+      ) : null}
       {noCustomersAtAll ? (
         <CustomersEmpty
           canAdd={canAdd}
           onAdd={() => {
             setAdding({});
           }}
+          {...(canImport
+            ? {
+                onImport: () => {
+                  setImporting(true);
+                },
+              }
+            : {})}
         />
       ) : (
         <>
@@ -280,20 +339,45 @@ export function CustomersPage({ search }: { search: CustomersSearch }) {
   );
 }
 
-/** MusterilerBos: henüz hiç müşteri yok. CSV içe aktarma ayrı dilimde (T-57). */
-function CustomersEmpty({ canAdd, onAdd }: { canAdd: boolean; onAdd: () => void }) {
+/** MusterilerBos: henüz hiç müşteri yok; içe aktarma yalnız customer.import ile (T-99). */
+function CustomersEmpty({
+  canAdd,
+  onAdd,
+  onImport,
+}: {
+  canAdd: boolean;
+  onAdd: () => void;
+  onImport?: () => void;
+}) {
   return (
     <section className={styles.emptyCard} aria-label="Müşteri yok">
       <EmptyState
         icon={<Users size={24} />}
         headingLevel={2}
         title="Henüz müşteriniz yok"
-        description="Online randevu alan herkes buraya kendiliğinden eklenir. Telefonla gelen müşterilerinizi tek tek ekleyebilirsiniz."
+        description={
+          onImport
+            ? 'Online randevu alan herkes buraya kendiliğinden eklenir. Önceki defterinizi ya da Excel listenizi CSV olarak içe aktararak başlayabilirsiniz.'
+            : 'Online randevu alan herkes buraya kendiliğinden eklenir. Telefonla gelen müşterilerinizi tek tek ekleyebilirsiniz.'
+        }
         actions={
-          canAdd ? (
-            <Button icon={<Plus size={16} aria-hidden="true" />} onClick={onAdd}>
-              Tek tek ekle
-            </Button>
+          onImport || canAdd ? (
+            <>
+              {onImport ? (
+                <Button
+                  variant="primary"
+                  icon={<Upload size={16} aria-hidden="true" />}
+                  onClick={onImport}
+                >
+                  CSV içe aktar
+                </Button>
+              ) : null}
+              {canAdd ? (
+                <Button icon={<Plus size={16} aria-hidden="true" />} onClick={onAdd}>
+                  Tek tek ekle
+                </Button>
+              ) : null}
+            </>
           ) : undefined
         }
       />
@@ -302,7 +386,7 @@ function CustomersEmpty({ canAdd, onAdd }: { canAdd: boolean; onAdd: () => void 
           <Phone size={18} className={styles.tipIcon} aria-hidden="true" />
           <div>
             <p className={styles.tipTitle}>Telefon numarası anahtardır</p>
-            <p className={styles.tipText}>Aynı numara iki kez eklenmez.</p>
+            <p className={styles.tipText}>Aynı numara iki kez eklenmez; kayıtlar birleştirilir.</p>
           </div>
         </div>
         <div className={styles.tip}>

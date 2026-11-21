@@ -11,6 +11,8 @@ import { createQueuesFake } from './fake-queues';
 import type { QueuesFakeOptions } from './fake-queues';
 import { createSalesFake } from './fake-sales';
 import type { SalesFakeOptions } from './fake-sales';
+import { createReviewsFake } from './fake-reviews';
+import type { ReviewsFakeOptions } from './fake-reviews';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -36,6 +38,12 @@ export const ownerPermissions = [
   'timeoff.request',
   'waitlist.manage',
   'walkin.manage',
+  'review.view',
+  'review.reply',
+  'customer.merge',
+  'customer.import',
+  'customer.export',
+  'customer.kvkk',
 ];
 export const staffPermissions = [
   'calendar.view',
@@ -109,6 +117,8 @@ export interface FakeApiOptions {
   queues?: QueuesFakeOptions;
   /** Kasa ve müşteri paketi uçları. */
   sales?: SalesFakeOptions;
+  /** Değerlendirme uçları. */
+  reviews?: ReviewsFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -396,6 +406,7 @@ export function fakeFetch({
   notificationSettings = {},
   queues = {},
   sales = {},
+  reviews = {},
 }: FakeApiOptions = {}) {
   const queuesFake = createQueuesFake(queues);
   const salesFake = createSalesFake(session, sales);
@@ -403,6 +414,7 @@ export function fakeFetch({
   const customersFake = createCustomersFake(session, customers);
   const notificationsFake = createNotificationsFake(notifications);
   const notificationSettingsFake = createNotificationSettingsFake(notificationSettings);
+  const reviewsFake = createReviewsFake(reviews);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -449,6 +461,11 @@ export function fakeFetch({
     const customersResponse = await customersFake(request);
     if (customersResponse) {
       return customersResponse;
+    }
+
+    const reviewsResponse = await reviewsFake.handle(request);
+    if (reviewsResponse) {
+      return reviewsResponse;
     }
 
     const notificationsResponse = await notificationsFake(request);

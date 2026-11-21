@@ -5,6 +5,7 @@ import { cashDemo, checkoutDemo } from './cash-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
 import { queuesDemo } from './queues-demo';
+import { reviewsDemo } from './reviews-demo';
 import { depositSetup } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
@@ -325,7 +326,130 @@ const screens: ScreenCase[] = [
     setup: (page) => queuesDemo(page, { empty: true }),
     act: (page) => expect(page.getByRole('heading', { name: 'Sırada kimse yok' })).toBeVisible(),
   },
+  // Dilim 5 (T-99): değerlendirmeler, müşteri kartı sekmeleri ve kayıt işlemleri, CSV içe aktarma, KVKK.
+  {
+    path: '/degerlendirmeler',
+    name: 'Degerlendirmeler',
+    heading: 'Değerlendirmeler',
+    setup: reviewsDemo,
+    act: (page) =>
+      expect(page.getByRole('article', { name: 'Ece Koç değerlendirmesi' })).toBeVisible(),
+  },
+  {
+    path: '/degerlendirmeler?filtre=tumu',
+    name: 'DegerlendirmelerTumu',
+    heading: 'Değerlendirmeler',
+    setup: reviewsDemo,
+    act: (page) => expect(page.getByText('Yanıtınız · Elif Kaya')).toBeVisible(),
+  },
+  {
+    path: '/degerlendirmeler',
+    name: 'Degerlendirmeler899',
+    heading: 'Değerlendirmeler',
+    setup: reviewsDemo,
+    act: (page) =>
+      expect(page.getByRole('article', { name: 'Ece Koç değerlendirmesi' })).toBeVisible(),
+    viewport: { width: 899, height: 1200 },
+  },
+  {
+    path: '/degerlendirmeler',
+    name: 'DegerlendirmelerBos',
+    heading: 'Değerlendirmeler',
+    setup: (page) => reviewsDemo(page, { empty: true }),
+    act: (page) =>
+      expect(page.getByRole('heading', { name: 'Henüz değerlendirme yok' })).toBeVisible(),
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriKartiPaketler',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: async (page) => {
+      await expect(page.getByText('seans kaldı · 31 Ara')).toBeVisible();
+      await page.getByRole('tab', { name: 'Paketler' }).click();
+      await expect(page.getByRole('table', { name: 'Paketler' })).toBeVisible();
+    },
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriKartiOdemeler',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('tab', { name: 'Ödemeler' }).click();
+      await expect(page.getByRole('table', { name: 'Ödemeler' })).toBeVisible();
+    },
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriKartiDegerlendirmeler',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('tab', { name: 'Değerlendirmeler' }).click();
+      await expect(
+        page.getByRole('article', { name: 'Selin Öztürk değerlendirmesi' }),
+      ).toBeVisible();
+    },
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriBirlestir',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Başka kayıtla birleştir' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Kayıtları birleştir' });
+      await dialog.getByRole('searchbox', { name: 'Birleşecek kaydı ara' }).fill('Derya');
+      await dialog.getByRole('button', { name: /Derya Şahin/ }).click();
+      await expect(dialog.getByRole('region', { name: 'Birleşecek kayıt' })).toContainText('6');
+      await settle(page);
+    },
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriSil',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'KVKK silme talebi' }).click();
+      const dialog = page.getByRole('dialog', { name: 'KVKK silme talebi' });
+      await expect(dialog.getByText('12 randevu, 9 ödeme')).toBeVisible();
+      await settle(page);
+    },
+  },
+  {
+    path: '/musteriler',
+    name: 'MusteriIceAktar',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'İçe aktar' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Müşterileri içe aktar' });
+      await dialog.getByLabel('CSV dosyası').setInputFiles({
+        name: 'musteriler-eski-program.csv',
+        mimeType: 'text/csv',
+        buffer: Buffer.from('Ad;Telefon\n'),
+      });
+      await expect(dialog.getByRole('button', { name: '1.242 kaydı içe aktar' })).toBeVisible();
+      await settle(page);
+    },
+  },
+  {
+    path: '/ayarlar/kvkk',
+    name: 'AyarlarKvkk',
+    heading: 'Ayarlar',
+    setup: customersDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Silme talepleri' })).toBeVisible(),
+  },
 ];
+
+/** Pencerenin açılış hareketi bitsin. */
+async function settle(page: Page) {
+  await page.waitForFunction(() =>
+    document.getAnimations().every((animation) => animation.playState !== 'running'),
+  );
+}
 
 for (const theme of ['light', 'dark'] as const) {
   for (const screen of screens) {

@@ -16,7 +16,7 @@ import {
 import { displayStatus } from '@omvila/ui-web/status';
 import { branchToday } from '@omvila/ui-web/time';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { CalendarDays, CalendarPlus } from 'lucide-react';
+import { CalendarDays, CalendarPlus, GitMerge, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
@@ -30,15 +30,20 @@ import { Page } from '@/shared/Page';
 import { customerAppointmentsQuery, customerQuery } from './api';
 import type { CustomerAppointmentRow, CustomerSummary } from './api';
 import styles from './Customers.module.css';
-import { customerPhone, dayLabel, instantLabel, tagTone } from './labels';
+import { PackagesTab, PaymentsTab, ReviewsTab } from './CustomerTabs';
+import { DeleteCustomerModal } from './DeleteCustomerModal';
+import { activePackage, customerPhone, dayLabel, instantLabel, shortDate, tagTone } from './labels';
+import { MergeCustomersModal } from './MergeCustomersModal';
+import { customerPackagesQuery } from './records-api';
 
 const breadcrumb = 'Müşteriler / Müşteri kartı';
 
 /**
- * Müşteri kartı (salon-paneli/MusteriKarti): kimlik, etiketler, metrik blokları, Randevular sekmesi ve notlar.
- * "Randevu ver" yeni randevu ekranını müşteri seçili açar (appointment.create, T-58). "Müşteri since", ilk kanal,
- * tercih ettiği personel, KVKK izinleri, kayıt işlemleri, paket bloğu ve "SMS gönder" sözleşmede/dilimde yok; gizli
- * (acik-sorular.md T-57).
+ * Müşteri kartı (salon-paneli/MusteriKarti): kimlik, etiketler, metrik blokları (etkin paket kartı dahil), sekmeler
+ * (Randevular, Paketler, Ödemeler: payment.collect, Değerlendirmeler: review.view), notlar ve "Kayıt işlemleri"
+ * (birleştir: customer.merge, KVKK silme: customer.kvkk). "Randevu ver" yeni randevu ekranını müşteri seçili açar
+ * (appointment.create, T-58). "Müşteri since", ilk kanal, tercih ettiği personel, KVKK izinleri ve "SMS gönder"
+ * sözleşmede yok; gizli (acik-sorular.md T-57, T-99).
  */
 export function CustomerCardPage({ brandCustomerId }: { brandCustomerId: string }) {
   const api = useApi();
@@ -81,7 +86,20 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
   const { session, can } = useSession();
   const { branchId: selectedBranch } = useSelectedBranch();
   const branchId = selectedBranch ?? session.branches[0]?.id ?? '';
+  const api = useApi();
   const [booking, setBooking] = useState(false);
+  const [tab, setTab] = useState('randevular');
+  const [dialog, setDialog] = useState<'merge' | 'delete' | null>(null);
+  const packages = useInfiniteQuery(customerPackagesQuery(api, customer.id));
+  const active = activePackage(packages.data?.pages.flatMap((page) => page.items) ?? []);
+  const tabs = [
+    { value: 'randevular', label: 'Randevular' },
+    { value: 'paketler', label: 'Paketler' },
+    ...(can('payment.collect') ? [{ value: 'odemeler', label: 'Ödemeler' }] : []),
+    ...(can('review.view') ? [{ value: 'degerlendirmeler', label: 'Değerlendirmeler' }] : []),
+  ];
+  const canMerge = can('customer.merge');
+  const canDelete = can('customer.kvkk');
   const today = branchToday(clock, defaultTimeZone);
   const phone = customerPhone(customer);
   const visits = customer.visitCount;
@@ -134,6 +152,22 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
           }}
         />
       ) : null}
+      {dialog === 'merge' ? (
+        <MergeCustomersModal
+          customer={customer}
+          onClose={() => {
+            setDialog(null);
+          }}
+        />
+      ) : null}
+      {dialog === 'delete' ? (
+        <DeleteCustomerModal
+          customer={customer}
+          onClose={() => {
+            setDialog(null);
+          }}
+        />
+      ) : null}
       <div className={styles.cardLayout}>
         <aside className={styles.side}>
           <section className={styles.panel} aria-label="Müşteri">
@@ -164,6 +198,44 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
               </dl>
             ) : null}
           </section>
+          {canMerge || canDelete ? (
+            <section className={styles.panel} aria-labelledby="musteri-kayit-islemleri">
+              <h2 id="musteri-kayit-islemleri" className={styles.recordTitle}>
+                Kayıt işlemleri
+              </h2>
+              <ul className={styles.recordActions}>
+                {canMerge ? (
+                  <li>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      icon={<GitMerge size={16} aria-hidden="true" />}
+                      onClick={() => {
+                        setDialog('merge');
+                      }}
+                    >
+                      Başka kayıtla birleştir
+                    </Button>
+                  </li>
+                ) : null}
+                {canDelete ? (
+                  <li>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={styles.dangerAction}
+                      icon={<Trash2 size={16} aria-hidden="true" />}
+                      onClick={() => {
+                        setDialog('delete');
+                      }}
+                    >
+                      KVKK silme talebi
+                    </Button>
+                  </li>
+                ) : null}
+              </ul>
+            </section>
+          ) : null}
         </aside>
         <div className={styles.main}>
           <Bento label="Müşteri özeti">
@@ -193,20 +265,32 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
                     : 'randevuya gelmedi'
               }
             />
+            {active ? (
+              <BentoBlock
+                tone="kum"
+                label={active.packageName}
+                value={`${String(active.remainingSessions)}/${String(active.totalSessions)}`}
+                sub={`seans kaldı · ${shortDate(active.expiresOn)}`}
+              />
+            ) : null}
           </Bento>
           <Tabs
             label="Müşteri kartı"
             idPrefix="musteri"
-            items={[{ value: 'randevular', label: 'Randevular' }]}
-            value="randevular"
-            onChange={() => undefined}
+            items={tabs}
+            value={tab}
+            onChange={setTab}
           />
-          <div
-            role="tabpanel"
-            id="musteri-panel-randevular"
-            aria-labelledby="musteri-tab-randevular"
-          >
-            <AppointmentsTab brandCustomerId={customer.id} today={today} />
+          <div role="tabpanel" id={`musteri-panel-${tab}`} aria-labelledby={`musteri-tab-${tab}`}>
+            {tab === 'paketler' ? (
+              <PackagesTab brandCustomerId={customer.id} today={today} />
+            ) : tab === 'odemeler' ? (
+              <PaymentsTab brandCustomerId={customer.id} today={today} />
+            ) : tab === 'degerlendirmeler' ? (
+              <ReviewsTab brandCustomerId={customer.id} today={today} />
+            ) : (
+              <AppointmentsTab brandCustomerId={customer.id} today={today} />
+            )}
           </div>
           {customer.notes ? (
             <section className={styles.panel} aria-labelledby="musteri-notlar">
