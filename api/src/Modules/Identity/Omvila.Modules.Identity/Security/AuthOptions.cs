@@ -13,6 +13,12 @@ public sealed class AuthOptions
     /// <summary>Kayıt jetonu ömrü, dakika (sözleşme ManageAuthResult.signupToken: 15 dk).</summary>
     public int SignupTokenMinutes { get; set; }
 
+    /// <summary>Rezervasyon sayfası jetonunun ömrü, dakika (sureler-ve-ayarlar.md PublicBookingTokenMinutes: 30).</summary>
+    public int PublicBookingTokenMinutes { get; set; }
+
+    /// <summary>Güvenilir cihaz çerezinin ömrü, gün (sureler-ve-ayarlar.md TrustedDeviceDays: 30).</summary>
+    public int TrustedDeviceDays { get; set; }
+
     /// <summary>Davet SMS'indeki panel giriş adresi (alan adı S-14 gereği yapılandırmadan).</summary>
     public Uri? PanelSignInUrl { get; set; }
 
@@ -27,5 +33,7 @@ public sealed class AuthOptions
 
     internal bool IsValid() =>
         !string.IsNullOrWhiteSpace(Issuer) && AccessTokenMinutes > 0 && RefreshTokenDaysRemembered > 0 && RefreshTokenDaysSession > 0 && SignupTokenMinutes > 0
+        && PublicBookingTokenMinutes > 0 && TrustedDeviceDays > 0
+        && PublicBookingTokenMinutes > 0 && TrustedDeviceDays > 0
         && PanelSignInUrl is { IsAbsoluteUri: true };
 }

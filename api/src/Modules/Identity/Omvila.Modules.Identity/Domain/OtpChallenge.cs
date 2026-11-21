@@ -32,13 +32,21 @@ internal sealed class OtpChallenge
     /// <summary>Deneme sınırı aşıldıysa bu zamana kadar aynı telefona yeni kod verilmez.</summary>
     public Instant? LockedUntilUtc { get; private set; }
 
-    public static OtpChallenge Create(Guid id, string phoneE164, OtpPurpose purpose, string codeHash, Instant now, Duration ttl) => new()
-    {
-        Id = id,
-        PhoneE164 = phoneE164,
-        Purpose = purpose,
-        CodeHash = codeHash,
-        CreatedUtc = now,
-        ExpiresUtc = now + ttl,
-    };
+    /// <summary>
+    /// Rezervasyon kodunun istendiği şube (PublicBooking): doğrulamada salonun müşteriyi tanıyıp tanımadığı ("Tekrar hoş
+    /// geldiniz") bu şubenin markasında aranır. Diğer amaçlarda boş.
+    /// </summary>
+    public Guid? BranchId { get; private set; }
+
+    public static OtpChallenge Create(
+        Guid id, string phoneE164, OtpPurpose purpose, string codeHash, Instant now, Duration ttl, Guid? branchId = null) => new()
+        {
+            BranchId = branchId,
+            Id = id,
+            PhoneE164 = phoneE164,
+            Purpose = purpose,
+            CodeHash = codeHash,
+            CreatedUtc = now,
+            ExpiresUtc = now + ttl,
+        };
 }

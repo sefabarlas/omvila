@@ -4,6 +4,7 @@ using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Calendar;
+using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
@@ -27,6 +28,7 @@ public static class SchedulingModule
         services.AddScoped<AppointmentWriter>();
         services.AddScoped<AppointmentDetailReader>();
         services.AddScoped<ManageAppointmentCreator>();
+        services.AddScoped<PublicAppointmentCreator>();
         services.AddScoped<ManageAppointmentChanges>();
         services.AddScoped<CalendarReader>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
@@ -38,6 +40,8 @@ public static class SchedulingModule
         CalendarEndpoints.Map(app);
         SlotSearchEndpoints.Map(app);
         ManageAppointmentEndpoints.Map(app);
+        PublicAvailabilityEndpoints.Map(app);
+        PublicAppointmentEndpoints.Map(app);
         return app;
     }
 }

@@ -6,6 +6,7 @@ using Omvila.Modules.Catalog.Contracts;
 using Omvila.Modules.Catalog.Features;
 using Omvila.Modules.Catalog.Features.BranchPrices;
 using Omvila.Modules.Catalog.Features.Categories;
+using Omvila.Modules.Catalog.Features.PublicCatalog;
 using Omvila.Modules.Catalog.Features.Services;
 using Omvila.Modules.Catalog.Features.Templates;
 using Omvila.Modules.Catalog.Infrastructure;
@@ -32,6 +33,7 @@ public static class CatalogModule
         ServiceEndpoints.Map(app);
         BranchPriceEndpoints.Map(app);
         TemplateEndpoints.Map(app);
+        PublicCatalogEndpoints.Map(app);
         return app;
     }
 }

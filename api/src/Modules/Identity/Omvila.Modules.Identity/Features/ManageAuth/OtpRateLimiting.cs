@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Omvila.Modules.Identity.Features.PublicBookingAuth;
 using Omvila.Modules.Identity.Security;
 using Omvila.SharedKernel;
 
@@ -19,13 +20,9 @@ internal static class OtpRateLimiting
     public static IServiceCollection AddOtpRateLimiting(this IServiceCollection services) =>
         services.AddRateLimiter(options =>
         {
-            options.AddPolicy(ManageAuthEndpoints.OtpRateLimitPolicy, http =>
-            {
-                var settings = http.RequestServices.GetRequiredService<IOptions<OtpOptions>>().Value;
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                    _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.MaxPerIpPerHour, Window = TimeSpan.FromHours(1), QueueLimit = 0 });
-            });
+            options.AddPolicy(ManageAuthEndpoints.OtpRateLimitPolicy, PerIp);
+            // Rezervasyon sayfası kod istekleri ayrı sayılır (aynı sınır; güvenilir cihazla SMS'siz dönen istek de sayılır).
+            options.AddPolicy(PublicOtpEndpoints.RateLimitPolicy, PerIp);
             options.OnRejected = async (context, ct) =>
             {
                 var http = context.HttpContext;
@@ -42,4 +39,12 @@ internal static class OtpRateLimiting
                 });
             };
         });
+
+    private static RateLimitPartition<string> PerIp(HttpContext http)
+    {
+        var settings = http.RequestServices.GetRequiredService<IOptions<OtpOptions>>().Value;
+        return RateLimitPartition.GetFixedWindowLimiter(
+            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = settings.MaxPerIpPerHour, Window = TimeSpan.FromHours(1), QueueLimit = 0 });
+    }
 }
