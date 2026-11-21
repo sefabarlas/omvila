@@ -55,9 +55,9 @@ builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((doc
 
 var app = builder.Build();
 
-// `dotnet run --project src/Omvila.Host -- migrate`: migration'ları migrator rolüyle uygular ve çıkar.
-// Platform:SeedPlans doluysa (yalnız geliştirme yapılandırması) planlar da eklenir (S-14).
-if (args.Contains("migrate", StringComparer.Ordinal))
+// `--role=migrate` (veya eski biçim `migrate`): migration'ları migrator bağlantısıyla uygular ve çıkar; sunucu başlamaz.
+// Platform:SeedPlans doluysa (geliştirme ve test sunucusu yapılandırması) planlar da eklenir (S-14).
+if (role == HostRole.Migrate || args.Contains("migrate", StringComparer.Ordinal))
 {
     var migrator = builder.Configuration.GetConnectionString(InfrastructureServiceCollectionExtensions.MigratorConnectionName)
         ?? throw new InvalidOperationException("ConnectionStrings:Migrator tanımlı değil.");

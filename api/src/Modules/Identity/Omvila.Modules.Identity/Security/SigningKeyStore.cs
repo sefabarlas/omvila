@@ -8,20 +8,20 @@ namespace Omvila.Modules.Identity.Security;
 
 /// <summary>
 /// ES256 anahtarları (kid ile). Yapılandırmada anahtar yoksa yalnız Development'ta geçici anahtar üretilir
-/// (yeniden başlatınca jetonlar düşer); diğer ortamlarda açılış durur.
+/// (yeniden başlatınca jetonlar düşer); diğer ortamlarda (Staging, Production) açılış durur (T-73).
 /// </summary>
 internal sealed partial class SigningKeyStore
 {
     public SigningKeyStore(IOptions<AuthOptions> options, IHostEnvironment environment, ILogger<SigningKeyStore> logger)
     {
-        var configured = options.Value.SigningKeys.Where(k => !string.IsNullOrWhiteSpace(k.PrivateKeyPem)).ToList();
+        if (IdentitySecrets.SigningKeysError(options.Value, environment) is { } error)
+        {
+            throw new InvalidOperationException(error);
+        }
+
+        var configured = IdentitySecrets.ConfiguredSigningKeys(options.Value);
         if (configured.Count == 0)
         {
-            if (!environment.IsDevelopment())
-            {
-                throw new InvalidOperationException("Auth:SigningKeys tanımlı değil (ES256 PEM, kasadan).");
-            }
-
             LogEphemeralKey(logger);
             Keys = [Create("dev-ephemeral", ECDsa.Create(ECCurve.NamedCurves.nistP256))];
         }
