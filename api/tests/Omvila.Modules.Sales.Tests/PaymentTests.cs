@@ -43,6 +43,42 @@ public sealed class PaymentTests
     public void RecordDeposit_ZeroAmount_IsProgrammerError() =>
         Should.Throw<DomainException>(() => Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(0), null, User, Now));
 
+    // Kural: durum-makinesi.md § 6 (Recorded → PartiallyRefunded / Refunded); V7 ("Salon iade etti", kısmi olabilir, tek kez)
+    [Theory]
+    [InlineData(84000, nameof(PaymentStatus.Refunded))]
+    [InlineData(30000, nameof(PaymentStatus.PartiallyRefunded))]
+    public void MarkRefunded_SetsRefundedAmount_FullOrPartial(long amount, string expected)
+    {
+        var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
+
+        payment.MarkRefunded(Money.Try(amount));
+
+        payment.Status.ToString().ShouldBe(expected);
+        payment.RefundedAmountMinor.ShouldBe(amount);
+        payment.AmountMinor.ShouldBe(84000, "tahsilat tutarı değişmez");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(84001)]
+    public void MarkRefunded_OutOfRange_IsProgrammerError(long amount)
+    {
+        var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
+
+        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(amount)));
+        payment.Status.ShouldBe(PaymentStatus.Recorded);
+    }
+
+    [Fact]
+    public void MarkRefunded_Twice_IsProgrammerError()
+    {
+        var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
+        payment.MarkRefunded(Money.Try(10000));
+
+        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(10000)));
+        payment.RefundedAmountMinor.ShouldBe(10000);
+    }
+
     private sealed class Ids : IIdGenerator
     {
         private int _next;

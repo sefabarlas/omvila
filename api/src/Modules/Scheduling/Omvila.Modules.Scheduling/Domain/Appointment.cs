@@ -10,6 +10,9 @@ namespace Omvila.Modules.Scheduling.Domain;
 /// </summary>
 internal sealed class Appointment
 {
+    /// <summary>Sözleşme DepositRefundRequest.note maxLength.</summary>
+    public const int DepositRefundNoteMaxLength = 300;
+
     private static readonly Domain.CancellationReason[] CustomerReasons =
         [Domain.CancellationReason.PlanChanged, Domain.CancellationReason.Sick, Domain.CancellationReason.WantsDifferentTime, Domain.CancellationReason.Other];
 
@@ -103,6 +106,20 @@ internal sealed class Appointment
 
     public Guid? DepositWaivedByUserId { get; private set; }
 
+    /// <summary>Salon "Hatırlat" ile kapora SMS'ini yeniden gönderdi (V6: randevu başına en fazla bir kez).</summary>
+    public Instant? DepositRemindedUtc { get; private set; }
+
+    /// <summary>Salon "Salon iade etti" dedi (V7: tek kez; para hareketi değil, işaret).</summary>
+    public Instant? DepositRefundedUtc { get; private set; }
+
+    /// <summary>İade edildi olarak işaretlenen tutar (0 &lt; tutar ≤ alınan kapora; kısmi olabilir).</summary>
+    public long? DepositRefundedAmountMinor { get; private set; }
+
+    /// <summary>İade notu; yalnız panel geçmişinde görünür, müşteriye gösterilmez. Günlüğe yazılmaz.</summary>
+    public string? DepositRefundNote { get; private set; }
+
+    public Guid? DepositRefundedByUserId { get; private set; }
+
     public Instant CreatedUtc { get; private set; }
 
     public Guid? CreatedByUserId { get; private set; }
@@ -126,17 +143,18 @@ internal sealed class Appointment
     {
         null => null,
         _ when DepositWaivedUtc is not null => Domain.DepositStatus.Waived,
+        _ when DepositRefundedUtc is not null => Domain.DepositStatus.Refunded,
         _ when DepositReceivedUtc is not null => Domain.DepositStatus.Received,
         _ when DepositCustomerReportedUtc is not null => Domain.DepositStatus.CustomerReported,
         _ => Domain.DepositStatus.Awaiting,
     };
 
     /// <summary>
-    /// "Salonda ödenecek": toplam − alınmış kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden ve kaporasız onayda
-    /// toplamdır.
+    /// "Salonda ödenecek": toplam − salonda kalan kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden ve kaporasız
+    /// onayda toplamdır; iade işaretinden sonra iade edilen kısım yeniden salonda ödenir (tam iadede toplam; T-83).
     /// </summary>
     public long AmountDueMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
-        ? Math.Max(0, TotalAmountMinor - deposit)
+        ? Math.Max(0, TotalAmountMinor - (deposit - (DepositRefundedAmountMinor ?? 0)))
         : TotalAmountMinor;
 
     // Kural: docs/alan/durum-makinesi.md#oluşturma-kuralı (A1)
@@ -334,6 +352,87 @@ internal sealed class Appointment
         return Result.Success();
     }
 
+    /// <summary>
+    /// Müşteri "Havaleyi yaptım, salona bildir" der (dilim-04 kabul kriteri 4): durum değişmez, kapora CustomerReported olur.
+    /// Kendiliğinden idempotenttir: zaten bildirilmişse başarı ve <c>false</c> (yeni bildirim yazılmaz). Kapora beklenmiyorsa
+    /// veya randevu PendingApproval değilse 409 <c>invalid_state_transition</c>, tutma süresi geçmişse <c>hold_expired</c>.
+    /// </summary>
+    /// <returns>İlk bildirimde <c>true</c>.</returns>
+    // Kural: dilim-04 kabul kriteri 4; sözleşme publicReportDepositTransfer
+    public Result<bool> ReportDepositTransfer(Instant now)
+    {
+        var allowed = EnsureDepositAwaited(now);
+        if (!allowed.IsSuccess)
+        {
+            return allowed.Error;
+        }
+
+        if (DepositCustomerReportedUtc is not null)
+        {
+            return false;
+        }
+
+        DepositCustomerReportedUtc = now;
+        Touch(now, userId: null);
+        return true;
+    }
+
+    /// <summary>
+    /// "Hatırlat" koruması (V6): kapora beklenen, süresi geçmemiş ve henüz hatırlatılmamış talep. Kontör denetiminden önce
+    /// çağrılır; <see cref="RemindDeposit"/> aynı kuralı yeniden uygular.
+    /// </summary>
+    public Result CanRemindDeposit(Instant now)
+    {
+        var allowed = EnsureDepositAwaited(now);
+        if (!allowed.IsSuccess)
+        {
+            return allowed;
+        }
+
+        return DepositRemindedUtc is null ? Result.Success() : Error.Conflict(ErrorCodes.DepositReminderAlreadySent);
+    }
+
+    /// <summary>"Hatırlat": durum değişmez, hatırlatma anı yazılır (deposit.awaiting SMS'i olayla yeniden kuyruğa girer).</summary>
+    // Kural: V6 (randevu başına en fazla bir kez); sözleşme manageRemindDeposit
+    public Result RemindDeposit(Instant now, Guid? userId)
+    {
+        var allowed = CanRemindDeposit(now);
+        if (!allowed.IsSuccess)
+        {
+            return allowed;
+        }
+
+        DepositRemindedUtc = now;
+        Touch(now, userId);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// "Salon iade etti" (V7): yalnız alınmış kapora, tek kez; tutar 0 &lt; tutar ≤ alınan kapora (değilse 400
+    /// <c>validation_failed</c>, <c>errors.amount = [out_of_range]</c>), kısmi olabilir. Randevu durumu değişmez (iptal,
+    /// tamamlanmış veya onaylı olabilir). Kapora alınmamış veya zaten iade işaretlenmişse 409 <c>invalid_state_transition</c>.
+    /// </summary>
+    // Kural: V7; sözleşme manageMarkDepositRefunded
+    public Result MarkDepositRefunded(long amountMinor, string? note, Instant now, Guid? userId)
+    {
+        if (DepositStatus != Domain.DepositStatus.Received || DepositRequiredMinor is not { } received)
+        {
+            return InvalidTransition();
+        }
+
+        if (amountMinor <= 0 || amountMinor > received)
+        {
+            return Error.Validation("amount", "out_of_range");
+        }
+
+        DepositRefundedUtc = now;
+        DepositRefundedAmountMinor = amountMinor;
+        DepositRefundNote = Clean(note);
+        DepositRefundedByUserId = userId;
+        Touch(now, userId);
+        return Result.Success();
+    }
+
     private void Confirm(Instant now, Guid? userId)
     {
         Status = AppointmentStatus.Confirmed;
@@ -447,7 +546,14 @@ internal sealed class Appointment
     /// </summary>
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A13, A14)
     public Result Reschedule(
-        AppointmentPlan plan, ChangeActor actor, Instant now, Duration rescheduleCutoff, IIdGenerator ids, Guid? userId, Duration? approvalHold = null)
+        AppointmentPlan plan,
+        ChangeActor actor,
+        Instant now,
+        Duration rescheduleCutoff,
+        IIdGenerator ids,
+        Guid? userId,
+        Duration? approvalHold = null,
+        Duration? depositWindow = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(ids);
@@ -477,11 +583,11 @@ internal sealed class Appointment
         if (actor == ChangeActor.Customer && approvalHold is { } hold)
         {
             Status = AppointmentStatus.PendingApproval;
-            HoldExpiresUtc = now + hold;
-            // Kapora hâlâ bekleniyorsa süre dolumu DepositNotReceived kalır (A5); kapora yeni saate aktarılır (A14).
-            HoldReason = DepositStatus is Domain.DepositStatus.Awaiting or Domain.DepositStatus.CustomerReported
-                ? Domain.HoldReason.ApprovalAndDeposit
-                : Domain.HoldReason.Approval;
+            // Kapora hâlâ bekleniyorsa süre dolumu DepositNotReceived kalır (A5) ve kapora ile onay birlikteyken tek tutma süresi
+            // havale süresidir (durum-makinesi.md § Oluşturma kuralı; T-83). Kapora alanları değişmez: alınmış kapora korunur
+            // (A13), yeni saate aktarılır (A14).
+            HoldExpiresUtc = now + (IsDepositAwaited ? depositWindow ?? hold : hold);
+            HoldReason = IsDepositAwaited ? Domain.HoldReason.ApprovalAndDeposit : Domain.HoldReason.Approval;
         }
 
         Touch(now, userId);
@@ -543,6 +649,18 @@ internal sealed class Appointment
         }
 
         return HoldExpiresUtc is { } expires && expires <= now ? Error.Conflict(ErrorCodes.HoldExpired) : Result.Success();
+    }
+
+    /// <summary>Havale bildirimi ve hatırlatma koruması: canlı onay bekleyen talep ve kapora bekleniyor.</summary>
+    private Result EnsureDepositAwaited(Instant now)
+    {
+        var pending = EnsureLivePending(now);
+        if (!pending.IsSuccess)
+        {
+            return pending;
+        }
+
+        return IsDepositAwaited ? Result.Success() : InvalidTransition();
     }
 
     /// <summary>Kapora istenmiş, ne alınmış ne de kaporasız onaylanmış (Awaiting veya CustomerReported).</summary>

@@ -129,6 +129,27 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deposit_received_utc");
 
+                    b.Property<string>("DepositRefundNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("deposit_refund_note");
+
+                    b.Property<long?>("DepositRefundedAmountMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("deposit_refunded_amount_minor");
+
+                    b.Property<Guid?>("DepositRefundedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deposit_refunded_by_user_id");
+
+                    b.Property<Instant?>("DepositRefundedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deposit_refunded_utc");
+
+                    b.Property<Instant?>("DepositRemindedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deposit_reminded_utc");
+
                     b.Property<long?>("DepositRequiredMinor")
                         .HasColumnType("bigint")
                         .HasColumnName("deposit_required_minor");
@@ -243,6 +264,8 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_appointments_client_app", "client_app IS NULL OR client_app IN ('BookingPage', 'CustomerApp', 'BusinessApp', 'Panel')");
 
                             t.HasCheckConstraint("ck_appointments_deposit_outcome", "(deposit_received_utc IS NULL OR (deposit_required_minor IS NOT NULL AND deposit_payment_id IS NOT NULL AND deposit_waived_utc IS NULL)) AND (deposit_waived_utc IS NULL OR deposit_required_minor IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_appointments_deposit_refund", "(deposit_refunded_utc IS NULL) = (deposit_refunded_amount_minor IS NULL) AND (deposit_refunded_utc IS NULL OR (deposit_received_utc IS NOT NULL AND deposit_refunded_amount_minor > 0 AND deposit_refunded_amount_minor <= deposit_required_minor))");
 
                             t.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
 

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Sales.Domain;
@@ -27,5 +28,13 @@ internal sealed class DepositPayments(SalesDbContext db, IIdGenerator ids, ICloc
         db.Payments.Add(payment);
         await db.SaveChangesAsync(ct);
         return payment.Id;
+    }
+
+    public async Task MarkDepositRefundedAsync(Guid paymentId, Money amount, CancellationToken ct)
+    {
+        var payment = await db.Payments.SingleOrDefaultAsync(p => p.Id == paymentId && p.IsDeposit, ct)
+            ?? throw new DomainException("Kapora tahsilatı bulunamadı.");
+        payment.MarkRefunded(amount);
+        await db.SaveChangesAsync(ct);
     }
 }

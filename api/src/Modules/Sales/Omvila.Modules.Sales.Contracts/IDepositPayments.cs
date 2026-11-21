@@ -1,3 +1,5 @@
+using Omvila.SharedKernel;
+
 namespace Omvila.Modules.Sales.Contracts;
 
 /// <summary>
@@ -15,4 +17,14 @@ public interface IDepositPayments
     /// <param name="ct">İptal belirteci.</param>
     /// <returns>Oluşan tahsilatın kimliği (randevunun <c>DepositPaymentId</c>'si).</returns>
     Task<Guid> RecordDepositAsync(DepositPaymentRequest request, CancellationToken ct);
+
+    /// <summary>
+    /// "Salon iade etti" (V7): kapora tahsilatını <c>Refunded</c> (tutarın tamamı) veya <c>PartiallyRefunded</c> yapar ve
+    /// <c>RefundedAmountMinor</c>'u yazar. Para hareketi değildir. Tutar ve tek seferlik kural çağıranda (randevu) denetlenir.
+    /// Kiracı bağlamı kurulmuş olmalıdır.
+    /// </summary>
+    /// <param name="paymentId">Randevunun <c>DepositPaymentId</c>'si.</param>
+    /// <param name="amount">İade edilen tutar (0 &lt; tutar ≤ tahsilat).</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task MarkDepositRefundedAsync(Guid paymentId, Money amount, CancellationToken ct);
 }
