@@ -23,6 +23,8 @@ export const errorMessages: Record<ErrorCode, string> = {
   phone_already_exists: 'Bu numara zaten kayıtlı.',
   slug_unavailable: 'Bu bağlantı adı kullanılamıyor.',
   deposit_unavailable_no_iban: 'Kapora alınamaz. Önce IBAN ekleyin.',
+  deposit_required: 'Kapora henüz gelmedi. Kapora geldiyse işaretleyin ya da kaporasız onaylayın.',
+  deposit_reminder_already_sent: 'Bu randevu için hatırlatma zaten gönderildi.',
   outside_working_hours: 'Seçilen saat çalışma saatleri dışında.',
   staff_on_time_off: 'Personel bu saatte izinli.',
   insufficient_credits: 'SMS kontörünüz az.',

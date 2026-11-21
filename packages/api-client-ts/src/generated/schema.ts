@@ -221,6 +221,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/brand/bank-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kaporanın gönderileceği hesap (Kapora ve IBAN)
+         * @description Ayarlar → Kapora ve IBAN (AyarlarOdeme) formu ve Randevu kuralları (Ayarlar) kapora bölümündeki
+         *     "Kapora IBAN'ı tanımlı · Elif Kaya · TR12 •••• 6789 01" özeti. Markada tek hesap vardır (tekil kaynak).
+         *     Hesap hiç tanımlanmadıysa da 200 döner: configured = false, alıcı, banka ve IBAN alanları yoktur; transferCodePrefix ve
+         *     transferWindowMinutes varsayılanlarla (OMV, 120) gelir ki form varsayılanlarla açılsın. Bu durumda ETag W/"0" olur ve ilk PUT bu değerle gönderilir.
+         *     IBAN'ın tamamı bu uçtan hiç dönmez (ibanMasked + ibanLast4). Tam IBAN yalnız müşteriye, randevunun havale bilgisinde
+         *     (DepositInstructions) gösterilir. İzin: settings.payment (yalnız Owner); diğer roller 403 forbidden.
+         */
+        get: operations["manageGetBankAccount"];
+        /**
+         * Kapora hesabını kaydet ("Kaydet")
+         * @description AyarlarOdeme "Kaydet". Hesap yoksa oluşturur (If-Match: W/"0"), varsa günceller (If-Match: GET'teki ETag). Hesap varken
+         *     W/"0" gönderilirse veya ETag uyuşmazsa 412 concurrency_conflict.
+         *     iban boşluklu veya boşluksuz, küçük harfle de gönderilebilir; sunucu boşlukları atar, büyük harfe çevirir, TR biçimini
+         *     (TR + 24 hane, toplam 26 karakter) ve mod-97 denetim hanesini doğrular. Geçersizse 400 validation_failed, errors.iban = [invalid_format].
+         *     iban ilk kayıtta zorunludur (yoksa errors.iban = [required]); hesap varken gönderilmezse kayıtlı IBAN korunur
+         *     (form maskeli IBAN'ı gösterir, yalnız yeni IBAN yazılırsa gönderilir).
+         *     transferWindowMinutes yalnız bundan sonra oluşan kaporalı randevulara uygulanır; bekleyen randevuların süresi değişmez.
+         *     Havale süresi yalnız bu uçtan düzenlenir (BrandSettings'te alanı yoktur).
+         *     Kayıttan sonra hesap aktiftir (isActive = true) ve BrandSettings.depositAvailable true olur.
+         *     IBAN ve alıcı adı günlüğe yazılmaz. İzin: settings.payment (yalnız Owner).
+         */
+        put: operations["manageUpdateBankAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/branches": {
         parameters: {
             query?: never;
@@ -850,8 +888,10 @@ export interface paths {
          * Onay bekleyen talebi onayla ("Onayla")
          * @description Randevu yan paneli (RandevuPanel) "Onayla" butonu. Geçiş A2: PendingApproval → Confirmed; holdExpiresUtc temizlenir,
          *     müşteriye appointment.approved bildirimi gider, hatırlatmalar planlanır.
-         *     Gövde isteğe bağlıdır. waiveDeposit Dilim 4'te anlam kazanır: kapora istenmiş ve gelmemişse onay için waiveDeposit = true gerekir
-         *     (kapora alınmadan onayla). Dilim 3'te kapora olmadığından alan yok sayılır.
+         *     Gövde isteğe bağlıdır. Kapora istenmiş ve gelmemişse (deposit.status Awaiting veya CustomerReported) onay için waiveDeposit = true gerekir
+         *     ("Kaporasız onayla"); gönderilmezse 409 deposit_required (istemci "Kapora geldi" veya "Kaporasız onayla" seçeneğini sunar).
+         *     waiveDeposit = true ile onaylanınca deposit.status Waived olur, geçmişe DepositWaived yazılır, Payment oluşmaz ve
+         *     "Salonda ödenecek" (amountDue) toplam tutara döner. Kapora yoksa veya alınmışsa waiveDeposit yok sayılır.
          *     Durum PendingApproval değilse 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired.
          *     İzin: appointment.approve (Owner, BranchManager kendi şubesinde). Personel rolü 403 forbidden alır; kapsam dışı randevu 404.
          */
@@ -889,6 +929,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/appointments/{appointmentId}/deposit/mark-received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kapora geldi olarak işaretle ("Kapora geldi")
+         * @description Randevu yan paneli ve işletme uygulaması "Kapora geldi mi?" (KaporaOnay) "Kapora geldi" butonu. Geçiş A3: PendingApproval → Confirmed.
+         *     Salon havaleyi kendi bankasında görür ve işaretler; OMVILA para almaz, yalnız kaydeder. Salonun işaretlemesi onay sayılır
+         *     (onay da gerekiyorsa ayrıca "Onayla" gerekmez). Yan etkiler: deposit.status Received, receivedUtc; Payment(Method = Transfer,
+         *     IsDeposit = true, tutar = deposit.required, Reference = açıklama kodu) ve randevu tahsis kaydı; amountDue kapora kadar düşer;
+         *     holdExpiresUtc temizlenir; geçmişe DepositReceived yazılır; müşteriye deposit.received SMS'i gider, hatırlatmalar planlanır.
+         *     Gövde yoktur: tutar istenen kaporadır. Payment oluşturduğu için Idempotency-Key ister; aynı anahtarla tekrar gelen istek ilk yanıtı alır.
+         *     Randevu PendingApproval değilse veya kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded) 409 invalid_state_transition.
+         *     Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired.
+         *     İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde). Personel rolü v1'de 403 forbidden alır; kapsam dışı randevu 404.
+         */
+        post: operations["manageMarkDepositReceived"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/appointments/{appointmentId}/deposit/remind": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kapora hatırlatması gönder ("Henüz gelmedi, hatırlat")
+         * @description KaporaOnay ve randevu yan paneli "Hatırlat". Müşteriye deposit.awaiting SMS'i kalan süreyle yeniden gönderilir (her zaman SMS;
+         *     sessiz saate kaydırılmaz, 1 kontör). Durum değişmez; deposit.remindedUtc dolar ve geçmişe DepositReminded yazılır.
+         *     Randevu başına en fazla bir kez: ikinci istek 409 deposit_reminder_already_sent (istemci butonu remindedUtc doluysa pasif gösterir).
+         *     Kapora beklenmiyorsa (randevu PendingApproval değil veya deposit.status Awaiting/CustomerReported değil) 409 invalid_state_transition;
+         *     tutma süresi dolmuşsa 409 hold_expired; kontör yoksa 409 insufficient_credits (hatırlatma hakkı harcanmaz).
+         *     İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404.
+         */
+        post: operations["manageRemindDeposit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/appointments/{appointmentId}/deposit/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kapora iadesini işaretle ("Salon iade etti")
+         * @description Randevu yan paneli "Salon iade etti". Salon iadeyi kendi bankasından yapar; OMVILA para göndermez, yalnız kaydeder.
+         *     Tutar elle girilir ve alınan kaporayı aşamaz (aşarsa veya 0 ise 400 validation_failed, errors.amount = [out_of_range]); kısmi iade olabilir.
+         *     Yan etkiler: deposit.status Refunded, refundedUtc, refundedAmount; kapora Payment kaydı Refunded veya PartiallyRefunded olur
+         *     (RefundedAmountMinor); geçmişe DepositRefunded yazılır (not varsa detail'de, yalnız panelde görünür). Müşteriye bildirim gitmez;
+         *     müşteri uygulamasında Ödemelerim "Salon iade etti" gösterir (Dilim 5). Randevu durumu değişmez (iptal, tamamlanmış veya onaylı olabilir).
+         *     Kapora alınmamışsa (deposit.status Received değil) veya zaten iade işaretlendiyse 409 invalid_state_transition.
+         *     Para kaydettiği için Idempotency-Key ister. İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404.
+         */
+        post: operations["manageMarkDepositRefunded"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/approval-queue": {
         parameters: {
             query?: never;
@@ -900,7 +1025,8 @@ export interface paths {
          * Onay bekleyen talepler ("Dikkat isteyenler", "Onay bekliyor" bentosu)
          * @description Genel bakış "Onay bekliyor" bentosu ("ilki 1 sa 35 dk içinde iptal olur"), "Dikkat isteyenler" kartındaki
          *     "2 online talep onay bekliyor" satırı ve takvim üst bandı. Yalnız PendingApproval randevular, holdExpiresUtc'ye göre artan sıralı
-         *     (en acil önce). Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır.
+         *     (en acil önce). Kapora bekleyen talepler (displayStatus DepositPending) de listededir; depositStatus ve depositAmount ile
+         *     "Kapora bekleniyor" ve "Havale bildirildi · kontrol edin" gösterilir. Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır.
          *     Kalan süre istemcide holdExpiresUtc ile generatedUtc farkından sayılır; cihaz saati kullanılmaz (generatedUtc sunucunun "şimdi"sidir).
          *     branchId verilirse yalnız o şube; verilmezse kullanıcının kapsamındaki bütün şubeler.
          *     İzin: appointment.approve. Personel rolü 403 forbidden alır (onay butonlarını görmez).
@@ -1301,6 +1427,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/appointments/{accessCode}/deposit/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SMS bağlantısındaki kod (omvila.com/r/{accessCode}) */
+                accessCode: components["parameters"]["AccessCodePath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Havaleyi bildir ("Havaleyi yaptım, salona bildir")
+         * @description Rezervasyon sayfası Havale ekranı. Müşteri havaleyi yaptığını salona bildirir: deposit.status CustomerReported, customerReportedUtc dolar,
+         *     geçmişe DepositReported yazılır, salonun Owner ve BranchManager kullanıcılarına staff.deposit_reported push'u ve panel bildirimi gider
+         *     ("Havale bildirildi · kontrol edin"). Randevu durumu değişmez (PendingApproval, displayStatus DepositPending); ekran "Salon onayı bekleniyor" gösterir.
+         *     Kendiliğinden idempotenttir: zaten CustomerReported ise 200 ile aynı sonuç döner, bildirim ikinci kez gitmez. Bu yüzden Idempotency-Key ve If-Match almaz.
+         *     Kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded veya randevu PendingApproval değil) 409 invalid_state_transition;
+         *     tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. Kod geçersizse 404 access_code_invalid.
+         */
+        post: operations["publicReportDepositTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/appointments/{accessCode}/availability/slots": {
         parameters: {
             query?: never;
@@ -1401,7 +1555,7 @@ export interface components {
          * @description docs/sozlesme/api-kurallari.md § Hata kodu kataloğu. İstemciler bilinmeyen değeri genel hata olarak ele alır.
          * @enum {string}
          */
-        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "slug_unavailable" | "deposit_unavailable_no_iban" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again";
+        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "slug_unavailable" | "deposit_unavailable_no_iban" | "deposit_required" | "deposit_reminder_already_sent" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again";
         /** @description Kuruş cinsinden tutar */
         Money: {
             /**
@@ -1840,6 +1994,85 @@ export interface components {
             sortOrder?: number;
             isActive?: boolean;
         };
+        /**
+         * @description Kaporanın gönderileceği salon hesabı (Ayarlar → Kapora ve IBAN, BrandBankAccount). OMVILA bu hesaba para göndermez veya hesaptan çekmez; yalnız müşteriye gösterir.
+         *     configured = false ise hesap hiç tanımlanmamıştır: accountHolderName, bankName, ibanMasked, ibanLast4 ve updatedUtc yoktur;
+         *     transferCodePrefix ve transferWindowMinutes varsayılanları döner. Tam IBAN bu şemada hiç bulunmaz.
+         */
+        BankAccount: {
+            /** @description Hesap tanımlı mı (false = "Kapora alınamaz · IBAN ekle") */
+            configured: boolean;
+            /** @description Hesap kaporada kullanılıyor mu; false iken kapora istenmez (BrandSettings.depositAvailable ile aynı) */
+            isActive: boolean;
+            /**
+             * @description Alıcı adı (müşterinin bankasında görünecek ad)
+             * @example Elif Kaya
+             */
+            accountHolderName?: string;
+            /**
+             * @description Banka
+             * @example Ziraat Bankası
+             */
+            bankName?: string;
+            /**
+             * @description Maskeli IBAN: ilk 4 karakter + " •••• " + son 6 hane "dddd dd" gruplamasıyla (Ayarlar özetindeki "TR12 •••• 6789 01").
+             *     İstemci dar alanda (AyarlarOdeme "Müşteri ne görür?") "••••" yerine "…" gösterebilir.
+             * @example TR29 •••• 6789 01
+             */
+            ibanMasked?: string;
+            /**
+             * @description IBAN'ın son 4 hanesi (listelerde)
+             * @example 8901
+             */
+            ibanLast4?: string;
+            /**
+             * @description Açıklama kodu öneki ("OMV-7K2X"); varsayılan OMV
+             * @example OMV
+             */
+            transferCodePrefix: string;
+            /**
+             * @description Havale süresi; dolarsa randevu otomatik iptal olur (A5). Varsayılan 120
+             * @example 120
+             * @enum {integer}
+             */
+            transferWindowMinutes: 60 | 120 | 240;
+            /**
+             * Format: date-time
+             * @description Son kayıt anı
+             */
+            updatedUtc?: string;
+            version: components["schemas"]["Version"];
+        };
+        /** @description "Kaydet" gövdesi. iban ilk kayıtta zorunlu, sonrasında isteğe bağlı (gönderilmezse kayıtlı IBAN korunur) */
+        BankAccountWrite: {
+            /**
+             * @description Alıcı adı; hesap sahibiyle aynı olmalı
+             * @example Elif Kaya
+             */
+            accountHolderName: string;
+            /**
+             * @description Banka
+             * @example Ziraat Bankası
+             */
+            bankName: string;
+            /**
+             * @description Tam IBAN girişi; boşluk ve küçük harf kabul edilir. Sunucu boşlukları atıp TR biçimini (TR + 24 hane) ve mod-97 denetim hanesini
+             *     doğrular; geçersizse 400 validation_failed, errors.iban = [invalid_format].
+             * @example TR29 0006 4000 0011 2345 6789 01
+             */
+            iban?: string;
+            /**
+             * @description Açıklama kodu öneki (2–5 büyük Latin harfi)
+             * @example OMV
+             */
+            transferCodePrefix: string;
+            /**
+             * @description Havale süresi (1, 2 veya 4 saat)
+             * @example 120
+             * @enum {integer}
+             */
+            transferWindowMinutes: 60 | 120 | 240;
+        };
         ServiceStage: {
             /** @example Bekleme */
             name: string;
@@ -2153,6 +2386,10 @@ export interface components {
             isRecurring: boolean;
             /** Format: date-time */
             holdExpiresUtc?: string | null;
+            /** @description Yalnız kapora istenmiş randevuda bulunur (bloktaki "Havale bildirildi" işareti) */
+            depositStatus?: components["schemas"]["DepositStatus"];
+            /** @description İstenen kapora; yalnız kapora istenmiş randevuda bulunur */
+            depositAmount?: components["schemas"]["Money"];
             segments: components["schemas"]["SegmentView"][];
         };
         CalendarView: {
@@ -2215,23 +2452,41 @@ export interface components {
         };
         DepositView: {
             required: components["schemas"]["Money"];
-            /** @enum {string} */
-            status: "Awaiting" | "CustomerReported" | "Received" | "Refunded";
+            status: components["schemas"]["DepositStatus"];
             /** @example OMV-7K2X */
             transferCode?: string;
             /** Format: date-time */
             customerReportedUtc?: string | null;
             /** Format: date-time */
             receivedUtc?: string | null;
+            /**
+             * Format: date-time
+             * @description Salonun "Hatırlat" ile kapora SMS'ini yeniden gönderdiği an (randevu başına en fazla bir kez); doluysa buton pasif
+             */
+            remindedUtc?: string | null;
+            /**
+             * Format: date-time
+             * @description "Salon iade etti" işaretlendiği an
+             */
+            refundedUtc?: string | null;
+            /** @description İade edildi olarak işaretlenen tutar (alınan kaporayı aşmaz; kısmi olabilir) */
+            refundedAmount?: components["schemas"]["Money"];
         };
+        /**
+         * @description Randevu kaporasının durumu. Awaiting = havale bekleniyor; CustomerReported = müşteri "Havaleyi yaptım" dedi ("Havale bildirildi · kontrol edin");
+         *     Received = salon "Kapora geldi" dedi; Refunded = salon iade etti olarak işaretledi ("Salon iade etti"); Waived = salon "Kaporasız onayla" dedi,
+         *     kapora istenmiyor. İstemciler bilinmeyen değeri genel durum olarak ele alır.
+         * @enum {string}
+         */
+        DepositStatus: "Awaiting" | "CustomerReported" | "Received" | "Refunded" | "Waived";
         AppointmentHistoryEntry: {
             /** Format: date-time */
             occurredUtc: string;
             /**
-             * @description Approved = "Onaylandı" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
+             * @description Approved = "Onaylandı" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5), DepositReported = müşteri havaleyi bildirdi, DepositReceived = "Kapora geldi" (A3), DepositWaived = "Kaporasız onayla", DepositReminded = "Hatırlat" SMS'i, DepositRefunded = "Salon iade etti". İstemciler bilinmeyen değeri genel satır olarak gösterir
              * @enum {string}
              */
-            kind: "Created" | "Approved" | "Declined" | "HoldExpired" | "Rescheduled" | "Cancelled" | "CheckedIn" | "NoShow" | "NoShowUndone" | "Completed" | "DepositReported" | "DepositReceived" | "NotificationSent";
+            kind: "Created" | "Approved" | "Declined" | "HoldExpired" | "Rescheduled" | "Cancelled" | "CheckedIn" | "NoShow" | "NoShowUndone" | "Completed" | "DepositReported" | "DepositReceived" | "NotificationSent" | "DepositWaived" | "DepositReminded" | "DepositRefunded";
             actorName?: string | null;
             /** @example Online talep oluşturuldu, SMS ile doğrulandı */
             detail?: string | null;
@@ -2395,10 +2650,17 @@ export interface components {
         /** @description "Onayla" gövdesi (isteğe bağlı) */
         ManageApproveRequest: {
             /**
-             * @description Kapora istenmiş ve gelmemişken kapora almadan onayla (Dilim 4'te anlam kazanır; Dilim 3'te yok sayılır)
+             * @description "Kaporasız onayla": kapora istenmiş ve gelmemişken kapora almadan onayla. Kapora bekleniyorken gönderilmezse 409 deposit_required
              * @default false
              */
             waiveDeposit?: boolean;
+        };
+        /** @description "Salon iade etti" gövdesi; yalnız kayıt, para hareketi yok */
+        DepositRefundRequest: {
+            /** @description İade edilen tutar; 0'dan büyük ve alınan kaporadan küçük veya eşit */
+            amount: components["schemas"]["Money"];
+            /** @description Salon içi not (geçmişte görünür, müşteriye gösterilmez) */
+            note?: string | null;
         };
         /** @description Onay bekleyen tek talep ("Pınar Yalçın 16:00") */
         PendingApprovalItem: {
@@ -2461,6 +2723,10 @@ export interface components {
              */
             createdUtc: string;
             channel: components["schemas"]["AppointmentChannel"];
+            /** @description Yalnız kapora istenmiş talepte bulunur: Awaiting = "Kapora bekleniyor", CustomerReported = "Havale bildirildi · kontrol edin" */
+            depositStatus?: components["schemas"]["DepositStatus"];
+            /** @description İstenen kapora; yalnız kapora istenmiş talepte bulunur */
+            depositAmount?: components["schemas"]["Money"];
         };
         /** @description "Dikkat isteyenler" ve "Onay bekliyor" bentosu verisi */
         PendingApprovalList: {
@@ -3046,8 +3312,8 @@ export interface components {
             /** @example Ziraat Bankası */
             bankName?: string | null;
             /**
-             * @description Boşluklu biçimde
-             * @example TR12 0006 4000 0011 2345 6789 01
+             * @description Tam IBAN, boşluklu biçimde (yalnız müşteriye bu alanda döner)
+             * @example TR29 0006 4000 0011 2345 6789 01
              */
             iban: string;
             amount: components["schemas"]["Money"];
@@ -3165,7 +3431,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban) */
+        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, insufficient_credits) */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -3621,6 +3887,83 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             403: components["responses"]["Forbidden"];
             409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageGetBankAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hesap (tanımlı değilse varsayılanlarla boş form) */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankAccount"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageUpdateBankAccount: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "accountHolderName": "Elif Kaya",
+                 *       "bankName": "Ziraat Bankası",
+                 *       "iban": "TR29 0006 4000 0011 2345 6789 01",
+                 *       "transferCodePrefix": "OMV",
+                 *       "transferWindowMinutes": 120
+                 *     }
+                 */
+                "application/json": components["schemas"]["BankAccountWrite"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "configured": true,
+                     *       "isActive": true,
+                     *       "accountHolderName": "Elif Kaya",
+                     *       "bankName": "Ziraat Bankası",
+                     *       "ibanMasked": "TR29 •••• 6789 01",
+                     *       "ibanLast4": "8901",
+                     *       "transferCodePrefix": "OMV",
+                     *       "transferWindowMinutes": 120,
+                     *       "updatedUtc": "2026-11-25T09:30:00Z",
+                     *       "version": "W/\"5540\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BankAccount"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             412: components["responses"]["PreconditionFailed"];
         };
     };
@@ -4856,6 +5199,197 @@ export interface operations {
             412: components["responses"]["PreconditionFailed"];
         };
     };
+    manageMarkDepositReceived: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kapora alındı, randevu onaylandı */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a71",
+                     *       "reference": "A-20512",
+                     *       "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *       "status": "Confirmed",
+                     *       "displayStatus": "Confirmed",
+                     *       "channel": "Online",
+                     *       "startUtc": "2026-11-25T11:30:00Z",
+                     *       "endUtc": "2026-11-25T12:15:00Z",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "holdExpiresUtc": null,
+                     *       "customer": {
+                     *         "brandCustomerId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b11",
+                     *         "fullName": "Gizem Arslan",
+                     *         "phoneMasked": "0532 *** ** 48",
+                     *         "visitCount": 3,
+                     *         "lastVisitOn": "2026-09-12",
+                     *         "isNew": false
+                     *       },
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5c21",
+                     *           "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d31",
+                     *           "serviceName": "Fön",
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *           "staffName": "Mert Demir",
+                     *           "startUtc": "2026-11-25T11:30:00Z",
+                     *           "endUtc": "2026-11-25T12:15:00Z",
+                     *           "price": {
+                     *             "amountMinor": 45000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "paidFromPackage": false,
+                     *           "status": "Active",
+                     *           "segments": [
+                     *             {
+                     *               "startUtc": "2026-11-25T11:30:00Z",
+                     *               "endUtc": "2026-11-25T12:15:00Z",
+                     *               "staffBusy": true
+                     *             }
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "deposit": {
+                     *         "required": {
+                     *           "amountMinor": 15000,
+                     *           "currency": "TRY"
+                     *         },
+                     *         "status": "Received",
+                     *         "transferCode": "OMV-7K2X",
+                     *         "customerReportedUtc": "2026-11-25T08:52:00Z",
+                     *         "receivedUtc": "2026-11-25T09:10:00Z"
+                     *       },
+                     *       "total": {
+                     *         "amountMinor": 45000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "amountDue": {
+                     *         "amountMinor": 30000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "customerNote": null,
+                     *       "staffNote": null,
+                     *       "isRecurring": false,
+                     *       "history": [
+                     *         {
+                     *           "occurredUtc": "2026-11-25T08:40:00Z",
+                     *           "kind": "Created",
+                     *           "actorName": null,
+                     *           "detail": "Online talep oluşturuldu, SMS ile doğrulandı"
+                     *         },
+                     *         {
+                     *           "occurredUtc": "2026-11-25T08:52:00Z",
+                     *           "kind": "DepositReported",
+                     *           "actorName": "Gizem Arslan",
+                     *           "detail": null
+                     *         },
+                     *         {
+                     *           "occurredUtc": "2026-11-25T09:10:00Z",
+                     *           "kind": "DepositReceived",
+                     *           "actorName": "Elif Kaya",
+                     *           "detail": null
+                     *         }
+                     *       ],
+                     *       "version": "W/\"8840\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AppointmentDetail"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    manageRemindDeposit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hatırlatma kuyruğa alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    manageMarkDepositRefunded: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "amount": {
+                 *         "amountMinor": 15000,
+                 *         "currency": "TRY"
+                 *       },
+                 *       "note": "Müşteri randevuyu erteleyemedi, kapora iade edildi"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DepositRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description İade işaretlendi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
     manageListPendingApprovals: {
         parameters: {
             query?: {
@@ -5614,6 +6148,108 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    publicReportDepositTransfer: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client"?: components["parameters"]["ClientHeader"];
+            };
+            path: {
+                /** @description SMS bağlantısındaki kod (omvila.com/r/{accessCode}) */
+                accessCode: components["parameters"]["AccessCodePath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bildirildi (veya zaten bildirilmişti) */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a71",
+                     *       "accessCode": "7Kx2Pq9a",
+                     *       "manageUrl": "https://omvila.com/r/7Kx2Pq9a",
+                     *       "status": "PendingApproval",
+                     *       "displayStatus": "DepositPending",
+                     *       "brand": {
+                     *         "name": "Kuaför Elif",
+                     *         "slug": "kuafor-elif",
+                     *         "logoUrl": null
+                     *       },
+                     *       "branch": {
+                     *         "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *         "name": "Kadıköy",
+                     *         "addressLine": "Caferağa Mah. Moda Cad. No:12",
+                     *         "district": "Kadıköy",
+                     *         "phone": "+902163450012"
+                     *       },
+                     *       "startUtc": "2026-11-25T11:30:00Z",
+                     *       "endUtc": "2026-11-25T12:15:00Z",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "holdExpiresUtc": "2026-11-25T10:40:00Z",
+                     *       "items": [
+                     *         {
+                     *           "serviceName": "Fön",
+                     *           "staffName": "Mert Demir",
+                     *           "startUtc": "2026-11-25T11:30:00Z",
+                     *           "endUtc": "2026-11-25T12:15:00Z",
+                     *           "price": {
+                     *             "amountMinor": 45000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "paidFromPackage": false
+                     *         }
+                     *       ],
+                     *       "total": {
+                     *         "amountMinor": 45000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "amountDue": {
+                     *         "amountMinor": 30000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "deposit": {
+                     *         "required": {
+                     *           "amountMinor": 15000,
+                     *           "currency": "TRY"
+                     *         },
+                     *         "status": "CustomerReported",
+                     *         "transferCode": "OMV-7K2X",
+                     *         "customerReportedUtc": "2026-11-25T08:52:00Z",
+                     *         "receivedUtc": null,
+                     *         "instructions": {
+                     *           "accountHolderName": "Elif Kaya",
+                     *           "bankName": "Ziraat Bankası",
+                     *           "iban": "TR29 0006 4000 0011 2345 6789 01",
+                     *           "amount": {
+                     *             "amountMinor": 15000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "transferCode": "OMV-7K2X",
+                     *           "dueUtc": "2026-11-25T10:40:00Z"
+                     *         }
+                     *       },
+                     *       "canCancel": true,
+                     *       "cancelDeadlineUtc": "2026-11-24T11:30:00Z",
+                     *       "canReschedule": false,
+                     *       "rescheduleDeadlineUtc": null,
+                     *       "preAppointmentNote": null,
+                     *       "cancellation": null,
+                     *       "version": "W/\"8836\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PublicAppointment"];
+                };
+            };
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
         };
     };
     publicSearchRescheduleSlots: {

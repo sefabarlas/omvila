@@ -58,7 +58,7 @@ class DepositInstructions {
 
 
 
-      /// Boşluklu biçimde
+      /// Tam IBAN, boşluklu biçimde (yalnız müşteriye bu alanda döner)
   @JsonKey(
     
     name: r'iban',

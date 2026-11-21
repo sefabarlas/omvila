@@ -31,6 +31,10 @@ abstract class _$CalendarAppointmentCWProxy {
 
   CalendarAppointment holdExpiresUtc(DateTime? holdExpiresUtc);
 
+  CalendarAppointment depositStatus(DepositStatus? depositStatus);
+
+  CalendarAppointment depositAmount(Money? depositAmount);
+
   CalendarAppointment segments(List<SegmentView> segments);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `CalendarAppointment(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -52,6 +56,8 @@ abstract class _$CalendarAppointmentCWProxy {
     bool? isNewCustomer,
     bool isRecurring,
     DateTime? holdExpiresUtc,
+    DepositStatus? depositStatus,
+    Money? depositAmount,
     List<SegmentView> segments,
   });
 }
@@ -106,6 +112,14 @@ class _$CalendarAppointmentCWProxyImpl implements _$CalendarAppointmentCWProxy {
       this(holdExpiresUtc: holdExpiresUtc);
 
   @override
+  CalendarAppointment depositStatus(DepositStatus? depositStatus) =>
+      this(depositStatus: depositStatus);
+
+  @override
+  CalendarAppointment depositAmount(Money? depositAmount) =>
+      this(depositAmount: depositAmount);
+
+  @override
   CalendarAppointment segments(List<SegmentView> segments) =>
       this(segments: segments);
 
@@ -129,6 +143,8 @@ class _$CalendarAppointmentCWProxyImpl implements _$CalendarAppointmentCWProxy {
     Object? isNewCustomer = const $CopyWithPlaceholder(),
     Object? isRecurring = const $CopyWithPlaceholder(),
     Object? holdExpiresUtc = const $CopyWithPlaceholder(),
+    Object? depositStatus = const $CopyWithPlaceholder(),
+    Object? depositAmount = const $CopyWithPlaceholder(),
     Object? segments = const $CopyWithPlaceholder(),
   }) {
     return CalendarAppointment(
@@ -180,6 +196,14 @@ class _$CalendarAppointmentCWProxyImpl implements _$CalendarAppointmentCWProxy {
           ? _value.holdExpiresUtc
           // ignore: cast_nullable_to_non_nullable
           : holdExpiresUtc as DateTime?,
+      depositStatus: depositStatus == const $CopyWithPlaceholder()
+          ? _value.depositStatus
+          // ignore: cast_nullable_to_non_nullable
+          : depositStatus as DepositStatus?,
+      depositAmount: depositAmount == const $CopyWithPlaceholder()
+          ? _value.depositAmount
+          // ignore: cast_nullable_to_non_nullable
+          : depositAmount as Money?,
       segments: segments == const $CopyWithPlaceholder()
           ? _value.segments
           // ignore: cast_nullable_to_non_nullable
@@ -250,6 +274,18 @@ CalendarAppointment _$CalendarAppointmentFromJson(Map<String, dynamic> json) =>
           'holdExpiresUtc',
           (v) => v == null ? null : DateTime.parse(v as String),
         ),
+        depositStatus: $checkedConvert(
+          'depositStatus',
+          (v) => $enumDecodeNullable(
+            _$DepositStatusEnumMap,
+            v,
+            unknownValue: DepositStatus.unknownDefaultOpenApi,
+          ),
+        ),
+        depositAmount: $checkedConvert(
+          'depositAmount',
+          (v) => v == null ? null : Money.fromJson(v as Map<String, dynamic>),
+        ),
         segments: $checkedConvert(
           'segments',
           (v) => (v as List<dynamic>)
@@ -275,6 +311,8 @@ Map<String, dynamic> _$CalendarAppointmentToJson(
   'isNewCustomer': ?instance.isNewCustomer,
   'isRecurring': instance.isRecurring,
   'holdExpiresUtc': ?instance.holdExpiresUtc?.toIso8601String(),
+  'depositStatus': ?_$DepositStatusEnumMap[instance.depositStatus],
+  'depositAmount': ?instance.depositAmount?.toJson(),
   'segments': instance.segments.map((e) => e.toJson()).toList(),
 };
 
@@ -298,4 +336,13 @@ const _$DisplayStatusEnumMap = {
   DisplayStatus.cancelled: 'Cancelled',
   DisplayStatus.noShow: 'NoShow',
   DisplayStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
+};
+
+const _$DepositStatusEnumMap = {
+  DepositStatus.awaiting: 'Awaiting',
+  DepositStatus.customerReported: 'CustomerReported',
+  DepositStatus.received: 'Received',
+  DepositStatus.refunded: 'Refunded',
+  DepositStatus.waived: 'Waived',
+  DepositStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

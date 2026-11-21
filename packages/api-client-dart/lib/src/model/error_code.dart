@@ -41,6 +41,10 @@ enum ErrorCode {
   slugUnavailable(r'slug_unavailable'),
   @JsonValue(r'deposit_unavailable_no_iban')
   depositUnavailableNoIban(r'deposit_unavailable_no_iban'),
+  @JsonValue(r'deposit_required')
+  depositRequired(r'deposit_required'),
+  @JsonValue(r'deposit_reminder_already_sent')
+  depositReminderAlreadySent(r'deposit_reminder_already_sent'),
   @JsonValue(r'outside_working_hours')
   outsideWorkingHours(r'outside_working_hours'),
   @JsonValue(r'staff_on_time_off')

@@ -9,13 +9,19 @@ part of 'public_appointment_deposit.dart';
 abstract class _$PublicAppointmentDepositCWProxy {
   PublicAppointmentDeposit required_(Money required_);
 
-  PublicAppointmentDeposit status(PublicAppointmentDepositStatusEnum status);
+  PublicAppointmentDeposit status(DepositStatus status);
 
   PublicAppointmentDeposit transferCode(String? transferCode);
 
   PublicAppointmentDeposit customerReportedUtc(DateTime? customerReportedUtc);
 
   PublicAppointmentDeposit receivedUtc(DateTime? receivedUtc);
+
+  PublicAppointmentDeposit remindedUtc(DateTime? remindedUtc);
+
+  PublicAppointmentDeposit refundedUtc(DateTime? refundedUtc);
+
+  PublicAppointmentDeposit refundedAmount(Money? refundedAmount);
 
   PublicAppointmentDeposit instructions(DepositInstructions? instructions);
 
@@ -27,10 +33,13 @@ abstract class _$PublicAppointmentDepositCWProxy {
   /// ````
   PublicAppointmentDeposit call({
     Money required_,
-    PublicAppointmentDepositStatusEnum status,
+    DepositStatus status,
     String? transferCode,
     DateTime? customerReportedUtc,
     DateTime? receivedUtc,
+    DateTime? remindedUtc,
+    DateTime? refundedUtc,
+    Money? refundedAmount,
     DepositInstructions? instructions,
   });
 }
@@ -47,8 +56,7 @@ class _$PublicAppointmentDepositCWProxyImpl
       this(required_: required_);
 
   @override
-  PublicAppointmentDeposit status(PublicAppointmentDepositStatusEnum status) =>
-      this(status: status);
+  PublicAppointmentDeposit status(DepositStatus status) => this(status: status);
 
   @override
   PublicAppointmentDeposit transferCode(String? transferCode) =>
@@ -61,6 +69,18 @@ class _$PublicAppointmentDepositCWProxyImpl
   @override
   PublicAppointmentDeposit receivedUtc(DateTime? receivedUtc) =>
       this(receivedUtc: receivedUtc);
+
+  @override
+  PublicAppointmentDeposit remindedUtc(DateTime? remindedUtc) =>
+      this(remindedUtc: remindedUtc);
+
+  @override
+  PublicAppointmentDeposit refundedUtc(DateTime? refundedUtc) =>
+      this(refundedUtc: refundedUtc);
+
+  @override
+  PublicAppointmentDeposit refundedAmount(Money? refundedAmount) =>
+      this(refundedAmount: refundedAmount);
 
   @override
   PublicAppointmentDeposit instructions(DepositInstructions? instructions) =>
@@ -79,6 +99,9 @@ class _$PublicAppointmentDepositCWProxyImpl
     Object? transferCode = const $CopyWithPlaceholder(),
     Object? customerReportedUtc = const $CopyWithPlaceholder(),
     Object? receivedUtc = const $CopyWithPlaceholder(),
+    Object? remindedUtc = const $CopyWithPlaceholder(),
+    Object? refundedUtc = const $CopyWithPlaceholder(),
+    Object? refundedAmount = const $CopyWithPlaceholder(),
     Object? instructions = const $CopyWithPlaceholder(),
   }) {
     return PublicAppointmentDeposit(
@@ -89,7 +112,7 @@ class _$PublicAppointmentDepositCWProxyImpl
       status: status == const $CopyWithPlaceholder()
           ? _value.status
           // ignore: cast_nullable_to_non_nullable
-          : status as PublicAppointmentDepositStatusEnum,
+          : status as DepositStatus,
       transferCode: transferCode == const $CopyWithPlaceholder()
           ? _value.transferCode
           // ignore: cast_nullable_to_non_nullable
@@ -102,6 +125,18 @@ class _$PublicAppointmentDepositCWProxyImpl
           ? _value.receivedUtc
           // ignore: cast_nullable_to_non_nullable
           : receivedUtc as DateTime?,
+      remindedUtc: remindedUtc == const $CopyWithPlaceholder()
+          ? _value.remindedUtc
+          // ignore: cast_nullable_to_non_nullable
+          : remindedUtc as DateTime?,
+      refundedUtc: refundedUtc == const $CopyWithPlaceholder()
+          ? _value.refundedUtc
+          // ignore: cast_nullable_to_non_nullable
+          : refundedUtc as DateTime?,
+      refundedAmount: refundedAmount == const $CopyWithPlaceholder()
+          ? _value.refundedAmount
+          // ignore: cast_nullable_to_non_nullable
+          : refundedAmount as Money?,
       instructions: instructions == const $CopyWithPlaceholder()
           ? _value.instructions
           // ignore: cast_nullable_to_non_nullable
@@ -133,9 +168,9 @@ PublicAppointmentDeposit _$PublicAppointmentDepositFromJson(
     status: $checkedConvert(
       'status',
       (v) => $enumDecode(
-        _$PublicAppointmentDepositStatusEnumEnumMap,
+        _$DepositStatusEnumMap,
         v,
-        unknownValue: PublicAppointmentDepositStatusEnum.unknownDefaultOpenApi,
+        unknownValue: DepositStatus.unknownDefaultOpenApi,
       ),
     ),
     transferCode: $checkedConvert('transferCode', (v) => v as String?),
@@ -146,6 +181,18 @@ PublicAppointmentDeposit _$PublicAppointmentDepositFromJson(
     receivedUtc: $checkedConvert(
       'receivedUtc',
       (v) => v == null ? null : DateTime.parse(v as String),
+    ),
+    remindedUtc: $checkedConvert(
+      'remindedUtc',
+      (v) => v == null ? null : DateTime.parse(v as String),
+    ),
+    refundedUtc: $checkedConvert(
+      'refundedUtc',
+      (v) => v == null ? null : DateTime.parse(v as String),
+    ),
+    refundedAmount: $checkedConvert(
+      'refundedAmount',
+      (v) => v == null ? null : Money.fromJson(v as Map<String, dynamic>),
     ),
     instructions: $checkedConvert(
       'instructions',
@@ -161,18 +208,21 @@ Map<String, dynamic> _$PublicAppointmentDepositToJson(
   PublicAppointmentDeposit instance,
 ) => <String, dynamic>{
   'required': instance.required_.toJson(),
-  'status': _$PublicAppointmentDepositStatusEnumEnumMap[instance.status]!,
+  'status': _$DepositStatusEnumMap[instance.status]!,
   'transferCode': ?instance.transferCode,
   'customerReportedUtc': ?instance.customerReportedUtc?.toIso8601String(),
   'receivedUtc': ?instance.receivedUtc?.toIso8601String(),
+  'remindedUtc': ?instance.remindedUtc?.toIso8601String(),
+  'refundedUtc': ?instance.refundedUtc?.toIso8601String(),
+  'refundedAmount': ?instance.refundedAmount?.toJson(),
   'instructions': ?instance.instructions?.toJson(),
 };
 
-const _$PublicAppointmentDepositStatusEnumEnumMap = {
-  PublicAppointmentDepositStatusEnum.awaiting: 'Awaiting',
-  PublicAppointmentDepositStatusEnum.customerReported: 'CustomerReported',
-  PublicAppointmentDepositStatusEnum.received: 'Received',
-  PublicAppointmentDepositStatusEnum.refunded: 'Refunded',
-  PublicAppointmentDepositStatusEnum.unknownDefaultOpenApi:
-      'unknown_default_open_api',
+const _$DepositStatusEnumMap = {
+  DepositStatus.awaiting: 'Awaiting',
+  DepositStatus.customerReported: 'CustomerReported',
+  DepositStatus.received: 'Received',
+  DepositStatus.refunded: 'Refunded',
+  DepositStatus.waived: 'Waived',
+  DepositStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

@@ -40,6 +40,10 @@ public static class ErrorCodes
 
     public const string DepositUnavailableNoIban = "deposit_unavailable_no_iban";
 
+    public const string DepositRequired = "deposit_required";
+
+    public const string DepositReminderAlreadySent = "deposit_reminder_already_sent";
+
     public const string OutsideWorkingHours = "outside_working_hours";
 
     public const string StaffOnTimeOff = "staff_on_time_off";
@@ -84,6 +88,8 @@ public static class ErrorCodes
         PhoneAlreadyExists,
         SlugUnavailable,
         DepositUnavailableNoIban,
+        DepositRequired,
+        DepositReminderAlreadySent,
         OutsideWorkingHours,
         StaffOnTimeOff,
         InsufficientCredits,

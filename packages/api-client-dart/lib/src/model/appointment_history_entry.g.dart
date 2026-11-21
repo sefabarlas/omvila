@@ -142,6 +142,9 @@ const _$AppointmentHistoryEntryKindEnumEnumMap = {
   AppointmentHistoryEntryKindEnum.depositReported: 'DepositReported',
   AppointmentHistoryEntryKindEnum.depositReceived: 'DepositReceived',
   AppointmentHistoryEntryKindEnum.notificationSent: 'NotificationSent',
+  AppointmentHistoryEntryKindEnum.depositWaived: 'DepositWaived',
+  AppointmentHistoryEntryKindEnum.depositReminded: 'DepositReminded',
+  AppointmentHistoryEntryKindEnum.depositRefunded: 'DepositRefunded',
   AppointmentHistoryEntryKindEnum.unknownDefaultOpenApi:
       'unknown_default_open_api',
 };

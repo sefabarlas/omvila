@@ -3,8 +3,10 @@
 //
 
 // ignore_for_file: unused_element
+import 'package:omvila_api/src/model/money.dart';
 import 'package:omvila_api/src/model/appointment_status.dart';
 import 'package:omvila_api/src/model/segment_view.dart';
+import 'package:omvila_api/src/model/deposit_status.dart';
 import 'package:omvila_api/src/model/display_status.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -46,6 +48,10 @@ class CalendarAppointment {
     required  this.isRecurring,
 
      this.holdExpiresUtc,
+
+     this.depositStatus,
+
+     this.depositAmount,
 
     required  this.segments,
   });
@@ -196,6 +202,33 @@ class CalendarAppointment {
 
 
 
+      /// Yalnız kapora istenmiş randevuda bulunur (bloktaki \"Havale bildirildi\" işareti)
+  @JsonKey(
+    
+    name: r'depositStatus',
+    required: false,
+    includeIfNull: false,
+  unknownEnumValue: DepositStatus.unknownDefaultOpenApi,
+  )
+
+
+  final DepositStatus? depositStatus;
+
+
+
+      /// İstenen kapora; yalnız kapora istenmiş randevuda bulunur
+  @JsonKey(
+    
+    name: r'depositAmount',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final Money? depositAmount;
+
+
+
   @JsonKey(
     
     name: r'segments',
@@ -224,6 +257,8 @@ class CalendarAppointment {
       other.isNewCustomer == isNewCustomer &&
       other.isRecurring == isRecurring &&
       other.holdExpiresUtc == holdExpiresUtc &&
+      other.depositStatus == depositStatus &&
+      other.depositAmount == depositAmount &&
       other.segments == segments;
 
     @override
@@ -240,6 +275,8 @@ class CalendarAppointment {
         isNewCustomer.hashCode +
         isRecurring.hashCode +
         (holdExpiresUtc == null ? 0 : holdExpiresUtc.hashCode) +
+        depositStatus.hashCode +
+        depositAmount.hashCode +
         segments.hashCode;
 
   factory CalendarAppointment.fromJson(Map<String, dynamic> json) => _$CalendarAppointmentFromJson(json);

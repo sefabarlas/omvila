@@ -41,7 +41,7 @@ class AppointmentHistoryEntry {
 
 
 
-      /// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
+      /// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5), DepositReported = müşteri havaleyi bildirdi, DepositReceived = \"Kapora geldi\" (A3), DepositWaived = \"Kaporasız onayla\", DepositReminded = \"Hatırlat\" SMS'i, DepositRefunded = \"Salon iade etti\". İstemciler bilinmeyen değeri genel satır olarak gösterir
   @JsonKey(
     
     name: r'kind',
@@ -106,7 +106,7 @@ class AppointmentHistoryEntry {
 
 }
 
-/// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
+/// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5), DepositReported = müşteri havaleyi bildirdi, DepositReceived = \"Kapora geldi\" (A3), DepositWaived = \"Kaporasız onayla\", DepositReminded = \"Hatırlat\" SMS'i, DepositRefunded = \"Salon iade etti\". İstemciler bilinmeyen değeri genel satır olarak gösterir
 enum AppointmentHistoryEntryKindEnum {
 @JsonValue(r'Created')
 created(r'Created'),
@@ -134,6 +134,12 @@ depositReported(r'DepositReported'),
 depositReceived(r'DepositReceived'),
 @JsonValue(r'NotificationSent')
 notificationSent(r'NotificationSent'),
+@JsonValue(r'DepositWaived')
+depositWaived(r'DepositWaived'),
+@JsonValue(r'DepositReminded')
+depositReminded(r'DepositReminded'),
+@JsonValue(r'DepositRefunded')
+depositRefunded(r'DepositRefunded'),
 @JsonValue(r'unknown_default_open_api')
 unknownDefaultOpenApi(r'unknown_default_open_api');
 

@@ -28,6 +28,8 @@ lib/src/model/appointment_history_entry.dart
 lib/src/model/appointment_item_request.dart
 lib/src/model/appointment_item_view.dart
 lib/src/model/appointment_status.dart
+lib/src/model/bank_account.dart
+lib/src/model/bank_account_write.dart
 lib/src/model/booking_page_settings.dart
 lib/src/model/booking_page_settings_update.dart
 lib/src/model/booking_token_result.dart
@@ -54,7 +56,9 @@ lib/src/model/day_search_request.dart
 lib/src/model/day_search_result.dart
 lib/src/model/day_search_result_days_inner.dart
 lib/src/model/deposit_instructions.dart
+lib/src/model/deposit_refund_request.dart
 lib/src/model/deposit_rule.dart
+lib/src/model/deposit_status.dart
 lib/src/model/deposit_view.dart
 lib/src/model/device_platform.dart
 lib/src/model/device_registration.dart

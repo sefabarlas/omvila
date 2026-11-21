@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:omvila_api/src/model/money.dart';
+import 'package:omvila_api/src/model/deposit_status.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -30,6 +31,12 @@ class DepositView {
      this.customerReportedUtc,
 
      this.receivedUtc,
+
+     this.remindedUtc,
+
+     this.refundedUtc,
+
+     this.refundedAmount,
   });
 
   @JsonKey(
@@ -49,11 +56,11 @@ class DepositView {
     name: r'status',
     required: true,
     includeIfNull: false,
-  unknownEnumValue: DepositViewStatusEnum.unknownDefaultOpenApi,
+  unknownEnumValue: DepositStatus.unknownDefaultOpenApi,
   )
 
 
-  final DepositViewStatusEnum status;
+  final DepositStatus status;
 
 
 
@@ -93,6 +100,45 @@ class DepositView {
 
 
 
+      /// Salonun \"Hatırlat\" ile kapora SMS'ini yeniden gönderdiği an (randevu başına en fazla bir kez); doluysa buton pasif
+  @JsonKey(
+    
+    name: r'remindedUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? remindedUtc;
+
+
+
+      /// \"Salon iade etti\" işaretlendiği an
+  @JsonKey(
+    
+    name: r'refundedUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? refundedUtc;
+
+
+
+      /// İade edildi olarak işaretlenen tutar (alınan kaporayı aşmaz; kısmi olabilir)
+  @JsonKey(
+    
+    name: r'refundedAmount',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final Money? refundedAmount;
+
+
+
 
 
     @override
@@ -101,7 +147,10 @@ class DepositView {
       other.status == status &&
       other.transferCode == transferCode &&
       other.customerReportedUtc == customerReportedUtc &&
-      other.receivedUtc == receivedUtc;
+      other.receivedUtc == receivedUtc &&
+      other.remindedUtc == remindedUtc &&
+      other.refundedUtc == refundedUtc &&
+      other.refundedAmount == refundedAmount;
 
     @override
     int get hashCode =>
@@ -109,7 +158,10 @@ class DepositView {
         status.hashCode +
         transferCode.hashCode +
         (customerReportedUtc == null ? 0 : customerReportedUtc.hashCode) +
-        (receivedUtc == null ? 0 : receivedUtc.hashCode);
+        (receivedUtc == null ? 0 : receivedUtc.hashCode) +
+        (remindedUtc == null ? 0 : remindedUtc.hashCode) +
+        (refundedUtc == null ? 0 : refundedUtc.hashCode) +
+        refundedAmount.hashCode;
 
   factory DepositView.fromJson(Map<String, dynamic> json) => _$DepositViewFromJson(json);
 
@@ -121,25 +173,4 @@ class DepositView {
   }
 
 }
-
-enum DepositViewStatusEnum {
-@JsonValue(r'Awaiting')
-awaiting(r'Awaiting'),
-@JsonValue(r'CustomerReported')
-customerReported(r'CustomerReported'),
-@JsonValue(r'Received')
-received(r'Received'),
-@JsonValue(r'Refunded')
-refunded(r'Refunded'),
-@JsonValue(r'unknown_default_open_api')
-unknownDefaultOpenApi(r'unknown_default_open_api');
-
-const DepositViewStatusEnum(this.value);
-
-final String value;
-
-@override
-String toString() => value;
-}
-
 

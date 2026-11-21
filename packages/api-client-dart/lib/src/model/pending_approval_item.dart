@@ -4,6 +4,8 @@
 
 // ignore_for_file: unused_element
 import 'package:omvila_api/src/model/appointment_channel.dart';
+import 'package:omvila_api/src/model/money.dart';
+import 'package:omvila_api/src/model/deposit_status.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -48,6 +50,10 @@ class PendingApprovalItem {
     required  this.createdUtc,
 
     required  this.channel,
+
+     this.depositStatus,
+
+     this.depositAmount,
   });
 
       /// Randevu kimliği (yan paneli açar)
@@ -232,6 +238,33 @@ class PendingApprovalItem {
 
 
 
+      /// Yalnız kapora istenmiş talepte bulunur: Awaiting = \"Kapora bekleniyor\", CustomerReported = \"Havale bildirildi · kontrol edin\"
+  @JsonKey(
+    
+    name: r'depositStatus',
+    required: false,
+    includeIfNull: false,
+  unknownEnumValue: DepositStatus.unknownDefaultOpenApi,
+  )
+
+
+  final DepositStatus? depositStatus;
+
+
+
+      /// İstenen kapora; yalnız kapora istenmiş talepte bulunur
+  @JsonKey(
+    
+    name: r'depositAmount',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final Money? depositAmount;
+
+
+
 
 
     @override
@@ -249,7 +282,9 @@ class PendingApprovalItem {
       other.endUtc == endUtc &&
       other.holdExpiresUtc == holdExpiresUtc &&
       other.createdUtc == createdUtc &&
-      other.channel == channel;
+      other.channel == channel &&
+      other.depositStatus == depositStatus &&
+      other.depositAmount == depositAmount;
 
     @override
     int get hashCode =>
@@ -266,7 +301,9 @@ class PendingApprovalItem {
         endUtc.hashCode +
         holdExpiresUtc.hashCode +
         createdUtc.hashCode +
-        channel.hashCode;
+        channel.hashCode +
+        depositStatus.hashCode +
+        depositAmount.hashCode;
 
   factory PendingApprovalItem.fromJson(Map<String, dynamic> json) => _$PendingApprovalItemFromJson(json);
 

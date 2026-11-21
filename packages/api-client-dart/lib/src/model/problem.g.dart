@@ -198,6 +198,8 @@ const _$ErrorCodeEnumMap = {
   ErrorCode.phoneAlreadyExists: 'phone_already_exists',
   ErrorCode.slugUnavailable: 'slug_unavailable',
   ErrorCode.depositUnavailableNoIban: 'deposit_unavailable_no_iban',
+  ErrorCode.depositRequired: 'deposit_required',
+  ErrorCode.depositReminderAlreadySent: 'deposit_reminder_already_sent',
   ErrorCode.outsideWorkingHours: 'outside_working_hours',
   ErrorCode.staffOnTimeOff: 'staff_on_time_off',
   ErrorCode.insufficientCredits: 'insufficient_credits',

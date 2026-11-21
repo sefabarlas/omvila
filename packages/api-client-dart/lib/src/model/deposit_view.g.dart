@@ -9,13 +9,19 @@ part of 'deposit_view.dart';
 abstract class _$DepositViewCWProxy {
   DepositView required_(Money required_);
 
-  DepositView status(DepositViewStatusEnum status);
+  DepositView status(DepositStatus status);
 
   DepositView transferCode(String? transferCode);
 
   DepositView customerReportedUtc(DateTime? customerReportedUtc);
 
   DepositView receivedUtc(DateTime? receivedUtc);
+
+  DepositView remindedUtc(DateTime? remindedUtc);
+
+  DepositView refundedUtc(DateTime? refundedUtc);
+
+  DepositView refundedAmount(Money? refundedAmount);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DepositView(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -25,10 +31,13 @@ abstract class _$DepositViewCWProxy {
   /// ````
   DepositView call({
     Money required_,
-    DepositViewStatusEnum status,
+    DepositStatus status,
     String? transferCode,
     DateTime? customerReportedUtc,
     DateTime? receivedUtc,
+    DateTime? remindedUtc,
+    DateTime? refundedUtc,
+    Money? refundedAmount,
   });
 }
 
@@ -42,7 +51,7 @@ class _$DepositViewCWProxyImpl implements _$DepositViewCWProxy {
   DepositView required_(Money required_) => this(required_: required_);
 
   @override
-  DepositView status(DepositViewStatusEnum status) => this(status: status);
+  DepositView status(DepositStatus status) => this(status: status);
 
   @override
   DepositView transferCode(String? transferCode) =>
@@ -57,6 +66,18 @@ class _$DepositViewCWProxyImpl implements _$DepositViewCWProxy {
       this(receivedUtc: receivedUtc);
 
   @override
+  DepositView remindedUtc(DateTime? remindedUtc) =>
+      this(remindedUtc: remindedUtc);
+
+  @override
+  DepositView refundedUtc(DateTime? refundedUtc) =>
+      this(refundedUtc: refundedUtc);
+
+  @override
+  DepositView refundedAmount(Money? refundedAmount) =>
+      this(refundedAmount: refundedAmount);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DepositView(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -69,6 +90,9 @@ class _$DepositViewCWProxyImpl implements _$DepositViewCWProxy {
     Object? transferCode = const $CopyWithPlaceholder(),
     Object? customerReportedUtc = const $CopyWithPlaceholder(),
     Object? receivedUtc = const $CopyWithPlaceholder(),
+    Object? remindedUtc = const $CopyWithPlaceholder(),
+    Object? refundedUtc = const $CopyWithPlaceholder(),
+    Object? refundedAmount = const $CopyWithPlaceholder(),
   }) {
     return DepositView(
       required_: required_ == const $CopyWithPlaceholder()
@@ -78,7 +102,7 @@ class _$DepositViewCWProxyImpl implements _$DepositViewCWProxy {
       status: status == const $CopyWithPlaceholder()
           ? _value.status
           // ignore: cast_nullable_to_non_nullable
-          : status as DepositViewStatusEnum,
+          : status as DepositStatus,
       transferCode: transferCode == const $CopyWithPlaceholder()
           ? _value.transferCode
           // ignore: cast_nullable_to_non_nullable
@@ -91,6 +115,18 @@ class _$DepositViewCWProxyImpl implements _$DepositViewCWProxy {
           ? _value.receivedUtc
           // ignore: cast_nullable_to_non_nullable
           : receivedUtc as DateTime?,
+      remindedUtc: remindedUtc == const $CopyWithPlaceholder()
+          ? _value.remindedUtc
+          // ignore: cast_nullable_to_non_nullable
+          : remindedUtc as DateTime?,
+      refundedUtc: refundedUtc == const $CopyWithPlaceholder()
+          ? _value.refundedUtc
+          // ignore: cast_nullable_to_non_nullable
+          : refundedUtc as DateTime?,
+      refundedAmount: refundedAmount == const $CopyWithPlaceholder()
+          ? _value.refundedAmount
+          // ignore: cast_nullable_to_non_nullable
+          : refundedAmount as Money?,
     );
   }
 }
@@ -116,9 +152,9 @@ DepositView _$DepositViewFromJson(Map<String, dynamic> json) =>
         status: $checkedConvert(
           'status',
           (v) => $enumDecode(
-            _$DepositViewStatusEnumEnumMap,
+            _$DepositStatusEnumMap,
             v,
-            unknownValue: DepositViewStatusEnum.unknownDefaultOpenApi,
+            unknownValue: DepositStatus.unknownDefaultOpenApi,
           ),
         ),
         transferCode: $checkedConvert('transferCode', (v) => v as String?),
@@ -130,6 +166,18 @@ DepositView _$DepositViewFromJson(Map<String, dynamic> json) =>
           'receivedUtc',
           (v) => v == null ? null : DateTime.parse(v as String),
         ),
+        remindedUtc: $checkedConvert(
+          'remindedUtc',
+          (v) => v == null ? null : DateTime.parse(v as String),
+        ),
+        refundedUtc: $checkedConvert(
+          'refundedUtc',
+          (v) => v == null ? null : DateTime.parse(v as String),
+        ),
+        refundedAmount: $checkedConvert(
+          'refundedAmount',
+          (v) => v == null ? null : Money.fromJson(v as Map<String, dynamic>),
+        ),
       );
       return val;
     }, fieldKeyMap: const {'required_': 'required'});
@@ -137,16 +185,20 @@ DepositView _$DepositViewFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$DepositViewToJson(DepositView instance) =>
     <String, dynamic>{
       'required': instance.required_.toJson(),
-      'status': _$DepositViewStatusEnumEnumMap[instance.status]!,
+      'status': _$DepositStatusEnumMap[instance.status]!,
       'transferCode': ?instance.transferCode,
       'customerReportedUtc': ?instance.customerReportedUtc?.toIso8601String(),
       'receivedUtc': ?instance.receivedUtc?.toIso8601String(),
+      'remindedUtc': ?instance.remindedUtc?.toIso8601String(),
+      'refundedUtc': ?instance.refundedUtc?.toIso8601String(),
+      'refundedAmount': ?instance.refundedAmount?.toJson(),
     };
 
-const _$DepositViewStatusEnumEnumMap = {
-  DepositViewStatusEnum.awaiting: 'Awaiting',
-  DepositViewStatusEnum.customerReported: 'CustomerReported',
-  DepositViewStatusEnum.received: 'Received',
-  DepositViewStatusEnum.refunded: 'Refunded',
-  DepositViewStatusEnum.unknownDefaultOpenApi: 'unknown_default_open_api',
+const _$DepositStatusEnumMap = {
+  DepositStatus.awaiting: 'Awaiting',
+  DepositStatus.customerReported: 'CustomerReported',
+  DepositStatus.received: 'Received',
+  DepositStatus.refunded: 'Refunded',
+  DepositStatus.waived: 'Waived',
+  DepositStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
 };
