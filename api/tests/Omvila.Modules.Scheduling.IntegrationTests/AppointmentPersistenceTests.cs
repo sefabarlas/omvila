@@ -37,7 +37,7 @@ public sealed class AppointmentPersistenceTests(PostgresFixture db) : IAsyncLife
         await using (var connection = await db.OpenMigratorConnectionAsync(Ct))
         {
             await using var command = new NpgsqlCommand(
-                "TRUNCATE scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;",
+                "TRUNCATE scheduling.waitlist_offers, scheduling.waitlist_entries, scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;",
                 connection);
             await command.ExecuteNonQueryAsync(Ct);
         }

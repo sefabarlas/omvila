@@ -218,9 +218,11 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             """);
         var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
         var importId = await PreviewImportAsync(token);
+        var entryId = await WaitlistEntryAsync(token, branchId, brandCustomerId, serviceId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["importId"] = importId,
+            ["entryId"] = entryId,
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
             ["appointmentId"] = appointmentId,
@@ -243,6 +245,14 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         import.Status.ShouldBe(201, import.Text);
         return import.Json.GetProperty("importId").GetString()!;
     }
+
+    private Task<string> WaitlistEntryAsync(string token, string branchId, string brandCustomerId, string serviceId) =>
+        PostIdAsync(token, "/api/v1/manage/waitlist", new
+        {
+            branchId,
+            brandCustomerId,
+            preferences = new { serviceIds = new[] { serviceId }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
+        });
 
     private async Task<string> PostIdAsync(string token, string path, object body)
     {

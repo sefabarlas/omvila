@@ -54,6 +54,12 @@ public static class NotificationEvents
     /// </summary>
     public const string WalkInAlmostTurn = "walkin.almost_turn";
 
+    /// <summary>
+    /// Bekleme teklifi (durum-makinesi.md § 3): "{salon}: Beklediğiniz {tarih} {saat} boşaldı. 15 dk içinde onaylarsanız sizin:
+    /// {b bağlantısı}". Push → SMS, sessiz saatte kaydırılmaz.
+    /// </summary>
+    public const string WaitlistOffer = "waitlist.offer";
+
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 

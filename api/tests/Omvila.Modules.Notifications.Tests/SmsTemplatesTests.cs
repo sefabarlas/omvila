@@ -50,6 +50,8 @@ public sealed class SmsTemplatesTests
         [(NotificationEvents.AppointmentCancelledBySalon, SmsTemplates.DepositReceivedVariant)] = Values(
             ("salon", "Kuaför Elif Moda"), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif-moda")),
         [(NotificationEvents.WalkInAlmostTurn, null)] = Values(("salon", Salon30)),
+        [(NotificationEvents.WaitlistOffer, null)] = Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("dakika", "15"), ("b bağlantısı", "omvila.com/b/AbCdEfGh12")),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.ReviewInvite, null)] = Values(("salon", Salon30), ("bağlantı", "omvila.com/d/AbCdEfGh12")),
@@ -104,13 +106,13 @@ public sealed class SmsTemplatesTests
 
             var body = SmsTemplates.Render(eventCode, values, variant);
             GsmLength.Units(body)!.Value.ShouldBeLessThanOrEqualTo(GsmLength.SingleSmsLimit, $"{eventCode} {variant}");
-            // Kapora metinlerinde bağlantı yoksa tutar, salon iptalinin kapora ekinde (T-83) kapora cümlesi, kapıda sırada
-            // "önünüzde 1 kişi" cümlesi korunur.
+            // Bağlantı (/r/, rezervasyon, /b/) korunur; kapora metinlerinde bağlantı yoksa tutar, salon iptalinin kapora ekinde
+            // (T-83) kapora cümlesi, kapıda sırada "önünüzde 1 kişi" cümlesi korunur.
             var anchor = (eventCode, variant) == (NotificationEvents.AppointmentCancelledBySalon, SmsTemplates.DepositReceivedVariant)
                 ? "Kapora iadesi için salon sizinle iletişime geçecek."
                 : string.Equals(eventCode, NotificationEvents.WalkInAlmostTurn, StringComparison.Ordinal)
                 ? "Sıranız yaklaştı, önünüzde 1 kişi var. Salona yakın olun."
-                : values.GetValueOrDefault("bağlantı") ?? values.GetValueOrDefault("rezervasyon bağlantısı") ?? values.GetValueOrDefault("kod") ?? values["tutar"];
+                : values.GetValueOrDefault("bağlantı") ?? values.GetValueOrDefault("rezervasyon bağlantısı") ?? values.GetValueOrDefault("b bağlantısı") ?? values.GetValueOrDefault("kod") ?? values["tutar"];
             body.ShouldContain(anchor);
         }
     }
@@ -331,6 +333,16 @@ public sealed class SmsTemplatesTests
     [Fact]
     public void GsmLength_WithCharacterOutsideTables_ReturnsNull() =>
         GsmLength.Units("Randevu ✂").ShouldBeNull();
+
+    // Kural: bildirimler.md waitlist.offer (KK3); "15 dk" WaitlistOfferHoldMinutes'tan.
+    [Fact]
+    public void WaitlistOffer_MatchesCatalogText()
+    {
+        var values = Values(("salon", "Kuaför Elif"), ("tarih", "Çar 25 Kas"), ("saat", "16:00"), ("dakika", "15"), ("b bağlantısı", "omvila.com/b/AbCdEfGh12"));
+
+        SmsTemplates.Render(NotificationEvents.WaitlistOffer, values)
+            .ShouldBe("Kuaför Elif: Beklediğiniz Çar 25 Kas 16:00 boşaldı. 15 dk içinde onaylarsanız sizin: omvila.com/b/AbCdEfGh12");
+    }
 
     private static Dictionary<string, string> Values(params (string Key, string Value)[] pairs) =>
         pairs.ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);

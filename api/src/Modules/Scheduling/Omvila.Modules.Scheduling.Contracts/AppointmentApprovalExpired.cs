@@ -7,7 +7,7 @@ namespace Omvila.Modules.Scheduling.Contracts;
 /// Tutma süresi doldu, talep sistemce iptal edildi (A5; <c>ExpireAppointmentHolds</c> işi veya yazma yolunun satır içi
 /// iptali). Notifications <see cref="Reason"/> <c>ApprovalExpired</c> ise müşteriye <c>appointment.approval_expired</c>
 /// ("zamanında yanıtlayamadı"), <c>DepositNotReceived</c> ise <c>deposit.not_received</c> ("… kapora … gelmediği için …
-/// iptal edildi") yazar. Bekleme listesi Dilim 5'te.
+/// iptal edildi") yazar. Scheduling boşalan saati bekleme listesine teklif eder (OfferVacatedSlotToWaitlist).
 /// </summary>
 /// <param name="BrandId">Marka.</param>
 /// <param name="AppointmentId">Randevu.</param>

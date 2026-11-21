@@ -91,6 +91,9 @@ internal static partial class SmsTemplates
             SalonOnly),
         // Tasarımdaki "Lütfen salona yakın olun." ses tonu kuralıyla (lütfen yok) "Salona yakın olun." yazılır (bildirimler.md ¹, S-17).
         [Key(NotificationEvents.WalkInAlmostTurn, null)] = new("{salon}: Sıranız yaklaştı, önünüzde 1 kişi var. Salona yakın olun.", SalonOnly),
+        // Katalogdaki "15 dk" WaitlistOfferHoldMinutes'tan gelir (sabit yazılmaz).
+        [Key(NotificationEvents.WaitlistOffer, null)] = new(
+            "{salon}: Beklediğiniz {tarih} {saat} boşaldı. {dakika} dk içinde onaylarsanız sizin: {b bağlantısı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(

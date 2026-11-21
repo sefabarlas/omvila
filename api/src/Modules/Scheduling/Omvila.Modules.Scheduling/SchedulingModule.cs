@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 using Omvila.Infrastructure.Jobs;
+using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
@@ -14,10 +15,12 @@ using Omvila.Modules.Scheduling.Features.Completion;
 using Omvila.Modules.Scheduling.Features.Deposits;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
+using Omvila.Modules.Scheduling.Features.Waitlist;
 using Omvila.Modules.Scheduling.Features.WalkIns;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
 using Omvila.Modules.Scheduling.Infrastructure.ConflictGuard;
+using Omvila.Modules.Scheduling.IntegrationEventHandlers;
 using Omvila.Modules.Scheduling.Jobs;
 
 namespace Omvila.Modules.Scheduling;
@@ -26,7 +29,8 @@ namespace Omvila.Modules.Scheduling;
 /// Scheduling modülü girişi (D2: randevu alanı ve kalıcılığı, müsaitlik motoru ve anlık görüntü yükleyicisi, çakışma
 /// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; rezervasyon sayfası ve SMS bağlantısı (/r/) uçları; IAppointmentQueries; MarkNoShows ve ExtendRecurringSeries işleri). D3: onay akışı (onay, red, kuyruk) ve
 /// ExpireAppointmentHolds işi. D4: "Kapora geldi" (tahsilat kaydı Sales IDepositPayments ile aynı transaction'da) ve
-/// "Kaporasız onayla".
+/// "Kaporasız onayla". D5: bekleme listesi (teklif motoru, saat tutma, /b/ bağlantısı, ExpireWaitlistOffers ve
+/// ExpireWaitlistEntries işleri; T-90).
 /// Yükleyici Tenancy (IBranchScheduleQueries) ve Catalog (IServiceOffers), randevu uçları Customers (ICustomerDirectory)
 /// ve Platform (ISubscriptionQueries) sözleşmelerine dayanır.
 /// </summary>
@@ -63,6 +67,17 @@ public static class SchedulingModule
         services.AddScoped<WalkInTickets>();
         services.AddScoped<WalkInQueueReader>();
         services.AddScoped<AppointmentCompletions>();
+        services.AddScoped<WaitlistOfferEngine>();
+        services.AddScoped<WaitlistInput>();
+        services.AddScoped<WaitlistViewMapper>();
+        services.AddScoped<WaitlistManagement>();
+        services.AddScoped<PublicWaitlist>();
+        services.AddIntegrationEventHandler<AppointmentDeclined, OfferVacatedSlotToWaitlist>();
+        services.AddIntegrationEventHandler<AppointmentApprovalExpired, OfferVacatedSlotToWaitlist>();
+        services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, OfferVacatedSlotToWaitlist>();
+        services.AddIntegrationEventHandler<AppointmentCancelledBySalon, OfferVacatedSlotToWaitlist>();
+        services.AddPeriodicJob<ExpireWaitlistOffers, SchedulingOptions>(o => Duration.FromSeconds(o.ExpireWaitlistOffersIntervalSeconds));
+        services.AddPeriodicJob<ExpireWaitlistEntries, SchedulingOptions>(o => Duration.FromMinutes(o.ExpireWaitlistEntriesIntervalMinutes));
         services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
             o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
         services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
@@ -89,6 +104,7 @@ public static class SchedulingModule
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);
         PublicAppointmentLinkEndpoints.Map(app);
+        WaitlistEndpoints.Map(app);
         return app;
     }
 }
