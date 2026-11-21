@@ -12,6 +12,7 @@ type AppointmentDetail = components['schemas']['AppointmentDetail'];
 type AppointmentStatus = components['schemas']['AppointmentStatus'];
 type AppointmentCreate = components['schemas']['ManageAppointmentCreate'];
 type SlotSearchRequest = components['schemas']['SlotSearchRequest'];
+type HistoryKind = components['schemas']['AppointmentHistoryEntry']['kind'];
 
 const tz = 'Europe/Istanbul';
 export const calendarDate = '2026-11-25';
@@ -43,6 +44,23 @@ interface Row {
   seriesId?: string;
   gap?: [string, string];
   holdExpires?: string;
+  deposit?: DepositState;
+}
+
+type DepositStatus = components['schemas']['DepositStatus'];
+
+/** Kaporanın sahte hâli; saatler randevu gününde İstanbul yerel saatidir. */
+interface DepositState {
+  status: DepositStatus;
+  amountMinor: number;
+  code: string;
+  reported?: string;
+  reminded?: string;
+  received?: string;
+  refunded?: string;
+  refundedMinor?: number;
+  refundNote?: string;
+  waived?: string;
 }
 
 const series = '0193a8f0-0000-7000-8000-00000000a5e1';
@@ -56,6 +74,90 @@ export const appointmentIds = {
   asli: '0193a8f0-0000-7000-8000-00000000a007',
   deryaNext: '0193a8f0-0000-7000-8000-00000000a008',
 } as const;
+
+/** Kaporalı randevular (CalendarFakeOptions.deposits): beş DepositStatus birer kez. */
+export const depositAppointmentIds = {
+  gizem: '0193a8f0-0000-7000-8000-00000000a101',
+  buse: '0193a8f0-0000-7000-8000-00000000a102',
+  nur: '0193a8f0-0000-7000-8000-00000000a103',
+  kerem: '0193a8f0-0000-7000-8000-00000000a104',
+  hande: '0193a8f0-0000-7000-8000-00000000a105',
+} as const;
+
+// Saat 12:00'de: Gizem'in havale süresi 13:20'de (1 sa 20 dk), Buse 11:52'de "Havaleyi yaptım" dedi (GenelBakis,
+// KaporaOnay); Nur'un kaporası alındı, Kerem'inki kısmen iade edildi, Hande kaporasız onaylandı.
+const depositRows: Row[] = [
+  {
+    id: depositAppointmentIds.gizem,
+    staffId: staffIds.mert,
+    start: '14:30',
+    end: '15:00',
+    customer: 'Gizem Arslan',
+    service: 'Fön',
+    status: 'PendingApproval',
+    holdExpires: '13:20',
+    deposit: { status: 'Awaiting', amountMinor: 15000, code: 'OMV-7K2X' },
+  },
+  {
+    id: depositAppointmentIds.buse,
+    staffId: staffIds.elif,
+    start: '15:30',
+    end: '16:30',
+    customer: 'Buse Kaya',
+    service: 'Keratin',
+    status: 'PendingApproval',
+    holdExpires: '13:50',
+    deposit: {
+      status: 'CustomerReported',
+      amountMinor: 30000,
+      code: 'OMV-3H8P',
+      reported: '11:52',
+    },
+  },
+  {
+    id: depositAppointmentIds.nur,
+    staffId: staffIds.elif,
+    start: '17:00',
+    end: '17:45',
+    customer: 'Nur Ateş',
+    service: 'Fön',
+    status: 'Confirmed',
+    deposit: {
+      status: 'Received',
+      amountMinor: 15000,
+      code: 'OMV-9MQ4',
+      reported: '09:40',
+      received: '10:05',
+    },
+  },
+  {
+    id: depositAppointmentIds.kerem,
+    staffId: staffIds.mert,
+    start: '16:00',
+    end: '16:45',
+    customer: 'Kerem Aydın',
+    service: 'Saç kesimi',
+    status: 'Confirmed',
+    deposit: {
+      status: 'Refunded',
+      amountMinor: 15000,
+      code: 'OMV-5TWB',
+      received: '09:15',
+      refunded: '11:20',
+      refundedMinor: 10000,
+    },
+  },
+  {
+    id: depositAppointmentIds.hande,
+    staffId: staffIds.can,
+    start: '16:30',
+    end: '17:15',
+    customer: 'Hande Er',
+    service: 'Saç kesimi',
+    status: 'Confirmed',
+    deposit: { status: 'Waived', amountMinor: 15000, code: 'OMV-2RNC', waived: '10:40' },
+  },
+];
 
 const rows: Row[] = [
   {
@@ -148,9 +250,16 @@ interface Stored {
   endUtc: string;
   status: AppointmentStatus;
   version: number;
+  deposit?: DepositState | undefined;
 }
 
 export interface CalendarFakeOptions {
+  /** Kaporalı randevular eklenir (Awaiting, CustomerReported, Received, Refunded, Waived). */
+  deposits?: boolean;
+  /** "Kapora geldi" ve iade yanıtı: kayıt çakışması (412) veya süresi dolmuş tutma (409 hold_expired). */
+  depositError?: 'concurrency_conflict' | 'hold_expired';
+  /** "Hatırlat" yanıtı: kontör yok (409 insufficient_credits). */
+  remindError?: 'insufficient_credits';
   /** Sürükle-bırak yanıtı: dolu saat, kayıt çakışması veya çalışma saati dışı (onaylanınca geçer). */
   rescheduleError?: 'slot_taken' | 'concurrency_conflict' | 'outside_working_hours';
   /** Durum eylemlerinde (Geldi, geri al, iptal) 412. */
@@ -188,7 +297,7 @@ const shift = (iso: string, ms: number) => new Date(Date.parse(iso) + ms).toISOS
 
 /** Takvim uçlarını karşılar; ilgisiz istekte null döner (fakeFetch devam eder). */
 export function createCalendarFake(session: ManageSession, options: CalendarFakeOptions = {}) {
-  const store: Stored[] = rows
+  const store: Stored[] = [...rows, ...(options.deposits ? depositRows : [])]
     .filter(() => !options.empty)
     .map((row) => {
       const date = row.date ?? calendarDate;
@@ -200,8 +309,60 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
         endUtc: localDateTimeToUtc(date, row.end, tz),
         status: row.status,
         version: 1,
+        deposit: row.deposit ? { ...row.deposit } : undefined,
       };
     });
+  /** Test saatinin yerel karşılığı ("şimdi" 12:00 İstanbul); eylem anları buna yazılır. */
+  const nowLocal = '12:00';
+  const awaited = (s: Stored) =>
+    s.status === 'PendingApproval' &&
+    (s.deposit?.status === 'Awaiting' || s.deposit?.status === 'CustomerReported');
+  const money = (amountMinor: number) => ({ amountMinor, currency: 'TRY' as const });
+  const localUtc = (s: Stored, time: string | undefined) =>
+    time ? localDateTimeToUtc(s.date, time, tz) : null;
+
+  const depositView = (s: Stored): NonNullable<AppointmentDetail['deposit']> | null => {
+    const d = s.deposit;
+    if (!d) {
+      return null;
+    }
+
+    return {
+      required: money(d.amountMinor),
+      status: d.status,
+      transferCode: d.code,
+      customerReportedUtc: localUtc(s, d.reported),
+      receivedUtc: localUtc(s, d.received),
+      remindedUtc: localUtc(s, d.reminded),
+      refundedUtc: localUtc(s, d.refunded),
+      ...(d.refundedMinor !== undefined ? { refundedAmount: money(d.refundedMinor) } : {}),
+    };
+  };
+
+  /** Geçmiş: oluşturma ve kapora olayları zaman sırasıyla. */
+  const history = (s: Stored): AppointmentDetail['history'] => {
+    const d = s.deposit;
+    const entries: [string | undefined, HistoryKind, string | null][] = [
+      [
+        s.row.status === 'PendingApproval' || d ? '11:35' : undefined,
+        'Created',
+        'Online talep oluşturuldu, SMS ile doğrulandı',
+      ],
+      [d?.reported, 'DepositReported', null],
+      [d?.reminded, 'DepositReminded', null],
+      [d?.received, 'DepositReceived', null],
+      [d?.waived, 'DepositWaived', null],
+      [d?.refunded, 'DepositRefunded', d?.refundNote ?? null],
+    ];
+    return entries
+      .filter((entry): entry is [string, HistoryKind, string | null] => entry[0] !== undefined)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([time, kind, detail]) => ({
+        occurredUtc: localDateTimeToUtc(s.date, time, tz),
+        kind,
+        detail,
+      }));
+  };
   const opened = new Map<string, { start: string; end: string }[]>();
 
   const toItem = (s: Stored): CalendarAppointment => {
@@ -214,7 +375,14 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       startUtc: s.startUtc,
       endUtc: s.endUtc,
       status: s.status,
-      displayStatus: s.status === 'Draft' ? 'PendingApproval' : s.status,
+      displayStatus: awaited(s)
+        ? 'DepositPending'
+        : s.status === 'Draft'
+          ? 'PendingApproval'
+          : s.status,
+      ...(s.deposit
+        ? { depositStatus: s.deposit.status, depositAmount: money(s.deposit.amountMinor) }
+        : {}),
       customerName: s.row.customer,
       serviceName: s.row.service,
       isNewCustomer: false,
@@ -263,7 +431,9 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
         },
       ],
       total: { amountMinor: 45000, currency: 'TRY' },
-      amountDue: { amountMinor: 45000, currency: 'TRY' },
+      // "Salonda ödenecek" alınan kapora kadar düşer (A3).
+      amountDue: money(s.deposit?.received ? 45000 - s.deposit.amountMinor : 45000),
+      deposit: depositView(s),
       isRecurring: item.isRecurring,
       seriesId: s.row.seriesId ?? null,
       noShowAtUtc: s.status === 'Confirmed' ? shift(s.startUtc, 15 * 60_000) : null,
@@ -273,16 +443,7 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
           : null,
       holdExpiresUtc: s.status === 'PendingApproval' ? (item.holdExpiresUtc ?? null) : null,
       customerNote: s.row.status === 'PendingApproval' ? 'Parfümsüz ürün tercih ediyorum.' : null,
-      history:
-        s.row.status === 'PendingApproval'
-          ? [
-              {
-                occurredUtc: localDateTimeToUtc(s.date, '11:35', tz),
-                kind: 'Created',
-                detail: 'Online talep oluşturuldu, SMS ile doğrulandı',
-              },
-            ]
-          : [],
+      history: history(s),
       version: String(s.version),
     };
   };
@@ -385,6 +546,9 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
             holdExpiresUtc: item.holdExpiresUtc ?? s.startUtc,
             createdUtc: localDateTimeToUtc(s.date, '11:35', tz),
             channel: s.row.channel ?? 'Online',
+            ...(s.deposit
+              ? { depositStatus: s.deposit.status, depositAmount: money(s.deposit.amountMinor) }
+              : {}),
           };
         })
         .sort((a, b) => a.holdExpiresUtc.localeCompare(b.holdExpiresUtc));
@@ -517,7 +681,7 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       });
     }
 
-    const match = /^\/api\/v1\/manage\/appointments\/([^/]+)(\/[a-z-]+)?$/.exec(path);
+    const match = /^\/api\/v1\/manage\/appointments\/([^/]+)(\/[a-z-]+(?:\/[a-z-]+)?)?$/.exec(path);
     const stored = match ? store.find((s) => s.row.id === match[1]) : undefined;
     if (!match) {
       return null;
@@ -532,15 +696,91 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       return json(200, toDetail(stored));
     }
 
-    if (request.headers.get('If-Match') !== String(stored.version)) {
-      return json(412, { code: 'concurrency_conflict' });
-    }
-
     const save = (status: AppointmentStatus) => {
       stored.status = status;
       stored.version += 1;
       return json(200, toDetail(stored));
     };
+
+    // Kapora uçları (manageMarkDepositReceived, manageRemindDeposit, manageMarkDepositRefunded): izin
+    // appointment.deposit.mark; "Hatırlat" If-Match almaz, para kaydeden ikisi Idempotency-Key ister.
+    if (action.startsWith('/deposit/')) {
+      if (!session.permissions.includes('appointment.deposit.mark')) {
+        return json(403, { code: 'forbidden' });
+      }
+
+      const deposit = stored.deposit;
+      if (action === '/deposit/remind') {
+        if (!deposit || !awaited(stored)) {
+          return json(409, { code: 'invalid_state_transition' });
+        }
+
+        if (deposit.reminded) {
+          return json(409, { code: 'deposit_reminder_already_sent' });
+        }
+
+        if (options.remindError) {
+          return json(409, { code: options.remindError });
+        }
+
+        deposit.reminded = nowLocal;
+        return new Response(null, { status: 204 });
+      }
+
+      if (request.headers.get('If-Match') !== String(stored.version)) {
+        return json(412, { code: 'concurrency_conflict' });
+      }
+
+      if (!request.headers.get('Idempotency-Key')) {
+        return json(400, { code: 'validation_failed' });
+      }
+
+      if (options.depositError === 'concurrency_conflict') {
+        return json(412, { code: 'concurrency_conflict' });
+      }
+
+      if (action === '/deposit/mark-received') {
+        if (options.depositError === 'hold_expired') {
+          return json(409, { code: 'hold_expired' });
+        }
+
+        if (!deposit || !awaited(stored)) {
+          return json(409, { code: 'invalid_state_transition' });
+        }
+
+        deposit.status = 'Received';
+        deposit.received = nowLocal;
+        return save('Confirmed');
+      }
+
+      if (action === '/deposit/refund') {
+        const body = (await request.clone().json()) as {
+          amount: { amountMinor: number };
+          note?: string | null;
+        };
+        if (deposit?.status !== 'Received') {
+          return json(409, { code: 'invalid_state_transition' });
+        }
+
+        if (body.amount.amountMinor <= 0 || body.amount.amountMinor > deposit.amountMinor) {
+          return json(400, { code: 'validation_failed', errors: { amount: ['out_of_range'] } });
+        }
+
+        deposit.status = 'Refunded';
+        deposit.refunded = nowLocal;
+        deposit.refundedMinor = body.amount.amountMinor;
+        if (body.note) {
+          deposit.refundNote = body.note;
+        }
+        return save(stored.status);
+      }
+
+      return null;
+    }
+
+    if (request.headers.get('If-Match') !== String(stored.version)) {
+      return json(412, { code: 'concurrency_conflict' });
+    }
 
     switch (action) {
       case '/check-in':
@@ -587,6 +827,19 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
 
         if (stored.status !== 'PendingApproval') {
           return json(409, { code: 'invalid_state_transition' });
+        }
+
+        if (action === '/approve' && stored.deposit && awaited(stored)) {
+          const body = (await request
+            .clone()
+            .json()
+            .catch(() => null)) as { waiveDeposit?: boolean } | null;
+          if (body?.waiveDeposit !== true) {
+            return json(409, { code: 'deposit_required' });
+          }
+
+          stored.deposit.status = 'Waived';
+          stored.deposit.waived = nowLocal;
         }
 
         return save(action === '/approve' ? 'Confirmed' : 'Cancelled');

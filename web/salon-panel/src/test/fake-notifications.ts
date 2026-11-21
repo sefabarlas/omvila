@@ -9,6 +9,8 @@ export interface NotificationsFakeOptions {
   empty?: boolean;
   /** Liste ucu 500 döner. */
   error?: boolean;
+  /** Başa "Havale bildirildi" (staff.deposit_reported, hedef Deposit) eklenir. */
+  depositReported?: boolean;
 }
 
 export const notificationIds = {
@@ -16,7 +18,22 @@ export const notificationIds = {
   cancelled: '0193a8f0-0000-7000-8000-00000000b002',
   review: '0193a8f0-0000-7000-8000-00000000b003',
   credits: '0193a8f0-0000-7000-8000-00000000b004',
+  deposit: '0193a8f0-0000-7000-8000-00000000b005',
 } as const;
+
+/** Buse Kaya'nın kaporalı randevusu (fake-calendar depositAppointmentIds.buse). */
+export const depositNotificationTarget = '0193a8f0-0000-7000-8000-00000000a102';
+
+const depositReported: InAppNotification = {
+  id: notificationIds.deposit,
+  event: 'staff.deposit_reported',
+  title: 'Havale bildirildi · Buse Kaya',
+  body: 'Keratin 15:30 · 300 ₺ · OMV-3H8P',
+  createdUtc: '2026-11-25T08:52:00Z',
+  readUtc: null,
+  branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+  target: { type: 'Deposit', id: depositNotificationTarget },
+};
 
 const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
 
@@ -70,7 +87,9 @@ export function notificationsFixture(): InAppNotification[] {
 }
 
 export function createNotificationsFake(options: NotificationsFakeOptions) {
-  const items = options.empty ? [] : notificationsFixture();
+  const items = options.empty
+    ? []
+    : [...(options.depositReported ? [depositReported] : []), ...notificationsFixture()];
   const unread = () => items.filter((item) => item.readUtc === null).length;
   const json = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), {

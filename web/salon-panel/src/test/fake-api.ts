@@ -21,6 +21,7 @@ export const ownerPermissions = [
   'appointment.cancel',
   'appointment.approve',
   'appointment.checkin',
+  'appointment.deposit.mark',
   'customer.view',
   'customer.phone.view',
   'customer.edit',
