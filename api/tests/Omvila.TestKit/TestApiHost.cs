@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.SharedKernel;
 
@@ -35,6 +36,7 @@ public static class TestApiHost
         var app = builder.Build();
         app.UseExceptionHandler();
         app.UseStatusCodePages();
+        app.UseSurfaceCors();
         app.UseIdempotencyRequestBuffering();
         configurePipeline?.Invoke(app);
         app.UseOmvilaDbSession();

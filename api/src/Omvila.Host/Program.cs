@@ -4,6 +4,7 @@ using NodaTime;
 using Omvila.Host;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Catalog;
@@ -67,6 +68,8 @@ if (args.Contains("migrate", StringComparer.Ordinal))
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+// CORS kimlik doğrulama, hız sınırı ve idempotency'den önce: ön uçuş (OPTIONS) jetonsuz yanıtlanır.
+app.UseSurfaceCors();
 app.UseIdempotencyRequestBuffering();
 app.UseAuthentication();
 app.UseAuthorization();

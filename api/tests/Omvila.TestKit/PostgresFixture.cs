@@ -102,6 +102,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Outbox:RetryMaxDelaySeconds"] = "3600",
             ["Idempotency:RetentionHours"] = "24",
             ["Idempotency:PurgeIntervalMinutes"] = "60",
+            ["Cors:PreflightMaxAgeSeconds"] = "600",
             ["Notifications:DispatchIntervalSeconds"] = "1",
             ["Notifications:BatchSize"] = "50",
             ["Notifications:MaxAttempts"] = "3",
