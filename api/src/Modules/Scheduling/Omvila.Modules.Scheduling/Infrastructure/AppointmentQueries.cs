@@ -126,6 +126,32 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
             AwaitedDeposit(appointment));
     }
 
+    public async Task<IReadOnlyDictionary<Guid, AppointmentPaymentContext>> GetPaymentContextsAsync(
+        Guid brandId, IReadOnlyCollection<Guid> appointmentIds, CancellationToken ct)
+    {
+        if (appointmentIds.Count == 0)
+        {
+            return new Dictionary<Guid, AppointmentPaymentContext>();
+        }
+
+        var appointments = await db.Appointments.AsNoTracking().Include(a => a.Items)
+            .Where(a => a.BrandId == brandId && appointmentIds.Contains(a.Id))
+            .ToListAsync(ct);
+        var items = appointments.ToDictionary(
+            a => a.Id, a => a.Items.Where(i => i.Status != AppointmentItemStatus.Cancelled).OrderBy(i => i.SeqNo).ToList());
+        var firstStaff = items.Values.Select(i => i.Select(x => x.StaffId).FirstOrDefault(s => s is not null))
+            .Where(s => s is not null).Select(s => s!.Value).Distinct().ToList();
+        var staff = await tenants.GetStaffCardsAsync(brandId, firstStaff, ct);
+        return appointments.ToDictionary(a => a.Id, a =>
+        {
+            var ordered = items[a.Id];
+            var staffName = ordered.Select(i => i.StaffId).FirstOrDefault(s => s is not null) is { } first && staff.TryGetValue(first, out var card)
+                ? card.FullName
+                : null;
+            return new AppointmentPaymentContext(a.Id, a.StartUtc, [.. ordered.Select(i => i.ServiceNameSnapshot)], staffName);
+        });
+    }
+
     private static AwaitedDepositInfo? AwaitedDeposit(Appointment a) =>
         a is { DisplayStatus: DisplayStatus.DepositPending, DepositRequiredMinor: { } amount, DepositTransferCode: { } code, HoldExpiresUtc: { } due }
             ? new AwaitedDepositInfo(

@@ -5,7 +5,7 @@ namespace Omvila.Modules.Scheduling.Contracts;
 
 /// <summary>
 /// Randevu okuma (Customers modülü: müşteri kartı randevular sekmesi ve CustomerSummary.nextAppointmentUtc; Notifications:
-/// bildirim metni). Çağıranın
+/// bildirim metni; Sales: kasa satırı). Çağıranın
 /// transaction'ında ve markanın kiracı bağlamında çalışır; başka markanın randevusu dönmez.
 /// </summary>
 public interface IAppointmentQueries
@@ -39,4 +39,11 @@ public interface IAppointmentQueries
     /// <param name="appointmentId">Randevu.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<AppointmentNotificationInfo?> GetNotificationInfoAsync(Guid brandId, Guid appointmentId, CancellationToken ct);
+
+    /// <summary>Tahsilat satırları için randevu bilgisi (toplu, tek sorgu); markada olmayan randevu sonuçta yer almaz.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="appointmentIds">Randevular.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyDictionary<Guid, AppointmentPaymentContext>> GetPaymentContextsAsync(
+        Guid brandId, IReadOnlyCollection<Guid> appointmentIds, CancellationToken ct);
 }
