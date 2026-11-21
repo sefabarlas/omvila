@@ -44,6 +44,7 @@ Tam liste ve ses-tonu: [`docs/urun/urun-kurallari.md`](docs/urun/urun-kurallari.
 | Müsaitlik, takvim, çakışma | [docs/alan/musaitlik.md](docs/alan/musaitlik.md) |
 | API tasarımı | [docs/sozlesme/api-kurallari.md](docs/sozlesme/api-kurallari.md), [contracts/yol-haritasi.md](contracts/yol-haritasi.md) |
 | Mimari karar | [docs/mimari/mimari.md](docs/mimari/mimari.md) ve [ADR'ler](docs/mimari/adr/) |
+| Test ortamı, dağıtım, demo verisi | [docs/mimari/test-ortami.md](docs/mimari/test-ortami.md) |
 | Bildirim metni | [docs/standartlar/bildirimler.md](docs/standartlar/bildirimler.md) |
 | Kişisel veri, güvenlik | [docs/standartlar/guvenlik-kvkk.md](docs/standartlar/guvenlik-kvkk.md) |
 | Ekran yaparken | [design/ekran-envanteri.md](design/ekran-envanteri.md) ve ilgili `design/ekranlar/<yüzey>/*.png` |

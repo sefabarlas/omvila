@@ -30,7 +30,7 @@ flowchart LR
   classDef ext fill:#eee,stroke:#999
 ```
 
-- **Tek deploy birimi:** `Omvila.Host` aynı imajla iki rolde çalışır: `--role=api` (HTTP) ve `--role=worker` (zamanlanmış işler, outbox dağıtımı). Geliştirmede `--role=all`. `--role=migrate` migration'ları migrator bağlantısıyla uygulayıp çıkar (dağıtımda api/worker'dan önce).
+- **Tek deploy birimi:** `Omvila.Host` aynı imajla iki rolde çalışır: `--role=api` (HTTP) ve `--role=worker` (zamanlanmış işler, outbox dağıtımı). Geliştirmede `--role=all`. `--role=migrate` migration'ları migrator bağlantısıyla uygulayıp çıkar (dağıtımda api/worker'dan önce). `--role=seed` demo verisini yazıp çıkar (Production dışında). Ortamlar ve test sunucusu: [test-ortami.md](test-ortami.md).
 - **Tek veritabanı, modül başına şema:** `identity`, `tenancy`, `catalog`, `customers`, `scheduling`, `sales`, `reviews`, `notifications`, `integrations`, `platform`, `infra`.
 - **Sözleşme önce:** HTTP yüzeyi `contracts/openapi.yaml`'dır. Backend bu sözleşmeye uyar; istemciler bu sözleşmeden üretilir (ADR-0009).
 
