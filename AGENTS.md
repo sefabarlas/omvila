@@ -98,6 +98,7 @@ pnpm --filter @omvila/contracts generate   # TS + Dart istemcileri
 pnpm turbo build test lint                 # tüm web paketleri
 (cd api && dotnet test --solution Omvila.slnx)   # backend testleri
 melos bootstrap && melos run test          # Flutter paketleri
+python3 scripts/check_no_payments.py       # ödeme SDK'sı / kart formu taraması (kural 1; CI `odeme-taramasi`)
 ```
 Projeye özel komutlar ilgili `AGENTS.md`'dedir.
 
