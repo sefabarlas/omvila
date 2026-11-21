@@ -1,0 +1,149 @@
+/* "Tamamla ve ödeme al" penceresi (salon-paneli/OdemeAl) ve yan paneldeki ödemeler. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+}
+
+.customer {
+  display: flex;
+  align-items: center;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.customer strong {
+  color: var(--metin);
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: var(--yazi-govde-guclu-agirlik);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.line,
+.totalLine {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.line dt {
+  color: var(--metin-ikincil);
+}
+
+.line dd,
+.totalLine dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.minus {
+  color: var(--basari);
+}
+
+.totalLine {
+  border-bottom: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.totalLine dt {
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.payments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bosluk-3);
+}
+
+.blockTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: var(--yazi-govde-guclu-agirlik);
+}
+
+.amountRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--bosluk-3);
+  width: 100%;
+}
+
+.amount {
+  flex: 0 1 248px;
+}
+
+.packageNote,
+.info {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.error {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+/* Yan paneldeki ödemeler (yalnız payment.collect). */
+.paidList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+}
+
+.paidItems {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paidTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: var(--yazi-govde-guclu-agirlik);
+}
+
+.paidRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.paidRow strong {
+  color: var(--metin);
+  font-variant-numeric: tabular-nums;
+}

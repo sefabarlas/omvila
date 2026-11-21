@@ -7,6 +7,8 @@ import { createNotificationsFake } from './fake-notifications';
 import type { NotificationsFakeOptions } from './fake-notifications';
 import { createNotificationSettingsFake } from './fake-notification-settings';
 import type { NotificationSettingsFakeOptions } from './fake-notification-settings';
+import { createSalesFake } from './fake-sales';
+import type { SalesFakeOptions } from './fake-sales';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -22,6 +24,9 @@ export const ownerPermissions = [
   'appointment.approve',
   'appointment.checkin',
   'appointment.deposit.mark',
+  'appointment.complete',
+  'payment.collect',
+  'cash.close',
   'customer.view',
   'customer.phone.view',
   'customer.edit',
@@ -96,6 +101,8 @@ export interface FakeApiOptions {
   notifications?: NotificationsFakeOptions;
   /** Bildirim ve SMS ayarları uçları. */
   notificationSettings?: NotificationSettingsFakeOptions;
+  /** Kasa ve müşteri paketi uçları. */
+  sales?: SalesFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -381,7 +388,9 @@ export function fakeFetch({
   customers = {},
   notifications = {},
   notificationSettings = {},
+  sales = {},
 }: FakeApiOptions = {}) {
+  const salesFake = createSalesFake(session, sales);
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
   const notificationsFake = createNotificationsFake(notifications);
@@ -417,6 +426,11 @@ export function fakeFetch({
     const calendarResponse = await calendarFake(request);
     if (calendarResponse) {
       return calendarResponse;
+    }
+
+    const salesResponse = await salesFake(request);
+    if (salesResponse) {
+      return salesResponse;
     }
 
     const customersResponse = await customersFake(request);

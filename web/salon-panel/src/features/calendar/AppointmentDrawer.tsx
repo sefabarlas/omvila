@@ -12,12 +12,14 @@ import { displayStatus } from '@omvila/ui-web/status';
 import { addDays, toBranchDate } from '@omvila/ui-web/time';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { Banknote, CalendarX2, Check, Clock, UserCheck } from 'lucide-react';
+import { Banknote, CalendarX2, Check, Clock, ReceiptText, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useNow } from '@/app/clock';
 import { useSession } from '@/app/session';
 import { channelLabels } from '@/features/appointments/labels';
+import { AppointmentPayments } from '@/features/checkout/AppointmentPayments';
+import { CheckoutModal } from '@/features/checkout/CheckoutModal';
 import approvalStyles from '@/features/approvals/Approvals.module.css';
 import {
   AppointmentHistory,
@@ -59,8 +61,10 @@ function dayLabel(date: string, today: string): string {
 
 /**
  * Randevu yan paneli (salon-paneli/RandevuOnayli): durum kartı, müşteri, eylemler; altta "Geldi" veya gelmeyen için
- * "Geldiyse geri al". Durum eylemleri If-Match ile; 412'de "Kayıt çakışması" şeridi. "Tamamla ve ödeme al" (D5),
- * "Hizmet ekle" ve "Müşteriye SMS gönder" bu dilimde yok (acik-sorular.md T-54); "Müşteri kartı" kartı açar (T-57).
+ * "Geldiyse geri al". Durum eylemleri If-Match ile; 412'de "Kayıt çakışması" şeridi. Geldi (CheckedIn) randevuda alt
+ * buton "Tamamla ve ödeme al" (appointment.complete, salon-paneli/OdemeAl; acik-sorular.md T-97); tahsilatlar "Ödemeler"
+ * bölümünde (sunucu yalnız payment.collect yetkisinde döner). "Hizmet ekle" ve "Müşteriye SMS gönder" yok
+ * (acik-sorular.md T-54); "Müşteri kartı" kartı açar (T-57).
  * Onay bekleyen talepte (salon-paneli/RandevuPanel) kalan süre şeridi, ücretler, not, geçmiş ve altta Reddet / Onayla
  * (appointment.approve); 409 hold_expired → "Yanıt süresi doldu" şeridi, butonlar kalkar (acik-sorular.md T-67).
  * Kapora bekleyen talepte (dilim-04 KK5, KK7) kapora bölümü, "Hatırlat", "Kaporasız onayla" ve alt buton "Kapora geldi"
@@ -84,6 +88,7 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   const [holdExpired, setHoldExpired] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [refunding, setRefunding] = useState(false);
+  const [completing, setCompleting] = useState(false);
   // "Kapora geldi" Payment yazar: yan panel açıkken aynı eylemin tekrarı aynı anahtarla gider.
   const [receiveKey] = useState(() => idempotencyKey()['Idempotency-Key']);
   const detail = query.data;
@@ -149,6 +154,7 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   const visits = customer.isNew ? 'Yeni müşteri' : `${String(customer.visitCount)} ziyaret`;
   const showCheckIn = detail.status === 'Confirmed' && can('appointment.checkin');
   const showUndo = detail.status === 'NoShow' && date === today && can('appointment.checkin');
+  const showComplete = detail.status === 'CheckedIn' && can('appointment.complete');
   const pending = detail.status === 'PendingApproval';
   const canApprove = can('appointment.approve');
   // Kapora işaretleme (V5, V7): Owner ve BranchManager; personel görmez.
@@ -183,7 +189,7 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   return (
     <>
       <Drawer
-        open={!cancelling && !refunding}
+        open={!cancelling && !refunding && !completing}
         onClose={onClose}
         title={title}
         {...(showDecision
@@ -275,50 +281,64 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
                 </div>
               ),
             }
-          : showCheckIn || showUndo
+          : showComplete
             ? {
-                footer: showCheckIn ? (
+                footer: (
                   <Button
                     variant="primary"
-                    icon={<UserCheck size={16} aria-hidden="true" />}
-                    loading={checkIn.isPending}
-                    loadingLabel="İşaretleniyor…"
+                    icon={<ReceiptText size={16} aria-hidden="true" />}
                     onClick={() => {
-                      checkIn.mutate(
-                        { detail, input: undefined },
-                        {
-                          onSuccess: () => {
-                            toast.show({ tone: 'basari', title: `${customer.fullName} geldi` });
-                          },
-                          onError: onActionError,
-                        },
-                      );
+                      setCompleting(true);
                     }}
                   >
-                    Geldi
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    loading={undo.isPending}
-                    loadingLabel="Geri alınıyor…"
-                    onClick={() => {
-                      undo.mutate(
-                        { detail, input: undefined },
-                        {
-                          onSuccess: () => {
-                            toast.show({ tone: 'basari', title: 'Gelmedi geri alındı' });
-                          },
-                          onError: onActionError,
-                        },
-                      );
-                    }}
-                  >
-                    Geldiyse geri al
+                    Tamamla ve ödeme al
                   </Button>
                 ),
               }
-            : {})}
+            : showCheckIn || showUndo
+              ? {
+                  footer: showCheckIn ? (
+                    <Button
+                      variant="primary"
+                      icon={<UserCheck size={16} aria-hidden="true" />}
+                      loading={checkIn.isPending}
+                      loadingLabel="İşaretleniyor…"
+                      onClick={() => {
+                        checkIn.mutate(
+                          { detail, input: undefined },
+                          {
+                            onSuccess: () => {
+                              toast.show({ tone: 'basari', title: `${customer.fullName} geldi` });
+                            },
+                            onError: onActionError,
+                          },
+                        );
+                      }}
+                    >
+                      Geldi
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      loading={undo.isPending}
+                      loadingLabel="Geri alınıyor…"
+                      onClick={() => {
+                        undo.mutate(
+                          { detail, input: undefined },
+                          {
+                            onSuccess: () => {
+                              toast.show({ tone: 'basari', title: 'Gelmedi geri alındı' });
+                            },
+                            onError: onActionError,
+                          },
+                        );
+                      }}
+                    >
+                      Geldiyse geri al
+                    </Button>
+                  ),
+                }
+              : {})}
       >
         <div className={styles.drawerBody}>
           {conflict ? <ConflictBanner onReload={reload} /> : null}
@@ -462,6 +482,7 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
               ) : null}
             </ul>
           )}
+          {!pending ? <AppointmentPayments detail={detail} /> : null}
           {/* Kaporalı randevuda geçmiş (DepositReceived, DepositWaived, DepositRefunded) onaydan sonra da görünür. */}
           {!pending && detail.deposit ? <AppointmentHistory detail={detail} /> : null}
           {detail.status === 'Confirmed' && detail.noShowAtUtc ? (
@@ -489,6 +510,24 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
           }}
           onConflict={() => {
             setCancelling(false);
+            setConflict(true);
+          }}
+        />
+      ) : null}
+      {/* Ödeme penceresi açıkken yan panel kapanır (OdemeAl: takvim üstünde pencere); bitince Tamamlandı görünür. */}
+      {completing ? (
+        <CheckoutModal
+          detail={detail}
+          today={today}
+          dayLabel={date === today ? 'bugün' : formatDate(date, 'dayMonth')}
+          onClose={() => {
+            setCompleting(false);
+          }}
+          onCompleted={() => {
+            setCompleting(false);
+          }}
+          onConflict={() => {
+            setCompleting(false);
             setConflict(true);
           }}
         />

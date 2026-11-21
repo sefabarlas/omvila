@@ -32,6 +32,11 @@ export const queryKeys = {
   customer: (brandCustomerId: string) => ['customers', brandCustomerId] as const,
   customerAppointments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'appointments'] as const,
+  /** Müşterinin paketleri ("Paketten" seçeneği); önek ['customers'] ile birlikte geçersizlenir. */
+  customerPackages: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'packages'] as const,
+  /** Kasa (şube + yerel gün); önek ['cash'] bütün kasa sorgularını geçersizler. */
+  cashDay: (branchId: string, date: string) => ['cash', branchId, date] as const,
   /** Bildirim paneli (zil): ilk sayfa ve okunmamış sayısı. */
   notifications: () => ['notifications'] as const,
 };
