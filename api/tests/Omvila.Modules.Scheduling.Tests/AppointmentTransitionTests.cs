@@ -215,6 +215,29 @@ public sealed class AppointmentTransitionTests
         Create(AppointmentChannel.Phone, Start - Duration.FromDays(1)).CancelBySalon(CancellationReason.DeclinedBySalon, null, UserId, Start)
             .Error!.FieldErrors["reason"].ShouldBe(["invalid_format"]);
 
+    // Kural: alan-modeli.md § DataDeletionRequest (yaklaşan randevular iptal, neden AccountDeleted; T-92)
+    [Fact]
+    public void KvkkErasure_CancelsUpcoming_BySystem_FreesSlot()
+    {
+        var appointment = Create(AppointmentChannel.Phone, Start - Duration.FromDays(1));
+
+        appointment.CancelForAccountDeletion(Start - Duration.FromHours(1), UserId).IsSuccess.ShouldBeTrue();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Cancelled);
+        appointment.CancellationReason.ShouldBe(CancellationReason.AccountDeleted);
+        appointment.CancelledBy.ShouldBe(CancelledBy.System);
+        AllSegments(appointment).ShouldAllBe(s => !s.IsActive);
+    }
+
+    [Fact]
+    public void KvkkErasure_StartedOrFinishedAppointment_IsKept()
+    {
+        Create(AppointmentChannel.Phone, Start - Duration.FromDays(1)).CancelForAccountDeletion(Start, UserId)
+            .Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition, "başlamış randevu yaklaşan değildir");
+        Create(AppointmentChannel.WalkIn, Start).CancelForAccountDeletion(Start - Duration.FromHours(1), UserId)
+            .Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition, "Geldi durumundaki randevu iptal edilmez");
+    }
+
     [Fact]
     public void A7_Cancelled_IsFinal()
     {

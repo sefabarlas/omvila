@@ -31,6 +31,13 @@ public static class SalesModule
         services.AddScoped<PackageReader>();
         services.AddScoped<PackageSales>();
         services.AddPeriodicJob<ExpireCustomerPackages, SalesOptions>(o => Duration.FromMinutes(o.ExpireCustomerPackagesIntervalMinutes));
+        // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
+        services.AddScoped<CustomerPaymentsParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
+        services.AddScoped<CustomerPackagesParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerPackagesParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerPackagesParticipant>());
         // Demo verisi --reset (T-74): markanın tahsilat, paket ve prim kayıtları.
         services.AddBrandDataEraser<SalesDbContext>();
         return services;

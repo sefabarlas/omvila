@@ -434,6 +434,31 @@ public sealed class PackageTests(PostgresFixture db) : IAsyncLifetime
             new { packageId = package, branchId = otherBranch, soldByStaffId = _elif, paymentMethod = "Cash" }, other, Key())).Status.ShouldBe(404);
     }
 
+    // alan-modeli.md § Birleştirme (paketler hedefe taşınır), § Anonimleştirme ("Aktif paket varsa arayüz önce uyarır"); T-92, T-95.
+    [Fact]
+    public async Task CustomerMerge_MovesPackages_AndDeletionPreview_ListsActivePackages()
+    {
+        var package = await CreatePackageAsync("Fön paketi", 150000, 10, saleCommissionPercent: 10);
+        var packageItem = (await SellAsync(package, "Cash")).Body.GetProperty("items")[0].GetProperty("customerPackageItemId").GetString()!;
+        (await BookAsync(await VerifyAsync(CustomerPhone), FridayAt1430, packageItem)).Status.ShouldBe(201);
+
+        var preview = await _api.GetAsync($"/api/v1/manage/customers/{_customer}/deletion", _token);
+        preview.Status.ShouldBe(200, preview.Body.ToString());
+        var active = preview.Body.GetProperty("activePackages").EnumerateArray().ShouldHaveSingleItem();
+        active.GetProperty("packageName").GetString().ShouldBe("Fön paketi");
+        active.GetProperty("remainingSessions").GetInt32().ShouldBe(9);
+
+        var target = (await PostAsync("/api/v1/manage/customers", new { fullName = "Selin Ö.", phone = "0533 111 22 18" })).Body.GetProperty("id").GetString()!;
+        var merged = await _api.SendAsync(HttpMethod.Post, $"/api/v1/manage/customers/{target}/merge", new { sourceBrandCustomerId = _customer }, _token);
+        merged.Status.ShouldBe(200, merged.Body.ToString());
+
+        var moved = (await _api.GetAsync($"/api/v1/manage/customers/{target}/packages", _token)).Body.GetProperty("items").EnumerateArray().ShouldHaveSingleItem();
+        moved.GetProperty("customer").GetProperty("brandCustomerId").GetString().ShouldBe(target);
+        moved.GetProperty("remainingSessions").GetInt32().ShouldBe(9, "seans defteri paketle gelir");
+        moved.GetProperty("usages").GetArrayLength().ShouldBe(1);
+        (await _api.ScalarAsync<long>($"SELECT count(*) FROM sales.customer_packages WHERE brand_customer_id = '{_customer}'")).ShouldBe(0);
+    }
+
     [Fact]
     public async Task SameIdempotencyKey_SellsOnce()
     {

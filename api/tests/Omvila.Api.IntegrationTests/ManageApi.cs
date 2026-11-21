@@ -25,7 +25,8 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         await using var command = new NpgsqlCommand("""
             TRUNCATE identity.otp_challenges, identity.trusted_devices, identity.refresh_tokens, identity.terms_acceptances, identity.user_memberships, identity.users CASCADE;
             TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.brand_sms_senders, notifications.devices, notifications.in_app_notifications;
-            TRUNCATE platform.subscriptions;
+            TRUNCATE platform.subscriptions, platform.audit_logs;
+            TRUNCATE customers.customer_imports;
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;
@@ -123,11 +124,41 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
 
         using var response = await client.SendAsync(request, Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
+        // JSON dışı yanıt (CSV dışa aktarma) metin olarak JSON dizesine sarılır.
+        var isJson = response.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) != false;
         return new Response(
             (int)response.StatusCode,
-            text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone(),
+            text.Length == 0 ? default : isJson ? JsonDocument.Parse(text).RootElement.Clone() : JsonSerializer.SerializeToElement(text),
             response.Headers.ETag?.ToString(),
             response.Headers.ToDictionary(h => h.Key, h => string.Join(',', h.Value), StringComparer.OrdinalIgnoreCase));
+    }
+
+    public sealed record RawResponse(int Status, byte[] Body, string? ContentType, string? ContentDisposition)
+    {
+        public string Text => System.Text.Encoding.UTF8.GetString(Body);
+
+        public JsonElement Json => JsonDocument.Parse(Body).RootElement.Clone();
+    }
+
+    /// <summary>JSON dışı istek veya yanıt (çok parçalı form, CSV).</summary>
+    public async Task<RawResponse> SendRawAsync(
+        HttpMethod method, string path, HttpContent? content, string token, IReadOnlyDictionary<string, string>? headers = null)
+    {
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Client-Type", "web");
+        using var request = new HttpRequestMessage(method, path) { Content = content };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        foreach (var (name, value) in headers ?? new Dictionary<string, string>(StringComparer.Ordinal))
+        {
+            request.Headers.TryAddWithoutValidation(name, value);
+        }
+
+        using var response = await client.SendAsync(request, Ct);
+        return new RawResponse(
+            (int)response.StatusCode,
+            await response.Content.ReadAsByteArrayAsync(Ct),
+            response.Content.Headers.ContentType?.ToString(),
+            response.Content.Headers.ContentDisposition?.ToString());
     }
 
     /// <summary>Entegrasyon olaylarını işleyicilere iletir (DispatchIntegrationEvents).</summary>

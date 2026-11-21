@@ -216,10 +216,10 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
             RETURNING id::text
             """);
-        var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
         var (packageId, customerPackageId) = await SeedPackageAsync(token, serviceId, branchId, ownerStaffId, brandCustomerId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["importId"] = await PreviewImportAsync(token),
             ["entryId"] = await WaitlistEntryAsync(token, branchId, brandCustomerId, serviceId),
             ["packageId"] = packageId,
             ["customerPackageId"] = customerPackageId,
@@ -232,8 +232,18 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["staffId"] = staffId,
             ["overrideId"] = overrideId,
             ["timeOffId"] = timeOff.Body.GetProperty("timeOff").GetProperty("id").GetString()!,
-            ["ticketId"] = ticketId,
+            ["ticketId"] = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" }),
         };
+    }
+
+    // İçe aktarma önizlemesi (çok parçalı CSV); commit ucunun importId'si.
+    private async Task<string> PreviewImportAsync(string token)
+    {
+        using var csv = new MultipartFormDataContent { { new StringContent("Ad;Telefon\nDerya Şahin;05550002118\n"), "file", "musteriler.csv" } };
+        var import = await _api.SendRawAsync(HttpMethod.Post, "/api/v1/manage/customers/imports", csv, token,
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
+        import.Status.ShouldBe(201, import.Text);
+        return import.Json.GetProperty("importId").GetString()!;
     }
 
     private Task<string> WaitlistEntryAsync(string token, string branchId, string brandCustomerId, string serviceId) =>

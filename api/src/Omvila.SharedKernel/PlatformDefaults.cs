@@ -76,6 +76,9 @@ public static class PlatformDefaults
     /// <summary>sureler-ve-ayarlar.md § Bekleme listesi ve kapıda sıra: WaitlistAfternoonEndHour ("Öğleden sonra" 12:00–17:00, "Akşam" 17:00 ve sonrası; T-90).</summary>
     public const int WaitlistAfternoonEndHour = 17;
 
+    /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: DeletionRequestDueDays 30 (silme talepleri 30 gün içinde tamamlanır).</summary>
+    public const int DeletionRequestDueDays = 30;
+
     /// <summary>sureler-ve-ayarlar.md § Paketler: PackageExpiringSoonDays 30 ("Süresi yaklaşan": 30 gün içinde biten Active paketler).</summary>
     public const int PackageExpiringSoonDays = 30;
 }
