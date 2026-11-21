@@ -22,7 +22,7 @@ Kaynak: `design/ekranlar/bildirim-dagitim/` (SMS şablonları `Main.png`, push `
 | `otp.code` | OTP isteği | SMS (OMVILA) | `OMVILA giriş kodunuz: {kod}. Bu kodu kimseyle paylaşmayın.` | — |
 | `appointment.confirmed` | Online oluşturma (onaysız) veya panel oluşturma (bildir açık) | Push → SMS | `{salon}: Randevunuz onaylandı. {tarih} {saat}, {hizmet} ({personel}). Değişiklik ve iptal: {bağlantı}` | Randevunuz onaylandı / `{salon} · {tarih} {saat}. Görüşmek üzere.` |
 | `appointment.requested` | Online oluşturma, onay gerekli | Push → SMS | `{salon}: Talebiniz alındı. {tarih} {saat} için salon onayladığında size haber vereceğiz. {bağlantı}` | Talebiniz alındı / `Salon onaylayınca haber vereceğiz.` |
-| `appointment.approved` | A2 | Push → SMS | `{salon} talebinizi onayladı: {tarih} {saat}, {hizmet}. Görüşmek üzere! {bağlantı}` | Randevunuz onaylandı / … |
+| `appointment.approved` | A2 | Push → SMS | `{salon} talebinizi onayladı: {tarih} {saat}, {hizmet}. Görüşmek üzere! {bağlantı}` ² | Randevunuz onaylandı / … |
 | `appointment.approval_expired` | A5 (kapora yok) | Push → SMS | `{salon}, {tarih} {saat} talebinizi zamanında yanıtlayamadı, talep iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}` | Talebiniz iptal edildi / … |
 | `appointment.declined` | A4 | Push → SMS | `appointment.approval_expired` ile aynı dil ("iptal edildi"); "reddedildi" yazılmaz: `{salon}, {tarih} {saat} talebinizi onaylayamadı, talep iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}` | |
 | `deposit.awaiting` | Kaporalı randevu oluşunca | **SMS** | `{salon}: {tarih} {saat} için {tutar} TL kaporayı {süre} içinde gönderin. IBAN {iban}, {alıcı}, açıklama {kod}` (133 kr) | — |
@@ -38,6 +38,8 @@ Kaynak: `design/ekranlar/bildirim-dagitim/` (SMS şablonları `Main.png`, push `
 | `appointment.confirmed.email` | Onay (e-posta adresi varsa) | E-posta | Bkz. `EpostaOnay.png` | |
 
 ¹ Tasarımdaki metinde "Lütfen salona yakın olun." yazıyor. Ses-tonu kuralı "lütfen" kullanılmasını yasakladığı için "Salona yakın olun." kullanılır. Tasarım düzeltilmeli (`docs/acik-sorular.md`).
+
+² `appointment.approved` kodda ünlemsiz yazılır ("Görüşmek üzere."). `appointment.declined` ve `appointment.approval_expired` 155 birimi aşınca kısa metin gider: `{salon}, {tarih} {saat} talebiniz iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}` (`docs/acik-sorular.md` T-65).
 
 Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gibi yardımcılarla yapılır. Salon adının son hecesine göre ek seçilir; sabit "'te" yazılmaz.
 

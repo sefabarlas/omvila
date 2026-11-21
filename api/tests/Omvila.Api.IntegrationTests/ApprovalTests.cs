@@ -15,6 +15,7 @@ public sealed class ApprovalTests(PostgresFixture db) : IAsyncLifetime
     private const string AyşePhone = "+905321234567";
     private const string FridayAt1430 = "2026-11-27T11:30:00Z";
     private const string ExpireJob = "Omvila.Modules.Scheduling.Jobs.ExpireAppointmentHolds, Omvila.Modules.Scheduling";
+    private const string DispatchSmsJob = "Omvila.Modules.Notifications.Jobs.DispatchNotifications, Omvila.Modules.Notifications";
     private OmvilaApiFactory _factory = null!;
     private ManageApi _api = null!;
     private string _token = null!;
@@ -296,6 +297,159 @@ public sealed class ApprovalTests(PostgresFixture db) : IAsyncLifetime
         created.Body.GetProperty("appointment").GetProperty("status").GetString().ShouldBe("Confirmed");
         (await OutboxCountAsync("AppointmentRequested")).ShouldBe(0);
     }
+
+    // bildirimler.md appointment.requested; T-65: onay bekleyen talebe hatırlatma planlanmaz.
+    [Fact]
+    public async Task Requested_CustomerGetsRequestReceivedSms_NoReminders()
+    {
+        var created = await CreateAsync(FridayAt1430);
+        var code = created.Body.GetProperty("accessCode").GetString()!;
+
+        await DispatchAsync();
+
+        (await PayloadsAsync("appointment.requested", "salon", "tarih", "saat", "bağlantı"))
+            .ShouldBe($"{AyşePhone}|Kuaför Elif|Cum 27 Kas|14:30|omvila.com/r/{code}");
+        (await SentBodiesAsync()).ShouldContain(
+            $"Kuaför Elif: Talebiniz alındı. Cum 27 Kas 14:30 için salon onayladığında size haber vereceğiz. omvila.com/r/{code}");
+        (await RemindersAsync("Pending")).ShouldBeNull();
+    }
+
+    // bildirimler.md appointment.approved; hatırlatmalar onay anında planlanır (24 sa ve 2 sa önce).
+    [Fact]
+    public async Task Approved_CustomerGetsApprovalSms_RemindersScheduledAtApproval()
+    {
+        var created = await CreateAsync(FridayAt1430);
+        var id = created.Body.GetProperty("id").GetString()!;
+        var code = created.Body.GetProperty("accessCode").GetString()!;
+        await DispatchAsync();
+
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await PayloadsAsync("appointment.approved", "salon", "tarih", "saat", "hizmet", "bağlantı"))
+            .ShouldBe($"{AyşePhone}|Kuaför Elif|Cum 27 Kas|14:30|Saç kesimi|omvila.com/r/{code}");
+        (await SentBodiesAsync()).ShouldContain($"Kuaför Elif talebinizi onayladı: Cum 27 Kas 14:30, Saç kesimi. Görüşmek üzere. omvila.com/r/{code}");
+        (await RemindersAsync("Pending")).ShouldBe("11-26 11:30|-,11-27 09:30|same_day");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'appointment.confirmed'")).ShouldBe(0);
+    }
+
+    // Kriter 3: müşteri SMS'inde "iptal" yazar, "reddedildi" geçmez; rezervasyon sayfası bağlantısı.
+    [Fact]
+    public async Task Declined_CustomerSmsSaysCancelled_NeverRejected_WithBookingLink()
+    {
+        var id = (await CreateAsync(FridayAt1430)).Body.GetProperty("id").GetString()!;
+        await DispatchAsync();
+
+        (await DeclineAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await PayloadsAsync("appointment.declined", "salon", "tarih", "saat", "rezervasyon bağlantısı"))
+            .ShouldBe($"{AyşePhone}|Kuaför Elif|Cum 27 Kas|14:30|omvila.com/kuafor-elif");
+        var bodies = await SentBodiesAsync();
+        bodies.ShouldContain("Kuaför Elif, Cum 27 Kas 14:30 talebinizi onaylayamadı, talep iptal edildi. Başka bir saat seçin: omvila.com/kuafor-elif");
+        bodies.ShouldNotContain("reddedil", Case.Insensitive);
+        (await RemindersAsync("Pending")).ShouldBeNull();
+    }
+
+    // Kriter 4: 120 dk yanıtsız → müşteriye "zamanında yanıtlayamadı, talep iptal edildi".
+    [Fact]
+    public async Task ApprovalExpired_CustomerGetsExpiredSms()
+    {
+        await CreateAsync(FridayAt1430);
+        await DispatchAsync();
+
+        _factory.Clock.Advance(Duration.FromMinutes(120));
+        await _api.RunJobAsync(ExpireJob);
+        await DispatchAsync();
+
+        (await PayloadsAsync("appointment.approval_expired", "salon", "tarih", "saat", "rezervasyon bağlantısı"))
+            .ShouldBe($"{AyşePhone}|Kuaför Elif|Cum 27 Kas|14:30|omvila.com/kuafor-elif");
+        (await SentBodiesAsync()).ShouldContain(
+            "Kuaför Elif, Cum 27 Kas 14:30 talebinizi zamanında yanıtlayamadı, talep iptal edildi. Başka bir saat seçin: omvila.com/kuafor-elif");
+    }
+
+    // Kriter 6 + A13: onaylı randevunun saati müşteri tarafından değişip yeniden onaya düşünce hatırlatmalar düşer, "Talebiniz
+    // alındı" yeniden gider; ikinci onayda yeni saate göre planlanır.
+    [Fact]
+    public async Task CustomerReschedule_BackToPending_CancelsReminders_ReapprovalReschedulesThem()
+    {
+        var created = await CreateAsync(FridayAt1430);
+        var id = created.Body.GetProperty("id").GetString()!;
+        var code = created.Body.GetProperty("accessCode").GetString()!;
+        await DispatchAsync();
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+        (await RemindersAsync("Pending")).ShouldBe("11-26 11:30|-,11-27 09:30|same_day");
+
+        var shown = await _api.SendAsync(HttpMethod.Get, $"/api/v1/public/appointments/{code}", null);
+        (await _api.SendAsync(HttpMethod.Post, $"/api/v1/public/appointments/{code}/reschedule", new { startUtc = "2026-11-27T12:30:00Z" },
+            headers: IfMatch(shown.ETag))).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await RemindersAsync("Pending")).ShouldBeNull();
+        (await _api.ScalarAsync<string>(
+            "SELECT string_agg(payload->>'saat', ',' ORDER BY created_utc) FROM notifications.notification_outbox WHERE event_code = 'appointment.requested'"))
+            .ShouldBe("14:30,15:30");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'appointment.rescheduled'")).ShouldBe(0);
+
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await RemindersAsync("Pending")).ShouldBe("11-26 12:30|-,11-27 10:30|same_day");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'appointment.approved'")).ShouldBe(2);
+    }
+
+    // İşleyici çalışana kadar talep onaylandıysa eski "Talebiniz alındı" yazılmaz; yalnız onay mesajı gider.
+    [Fact]
+    public async Task RequestedProcessedAfterApproval_NoStaleRequestReceivedSms()
+    {
+        var id = (await CreateAsync(FridayAt1430)).Body.GetProperty("id").GetString()!;
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await _api.ScalarAsync<string>(
+            "SELECT string_agg(event_code, ',' ORDER BY event_code) FROM notifications.notification_outbox WHERE event_code LIKE 'appointment.%' AND event_code <> 'appointment.reminder'"))
+            .ShouldBe("appointment.approved");
+    }
+
+    // T-46 (3): "Randevu bilgilendirme SMS'leri" kapalı müşteriye onay akışı SMS'i yazılmaz.
+    [Fact]
+    public async Task CustomerWithAppointmentSmsDisabled_GetsNoApprovalFlowSms()
+    {
+        var id = (await CreateAsync(FridayAt1430)).Body.GetProperty("id").GetString()!;
+        await _api.ScalarAsync<int>("UPDATE customers.brand_customers SET appointment_sms_enabled = false RETURNING 1");
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await DispatchAsync();
+
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code LIKE 'appointment.%'")).ShouldBe(0);
+    }
+
+    /// <summary>Olayları işler ve bekleyen SMS'leri gönderir (sahte sağlayıcı; deneme kontörüyle).</summary>
+    private async Task DispatchAsync()
+    {
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+        await _api.RunJobAsync(DispatchSmsJob);
+    }
+
+    private Task<string> PayloadsAsync(string eventCode, params string[] keys) =>
+        _api.ScalarAsync<string>($"""
+            SELECT string_agg(recipient_phone || '|' || {string.Join(" || '|' || ", keys.Select(k => $"(payload->>'{k}')"))}, ',')
+            FROM notifications.notification_outbox WHERE event_code = '{eventCode}'
+            """);
+
+    /// <summary>Müşteriye giden SMS metinleri (giriş kodu hariç).</summary>
+    private async Task<string> SentBodiesAsync()
+    {
+        var joined = await _api.ScalarAsync<object>(
+            $"SELECT string_agg(body, E'\\n') FROM infra.dev_sms_log WHERE phone_e164 = '{AyşePhone}' AND body NOT LIKE 'OMVILA giriş kodunuz%'");
+        return joined as string ?? string.Empty;
+    }
+
+    private async Task<string?> RemindersAsync(string status) =>
+        await _api.ScalarAsync<object>($"""
+            SELECT string_agg(to_char(scheduled_utc AT TIME ZONE 'UTC', 'MM-DD HH24:MI') || '|' || coalesce(template_variant, '-'), ',' ORDER BY scheduled_utc)
+            FROM notifications.notification_outbox WHERE event_code = 'appointment.reminder' AND status = '{status}'
+            """) as string;
 
     private static string[] Kinds(ManageApi.Response response) =>
         [.. response.Body.GetProperty("history").EnumerateArray().Select(e => e.GetProperty("kind").GetString()!)];
