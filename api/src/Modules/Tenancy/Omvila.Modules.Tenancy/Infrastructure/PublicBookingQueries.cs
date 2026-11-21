@@ -77,6 +77,12 @@ internal sealed class PublicBookingQueries(
         return new Uri(options.Value.BookingPageBaseUrl!, $"r/{accessCode}");
     }
 
+    public Uri BookingPageUrl(string brandSlug)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(brandSlug);
+        return new Uri(options.Value.BookingPageBaseUrl!, brandSlug);
+    }
+
     /// <summary>Marka bağlamında çağrılır (abonelik RLS'li).</summary>
     internal async Task<bool> IsBookingEnabledAsync(Guid brandId, BrandStatus status, CancellationToken ct)
     {

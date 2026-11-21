@@ -102,6 +102,69 @@ public sealed class NotificationOutboxTests(PostgresFixture db) : IAsyncLifetime
         (await ScalarAsync<string>("SELECT status || ':' || attempt_count FROM notifications.notification_outbox")).ShouldBe("Failed:3");
     }
 
+    [Fact]
+    public async Task ScheduledReminder_IsNotSentBeforeItsTime_ThenSentWithVariantText()
+    {
+        await using var services = Services();
+        var clock = (FakeClock)services.GetRequiredService<IClock>();
+        var appointmentId = Guid.Parse("0193a8f0-0000-7000-8000-0000000000a1");
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Reminder(appointmentId, clock.GetCurrentInstant() + Duration.FromHours(2)), commit: true);
+
+        await DispatchAsync(services);
+        (await CountAsync("SELECT count(*) FROM infra.dev_sms_log")).ShouldBe(0);
+
+        clock.Advance(Duration.FromHours(2));
+        await DispatchAsync(services);
+
+        (await ScalarAsync<string>("SELECT body FROM infra.dev_sms_log"))
+            .ShouldBe("Bugün 14:30'da Kuaför Elif'te görüşmek üzere. Yol tarifi: omvila.com/r/AbCdEfGh12");
+        (await ScalarAsync<string>("SELECT reference_type || ':' || reference_id || ':' || template_variant FROM notifications.notification_outbox"))
+            .ShouldBe($"Appointment:{appointmentId}:same_day");
+    }
+
+    [Fact]
+    public async Task CancelPending_CancelsOnlyPendingRowsOfThatEventAndReference_InOwnBrand()
+    {
+        await using var services = Services();
+        var clock = (FakeClock)services.GetRequiredService<IClock>();
+        var appointment = Guid.Parse("0193a8f0-0000-7000-8000-0000000000a1");
+        var other = Guid.Parse("0193a8f0-0000-7000-8000-0000000000a2");
+        var later = clock.GetCurrentInstant() + Duration.FromDays(1);
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Reminder(appointment, later), commit: true);
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Reminder(appointment, later) with { Variant = null }, commit: true);
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Reminder(other, later), commit: true);
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandB), Reminder(appointment, later) with { BrandId = BrandB }, commit: true);
+        await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Otp() with { BrandId = BrandA, Reference = NotificationReference.ForAppointment(appointment) }, commit: true);
+
+        (await CancelAsync(services, BrandA, appointment)).ShouldBe(2);
+
+        (await ScalarAsync<string>("""
+            SELECT string_agg(status, ',' ORDER BY status) FROM notifications.notification_outbox
+            """)).ShouldBe("Cancelled,Cancelled,Pending,Pending,Pending");
+        (await CancelAsync(services, BrandA, appointment)).ShouldBe(0, "zaten iptal; gönderilmiş/iptal satır değişmez");
+    }
+
+    private static SmsNotification Reminder(Guid appointmentId, Instant at) => new(
+        NotificationEvents.AppointmentReminder,
+        Phone,
+        new Dictionary<string, string>(StringComparer.Ordinal) { ["saat"] = "14:30", ["salon"] = "Kuaför Elif", ["bağlantı"] = "omvila.com/r/AbCdEfGh12" },
+        BrandA,
+        NotificationReference.ForAppointment(appointmentId),
+        at,
+        "same_day");
+
+    private static async Task<int> CancelAsync(IServiceProvider services, Guid brandId, Guid appointmentId)
+    {
+        await using var serviceScope = services.CreateAsyncScope();
+        var session = serviceScope.ServiceProvider.GetRequiredService<IDbSession>();
+        await session.SetTenantAsync(TenantScope.ForBrand(brandId), Ct);
+        await session.BeginAsync(Ct);
+        var count = await serviceScope.ServiceProvider.GetRequiredService<INotificationOutbox>()
+            .CancelPendingAsync(NotificationEvents.AppointmentReminder, NotificationReference.ForAppointment(appointmentId), Ct);
+        await session.CommitAsync(Ct);
+        return count;
+    }
+
     private ServiceProvider Services(bool failing = false)
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(db.Settings()).Build();

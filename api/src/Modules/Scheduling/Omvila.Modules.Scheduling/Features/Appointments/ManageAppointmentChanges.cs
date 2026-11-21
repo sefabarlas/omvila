@@ -93,13 +93,13 @@ internal sealed class ManageAppointmentChanges(
         }
 
         var newLocalTime = start.InZone(zone).TimeOfDay;
-        var movedFollowing = await MoveFollowingAsync(appointment, following, zone, newLocalTime, allowOutside, notify, userId, ct);
+        var movedFollowing = await MoveFollowingAsync(appointment, following, zone, newLocalTime, allowOutside, userId, ct);
         return movedFollowing.IsSuccess ? await SplitSeriesAsync(appointment, following, zone, previousStart, newLocalTime, ct) : movedFollowing.Error;
     }
 
     /// <summary>"Bu ve sonrakiler": sonraki tekrarlar kendi günlerinde yeni yerel saate, kalem sırasına göre aynı personele.</summary>
     private async Task<Result> MoveFollowingAsync(
-        Appointment selected, List<Appointment> following, DateTimeZone zone, LocalTime newLocalTime, bool allowOutside, bool notify, Guid? userId, CancellationToken ct)
+        Appointment selected, List<Appointment> following, DateTimeZone zone, LocalTime newLocalTime, bool allowOutside, Guid? userId, CancellationToken ct)
     {
         var staffBySeq = selected.Items.ToDictionary(i => i.SeqNo, i => i.StaffId);
         foreach (var occurrence in following)
@@ -117,7 +117,9 @@ internal sealed class ManageAppointmentChanges(
                 return result.Error;
             }
 
-            await PublishRescheduledAsync(occurrence, occurrencePrevious, notify, ct);
+            // Seri toplu değişikliğinde müşteriye tek SMS gider (seçilen randevu); sonraki tekrarların hatırlatmaları
+            // yine yeni saate taşınır (T-53).
+            await PublishRescheduledAsync(occurrence, occurrencePrevious, notify: false, ct);
         }
 
         return Result.Success();
@@ -170,7 +172,9 @@ internal sealed class ManageAppointmentChanges(
         var notify = body.NotifyCustomer ?? true;
         foreach (var a in all)
         {
-            await outbox.EnqueueAsync(new AppointmentCancelledBySalon(a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notify), ct);
+            // "Bu ve sonrakiler" iptalinde müşteriye tek SMS gider (seçilen randevu); hepsinin hatırlatmaları düşer (T-53).
+            var notifyThis = notify && ReferenceEquals(a, appointment);
+            await outbox.EnqueueAsync(new AppointmentCancelledBySalon(a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notifyThis), ct);
         }
 
         return appointment;

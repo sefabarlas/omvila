@@ -4,7 +4,8 @@ using Omvila.SharedKernel;
 namespace Omvila.Modules.Scheduling.Contracts;
 
 /// <summary>
-/// Randevu okuma (Customers modülü: müşteri kartı randevular sekmesi ve CustomerSummary.nextAppointmentUtc). Çağıranın
+/// Randevu okuma (Customers modülü: müşteri kartı randevular sekmesi ve CustomerSummary.nextAppointmentUtc; Notifications:
+/// bildirim metni). Çağıranın
 /// transaction'ında ve markanın kiracı bağlamında çalışır; başka markanın randevusu dönmez.
 /// </summary>
 public interface IAppointmentQueries
@@ -32,4 +33,10 @@ public interface IAppointmentQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyDictionary<Guid, Instant>> GetNextAppointmentsAsync(
         Guid brandId, IReadOnlyCollection<Guid> brandCustomerIds, Instant fromUtc, CancellationToken ct);
+
+    /// <summary>Bildirim metni için randevu bilgisi; randevu markada yoksa null.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="appointmentId">Randevu.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<AppointmentNotificationInfo?> GetNotificationInfoAsync(Guid brandId, Guid appointmentId, CancellationToken ct);
 }

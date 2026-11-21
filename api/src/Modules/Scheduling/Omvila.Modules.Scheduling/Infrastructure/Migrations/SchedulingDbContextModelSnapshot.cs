@@ -185,6 +185,10 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                     b.HasIndex("SeriesId")
                         .HasDatabaseName("ix_appointments_series_id");
 
+                    b.HasIndex("StartUtc")
+                        .HasDatabaseName("ix_appointments_no_show_candidates")
+                        .HasFilter("status = 'Confirmed' AND checked_in_utc IS NULL");
+
                     b.HasIndex("BrandId", "SeriesId")
                         .HasDatabaseName("ix_appointments_brand_id_series_id");
 

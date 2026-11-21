@@ -109,6 +109,17 @@ public sealed class PublicBookingTests(PostgresFixture db) : IAsyncLifetime
 
         var calendar = await _api.GetAsync($"/api/v1/manage/calendar?branchId={_merkez}&from=2026-11-26&to=2026-11-26", _token);
         calendar.Body.GetProperty("appointments").EnumerateArray().ShouldContain(a => string.Equals(a.GetProperty("staffId").GetString(), _elif, StringComparison.Ordinal) && string.Equals(a.GetProperty("status").GetString(), "Confirmed", StringComparison.Ordinal));
+
+        // Outbox: appointment.confirmed (hemen) ve 24 sa / 2 sa hatırlatmaları (Per 26 Kas 14:30 İstanbul).
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+        (await _api.ScalarAsync<string>("""
+            SELECT string_agg(event_code || '|' || coalesce(template_variant, '-') || '|' || to_char(scheduled_utc AT TIME ZONE 'UTC', 'MM-DD HH24:MI'), ',' ORDER BY scheduled_utc)
+            FROM notifications.notification_outbox WHERE event_code = 'appointment.reminder' AND status = 'Pending'
+            """)).ShouldBe("appointment.reminder|-|11-25 11:30,appointment.reminder|same_day|11-26 09:30");
+        (await _api.ScalarAsync<string>("""
+            SELECT recipient_phone || '|' || (payload->>'salon') || '|' || (payload->>'tarih') || '|' || (payload->>'saat') || '|' || (payload->>'hizmet') || '|' || (payload->>'bağlantı')
+            FROM notifications.notification_outbox WHERE event_code = 'appointment.confirmed'
+            """)).ShouldBe($"{AyşePhone}|Kuaför Elif|Per 26 Kas|14:30|Saç kesimi +1|omvila.com/r/{code}");
     }
 
     [Fact]
