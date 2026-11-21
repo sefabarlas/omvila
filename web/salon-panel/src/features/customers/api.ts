@@ -13,6 +13,11 @@ import { queryKeys } from '@/app/query-keys';
 export type CustomerSummary = components['schemas']['CustomerSummary'];
 export type CustomerCreate = components['schemas']['CustomerCreate'];
 export type CustomerAppointmentRow = components['schemas']['CustomerAppointmentRow'];
+export type CustomerPackage = components['schemas']['CustomerPackage'];
+export type PaymentView = components['schemas']['PaymentView'];
+export type CustomerImportPreview = components['schemas']['CustomerImportPreview'];
+export type CustomerImportRowError = components['schemas']['CustomerImportRowError'];
+export type DataDeletionRequestView = components['schemas']['DataDeletionRequestView'];
 export type CustomerFilter = NonNullable<
   NonNullable<operations['manageListCustomers']['parameters']['query']>['filter']
 >;

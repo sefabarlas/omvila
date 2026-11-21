@@ -15,6 +15,7 @@ import { Route as KayitRouteImport } from './routes/kayit'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 import { Route as PanelAyarlarRouteImport } from './routes/_panel/ayarlar'
+import { Route as PanelDegerlendirmelerRouteImport } from './routes/_panel/degerlendirmeler'
 import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
 import { Route as PanelPersonelRouteImport } from './routes/_panel/personel'
 import { Route as PanelTakvimRouteImport } from './routes/_panel/takvim'
@@ -22,6 +23,7 @@ import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/i
 import { Route as PanelAyarlarBildirimlerRouteImport } from './routes/_panel/ayarlar/bildirimler'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarKaporaRouteImport } from './routes/_panel/ayarlar/kapora'
+import { Route as PanelAyarlarKvkkRouteImport } from './routes/_panel/ayarlar/kvkk'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
 import { Route as PanelAyarlarRezervasyonRouteImport } from './routes/_panel/ayarlar/rezervasyon'
 import { Route as PanelAyarlarSubeRouteImport } from './routes/_panel/ayarlar/sube'
@@ -55,6 +57,11 @@ const PanelSplatRoute = PanelSplatRouteImport.update({
 const PanelAyarlarRoute = PanelAyarlarRouteImport.update({
   id: '/ayarlar',
   path: '/ayarlar',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelDegerlendirmelerRoute = PanelDegerlendirmelerRouteImport.update({
+  id: '/degerlendirmeler',
+  path: '/degerlendirmeler',
   getParentRoute: () => PanelRoute,
 } as any)
 const PanelHizmetlerRoute = PanelHizmetlerRouteImport.update({
@@ -92,6 +99,11 @@ const PanelAyarlarKaporaRoute = PanelAyarlarKaporaRouteImport.update({
   path: '/kapora',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelAyarlarKvkkRoute = PanelAyarlarKvkkRouteImport.update({
+  id: '/kvkk',
+  path: '/kvkk',
+  getParentRoute: () => PanelAyarlarRoute,
+} as any)
 const PanelAyarlarRandevuKurallariRoute =
   PanelAyarlarRandevuKurallariRouteImport.update({
     id: '/randevu-kurallari',
@@ -125,12 +137,14 @@ export interface FileRoutesByFullPath {
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
   '/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
@@ -142,6 +156,7 @@ export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
+  '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
@@ -149,6 +164,7 @@ export interface FileRoutesByTo {
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
@@ -163,6 +179,7 @@ export interface FileRoutesById {
   '/kayit': typeof KayitRoute
   '/_panel/$': typeof PanelSplatRoute
   '/_panel/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/_panel/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/_panel/hizmetler': typeof PanelHizmetlerRoute
   '/_panel/personel': typeof PanelPersonelRoute
   '/_panel/takvim': typeof PanelTakvimRoute
@@ -170,6 +187,7 @@ export interface FileRoutesById {
   '/_panel/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/_panel/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/_panel/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/_panel/ayarlar/sube': typeof PanelAyarlarSubeRoute
@@ -185,12 +203,14 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/$'
     | '/ayarlar'
+    | '/degerlendirmeler'
     | '/hizmetler'
     | '/personel'
     | '/takvim'
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
+    | '/ayarlar/kvkk'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
@@ -202,6 +222,7 @@ export interface FileRouteTypes {
     | '/giris'
     | '/kayit'
     | '/$'
+    | '/degerlendirmeler'
     | '/hizmetler'
     | '/personel'
     | '/takvim'
@@ -209,6 +230,7 @@ export interface FileRouteTypes {
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
+    | '/ayarlar/kvkk'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
@@ -222,6 +244,7 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/_panel/$'
     | '/_panel/ayarlar'
+    | '/_panel/degerlendirmeler'
     | '/_panel/hizmetler'
     | '/_panel/personel'
     | '/_panel/takvim'
@@ -229,6 +252,7 @@ export interface FileRouteTypes {
     | '/_panel/ayarlar/bildirimler'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/kapora'
+    | '/_panel/ayarlar/kvkk'
     | '/_panel/ayarlar/randevu-kurallari'
     | '/_panel/ayarlar/rezervasyon'
     | '/_panel/ayarlar/sube'
@@ -287,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/degerlendirmeler': {
+      id: '/_panel/degerlendirmeler'
+      path: '/degerlendirmeler'
+      fullPath: '/degerlendirmeler'
+      preLoaderRoute: typeof PanelDegerlendirmelerRouteImport
+      parentRoute: typeof PanelRoute
+    }
     '/_panel/hizmetler': {
       id: '/_panel/hizmetler'
       path: '/hizmetler'
@@ -336,6 +367,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarKaporaRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/ayarlar/kvkk': {
+      id: '/_panel/ayarlar/kvkk'
+      path: '/kvkk'
+      fullPath: '/ayarlar/kvkk'
+      preLoaderRoute: typeof PanelAyarlarKvkkRouteImport
+      parentRoute: typeof PanelAyarlarRoute
+    }
     '/_panel/ayarlar/randevu-kurallari': {
       id: '/_panel/ayarlar/randevu-kurallari'
       path: '/randevu-kurallari'
@@ -378,6 +416,7 @@ interface PanelAyarlarRouteChildren {
   PanelAyarlarBildirimlerRoute: typeof PanelAyarlarBildirimlerRoute
   PanelAyarlarIsletmeRoute: typeof PanelAyarlarIsletmeRoute
   PanelAyarlarKaporaRoute: typeof PanelAyarlarKaporaRoute
+  PanelAyarlarKvkkRoute: typeof PanelAyarlarKvkkRoute
   PanelAyarlarRandevuKurallariRoute: typeof PanelAyarlarRandevuKurallariRoute
   PanelAyarlarRezervasyonRoute: typeof PanelAyarlarRezervasyonRoute
   PanelAyarlarSubeRoute: typeof PanelAyarlarSubeRoute
@@ -388,6 +427,7 @@ const PanelAyarlarRouteChildren: PanelAyarlarRouteChildren = {
   PanelAyarlarBildirimlerRoute: PanelAyarlarBildirimlerRoute,
   PanelAyarlarIsletmeRoute: PanelAyarlarIsletmeRoute,
   PanelAyarlarKaporaRoute: PanelAyarlarKaporaRoute,
+  PanelAyarlarKvkkRoute: PanelAyarlarKvkkRoute,
   PanelAyarlarRandevuKurallariRoute: PanelAyarlarRandevuKurallariRoute,
   PanelAyarlarRezervasyonRoute: PanelAyarlarRezervasyonRoute,
   PanelAyarlarSubeRoute: PanelAyarlarSubeRoute,
@@ -401,6 +441,7 @@ const PanelAyarlarRouteWithChildren = PanelAyarlarRoute._addFileChildren(
 interface PanelRouteChildren {
   PanelSplatRoute: typeof PanelSplatRoute
   PanelAyarlarRoute: typeof PanelAyarlarRouteWithChildren
+  PanelDegerlendirmelerRoute: typeof PanelDegerlendirmelerRoute
   PanelHizmetlerRoute: typeof PanelHizmetlerRoute
   PanelPersonelRoute: typeof PanelPersonelRoute
   PanelTakvimRoute: typeof PanelTakvimRoute
@@ -412,6 +453,7 @@ interface PanelRouteChildren {
 const PanelRouteChildren: PanelRouteChildren = {
   PanelSplatRoute: PanelSplatRoute,
   PanelAyarlarRoute: PanelAyarlarRouteWithChildren,
+  PanelDegerlendirmelerRoute: PanelDegerlendirmelerRoute,
   PanelHizmetlerRoute: PanelHizmetlerRoute,
   PanelPersonelRoute: PanelPersonelRoute,
   PanelTakvimRoute: PanelTakvimRoute,

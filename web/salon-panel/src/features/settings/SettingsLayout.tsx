@@ -6,8 +6,9 @@ import { useSession } from '@/app/session';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Roller, abonelik, KVKK (D5–6) ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez
-// (acik-sorular.md T-38, T-41). Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment) yalnız o izinle görünür.
+// Bölüm menüsü. Roller ve abonelik (D6) ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez
+// (acik-sorular.md T-38, T-41). Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment; KVKK ve veri: customer.kvkk)
+// yalnız o izinle görünür. KVKK ve veri D5'te yalnız "Silme talepleri" ile açıldı (T-99).
 const sections: readonly { to: string; label: string; permission?: string }[] = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
   { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
@@ -15,13 +16,14 @@ const sections: readonly { to: string; label: string; permission?: string }[] = 
   { to: '/ayarlar/rezervasyon', label: 'Rezervasyon sayfası' },
   { to: '/ayarlar/bildirimler', label: 'Bildirimler ve SMS' },
   { to: '/ayarlar/kapora', label: 'Kapora ve IBAN', permission: 'settings.payment' },
+  { to: '/ayarlar/kvkk', label: 'KVKK ve veri', permission: 'customer.kvkk' },
 ];
 
 export interface SettingsLayoutProps {
   context: string;
-  /** Üst bardaki "Değişiklikleri kaydet" bu formu gönderir. */
-  formId: string;
-  saving: boolean;
+  /** Üst bardaki "Değişiklikleri kaydet" bu formu gönderir; formu olmayan bölümde (KVKK ve veri) buton yok. */
+  formId?: string;
+  saving?: boolean;
   /** Üst bardaki kaydetme butonu metni (AyarlarOdeme: "Kaydet"). */
   saveLabel?: string;
   /** Kaydetmenin solunda ikincil eylem ("Şube ekle"). */
@@ -33,7 +35,7 @@ export interface SettingsLayoutProps {
 export function SettingsLayout({
   context,
   formId,
-  saving,
+  saving = false,
   saveLabel = 'Değişiklikleri kaydet',
   extraAction,
   children,
@@ -46,16 +48,18 @@ export function SettingsLayout({
       action={
         <>
           {extraAction}
-          <Button
-            variant="primary"
-            type="submit"
-            form={formId}
-            icon={<Check size={16} aria-hidden="true" />}
-            loading={saving}
-            loadingLabel="Kaydediliyor…"
-          >
-            {saveLabel}
-          </Button>
+          {formId ? (
+            <Button
+              variant="primary"
+              type="submit"
+              form={formId}
+              icon={<Check size={16} aria-hidden="true" />}
+              loading={saving}
+              loadingLabel="Kaydediliyor…"
+            >
+              {saveLabel}
+            </Button>
+          ) : null}
         </>
       }
     >

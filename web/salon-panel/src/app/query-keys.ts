@@ -32,6 +32,18 @@ export const queryKeys = {
   customer: (brandCustomerId: string) => ['customers', brandCustomerId] as const,
   customerAppointments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'appointments'] as const,
+  customerPackages: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'packages'] as const,
+  customerPayments: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'payments'] as const,
+  customerReviews: (brandCustomerId: string) => ['customers', brandCustomerId, 'reviews'] as const,
+  customerDeletionPreview: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'deletion'] as const,
+  /** KVKK silme talepleri (Ayarlar → KVKK ve veri). */
+  deletionRequests: () => ['deletion-requests'] as const,
+  /** Değerlendirmeler; önek ['reviews'] bütün filtreleri geçersizler. */
+  reviews: (filter: string, branchId: string | undefined) =>
+    ['reviews', filter, branchId ?? 'all'] as const,
   /** Bildirim paneli (zil): ilk sayfa ve okunmamış sayısı. */
   notifications: () => ['notifications'] as const,
 };

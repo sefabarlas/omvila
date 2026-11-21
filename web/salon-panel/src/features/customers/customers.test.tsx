@@ -51,9 +51,9 @@ describe('müşteri listesi', () => {
     expect(within(derya).getByText('Bugün 13:00')).toBeTruthy();
     expect(within(await rowOf('Gizem Arslan')).getByText('2 kez gelmedi')).toBeTruthy();
     expect(within(await rowOf('Nur Ateş')).getByText('0 ₺')).toBeTruthy();
-    // "Paketi olan" paketlerle (D5) gelir.
+    // "Paketi olan" D5'te paketlerle açıldı (T-99).
     const chips = screen.getByRole('group', { name: 'Müşteri filtresi' });
-    expect(within(chips).queryByLabelText('Paketi olan')).toBeNull();
+    expect(within(chips).getByLabelText('Paketi olan')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Müşteri ekle' })).toBeTruthy();
   });
 

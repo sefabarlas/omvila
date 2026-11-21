@@ -114,6 +114,13 @@ export async function customersDemo(page: Page, { empty = false } = {}) {
       'customer.phone.view',
       'customer.edit',
       'report.view',
+      'payment.collect',
+      'review.view',
+      'review.reply',
+      'customer.merge',
+      'customer.import',
+      'customer.export',
+      'customer.kvkk',
     ],
     membership: { role: 'Owner', branchIds: [], staffId: '0193a8f0-0000-7000-8000-0000000000c1' },
   });
@@ -174,4 +181,210 @@ export async function customersDemo(page: Page, { empty = false } = {}) {
       ),
     );
   });
+  await customerRecordsDemo(page);
+}
+
+const selinRef = { brandCustomerId: demoCustomerId, fullName: 'Selin Öztürk' };
+
+const demoPackages = [
+  {
+    id: '0193a8f0-0000-7000-8000-0000000f0001',
+    customer: selinRef,
+    packageId: '0193a8f0-0000-7000-8000-0000000f0101',
+    packageName: 'Fön paketi',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    isAvailableAllBranches: true,
+    price: money(1700),
+    purchasedUtc: '2026-10-01T08:00:00Z',
+    expiresOn: '2026-12-31',
+    soldByStaffId: null,
+    soldByStaffName: 'Elif Kaya',
+    status: 'Active',
+    items: [
+      {
+        customerPackageItemId: '0193a8f0-0000-7000-8000-0000000f0201',
+        serviceId: '0193a8f0-0000-7000-8000-0000000f0301',
+        serviceName: 'Fön',
+        totalSessions: 5,
+        remainingSessions: 2,
+      },
+    ],
+    totalSessions: 5,
+    remainingSessions: 2,
+    usages: [],
+    version: '3',
+  },
+];
+
+const demoPayments = [
+  {
+    id: '0193a8f0-0000-7000-8000-0000000f1001',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    method: 'Card',
+    amount: money(1140),
+    isDeposit: false,
+    status: 'Recorded',
+    paidUtc: '2026-11-25T08:40:00Z',
+    purpose: 'Appointment',
+    customer: selinRef,
+    appointmentStartUtc: '2026-11-25T07:30:00Z',
+    serviceNames: ['Boya ve fön'],
+    isBalanceAfterDeposit: true,
+  },
+  {
+    id: '0193a8f0-0000-7000-8000-0000000f1002',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    method: 'Transfer',
+    amount: money(300),
+    isDeposit: true,
+    status: 'Recorded',
+    paidUtc: '2026-11-23T10:00:00Z',
+    purpose: 'Appointment',
+    customer: selinRef,
+    appointmentStartUtc: '2026-11-25T07:30:00Z',
+    serviceNames: ['Boya ve fön'],
+  },
+  {
+    id: '0193a8f0-0000-7000-8000-0000000f1003',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    method: 'Cash',
+    amount: money(1700),
+    isDeposit: false,
+    status: 'Recorded',
+    paidUtc: '2026-10-01T08:00:00Z',
+    purpose: 'CustomerPackage',
+    customer: selinRef,
+    packageName: 'Fön paketi',
+    packageSessionCount: 5,
+  },
+];
+
+const demoReviews = [
+  {
+    id: '0193a8f0-0000-7000-8000-0000000f2001',
+    appointmentId: '0193a8f0-0000-7000-8000-0000000a0002',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    rating: 5,
+    comment: 'Fön çok güzel oldu, teşekkürler.',
+    customer: selinRef,
+    serviceNames: ['Fön'],
+    staffName: 'Elif Kaya',
+    createdUtc: '2026-10-21T15:00:00Z',
+    isPublished: true,
+    reply: null,
+  },
+];
+
+/**
+ * Müşteri kartı sekmeleri (Paketler, Ödemeler, Değerlendirmeler), birleştirme, KVKK silme, CSV içe/dışa aktarma ve
+ * silme talepleri (MusteriKarti, MusteriBirlestir, MusteriSil, MusteriIceAktar, AyarlarKvkk).
+ */
+async function customerRecordsDemo(page: Page) {
+  const tabs =
+    /\/api\/v1\/manage\/customers\/([^/?]+)\/(packages|payments|reviews|deletion|merge)(\?.*)?$/;
+  await page.route(tabs, async (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') {
+      await route.fallback();
+      return;
+    }
+
+    const [, id, tab] = tabs.exec(new URL(request.url()).pathname) ?? [];
+    const selin = id === demoCustomerId;
+    const customer = customers.find((c) => c.id === id);
+    switch (tab) {
+      case 'packages':
+        await route.fulfill(corsJson({ items: selin ? demoPackages : [], nextCursor: null }));
+        return;
+      case 'payments':
+        await route.fulfill(corsJson({ items: selin ? demoPayments : [], nextCursor: null }));
+        return;
+      case 'reviews':
+        await route.fulfill(corsJson({ items: selin ? demoReviews : [], nextCursor: null }));
+        return;
+      case 'deletion':
+        // Anonimleştirme (POST) Prism'e gider.
+        if (request.method() === 'POST') {
+          await route.fallback();
+          return;
+        }
+
+        await route.fulfill(
+          corsJson({
+            fullName: customer?.fullName ?? '',
+            appointmentCount: 12,
+            paymentCount: 9,
+            upcomingAppointmentCount: 0,
+            activePackages: selin
+              ? [
+                  {
+                    customerPackageId: demoPackages[0]?.id,
+                    packageName: 'Fön paketi',
+                    remainingSessions: 2,
+                  },
+                ]
+              : [],
+          }),
+        );
+        return;
+      default:
+        await route.fulfill(corsJson(customer));
+    }
+  });
+  await page.route(/\/api\/v1\/manage\/customers\/imports(\?.*)?$/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill(
+          corsJson(
+            {
+              importId: '0193a8f0-0000-7000-8000-0000000f3001',
+              fileName: 'musteriler-eski-program.csv',
+              totalRows: 1248,
+              toCreate: 1204,
+              toMerge: 38,
+              invalidRows: 6,
+              mappedColumns: ['FullName', 'Phone', 'Notes'],
+              errors: [14, 88, 301, 560, 902, 1101].map((rowNumber) => ({
+                rowNumber,
+                column: 'Telefon',
+                code: 'invalid_phone',
+              })),
+              status: 'Previewed',
+              expiresUtc: '2026-11-25T10:00:00Z',
+            },
+            201,
+          ),
+        ),
+  );
+  await page.route(/\/api\/v1\/manage\/customer-deletion-requests(\?.*)?$/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill(
+          corsJson({
+            items: [
+              {
+                id: '0193a8f0-0000-7000-8000-0000000f4001',
+                brandCustomerId: '0193a8f0-0000-7000-8000-0000000f4101',
+                customerDisplayName: 'Tuna Oral',
+                requestedVia: 'CustomerApp',
+                requestedUtc: '2026-11-23T09:00:00Z',
+                dueOn: '2026-12-23',
+                status: 'Pending',
+                completedUtc: null,
+              },
+              {
+                id: '0193a8f0-0000-7000-8000-0000000f4002',
+                brandCustomerId: null,
+                customerDisplayName: 'A•••• K••••',
+                requestedVia: 'Panel',
+                requestedUtc: '2026-11-02T09:00:00Z',
+                dueOn: '2026-12-02',
+                status: 'Completed',
+                completedUtc: '2026-11-02T09:00:00Z',
+              },
+            ],
+            nextCursor: null,
+          }),
+        ),
+  );
 }
