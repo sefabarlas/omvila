@@ -5,6 +5,7 @@ using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Notifications.Contracts;
+using Omvila.Modules.Notifications.Features.Devices;
 using Omvila.Modules.Notifications.Features.SmsDeliveryReports;
 using Omvila.Modules.Notifications.Infrastructure;
 using Omvila.Modules.Notifications.IntegrationEventHandlers;
@@ -16,7 +17,7 @@ namespace Omvila.Modules.Notifications;
 /// <summary>
 /// Notifications modülü girişi: telefona SMS (sistem şablonu, sahte sağlayıcı), kontör defteri; D2'de randevu olaylarından
 /// müşteri SMS'leri ve zamanlanmış hatırlatmalar (Scheduling olayları; Customers ve Tenancy sözleşmeleriyle); D3'te
-/// kontör düşümü, gönderen adı, geri çekilmeli tekrar ve teslim raporu webhook'u.
+/// kontör düşümü, gönderen adı, geri çekilmeli tekrar, teslim raporu webhook'u, cihaz kaydı ve push (SMS'e geri düşme).
 /// </summary>
 public static class NotificationsModule
 {
@@ -42,10 +43,11 @@ public static class NotificationsModule
         return services;
     }
 
-    /// <summary>Notifications uçları: SMS teslim raporu webhook'u.</summary>
+    /// <summary>Notifications uçları: SMS teslim raporu webhook'u, cihaz kaydı.</summary>
     public static IEndpointRouteBuilder MapNotificationsEndpoints(this IEndpointRouteBuilder app)
     {
         SmsDeliveryReportEndpoints.Map(app);
+        DeviceEndpoints.Map(app);
         return app;
     }
 }

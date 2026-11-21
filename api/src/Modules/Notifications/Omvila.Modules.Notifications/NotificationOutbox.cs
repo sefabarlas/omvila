@@ -32,9 +32,42 @@ internal sealed class NotificationOutbox(NotificationsDbContext db, IClock clock
             notification.ScheduledUtc,
             notification.Reference?.Type,
             notification.Reference?.Id,
-            notification.Variant));
+            notification.Variant,
+            PushCustomer(notification)));
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task EnqueueStaffPushAsync(StaffPushNotification notification, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(notification);
+        if (!PushTemplates.TryRender(notification.EventCode, notification.Values, notification.Variant, out _, out _))
+        {
+            throw new InvalidOperationException($"Push şablonu yok: {notification.EventCode} {notification.Variant}");
+        }
+
+        var zone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(notification.TimeZoneId) ?? DateTimeZoneProviders.Tzdb[PlatformDefaults.DefaultTimeZoneId];
+        var now = clock.GetCurrentInstant();
+
+        // Kural: bildirimler.md § Sessiz saatler — işletme push'u sessiz saatte gönderilmez, sabaha ertelenir.
+        var scheduled = QuietHours.Defer(now, zone);
+        var payload = JsonSerializer.Serialize(notification.Values);
+        foreach (var userId in notification.UserIds.Distinct())
+        {
+            db.Outbox.Add(NotificationMessage.ForUser(
+                ids.New(), notification.BrandId, notification.EventCode, userId, payload, now, scheduled,
+                notification.Reference?.Type, notification.Reference?.Id, notification.Variant));
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    // Kural: bildirimler.md § Kanal planı — push metni olan müşteri mesajı [Push, Sms]; giriş kodu her zaman SMS.
+    private static Guid? PushCustomer(SmsNotification notification) =>
+        notification.CustomerId is { } customerId
+        && !string.Equals(notification.EventCode, NotificationEvents.OtpCode, StringComparison.Ordinal)
+        && PushTemplates.Has(notification.EventCode, notification.Variant)
+            ? customerId
+            : null;
 
     public Task<int> CancelPendingAsync(string eventCode, NotificationReference reference, CancellationToken ct)
     {

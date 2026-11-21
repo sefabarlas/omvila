@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using NodaTime;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
+using Omvila.Infrastructure.Push;
 using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Domain;
@@ -23,11 +24,16 @@ namespace Omvila.Modules.Notifications.Jobs;
 /// Kontör: salon mesajı parça sayısı kadar düşer (bildirimler.md § Kontör); yetmezse Skipped/insufficient_credits ve
 /// marka başına bir <see cref="SmsCreditsInsufficient"/> olayı. Giriş kodu (ve markasız satır) OMVILA'dan karşılanır,
 /// gönderen her zaman varsayılandır. Gönderen: onaylı ad, yoksa varsayılan (OMVILA).
+/// Kanal planı (bildirimler.md § Kanal planı): planı Push ile başlayan satır alıcının aktif cihazlarına gönderilir; biri
+/// kabul ederse Sent/Push (kontör düşmez). Cihaz yok, push kapalı veya başarısızsa müşteri mesajı aynı çalışmada SMS'e
+/// düşer; yalnız push olan işletme satırı cihaz yoksa Skipped/no_device, geçici hatada geri çekilmeyle tekrar. Geçersiz
+/// jetonlu cihaz pasifleşir.
 /// Gönderim en az bir kez: commit düşerse mesaj yeniden gönderilebilir.
 /// </summary>
 internal sealed partial class DispatchNotifications(
     NotificationsDbContext db,
     ISmsSender sms,
+    IPushSender push,
     IOutbox outbox,
     IClock clock,
     IIdGenerator ids,
@@ -40,6 +46,8 @@ internal sealed partial class DispatchNotifications(
     private const string RenderFailed = "render_failed";
 
     private const string ProviderError = "provider_error";
+
+    private const string NoDevice = "no_device";
 
     public string Key => "DispatchNotifications";
 
@@ -80,6 +88,117 @@ internal sealed partial class DispatchNotifications(
     }
 
     private async Task DispatchAsync(
+        NotificationMessage message, Dictionary<Guid, BrandSmsSender> senders, RunState run, Instant now, CancellationToken ct)
+    {
+        if (message.PushFirst)
+        {
+            var pushed = await TryPushAsync(message, now, ct);
+            if (pushed is null || message.Status != NotificationStatus.Pending)
+            {
+                return;
+            }
+
+            if (!message.HasSmsFallback)
+            {
+                // İşletme push'u SMS'e düşmez (bildirimler.md § İşletme olayları).
+                if (pushed == PushSendStatus.Failed)
+                {
+                    message.MarkAttemptFailed(ProviderError, now, Backoff, options.Value.MaxAttempts);
+                    LogFailed(logger, message.Id, message.EventCode);
+                }
+                else
+                {
+                    message.MarkSkipped(NoDevice);
+                }
+
+                return;
+            }
+        }
+
+        await SendSmsAsync(message, senders, run, now, ct);
+    }
+
+    /// <summary>
+    /// Alıcının aktif cihazlarına push. Biri kabul ederse satır Sent/Push ve null döner; aksi en iyi sonuç (Failed: en az
+    /// bir geçici hata; Disabled/InvalidToken: ulaşılacak cihaz yok).
+    /// </summary>
+    private async Task<PushSendStatus?> TryPushAsync(NotificationMessage message, Instant now, CancellationToken ct)
+    {
+        string title;
+        string body;
+        try
+        {
+            var values = JsonSerializer.Deserialize<Dictionary<string, string>>(message.Payload) ?? [];
+            if (!PushTemplates.TryRender(message.EventCode, values, message.TemplateVariant, out title, out body))
+            {
+                return PushSendStatus.Disabled;
+            }
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or JsonException)
+        {
+            message.MarkAttemptFailed(RenderFailed, now, Backoff, options.Value.MaxAttempts, permanent: true);
+            LogFailed(logger, message.Id, message.EventCode);
+            return null;
+        }
+
+        // İşletme cihazı marka bağlamında kayıtlıdır: yalnız o markanın cihazları (kullanıcı başka markada da üye olabilir).
+        var userOwner = string.Equals(message.RecipientType, Device.UserOwner, StringComparison.Ordinal);
+        var devices = await db.Devices
+            .Where(d => d.IsActive && d.OwnerType == message.RecipientType && d.OwnerId == message.RecipientId
+                && (!userOwner || d.BrandId == message.BrandId))
+            .OrderBy(d => d.Id)
+            .ToListAsync(ct);
+        var data = new Dictionary<string, string>(StringComparer.Ordinal) { ["eventCode"] = message.EventCode, ["notificationId"] = message.Id.ToString() };
+        if (message.ReferenceType is { } referenceType && message.ReferenceId is { } referenceId)
+        {
+            data["referenceType"] = referenceType;
+            data["referenceId"] = referenceId.ToString();
+        }
+
+        var outcome = PushSendStatus.Disabled;
+        string? providerMessageId = null;
+        foreach (var device in devices)
+        {
+            var result = await PushAsync(new PushMessage(device.PushToken, title, body, data), ct);
+            switch (result.Status)
+            {
+                case PushSendStatus.Sent:
+                    providerMessageId ??= result.ProviderMessageId;
+                    break;
+                case PushSendStatus.InvalidToken:
+                    device.Deactivate();
+                    break;
+                case PushSendStatus.Failed:
+                    outcome = PushSendStatus.Failed;
+                    break;
+                case PushSendStatus.Disabled:
+                    break;
+            }
+        }
+
+        if (providerMessageId is not null)
+        {
+            message.MarkPushed(body, providerMessageId);
+            return null;
+        }
+
+        return outcome;
+    }
+
+    private async Task<PushSendResult> PushAsync(PushMessage message, CancellationToken ct)
+    {
+        try
+        {
+            return await push.SendAsync(message, ct);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            LogProviderException(logger, exception.GetType().Name);
+            return new PushSendResult(PushSendStatus.Failed, FailureReason: ProviderError);
+        }
+    }
+
+    private async Task SendSmsAsync(
         NotificationMessage message, Dictionary<Guid, BrandSmsSender> senders, RunState run, Instant now, CancellationToken ct)
     {
         string body;
@@ -165,7 +284,7 @@ internal sealed partial class DispatchNotifications(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Notification {NotificationId} ({EventCode}) failed to send")]
     private static partial void LogFailed(ILogger logger, Guid notificationId, string eventCode);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "SMS provider call threw {ExceptionType}")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Notification provider call threw {ExceptionType}")]
     private static partial void LogProviderException(ILogger logger, string exceptionType);
 
     /// <summary>Bir çalışmanın marka bazlı durumu: kilitlenmiş bakiyeler, atlanan sayılar, eşiği geçen markalar.</summary>
