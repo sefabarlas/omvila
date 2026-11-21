@@ -44,6 +44,15 @@ export function parseMoneyInput(input: string): number | null {
   return Number.isSafeInteger(minor) ? minor : null;
 }
 
+/** Hizmetin fiyat gösterimi (PublicCatalog.priceDisplay). */
+export type PriceDisplay = 'Fixed' | 'StartingFrom';
+
+/** Fixed "450 ₺", StartingFrom "2.800 ₺'den" (ServiceItem README: aralıklı fiyat). */
+export function formatPrice(value: MoneyValue, display: PriceDisplay = 'Fixed'): string {
+  const amount = formatMoney(value);
+  return display === 'StartingFrom' ? `${amount}'den` : amount;
+}
+
 /** Düzenleme alanına yazılacak tutar: 45000 → "450", 8550 → "85,50" (sembolsüz). */
 export function moneyInputValue(amountMinor: number): string {
   return formatMoney({ amountMinor, currency: 'TRY' }).replace(/\s₺$/, '');

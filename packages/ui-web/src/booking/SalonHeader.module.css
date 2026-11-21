@@ -1,0 +1,153 @@
+/* design/tasarim-sistemleri/mobil/components/SalonHeader; rezervasyon-sayfasi/Main, Masaustu. */
+.root {
+  position: relative;
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+}
+
+.card {
+  overflow: hidden;
+  border-radius: var(--kose-xl);
+  box-shadow: var(--golge-sm);
+}
+
+.cover {
+  position: relative;
+  height: 120px;
+  overflow: hidden;
+}
+
+.petrol {
+  background: var(--kapak-petrol);
+}
+
+.mercan {
+  background: var(--kapak-mercan);
+}
+
+.kum {
+  background: var(--kapak-kum);
+}
+
+/* Kapak süsü: sağ altta yuvarlak köşeli blok (bento). Petrol kapakta mercan, diğerlerinde petrol. */
+.shape {
+  position: absolute;
+  right: calc(var(--bosluk-5) * -1);
+  bottom: calc(var(--bosluk-12) * -1);
+  width: 140px;
+  height: 140px;
+  border-radius: 40px;
+  background: var(--vurgu);
+  opacity: 0.9;
+}
+
+.mercan .shape,
+.kum .shape {
+  background: var(--kapak-petrol);
+}
+
+.logo {
+  position: absolute;
+  top: calc(120px - 44px);
+  left: var(--bosluk-4);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-md);
+  color: var(--metin-marka);
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 700;
+}
+
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-12) var(--bosluk-4) var(--bosluk-4);
+}
+
+.name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 32px;
+  letter-spacing: -0.025em;
+}
+
+.category {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2) var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rating {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  font-size: var(--yazi-govde-boyut);
+  font-weight: 700;
+}
+
+.star {
+  color: var(--yildiz);
+}
+
+.reviews {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  font-weight: 400;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 var(--bosluk-3);
+  border-radius: var(--kose-tam);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.open {
+  background: var(--basari-zemin);
+  color: var(--basari);
+}
+
+.closed {
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+}
+
+.address {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.pin {
+  flex: none;
+}
