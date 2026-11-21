@@ -374,7 +374,8 @@ internal sealed class AppointmentWriter(
         return loader.LoadAsync(brandId, slot.BranchId, utcDate.PlusDays(-1), utcDate.PlusDays(1), ServiceIds(slot), staffIds, ct);
     }
 
-    private static Result<IReadOnlyList<RequestedItem>> RequestedItemsFor(Appointment appointment, IReadOnlyList<ItemStaffChange>? changes)
+    /// <summary>Randevunun kalemleri (sıra numarasıyla) motor sorusu olarak; personel değişikliği verilmezse korunur.</summary>
+    internal static Result<IReadOnlyList<RequestedItem>> RequestedItemsFor(Appointment appointment, IReadOnlyList<ItemStaffChange>? changes)
     {
         var ordered = appointment.Items.OrderBy(i => i.SeqNo).ToList();
         var staffByItem = ordered.ToDictionary(i => i.Id, i => i.StaffId);
