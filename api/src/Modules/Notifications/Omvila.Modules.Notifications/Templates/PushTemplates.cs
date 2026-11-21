@@ -29,6 +29,8 @@ internal static partial class PushTemplates
         [Key(NotificationEvents.AppointmentConfirmed, SmsTemplates.WithoutStaffVariant)] = ("Randevunuz onaylandı", "{salon} · {tarih} {saat}. Görüşmek üzere."),
         [Key(NotificationEvents.AppointmentReminder, null)] = ("Hatırlatma", "Yarın {saat} {salon}."),
         [Key(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = ("Bugün {saat} {salon}", "Görüşmek üzere. Yol tarifi için dokunun."),
+        [Key(NotificationEvents.ReviewInvite, null)] = ("Nasıldı?", "{salon|bulunma}ki randevunuzu değerlendirin."),
+        [Key(NotificationEvents.WaitlistOffer, null)] = ("Beklediğiniz saat boşaldı", "{salon} · {tarih} {saat} · {dakika} dk."),
         [Key(NotificationEvents.StaffApprovalNeeded, null)] = ("Onay bekliyor · {kalan süre}", "{müşteri} · {tarih saat} {hizmet}. Yanıtlanmazsa otomatik iptal olur."),
         [Key(NotificationEvents.StaffAppointmentCreated, null)] = ("Yeni randevu", "{müşteri} · {saat} {hizmet} · sizinle."),
         [Key(NotificationEvents.StaffAppointmentChanged, CancelledVariant)] = ("İptal", "{müşteri} · {saat} iptal etti. Neden: {neden}."),
@@ -65,15 +67,28 @@ internal static partial class PushTemplates
         return true;
     }
 
+    // {ad|bulunma}: SmsTemplates ile aynı Türkçe bulunma eki ("Kuaför Elif'teki").
     private static string Fill(string eventCode, string text, IReadOnlyDictionary<string, string> values) =>
-        Placeholder().Replace(text, match => values.TryGetValue(match.Groups["name"].Value, out var value)
-            ? value
-            : throw new InvalidOperationException($"Push şablonunda doldurulmamış değişken: {eventCode} {match.Groups["name"].Value}"));
+        Placeholder().Replace(text, match =>
+        {
+            var name = match.Groups["name"].Value;
+            if (!values.TryGetValue(name, out var value))
+            {
+                throw new InvalidOperationException($"Push şablonunda doldurulmamış değişken: {eventCode} {name}");
+            }
+
+            return match.Groups["helper"].Value switch
+            {
+                "" => value,
+                "bulunma" => TurkishSuffix.Locative(value),
+                var helper => throw new InvalidOperationException($"Bilinmeyen şablon yardımcısı: {helper}"),
+            };
+        });
 
     private static string Fit(string text, int max) => text.Length <= max ? text : string.Concat(text.AsSpan(0, max - 1).TrimEnd(), "…");
 
     private static string Key(string eventCode, string? variant) => variant is null ? eventCode : eventCode + "#" + variant;
 
-    [GeneratedRegex(@"\{(?<name>[^{}]+)\}", RegexOptions.ExplicitCapture, RegexTimeoutMilliseconds)]
+    [GeneratedRegex(@"\{(?<name>[^{}|]+)(\|(?<helper>[^{}]+))?\}", RegexOptions.ExplicitCapture, RegexTimeoutMilliseconds)]
     private static partial Regex Placeholder();
 }

@@ -56,16 +56,23 @@ internal sealed class AppointmentSms(
         && PhoneNumber.TryParse(customer.PhoneE164, out _);
 
     public Task EnqueueAsync(
-        AppointmentSmsContext context, string eventCode, IReadOnlyDictionary<string, string> values, CancellationToken ct, Instant? scheduledUtc = null, string? variant = null) =>
+        AppointmentSmsContext context,
+        string eventCode,
+        IReadOnlyDictionary<string, string> values,
+        CancellationToken ct,
+        Instant? scheduledUtc = null,
+        string? variant = null,
+        Guid? customerId = null) =>
         outbox.EnqueueSmsAsync(
             new SmsNotification(
                 eventCode,
-                context.Customer!.PhoneE164,
+                context.Customer!.PhoneE164!,
                 values,
                 context.BrandId,
                 NotificationReference.ForAppointment(context.Appointment.AppointmentId),
                 scheduledUtc,
-                variant),
+                variant,
+                customerId),
             ct);
 
     /// <summary>"Değişiklik ve iptal" bağlantısı (/r/{kod}); kod yoksa null.</summary>
@@ -129,6 +136,19 @@ internal sealed class AppointmentSms(
             ["rezervasyon bağlantısı"] = BookingLink(context),
         };
         await EnqueueAsync(context, eventCode, values, ct);
+    }
+
+    /// <summary>"Değerlendirme bağlantısı" (/d/{kod}; review.invite).</summary>
+    public string ReviewLink(string accessCode) => SmsFormat.Link(booking.ReviewPageUrl(accessCode));
+
+    /// <summary>
+    /// Randevu iptal edildi (A6, A7, A12): bekleyen hatırlatmalar ve değerlendirme daveti düşer (bildirimler.md § İptal). Kiracı
+    /// bağlamı kurulmuş olmalı.
+    /// </summary>
+    public async Task CancelPendingOnCancellationAsync(Guid appointmentId, CancellationToken ct)
+    {
+        await CancelRemindersAsync(appointmentId, ct);
+        await outbox.CancelPendingAsync(NotificationEvents.ReviewInvite, NotificationReference.ForAppointment(appointmentId), ct);
     }
 
     /// <summary>Randevunun bekleyen hatırlatmalarını düşürür (bildirimler.md § İptal). Kiracı bağlamı kurulmuş olmalı.</summary>

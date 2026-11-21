@@ -69,11 +69,7 @@ internal sealed class PublicAppointmentCreator(
 
         var settings = await tenants.GetAppointmentSettingsAsync(brandId, ct) ?? throw new DomainException("Markanın randevu ayarları yok.");
         var slot = new SlotRequest(context.Scope.BranchId, body.StartUtc!.Value, items.Value, sameStaff, AvailabilityMode.Public);
-        // Kural: sureler-ve-ayarlar.md § Kapora — aktif hesap yoksa kapora yok.
-        var account = await bankAccounts.GetActiveAsync(brandId, ct);
-        var deposit = account is null
-            ? null
-            : new DepositTerms(customer.NoShowCount, account.TransferCodePrefix, Duration.FromMinutes(account.TransferWindowMinutes));
+        var deposit = await DepositTermsAsync(bankAccounts, brandId, customer.NoShowCount, ct);
         var written = await writer.CreateAsync(
             new CreateAppointmentCommand(
                 brandId, slot, customer.CustomerId, customer.BrandCustomerId, AppointmentChannel.Online, context.ClientApp, body.CustomerNote,
@@ -85,21 +81,37 @@ internal sealed class PublicAppointmentCreator(
         }
 
         await RecordConsentsAsync(context, body, customer.CustomerId, ct);
-        var appointment = written.Value.Appointment;
+        await PublishCreatedAsync(outbox, written.Value.Appointment, ct);
+        return written.Value;
+    }
+
+    /// <summary>
+    /// Online oluşan randevunun olayı (rezervasyon sayfası ve bekleme teklifi kabulü; W4). Onay veya kapora gerekiyorsa
+    /// <see cref="AppointmentRequested"/> ("Talebiniz alındı", kaporada deposit.awaiting, staff.approval_needed; onay mesajı ve
+    /// hatırlatmalar onayda veya kapora gelince), değilse <see cref="AppointmentConfirmed"/>.
+    /// </summary>
+    internal static async Task PublishCreatedAsync(IOutbox outbox, Appointment appointment, CancellationToken ct)
+    {
         if (appointment.Status == AppointmentStatus.PendingApproval)
         {
-            // Onay veya kapora gerekli: "Talebiniz alındı" (kaporada deposit.awaiting) ve staff.approval_needed; onay mesajı
-            // ve hatırlatmalar onayda (A2) veya kapora gelince (A3).
             await outbox.EnqueueAsync(ApprovalEvents.Requested(appointment, isReschedule: false), ct);
-            return written.Value;
+            return;
         }
 
         await outbox.EnqueueAsync(
             new AppointmentConfirmed(
-                brandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,
+                appointment.BrandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,
                 appointment.Channel.ToString(), NotifyCustomer: true, SeriesId: null, IsSeriesStart: false),
             ct);
-        return written.Value;
+    }
+
+    /// <summary>Kural: sureler-ve-ayarlar.md § Kapora — aktif hesap yoksa kapora yok; varsa kalem kaporaları yazma yolunda çözülür.</summary>
+    internal static async Task<DepositTerms?> DepositTermsAsync(IBrandBankAccounts bankAccounts, Guid brandId, int customerNoShowCount, CancellationToken ct)
+    {
+        var account = await bankAccounts.GetActiveAsync(brandId, ct);
+        return account is null
+            ? null
+            : new DepositTerms(customerNoShowCount, account.TransferCodePrefix, Duration.FromMinutes(account.TransferWindowMinutes));
     }
 
     /// <summary>

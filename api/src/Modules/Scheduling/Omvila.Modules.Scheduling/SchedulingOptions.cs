@@ -14,6 +14,13 @@ public sealed class SchedulingOptions
     /// <summary>ExtendRecurringSeries turu; seri yerel 03:00'ten sonraki ilk turda ilerler.</summary>
     public int ExtendRecurringSeriesIntervalMinutes { get; set; }
 
+    /// <summary>ExpireWaitlistOffers turu (durum-makinesi.md § 3: her dakika).</summary>
+    public int ExpireWaitlistOffersIntervalSeconds { get; set; }
+
+    /// <summary>ExpireWaitlistEntries turu (istenen günleri geçen bekleme kayıtları; T-90).</summary>
+    public int ExpireWaitlistEntriesIntervalMinutes { get; set; }
+
     internal bool IsValid() =>
-        ExpireAppointmentHoldsIntervalSeconds > 0 && MarkNoShowsIntervalSeconds > 0 && ExtendRecurringSeriesIntervalMinutes > 0;
+        ExpireAppointmentHoldsIntervalSeconds > 0 && MarkNoShowsIntervalSeconds > 0 && ExtendRecurringSeriesIntervalMinutes > 0
+        && ExpireWaitlistOffersIntervalSeconds > 0 && ExpireWaitlistEntriesIntervalMinutes > 0;
 }

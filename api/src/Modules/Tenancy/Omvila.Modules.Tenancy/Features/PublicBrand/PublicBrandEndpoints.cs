@@ -7,6 +7,7 @@ using NodaTime;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Reviews.Contracts;
 using Omvila.Modules.Tenancy.Domain;
 using Omvila.Modules.Tenancy.Infrastructure;
 using Omvila.SharedKernel;
@@ -40,7 +41,13 @@ internal static class PublicBrandEndpoints
     }
 
     private static async Task<IResult> GetAsync(
-        string brandSlug, IDbSession session, TenancyDbContext db, PublicBookingQueries booking, IClock clock, CancellationToken ct)
+        string brandSlug,
+        IDbSession session,
+        TenancyDbContext db,
+        PublicBookingQueries booking,
+        IReviewRatings ratings,
+        IClock clock,
+        CancellationToken ct)
     {
         var now = clock.GetCurrentInstant();
         var resolved = await ResolveAsync(brandSlug, session, db, now, ct);
@@ -87,6 +94,8 @@ internal static class PublicBrandEndpoints
                 opening.OpenNow, opening.TodayClosesAt?.ToString("HH:mm", CultureInfo.InvariantCulture), opening.NextOpening);
         }).ToList();
 
+        // Kural: sureler-ve-ayarlar.md ReviewPublicThreshold; sözleşme PublicBrand.rating (salon gösteriyorsa, tüm yayınlanmışlar)
+        var rating = page.ShowReviews && await ratings.GetPublicRatingAsync(brand.Id, ct) is { } r ? new PublicRating(r.Average, r.Count) : null;
         return TypedResults.Ok(new PublicBrandResponse(
             brand.Id,
             brand.Name,
@@ -97,8 +106,7 @@ internal static class PublicBrandEndpoints
             page.CoverColorToken,
             page.ShowPrices,
             await booking.IsBookingEnabledAsync(brand.Id, brand.Status, ct),
-            // Değerlendirmeler (Reviews modülü) henüz yok; eşik geçilmediği için gösterilmez.
-            Rating: null,
+            rating,
             cards));
     }
 

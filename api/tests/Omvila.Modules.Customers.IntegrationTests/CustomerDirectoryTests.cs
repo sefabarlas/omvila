@@ -78,6 +78,27 @@ public sealed class CustomerDirectoryTests(PostgresFixture db) : IAsyncLifetime
         (await ScalarAsync<long>("SELECT count(*) FROM customers.customers")).ShouldBe(1);
     }
 
+    // Kural: alan-modeli.md § WalkInTicket (telefonsuz bilette adla telefonsuz müşteri; benzersizlik dolu telefonlar için), T-86 W6.
+    [Fact]
+    public async Task CreateWithoutPhone_OpensPhonelessCustomers_PhoneUniquenessStillHolds()
+    {
+        var burak = await InBrandAsync(BrandA, d => d.CreateWithoutPhoneAsync(BrandA, " Burak ", CustomerSource.WalkIn, Ct));
+        var other = await InBrandAsync(BrandA, d => d.CreateWithoutPhoneAsync(BrandA, "Burak", CustomerSource.WalkIn, Ct));
+        var selin = await InBrandAsync(BrandA, d => d.EnsureBrandCustomerAsync(new(BrandA, Selin, "Selin Öztürk", CustomerSource.Panel, false), Ct));
+        var again = await InBrandAsync(BrandA, d => d.EnsureBrandCustomerAsync(new(BrandA, Selin, "Selin", CustomerSource.Panel, false), Ct));
+
+        burak.Created.ShouldBeTrue();
+        other.CustomerId.ShouldNotBe(burak.CustomerId, "telefonsuz kişi adla eşleşmez");
+        again.CustomerId.ShouldBe(selin.CustomerId);
+        (await ScalarAsync<long>("SELECT count(*) FROM customers.customers WHERE phone_e164 IS NULL")).ShouldBe(2);
+        (await ScalarAsync<string>($"SELECT source || '/' || display_name FROM customers.brand_customers WHERE id = '{burak.BrandCustomerId}'")).ShouldBe("WalkIn/Burak");
+        var info = (await InBrandAsync(BrandA, d => d.GetDisplayInfoAsync(BrandA, [burak.BrandCustomerId], Ct)))[burak.BrandCustomerId];
+        info.FullName.ShouldBe("Burak");
+        info.PhoneE164.ShouldBeNull();
+        info.PhoneMasked.ShouldBeNull();
+        (await InBrandAsync(BrandB, d => d.GetDisplayInfoAsync(BrandB, [burak.BrandCustomerId], Ct))).ShouldBeEmpty();
+    }
+
     [Fact]
     public async Task Counters_AreAppliedToTheCard()
     {

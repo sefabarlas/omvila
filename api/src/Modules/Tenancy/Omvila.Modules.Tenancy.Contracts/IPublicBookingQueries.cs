@@ -36,7 +36,15 @@ public interface IPublicBookingQueries
     /// <param name="accessCode">Erişim kodu.</param>
     Uri AppointmentPageUrl(string accessCode);
 
+    /// <summary>Değerlendirme bağlantısı: <c>{Tenancy:BookingPageBaseUrl}d/{accessCode}</c> (bildirimler.md review.invite).</summary>
+    /// <param name="accessCode">Değerlendirme erişim kodu.</param>
+    Uri ReviewPageUrl(string accessCode);
+
     /// <summary>Rezervasyon sayfası bağlantısı: <c>{Tenancy:BookingPageBaseUrl}{slug}</c> (SMS'teki "rezervasyon bağlantısı").</summary>
     /// <param name="brandSlug">Markanın güncel bağlantı adı.</param>
     Uri BookingPageUrl(string brandSlug);
+
+    /// <summary>Bekleme teklifi bağlantısı (<c>{BookingPageBaseUrl}/b/{code}</c>; bildirimler.md § Bağlantılar).</summary>
+    /// <param name="accessCode">Teklifin erişim kodu.</param>
+    Uri WaitlistOfferPageUrl(string accessCode);
 }

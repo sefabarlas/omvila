@@ -89,10 +89,18 @@ internal static partial class SmsTemplates
         [Key(NotificationEvents.DepositNotReceived, null)] = new(
             "{salon}: {tutar} TL kapora {süre} içinde gelmediği için {tarih} {saat} randevunuz iptal edildi. Havale yaptıysanız salonu arayın.",
             SalonOnly),
+        // Tasarımdaki "Lütfen salona yakın olun." ses tonu kuralıyla (lütfen yok) "Salona yakın olun." yazılır (bildirimler.md ¹, S-17).
+        [Key(NotificationEvents.WalkInAlmostTurn, null)] = new("{salon}: Sıranız yaklaştı, önünüzde 1 kişi var. Salona yakın olun.", SalonOnly),
+        // Katalogdaki "15 dk" WaitlistOfferHoldMinutes'tan gelir (sabit yazılmaz).
+        [Key(NotificationEvents.WaitlistOffer, null)] = new(
+            "{salon}: Beklediğiniz {tarih} {saat} boşaldı. {dakika} dk içinde onaylarsanız sizin: {b bağlantısı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(
             "Bugün {saat|bulunma} {salon|bulunma} görüşmek üzere. Yol tarifi: {bağlantı}", SalonOnly),
+
+        // "{salon}'teki" = bulunma eki + "ki" (bildirimler.md § ek uyumu: sabit "'te" yazılmaz).
+        [Key(NotificationEvents.ReviewInvite, null)] = new("{salon|bulunma}ki randevunuz nasıldı? 10 saniyenizi alır: {bağlantı}", SalonOnly),
     };
 
     /// <summary>Tanımlı (olay kodu, çeşit) çiftleri.</summary>
