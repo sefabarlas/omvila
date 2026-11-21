@@ -33,6 +33,19 @@ const screens: ScreenCase[] = [
   { path: '/ayarlar/randevu-kurallari', name: 'Ayarlar', heading: 'Ayarlar' },
   { path: '/ayarlar/rezervasyon', name: 'AyarlarRezervasyon', heading: 'Ayarlar' },
   {
+    path: '/ayarlar/bildirimler',
+    name: 'AyarlarBildirim',
+    heading: 'Ayarlar',
+    act: (page) => expect(page.getByRole('heading', { name: 'Mesaj şablonları' })).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/bildirimler',
+    name: 'AyarlarBildirim899',
+    heading: 'Ayarlar',
+    act: (page) => expect(page.getByRole('heading', { name: 'Mesaj şablonları' })).toBeVisible(),
+    viewport: { width: 899, height: 1200 },
+  },
+  {
     path: '/takvim',
     name: 'Main',
     heading: 'Takvim',

@@ -5,10 +5,10 @@ Salon paneli, platform paneli, rezervasyon sayfası ve tanıtım sitesinin ortak
 ## İçerik
 | Yol | Ne |
 |---|---|
-| `src/panel/` | Panel tasarım sistemi bileşenleri: Button, IconButton, Input, Select, Checkbox, Switch, Tabs, Chip, StatusBadge, Badge, Banner, EmptyState, Modal, Drawer (yan panel), Table, Bento, Avatar, Sidebar, Topbar, Toast, Skeleton |
+| `src/panel/` | Panel tasarım sistemi bileşenleri: Button, IconButton, Input, TextArea, Select, Checkbox, Switch, Tabs, Chip, StatusBadge, Badge, Banner, EmptyState, Modal, Drawer (yan panel), Table, Bento, Avatar, Sidebar, Topbar, Toast, Skeleton |
 | `src/calendar/` | Takvim ızgarası (gün/hafta), blok, bekleme şeridi, şu anki saat çizgisi, sürükle-bırak (`@dnd-kit`) |
 | `src/booking/` | Mobil tasarım sisteminin web karşılıkları (rezervasyon, `@omvila/ui-web/booking`): SalonHeader, BookingSteps, ServiceItem, CategoryChips, StaffPicker, SwitchCard, DayStrip, TimeSlotGrid, FullDayNotice, StickyFooter, AppointmentTicket, CopyField, BookingButton, BookingAvatar, BookingStatusBadge; `branchOpenStatus`. Yalnız **mobil** ölçeğin tokenlarını kullanır (test denetler); panel bileşenlerini içe aktarmaz |
-| `src/format/` | `formatMoney`, `formatPrice`, `formatDate`, `formatTime`, `formatDuration`, `formatPhone`, `maskPhone`, `formatIban`, `withTimeSuffix` ("20:00'ye") |
+| `src/format/` | `formatMoney`, `formatCount` ("1.240"), `formatPrice`, `formatDate`, `formatTime`, `formatDuration`, `formatPhone`, `maskPhone`, `formatIban`, `withTimeSuffix` ("20:00'ye") |
 | `src/time/` | Şube saat dilimiyle dönüşüm (`toBranchTime`, `branchToday`, `localDateTimeToUtc`) |
 | `src/errors/tr.ts` | `ErrorCode` → Türkçe kullanıcı mesajı (sözleşmedeki her kod için bir girdi; test eksik kodu yakalar) |
 | `src/status/` | `displayStatus` → etiket ("Onay bekliyor") + token öneki (`durum-onay`) |

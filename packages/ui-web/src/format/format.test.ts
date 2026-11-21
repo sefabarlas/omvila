@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  formatCount,
   formatDate,
   formatDuration,
   formatMoney,
@@ -113,5 +114,18 @@ describe('parseMobilePhone', () => {
 
   it.each(['0212 555 12 34', '0532 418 77', 'abc'])('%s → null', (input) => {
     expect(parseMobilePhone(input)).toBeNull();
+  });
+});
+
+describe('formatCount', () => {
+  it('binlik nokta', () => {
+    expect(formatCount(1240)).toBe('1.240');
+    expect(formatCount(862)).toBe('862');
+    expect(formatCount(0)).toBe('0');
+    expect(formatCount(1250000)).toBe('1.250.000');
+  });
+
+  it('tamsayı olmayanı reddeder', () => {
+    expect(() => formatCount(1.5)).toThrow(RangeError);
   });
 });

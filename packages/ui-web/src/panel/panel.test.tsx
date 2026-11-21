@@ -12,6 +12,7 @@ import {
   Select,
   StatusBadge,
   Switch,
+  TextArea,
   TextField,
 } from './index';
 
@@ -84,6 +85,17 @@ describe('TextField', () => {
     await userEvent.type(input, '45');
     expect((input as HTMLInputElement).value).toBe('45');
   });
+});
+
+it('TextArea: etiket ve hata alana bağlı, çok satır yazılır', async () => {
+  render(<TextArea label="Salon metni" error="{bağlantı} değişkeni metinde olmalı." />);
+  const area = screen.getByRole('textbox', { name: 'Salon metni' });
+  expect(area.getAttribute('aria-invalid')).toBe('true');
+  expect(document.getElementById(area.getAttribute('aria-describedby') ?? '')?.textContent).toBe(
+    '{bağlantı} değişkeni metinde olmalı.',
+  );
+  await userEvent.type(area, 'a{Enter}b');
+  expect((area as HTMLTextAreaElement).value).toBe('a\nb');
 });
 
 it('Select seçenekleri metin veya {value,label}', async () => {

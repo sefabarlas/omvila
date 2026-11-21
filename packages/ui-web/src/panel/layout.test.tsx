@@ -90,6 +90,25 @@ describe('Topbar', () => {
     render(<Topbar title="Genel bakış" notifications={{ count: 0, onOpen: () => undefined }} />);
     expect(screen.getByRole('button', { name: 'Bildirimler' }).parentElement?.textContent).toBe('');
   });
+
+  it('bildirim paneli zilin yanında, zil açık/kapalı durumunu bildirir', () => {
+    render(
+      <Topbar
+        title="Genel bakış"
+        notifications={{
+          count: 1,
+          onOpen: () => undefined,
+          expanded: true,
+          controls: 'panel',
+          panel: <div id="panel">Bildirimler paneli</div>,
+        }}
+      />,
+    );
+    const bell = screen.getByRole('button', { name: 'Bildirimler, 1 okunmamış' });
+    expect(bell.getAttribute('aria-expanded')).toBe('true');
+    expect(bell.getAttribute('aria-controls')).toBe('panel');
+    expect(bell.parentElement?.textContent).toContain('Bildirimler paneli');
+  });
 });
 
 interface Row {

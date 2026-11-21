@@ -1,3 +1,4 @@
+export { formatCount } from './count';
 export { formatDate, formatDuration, formatTime } from './date';
 export type { DateStyle } from './date';
 export { formatIban, normalizeIban } from './iban';
