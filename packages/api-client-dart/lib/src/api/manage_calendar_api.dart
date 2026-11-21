@@ -12,6 +12,7 @@ import 'package:dio/dio.dart';
 import 'package:omvila_api/src/model/appointment_created.dart';
 import 'package:omvila_api/src/model/appointment_detail.dart';
 import 'package:omvila_api/src/model/calendar_view.dart';
+import 'package:omvila_api/src/model/deposit_refund_request.dart';
 import 'package:omvila_api/src/model/manage_appointment_create.dart';
 import 'package:omvila_api/src/model/manage_approve_request.dart';
 import 'package:omvila_api/src/model/manage_cancel_request.dart';
@@ -28,7 +29,7 @@ class ManageCalendarApi {
   const ManageCalendarApi(this._dio);
 
   /// Onay bekleyen talebi onayla (\&quot;Onayla\&quot;)
-  /// Randevu yan paneli (RandevuPanel) \&quot;Onayla\&quot; butonu. Geçiş A2: PendingApproval → Confirmed; holdExpiresUtc temizlenir, müşteriye appointment.approved bildirimi gider, hatırlatmalar planlanır. Gövde isteğe bağlıdır. waiveDeposit Dilim 4&#39;te anlam kazanır: kapora istenmiş ve gelmemişse onay için waiveDeposit &#x3D; true gerekir (kapora alınmadan onayla). Dilim 3&#39;te kapora olmadığından alan yok sayılır. Durum PendingApproval değilse 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. İzin: appointment.approve (Owner, BranchManager kendi şubesinde). Personel rolü 403 forbidden alır; kapsam dışı randevu 404. 
+  /// Randevu yan paneli (RandevuPanel) \&quot;Onayla\&quot; butonu. Geçiş A2: PendingApproval → Confirmed; holdExpiresUtc temizlenir, müşteriye appointment.approved bildirimi gider, hatırlatmalar planlanır. Gövde isteğe bağlıdır. Kapora istenmiş ve gelmemişse (deposit.status Awaiting veya CustomerReported) onay için waiveDeposit &#x3D; true gerekir (\&quot;Kaporasız onayla\&quot;); gönderilmezse 409 deposit_required (istemci \&quot;Kapora geldi\&quot; veya \&quot;Kaporasız onayla\&quot; seçeneğini sunar). waiveDeposit &#x3D; true ile onaylanınca deposit.status Waived olur, geçmişe DepositWaived yazılır, Payment oluşmaz ve \&quot;Salonda ödenecek\&quot; (amountDue) toplam tutara döner. Kapora yoksa veya alınmışsa waiveDeposit yok sayılır. Durum PendingApproval değilse 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. İzin: appointment.approve (Owner, BranchManager kendi şubesinde). Personel rolü 403 forbidden alır; kapsam dışı randevu 404. 
   ///
   /// Parameters:
   /// * [ifMatch] - GET yanıtındaki ETag değeri
@@ -664,7 +665,7 @@ _responseData = rawData == null ? null : deserialize<CalendarView, CalendarView>
   }
 
   /// Onay bekleyen talepler (\&quot;Dikkat isteyenler\&quot;, \&quot;Onay bekliyor\&quot; bentosu)
-  /// Genel bakış \&quot;Onay bekliyor\&quot; bentosu (\&quot;ilki 1 sa 35 dk içinde iptal olur\&quot;), \&quot;Dikkat isteyenler\&quot; kartındaki \&quot;2 online talep onay bekliyor\&quot; satırı ve takvim üst bandı. Yalnız PendingApproval randevular, holdExpiresUtc&#39;ye göre artan sıralı (en acil önce). Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır. Kalan süre istemcide holdExpiresUtc ile generatedUtc farkından sayılır; cihaz saati kullanılmaz (generatedUtc sunucunun \&quot;şimdi\&quot;sidir). branchId verilirse yalnız o şube; verilmezse kullanıcının kapsamındaki bütün şubeler. İzin: appointment.approve. Personel rolü 403 forbidden alır (onay butonlarını görmez). 
+  /// Genel bakış \&quot;Onay bekliyor\&quot; bentosu (\&quot;ilki 1 sa 35 dk içinde iptal olur\&quot;), \&quot;Dikkat isteyenler\&quot; kartındaki \&quot;2 online talep onay bekliyor\&quot; satırı ve takvim üst bandı. Yalnız PendingApproval randevular, holdExpiresUtc&#39;ye göre artan sıralı (en acil önce). Kapora bekleyen talepler (displayStatus DepositPending) de listededir; depositStatus ve depositAmount ile \&quot;Kapora bekleniyor\&quot; ve \&quot;Havale bildirildi · kontrol edin\&quot; gösterilir. Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır. Kalan süre istemcide holdExpiresUtc ile generatedUtc farkından sayılır; cihaz saati kullanılmaz (generatedUtc sunucunun \&quot;şimdi\&quot;sidir). branchId verilirse yalnız o şube; verilmezse kullanıcının kapsamındaki bütün şubeler. İzin: appointment.approve. Personel rolü 403 forbidden alır (onay butonlarını görmez). 
   ///
   /// Parameters:
   /// * [branchId] 
@@ -744,6 +745,248 @@ _responseData = rawData == null ? null : deserialize<PendingApprovalList, Pendin
       statusMessage: _response.statusMessage,
       extra: _response.extra,
     );
+  }
+
+  /// Kapora geldi olarak işaretle (\&quot;Kapora geldi\&quot;)
+  /// Randevu yan paneli ve işletme uygulaması \&quot;Kapora geldi mi?\&quot; (KaporaOnay) \&quot;Kapora geldi\&quot; butonu. Geçiş A3: PendingApproval → Confirmed. Salon havaleyi kendi bankasında görür ve işaretler; OMVILA para almaz, yalnız kaydeder. Salonun işaretlemesi onay sayılır (onay da gerekiyorsa ayrıca \&quot;Onayla\&quot; gerekmez). Yan etkiler: deposit.status Received, receivedUtc; Payment(Method &#x3D; Transfer, IsDeposit &#x3D; true, tutar &#x3D; deposit.required, Reference &#x3D; açıklama kodu) ve randevu tahsis kaydı; amountDue kapora kadar düşer; holdExpiresUtc temizlenir; geçmişe DepositReceived yazılır; müşteriye deposit.received SMS&#39;i gider, hatırlatmalar planlanır. Gövde yoktur: tutar istenen kaporadır. Payment oluşturduğu için Idempotency-Key ister; aynı anahtarla tekrar gelen istek ilk yanıtı alır. Randevu PendingApproval değilse veya kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded) 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde). Personel rolü v1&#39;de 403 forbidden alır; kapsam dışı randevu 404. 
+  ///
+  /// Parameters:
+  /// * [ifMatch] - GET yanıtındaki ETag değeri
+  /// * [idempotencyKey] - İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)
+  /// * [appointmentId] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AppointmentDetail] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AppointmentDetail>> manageMarkDepositReceived({ 
+    required String ifMatch,
+    required String idempotencyKey,
+    required String appointmentId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/appointments/{appointmentId}/deposit/mark-received'.replaceAll('{' r'appointmentId' '}', appointmentId.toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        r'If-Match': ifMatch,
+        r'Idempotency-Key': idempotencyKey,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AppointmentDetail? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<AppointmentDetail, AppointmentDetail>(rawData, 'AppointmentDetail', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AppointmentDetail>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Kapora iadesini işaretle (\&quot;Salon iade etti\&quot;)
+  /// Randevu yan paneli \&quot;Salon iade etti\&quot;. Salon iadeyi kendi bankasından yapar; OMVILA para göndermez, yalnız kaydeder. Tutar elle girilir ve alınan kaporayı aşamaz (aşarsa veya 0 ise 400 validation_failed, errors.amount &#x3D; [out_of_range]); kısmi iade olabilir. Yan etkiler: deposit.status Refunded, refundedUtc, refundedAmount; kapora Payment kaydı Refunded veya PartiallyRefunded olur (RefundedAmountMinor); geçmişe DepositRefunded yazılır (not varsa detail&#39;de, yalnız panelde görünür). Müşteriye bildirim gitmez; müşteri uygulamasında Ödemelerim \&quot;Salon iade etti\&quot; gösterir (Dilim 5). Randevu durumu değişmez (iptal, tamamlanmış veya onaylı olabilir). Kapora alınmamışsa (deposit.status Received değil) veya zaten iade işaretlendiyse 409 invalid_state_transition. Para kaydettiği için Idempotency-Key ister. İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404. 
+  ///
+  /// Parameters:
+  /// * [ifMatch] - GET yanıtındaki ETag değeri
+  /// * [idempotencyKey] - İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)
+  /// * [appointmentId] 
+  /// * [depositRefundRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AppointmentDetail] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AppointmentDetail>> manageMarkDepositRefunded({ 
+    required String ifMatch,
+    required String idempotencyKey,
+    required String appointmentId,
+    required DepositRefundRequest depositRefundRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/appointments/{appointmentId}/deposit/refund'.replaceAll('{' r'appointmentId' '}', appointmentId.toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        r'If-Match': ifMatch,
+        r'Idempotency-Key': idempotencyKey,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      _bodyData = jsonEncode(depositRefundRequest);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AppointmentDetail? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<AppointmentDetail, AppointmentDetail>(rawData, 'AppointmentDetail', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AppointmentDetail>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Kapora hatırlatması gönder (\&quot;Henüz gelmedi, hatırlat\&quot;)
+  /// KaporaOnay ve randevu yan paneli \&quot;Hatırlat\&quot;. Müşteriye deposit.awaiting SMS&#39;i kalan süreyle yeniden gönderilir (her zaman SMS; sessiz saate kaydırılmaz, 1 kontör). Durum değişmez; deposit.remindedUtc dolar ve geçmişe DepositReminded yazılır. Randevu başına en fazla bir kez: ikinci istek 409 deposit_reminder_already_sent (istemci butonu remindedUtc doluysa pasif gösterir). Kapora beklenmiyorsa (randevu PendingApproval değil veya deposit.status Awaiting/CustomerReported değil) 409 invalid_state_transition; tutma süresi dolmuşsa 409 hold_expired; kontör yoksa 409 insufficient_credits (hatırlatma hakkı harcanmaz). İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404. 
+  ///
+  /// Parameters:
+  /// * [appointmentId] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future]
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<void>> manageRemindDeposit({ 
+    required String appointmentId,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/appointments/{appointmentId}/deposit/remind'.replaceAll('{' r'appointmentId' '}', appointmentId.toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
   }
 
   /// Saati veya personeli değiştir (sürükle-bırak dahil)

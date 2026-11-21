@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:omvila_api/src/model/money.dart';
+import 'package:omvila_api/src/model/deposit_status.dart';
 import 'package:omvila_api/src/model/deposit_instructions.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -32,6 +33,12 @@ class PublicAppointmentDeposit {
 
      this.receivedUtc,
 
+     this.remindedUtc,
+
+     this.refundedUtc,
+
+     this.refundedAmount,
+
      this.instructions,
   });
 
@@ -52,11 +59,11 @@ class PublicAppointmentDeposit {
     name: r'status',
     required: true,
     includeIfNull: false,
-  unknownEnumValue: PublicAppointmentDepositStatusEnum.unknownDefaultOpenApi,
+  unknownEnumValue: DepositStatus.unknownDefaultOpenApi,
   )
 
 
-  final PublicAppointmentDepositStatusEnum status;
+  final DepositStatus status;
 
 
 
@@ -96,6 +103,45 @@ class PublicAppointmentDeposit {
 
 
 
+      /// Salonun \"Hatırlat\" ile kapora SMS'ini yeniden gönderdiği an (randevu başına en fazla bir kez); doluysa buton pasif
+  @JsonKey(
+    
+    name: r'remindedUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? remindedUtc;
+
+
+
+      /// \"Salon iade etti\" işaretlendiği an
+  @JsonKey(
+    
+    name: r'refundedUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? refundedUtc;
+
+
+
+      /// İade edildi olarak işaretlenen tutar (alınan kaporayı aşmaz; kısmi olabilir)
+  @JsonKey(
+    
+    name: r'refundedAmount',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final Money? refundedAmount;
+
+
+
   @JsonKey(
     
     name: r'instructions',
@@ -117,6 +163,9 @@ class PublicAppointmentDeposit {
       other.transferCode == transferCode &&
       other.customerReportedUtc == customerReportedUtc &&
       other.receivedUtc == receivedUtc &&
+      other.remindedUtc == remindedUtc &&
+      other.refundedUtc == refundedUtc &&
+      other.refundedAmount == refundedAmount &&
       other.instructions == instructions;
 
     @override
@@ -126,6 +175,9 @@ class PublicAppointmentDeposit {
         transferCode.hashCode +
         (customerReportedUtc == null ? 0 : customerReportedUtc.hashCode) +
         (receivedUtc == null ? 0 : receivedUtc.hashCode) +
+        (remindedUtc == null ? 0 : remindedUtc.hashCode) +
+        (refundedUtc == null ? 0 : refundedUtc.hashCode) +
+        refundedAmount.hashCode +
         instructions.hashCode;
 
   factory PublicAppointmentDeposit.fromJson(Map<String, dynamic> json) => _$PublicAppointmentDepositFromJson(json);
@@ -138,25 +190,4 @@ class PublicAppointmentDeposit {
   }
 
 }
-
-enum PublicAppointmentDepositStatusEnum {
-@JsonValue(r'Awaiting')
-awaiting(r'Awaiting'),
-@JsonValue(r'CustomerReported')
-customerReported(r'CustomerReported'),
-@JsonValue(r'Received')
-received(r'Received'),
-@JsonValue(r'Refunded')
-refunded(r'Refunded'),
-@JsonValue(r'unknown_default_open_api')
-unknownDefaultOpenApi(r'unknown_default_open_api');
-
-const PublicAppointmentDepositStatusEnum(this.value);
-
-final String value;
-
-@override
-String toString() => value;
-}
-
 

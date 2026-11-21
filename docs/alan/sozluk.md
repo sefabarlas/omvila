@@ -31,6 +31,8 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Kapora | `Deposit` (randevu alanları) | |
 | Havale / EFT | `Transfer` (`PaymentMethod.Transfer`) | |
 | Açıklama kodu (OMV-…) | `DepositTransferCode` | |
+| Kapora hesabı (alıcı, banka, IBAN) | `BrandBankAccount` (API: `BankAccount`) | Ayarlar → Kapora ve IBAN |
+| Kapora durumu | `DepositStatus`: `Awaiting`, `CustomerReported`, `Received`, `Refunded`, `Waived` | Kapora bekleniyor, Havale bildirildi, Alındı, Salon iade etti, Kaporasız onaylandı |
 | Abonelik kodu (ABN-…) | `Subscription.TransferCode` | |
 | Havale bildirimi | `PaymentNotice` | Platform onay kuyruğu |
 | Tahsilat / Ödeme (salonun kaydı) | `Payment` | |
@@ -76,6 +78,9 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Reddet | `POST /manage/appointments/{id}/decline` |
 | Kapora geldi | `POST /manage/appointments/{id}/deposit/mark-received` |
 | Havaleyi yaptım, salona bildir | `POST /public/appointments/{code}/deposit/report` |
+| Kaporasız onayla | `POST /manage/appointments/{id}/approve` (`waiveDeposit = true`) |
+| Henüz gelmedi, hatırlat | `POST /manage/appointments/{id}/deposit/remind` |
+| Salon iade etti | `POST /manage/appointments/{id}/deposit/refund` |
 | Geldi | `POST /manage/appointments/{id}/check-in` |
 | Geldiyse geri al | `POST /manage/appointments/{id}/undo-no-show` |
 | Tamamla ve ödeme al | `POST /manage/appointments/{id}/complete` |

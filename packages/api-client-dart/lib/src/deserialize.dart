@@ -5,6 +5,8 @@ import 'package:omvila_api/src/model/appointment_detail_customer.dart';
 import 'package:omvila_api/src/model/appointment_history_entry.dart';
 import 'package:omvila_api/src/model/appointment_item_request.dart';
 import 'package:omvila_api/src/model/appointment_item_view.dart';
+import 'package:omvila_api/src/model/bank_account.dart';
+import 'package:omvila_api/src/model/bank_account_write.dart';
 import 'package:omvila_api/src/model/booking_page_settings.dart';
 import 'package:omvila_api/src/model/booking_page_settings_update.dart';
 import 'package:omvila_api/src/model/booking_token_result.dart';
@@ -29,6 +31,7 @@ import 'package:omvila_api/src/model/day_search_request.dart';
 import 'package:omvila_api/src/model/day_search_result.dart';
 import 'package:omvila_api/src/model/day_search_result_days_inner.dart';
 import 'package:omvila_api/src/model/deposit_instructions.dart';
+import 'package:omvila_api/src/model/deposit_refund_request.dart';
 import 'package:omvila_api/src/model/deposit_rule.dart';
 import 'package:omvila_api/src/model/deposit_view.dart';
 import 'package:omvila_api/src/model/device_registration.dart';
@@ -173,6 +176,10 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'AppointmentStatus':
           
           
+        case 'BankAccount':
+          return BankAccount.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'BankAccountWrite':
+          return BankAccountWrite.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'BookingPageSettings':
           return BookingPageSettings.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'BookingPageSettingsUpdate':
@@ -227,8 +234,13 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return DaySearchResultDaysInner.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'DepositInstructions':
           return DepositInstructions.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'DepositRefundRequest':
+          return DepositRefundRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'DepositRule':
           return DepositRule.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'DepositStatus':
+          
+          
         case 'DepositView':
           return DepositView.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'DevicePlatform':

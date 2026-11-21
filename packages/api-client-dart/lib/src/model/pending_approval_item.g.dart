@@ -35,6 +35,10 @@ abstract class _$PendingApprovalItemCWProxy {
 
   PendingApprovalItem channel(AppointmentChannel channel);
 
+  PendingApprovalItem depositStatus(DepositStatus? depositStatus);
+
+  PendingApprovalItem depositAmount(Money? depositAmount);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `PendingApprovalItem(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -56,6 +60,8 @@ abstract class _$PendingApprovalItemCWProxy {
     DateTime holdExpiresUtc,
     DateTime createdUtc,
     AppointmentChannel channel,
+    DepositStatus? depositStatus,
+    Money? depositAmount,
   });
 }
 
@@ -118,6 +124,14 @@ class _$PendingApprovalItemCWProxyImpl implements _$PendingApprovalItemCWProxy {
       this(channel: channel);
 
   @override
+  PendingApprovalItem depositStatus(DepositStatus? depositStatus) =>
+      this(depositStatus: depositStatus);
+
+  @override
+  PendingApprovalItem depositAmount(Money? depositAmount) =>
+      this(depositAmount: depositAmount);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `PendingApprovalItem(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -139,6 +153,8 @@ class _$PendingApprovalItemCWProxyImpl implements _$PendingApprovalItemCWProxy {
     Object? holdExpiresUtc = const $CopyWithPlaceholder(),
     Object? createdUtc = const $CopyWithPlaceholder(),
     Object? channel = const $CopyWithPlaceholder(),
+    Object? depositStatus = const $CopyWithPlaceholder(),
+    Object? depositAmount = const $CopyWithPlaceholder(),
   }) {
     return PendingApprovalItem(
       appointmentId: appointmentId == const $CopyWithPlaceholder()
@@ -197,6 +213,14 @@ class _$PendingApprovalItemCWProxyImpl implements _$PendingApprovalItemCWProxy {
           ? _value.channel
           // ignore: cast_nullable_to_non_nullable
           : channel as AppointmentChannel,
+      depositStatus: depositStatus == const $CopyWithPlaceholder()
+          ? _value.depositStatus
+          // ignore: cast_nullable_to_non_nullable
+          : depositStatus as DepositStatus?,
+      depositAmount: depositAmount == const $CopyWithPlaceholder()
+          ? _value.depositAmount
+          // ignore: cast_nullable_to_non_nullable
+          : depositAmount as Money?,
     );
   }
 }
@@ -262,6 +286,18 @@ PendingApprovalItem _$PendingApprovalItemFromJson(Map<String, dynamic> json) =>
             unknownValue: AppointmentChannel.unknownDefaultOpenApi,
           ),
         ),
+        depositStatus: $checkedConvert(
+          'depositStatus',
+          (v) => $enumDecodeNullable(
+            _$DepositStatusEnumMap,
+            v,
+            unknownValue: DepositStatus.unknownDefaultOpenApi,
+          ),
+        ),
+        depositAmount: $checkedConvert(
+          'depositAmount',
+          (v) => v == null ? null : Money.fromJson(v as Map<String, dynamic>),
+        ),
       );
       return val;
     });
@@ -283,6 +319,8 @@ Map<String, dynamic> _$PendingApprovalItemToJson(
   'holdExpiresUtc': instance.holdExpiresUtc.toIso8601String(),
   'createdUtc': instance.createdUtc.toIso8601String(),
   'channel': _$AppointmentChannelEnumMap[instance.channel]!,
+  'depositStatus': ?_$DepositStatusEnumMap[instance.depositStatus],
+  'depositAmount': ?instance.depositAmount?.toJson(),
 };
 
 const _$AppointmentChannelEnumMap = {
@@ -291,4 +329,13 @@ const _$AppointmentChannelEnumMap = {
   AppointmentChannel.phone: 'Phone',
   AppointmentChannel.walkIn: 'WalkIn',
   AppointmentChannel.unknownDefaultOpenApi: 'unknown_default_open_api',
+};
+
+const _$DepositStatusEnumMap = {
+  DepositStatus.awaiting: 'Awaiting',
+  DepositStatus.customerReported: 'CustomerReported',
+  DepositStatus.received: 'Received',
+  DepositStatus.refunded: 'Refunded',
+  DepositStatus.waived: 'Waived',
+  DepositStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

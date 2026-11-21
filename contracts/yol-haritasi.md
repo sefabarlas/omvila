@@ -1,15 +1,6 @@
 # Sözleşme yol haritası
 
-`openapi.yaml` şu an Dilim 1, 2 ve 3'ü kapsar (80 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
-
-## Dilim 4: Kapora havalesi
-| Yöntem | Yol | operationId | Not |
-|---|---|---|---|
-| GET/PUT | `/api/v1/manage/brand/bank-account` | `manageGet/UpdateBankAccount` | IBAN doğrulama (TR, mod-97); yanıtta maskeli |
-| POST | `/api/v1/manage/appointments/{appointmentId}/deposit/mark-received` | `manageMarkDepositReceived` | `Payment` + onay |
-| POST | `/api/v1/manage/appointments/{appointmentId}/deposit/remind` | `manageRemindDeposit` | "Hatırlat" (SMS) |
-| POST | `/api/v1/manage/appointments/{appointmentId}/deposit/refund` | `manageMarkDepositRefunded` | "Salon iade etti" |
-| POST | `/api/v1/public/appointments/{accessCode}/deposit/report` | `publicReportDepositTransfer` | "Havaleyi yaptım, salona bildir" |
+`openapi.yaml` şu an Dilim 1, 2, 3 ve 4'ü kapsar (86 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
 
 ## Dilim 5: Mobil uygulamalar + bekleme listesi + kapıda sıra + paket + kasa
 | Yöntem | Yol | operationId |

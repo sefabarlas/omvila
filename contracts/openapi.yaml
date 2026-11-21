@@ -9,7 +9,8 @@ info:
   description: |
     OMVILA'nın tek HTTP sözleşmesi. Kurallar: docs/sozlesme/api-kurallari.md.
 
-    Kapsam (v0.1): Dilim 1 (giriş + salon kurulumu), Dilim 2 (müsaitlik + rezervasyon sayfası + panel takvimi) ve Dilim 3 (onay akışı + SMS + bildirimler).
+    Kapsam (v0.1): Dilim 1 (giriş + salon kurulumu), Dilim 2 (müsaitlik + rezervasyon sayfası + panel takvimi), Dilim 3 (onay akışı + SMS + bildirimler)
+    ve Dilim 4 (kapora havalesi: IBAN, Kapora geldi, hatırlatma, iade işareti, havale bildirimi).
     Sonraki dilimlerin uçları contracts/yol-haritasi.md içinde listelidir; eklenince bu dosyaya girer.
 
     Yüzeyler:
@@ -32,7 +33,7 @@ tags:
   - name: manage-session
     description: Oturum bilgisi ve kurulum adımları
   - name: manage-brand
-    description: İşletme bilgileri, ayarlar, rezervasyon sayfası
+    description: İşletme bilgileri, ayarlar, rezervasyon sayfası, kapora hesabı (IBAN)
   - name: manage-branches
     description: Şubeler, çalışma saatleri, özel günler
   - name: manage-catalog
@@ -355,6 +356,106 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/brand/bank-account:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetBankAccount
+      summary: Kaporanın gönderileceği hesap (Kapora ve IBAN)
+      description: |
+        Ayarlar → Kapora ve IBAN (AyarlarOdeme) formu ve Randevu kuralları (Ayarlar) kapora bölümündeki
+        "Kapora IBAN'ı tanımlı · Elif Kaya · TR12 •••• 6789 01" özeti. Markada tek hesap vardır (tekil kaynak).
+        Hesap hiç tanımlanmadıysa da 200 döner: configured = false, alıcı, banka ve IBAN alanları yoktur; transferCodePrefix ve
+        transferWindowMinutes varsayılanlarla (OMV, 120) gelir ki form varsayılanlarla açılsın. Bu durumda ETag W/"0" olur ve ilk PUT bu değerle gönderilir.
+        IBAN'ın tamamı bu uçtan hiç dönmez (ibanMasked + ibanLast4). Tam IBAN yalnız müşteriye, randevunun havale bilgisinde
+        (DepositInstructions) gösterilir. İzin: settings.payment (yalnız Owner); diğer roller 403 forbidden.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Hesap (tanımlı değilse varsayılanlarla boş form)
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
+              examples:
+                tanimli:
+                  summary: IBAN tanımlı
+                  value:
+                    configured: true
+                    isActive: true
+                    accountHolderName: Elif Kaya
+                    bankName: Ziraat Bankası
+                    ibanMasked: 'TR29 •••• 6789 01'
+                    ibanLast4: '8901'
+                    transferCodePrefix: OMV
+                    transferWindowMinutes: 120
+                    updatedUtc: '2026-11-20T10:15:00Z'
+                    version: 'W/"5521"'
+                tanimsiz:
+                  summary: IBAN henüz tanımlı değil ("Kapora alınamaz · IBAN ekle")
+                  value:
+                    configured: false
+                    isActive: false
+                    transferCodePrefix: OMV
+                    transferWindowMinutes: 120
+                    version: 'W/"0"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [manage-brand]
+      operationId: manageUpdateBankAccount
+      summary: Kapora hesabını kaydet ("Kaydet")
+      description: |
+        AyarlarOdeme "Kaydet". Hesap yoksa oluşturur (If-Match: W/"0"), varsa günceller (If-Match: GET'teki ETag). Hesap varken
+        W/"0" gönderilirse veya ETag uyuşmazsa 412 concurrency_conflict.
+        iban boşluklu veya boşluksuz, küçük harfle de gönderilebilir; sunucu boşlukları atar, büyük harfe çevirir, TR biçimini
+        (TR + 24 hane, toplam 26 karakter) ve mod-97 denetim hanesini doğrular. Geçersizse 400 validation_failed, errors.iban = [invalid_format].
+        iban ilk kayıtta zorunludur (yoksa errors.iban = [required]); hesap varken gönderilmezse kayıtlı IBAN korunur
+        (form maskeli IBAN'ı gösterir, yalnız yeni IBAN yazılırsa gönderilir).
+        transferWindowMinutes yalnız bundan sonra oluşan kaporalı randevulara uygulanır; bekleyen randevuların süresi değişmez.
+        Havale süresi yalnız bu uçtan düzenlenir (BrandSettings'te alanı yoktur).
+        Kayıttan sonra hesap aktiftir (isActive = true) ve BrandSettings.depositAvailable true olur.
+        IBAN ve alıcı adı günlüğe yazılmaz. İzin: settings.payment (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccountWrite'
+            example:
+              accountHolderName: Elif Kaya
+              bankName: Ziraat Bankası
+              iban: 'TR29 0006 4000 0011 2345 6789 01'
+              transferCodePrefix: OMV
+              transferWindowMinutes: 120
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankAccount'
+              example:
+                configured: true
+                isActive: true
+                accountHolderName: Elif Kaya
+                bankName: Ziraat Bankası
+                ibanMasked: 'TR29 •••• 6789 01'
+                ibanLast4: '8901'
+                transferCodePrefix: OMV
+                transferWindowMinutes: 120
+                updatedUtc: '2026-11-25T09:30:00Z'
+                version: 'W/"5540"'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
   # ───────────────────────────── manage-branches ─────────────────────────────
@@ -1369,8 +1470,10 @@ paths:
       description: |
         Randevu yan paneli (RandevuPanel) "Onayla" butonu. Geçiş A2: PendingApproval → Confirmed; holdExpiresUtc temizlenir,
         müşteriye appointment.approved bildirimi gider, hatırlatmalar planlanır.
-        Gövde isteğe bağlıdır. waiveDeposit Dilim 4'te anlam kazanır: kapora istenmiş ve gelmemişse onay için waiveDeposit = true gerekir
-        (kapora alınmadan onayla). Dilim 3'te kapora olmadığından alan yok sayılır.
+        Gövde isteğe bağlıdır. Kapora istenmiş ve gelmemişse (deposit.status Awaiting veya CustomerReported) onay için waiveDeposit = true gerekir
+        ("Kaporasız onayla"); gönderilmezse 409 deposit_required (istemci "Kapora geldi" veya "Kaporasız onayla" seçeneğini sunar).
+        waiveDeposit = true ile onaylanınca deposit.status Waived olur, geçmişe DepositWaived yazılır, Payment oluşmaz ve
+        "Salonda ödenecek" (amountDue) toplam tutara döner. Kapora yoksa veya alınmışsa waiveDeposit yok sayılır.
         Durum PendingApproval değilse 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired.
         İzin: appointment.approve (Owner, BranchManager kendi şubesinde). Personel rolü 403 forbidden alır; kapsam dışı randevu 404.
       security: [ { manageBearer: [] } ]
@@ -1428,6 +1531,154 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
+  /api/v1/manage/appointments/{appointmentId}/deposit/mark-received:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageMarkDepositReceived
+      summary: Kapora geldi olarak işaretle ("Kapora geldi")
+      description: |
+        Randevu yan paneli ve işletme uygulaması "Kapora geldi mi?" (KaporaOnay) "Kapora geldi" butonu. Geçiş A3: PendingApproval → Confirmed.
+        Salon havaleyi kendi bankasında görür ve işaretler; OMVILA para almaz, yalnız kaydeder. Salonun işaretlemesi onay sayılır
+        (onay da gerekiyorsa ayrıca "Onayla" gerekmez). Yan etkiler: deposit.status Received, receivedUtc; Payment(Method = Transfer,
+        IsDeposit = true, tutar = deposit.required, Reference = açıklama kodu) ve randevu tahsis kaydı; amountDue kapora kadar düşer;
+        holdExpiresUtc temizlenir; geçmişe DepositReceived yazılır; müşteriye deposit.received SMS'i gider, hatırlatmalar planlanır.
+        Gövde yoktur: tutar istenen kaporadır. Payment oluşturduğu için Idempotency-Key ister; aynı anahtarla tekrar gelen istek ilk yanıtı alır.
+        Randevu PendingApproval değilse veya kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded) 409 invalid_state_transition.
+        Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired.
+        İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde). Personel rolü v1'de 403 forbidden alır; kapsam dışı randevu 404.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Kapora alındı, randevu onaylandı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a71
+                reference: A-20512
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                status: Confirmed
+                displayStatus: Confirmed
+                channel: Online
+                startUtc: '2026-11-25T11:30:00Z'
+                endUtc: '2026-11-25T12:15:00Z'
+                timeZone: Europe/Istanbul
+                holdExpiresUtc: null
+                customer:
+                  brandCustomerId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b11
+                  fullName: Gizem Arslan
+                  phoneMasked: '0532 *** ** 48'
+                  visitCount: 3
+                  lastVisitOn: '2026-09-12'
+                  isNew: false
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5c21
+                    serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d31
+                    serviceName: Fön
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                    staffName: Mert Demir
+                    startUtc: '2026-11-25T11:30:00Z'
+                    endUtc: '2026-11-25T12:15:00Z'
+                    price: { amountMinor: 45000, currency: TRY }
+                    paidFromPackage: false
+                    status: Active
+                    segments:
+                      - { startUtc: '2026-11-25T11:30:00Z', endUtc: '2026-11-25T12:15:00Z', staffBusy: true }
+                deposit:
+                  required: { amountMinor: 15000, currency: TRY }
+                  status: Received
+                  transferCode: OMV-7K2X
+                  customerReportedUtc: '2026-11-25T08:52:00Z'
+                  receivedUtc: '2026-11-25T09:10:00Z'
+                total: { amountMinor: 45000, currency: TRY }
+                amountDue: { amountMinor: 30000, currency: TRY }
+                customerNote: null
+                staffNote: null
+                isRecurring: false
+                history:
+                  - { occurredUtc: '2026-11-25T08:40:00Z', kind: Created, actorName: null, detail: 'Online talep oluşturuldu, SMS ile doğrulandı' }
+                  - { occurredUtc: '2026-11-25T08:52:00Z', kind: DepositReported, actorName: Gizem Arslan, detail: null }
+                  - { occurredUtc: '2026-11-25T09:10:00Z', kind: DepositReceived, actorName: Elif Kaya, detail: null }
+                version: 'W/"8840"'
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/appointments/{appointmentId}/deposit/remind:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageRemindDeposit
+      summary: Kapora hatırlatması gönder ("Henüz gelmedi, hatırlat")
+      description: |
+        KaporaOnay ve randevu yan paneli "Hatırlat". Müşteriye deposit.awaiting SMS'i kalan süreyle yeniden gönderilir (her zaman SMS;
+        sessiz saate kaydırılmaz, 1 kontör). Durum değişmez; deposit.remindedUtc dolar ve geçmişe DepositReminded yazılır.
+        Randevu başına en fazla bir kez: ikinci istek 409 deposit_reminder_already_sent (istemci butonu remindedUtc doluysa pasif gösterir).
+        Kapora beklenmiyorsa (randevu PendingApproval değil veya deposit.status Awaiting/CustomerReported değil) 409 invalid_state_transition;
+        tutma süresi dolmuşsa 409 hold_expired; kontör yoksa 409 insufficient_credits (hatırlatma hakkı harcanmaz).
+        İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Hatırlatma kuyruğa alındı }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/manage/appointments/{appointmentId}/deposit/refund:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [manage-calendar]
+      operationId: manageMarkDepositRefunded
+      summary: Kapora iadesini işaretle ("Salon iade etti")
+      description: |
+        Randevu yan paneli "Salon iade etti". Salon iadeyi kendi bankasından yapar; OMVILA para göndermez, yalnız kaydeder.
+        Tutar elle girilir ve alınan kaporayı aşamaz (aşarsa veya 0 ise 400 validation_failed, errors.amount = [out_of_range]); kısmi iade olabilir.
+        Yan etkiler: deposit.status Refunded, refundedUtc, refundedAmount; kapora Payment kaydı Refunded veya PartiallyRefunded olur
+        (RefundedAmountMinor); geçmişe DepositRefunded yazılır (not varsa detail'de, yalnız panelde görünür). Müşteriye bildirim gitmez;
+        müşteri uygulamasında Ödemelerim "Salon iade etti" gösterir (Dilim 5). Randevu durumu değişmez (iptal, tamamlanmış veya onaylı olabilir).
+        Kapora alınmamışsa (deposit.status Received değil) veya zaten iade işaretlendiyse 409 invalid_state_transition.
+        Para kaydettiği için Idempotency-Key ister. İzin: appointment.deposit.mark (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRefundRequest'
+            example:
+              amount: { amountMinor: 15000, currency: TRY }
+              note: Müşteri randevuyu erteleyemedi, kapora iade edildi
+      responses:
+        '200':
+          description: İade işaretlendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
   /api/v1/manage/approval-queue:
     get:
       tags: [manage-calendar]
@@ -1436,7 +1687,8 @@ paths:
       description: |
         Genel bakış "Onay bekliyor" bentosu ("ilki 1 sa 35 dk içinde iptal olur"), "Dikkat isteyenler" kartındaki
         "2 online talep onay bekliyor" satırı ve takvim üst bandı. Yalnız PendingApproval randevular, holdExpiresUtc'ye göre artan sıralı
-        (en acil önce). Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır.
+        (en acil önce). Kapora bekleyen talepler (displayStatus DepositPending) de listededir; depositStatus ve depositAmount ile
+        "Kapora bekleniyor" ve "Havale bildirildi · kontrol edin" gösterilir. Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır.
         Kalan süre istemcide holdExpiresUtc ile generatedUtc farkından sayılır; cihaz saati kullanılmaz (generatedUtc sunucunun "şimdi"sidir).
         branchId verilirse yalnız o şube; verilmezse kullanıcının kapsamındaki bütün şubeler.
         İzin: appointment.approve. Personel rolü 403 forbidden alır (onay butonlarını görmez).
@@ -2073,6 +2325,80 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
+  /api/v1/public/appointments/{accessCode}/deposit/report:
+    parameters:
+      - $ref: '#/components/parameters/AccessCodePath'
+    post:
+      tags: [public-appointment-link]
+      operationId: publicReportDepositTransfer
+      summary: Havaleyi bildir ("Havaleyi yaptım, salona bildir")
+      description: |
+        Rezervasyon sayfası Havale ekranı. Müşteri havaleyi yaptığını salona bildirir: deposit.status CustomerReported, customerReportedUtc dolar,
+        geçmişe DepositReported yazılır, salonun Owner ve BranchManager kullanıcılarına staff.deposit_reported push'u ve panel bildirimi gider
+        ("Havale bildirildi · kontrol edin"). Randevu durumu değişmez (PendingApproval, displayStatus DepositPending); ekran "Salon onayı bekleniyor" gösterir.
+        Kendiliğinden idempotenttir: zaten CustomerReported ise 200 ile aynı sonuç döner, bildirim ikinci kez gitmez. Bu yüzden Idempotency-Key ve If-Match almaz.
+        Kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded veya randevu PendingApproval değil) 409 invalid_state_transition;
+        tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. Kod geçersizse 404 access_code_invalid.
+      parameters:
+        - $ref: '#/components/parameters/ClientHeader'
+      responses:
+        '200':
+          description: Bildirildi (veya zaten bildirilmişti)
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicAppointment'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a71
+                accessCode: 7Kx2Pq9a
+                manageUrl: 'https://omvila.com/r/7Kx2Pq9a'
+                status: PendingApproval
+                displayStatus: DepositPending
+                brand: { name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                branch:
+                  id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                  name: Kadıköy
+                  addressLine: Caferağa Mah. Moda Cad. No:12
+                  district: Kadıköy
+                  phone: '+902163450012'
+                startUtc: '2026-11-25T11:30:00Z'
+                endUtc: '2026-11-25T12:15:00Z'
+                timeZone: Europe/Istanbul
+                holdExpiresUtc: '2026-11-25T10:40:00Z'
+                items:
+                  - serviceName: Fön
+                    staffName: Mert Demir
+                    startUtc: '2026-11-25T11:30:00Z'
+                    endUtc: '2026-11-25T12:15:00Z'
+                    price: { amountMinor: 45000, currency: TRY }
+                    paidFromPackage: false
+                total: { amountMinor: 45000, currency: TRY }
+                amountDue: { amountMinor: 30000, currency: TRY }
+                deposit:
+                  required: { amountMinor: 15000, currency: TRY }
+                  status: CustomerReported
+                  transferCode: OMV-7K2X
+                  customerReportedUtc: '2026-11-25T08:52:00Z'
+                  receivedUtc: null
+                  instructions:
+                    accountHolderName: Elif Kaya
+                    bankName: Ziraat Bankası
+                    iban: 'TR29 0006 4000 0011 2345 6789 01'
+                    amount: { amountMinor: 15000, currency: TRY }
+                    transferCode: OMV-7K2X
+                    dueUtc: '2026-11-25T10:40:00Z'
+                canCancel: true
+                cancelDeadlineUtc: '2026-11-24T11:30:00Z'
+                canReschedule: false
+                rescheduleDeadlineUtc: null
+                preAppointmentNote: null
+                cancellation: null
+                version: 'W/"8836"'
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
   /api/v1/public/appointments/{accessCode}/availability/slots:
     parameters:
       - $ref: '#/components/parameters/AccessCodePath'
@@ -2287,7 +2613,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
-      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban)
+      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, insufficient_credits)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -2368,6 +2694,8 @@ components:
         - phone_already_exists
         - slug_unavailable
         - deposit_unavailable_no_iban
+        - deposit_required
+        - deposit_reminder_already_sent
         - outside_working_hours
         - staff_on_time_off
         - insufficient_credits
@@ -2799,6 +3127,46 @@ components:
         name: { type: string, minLength: 1, maxLength: 60 }
         sortOrder: { type: integer }
         isActive: { type: boolean }
+    BankAccount:
+      type: object
+      description: |
+        Kaporanın gönderileceği salon hesabı (Ayarlar → Kapora ve IBAN, BrandBankAccount). OMVILA bu hesaba para göndermez veya hesaptan çekmez; yalnız müşteriye gösterir.
+        configured = false ise hesap hiç tanımlanmamıştır: accountHolderName, bankName, ibanMasked, ibanLast4 ve updatedUtc yoktur;
+        transferCodePrefix ve transferWindowMinutes varsayılanları döner. Tam IBAN bu şemada hiç bulunmaz.
+      required: [configured, isActive, transferCodePrefix, transferWindowMinutes, version]
+      properties:
+        configured: { type: boolean, description: Hesap tanımlı mı (false = "Kapora alınamaz · IBAN ekle") }
+        isActive: { type: boolean, description: Hesap kaporada kullanılıyor mu; false iken kapora istenmez (BrandSettings.depositAvailable ile aynı) }
+        accountHolderName: { type: string, maxLength: 120, description: Alıcı adı (müşterinin bankasında görünecek ad), example: Elif Kaya }
+        bankName: { type: string, maxLength: 80, description: Banka, example: Ziraat Bankası }
+        ibanMasked:
+          type: string
+          description: |
+            Maskeli IBAN: ilk 4 karakter + " •••• " + son 6 hane "dddd dd" gruplamasıyla (Ayarlar özetindeki "TR12 •••• 6789 01").
+            İstemci dar alanda (AyarlarOdeme "Müşteri ne görür?") "••••" yerine "…" gösterebilir.
+          example: 'TR29 •••• 6789 01'
+        ibanLast4: { type: string, pattern: '^\d{4}$', description: IBAN'ın son 4 hanesi (listelerde), example: '8901' }
+        transferCodePrefix: { type: string, pattern: '^[A-Z]{2,5}$', description: 'Açıklama kodu öneki ("OMV-7K2X"); varsayılan OMV', example: OMV }
+        transferWindowMinutes: { type: integer, enum: [60, 120, 240], description: 'Havale süresi; dolarsa randevu otomatik iptal olur (A5). Varsayılan 120', example: 120 }
+        updatedUtc: { type: string, format: date-time, description: Son kayıt anı }
+        version: { $ref: '#/components/schemas/Version' }
+    BankAccountWrite:
+      type: object
+      description: '"Kaydet" gövdesi. iban ilk kayıtta zorunlu, sonrasında isteğe bağlı (gönderilmezse kayıtlı IBAN korunur)'
+      required: [accountHolderName, bankName, transferCodePrefix, transferWindowMinutes]
+      properties:
+        accountHolderName: { type: string, minLength: 2, maxLength: 120, description: Alıcı adı; hesap sahibiyle aynı olmalı, example: Elif Kaya }
+        bankName: { type: string, minLength: 2, maxLength: 80, description: Banka, example: Ziraat Bankası }
+        iban:
+          type: string
+          minLength: 26
+          maxLength: 40
+          description: |
+            Tam IBAN girişi; boşluk ve küçük harf kabul edilir. Sunucu boşlukları atıp TR biçimini (TR + 24 hane) ve mod-97 denetim hanesini
+            doğrular; geçersizse 400 validation_failed, errors.iban = [invalid_format].
+          example: 'TR29 0006 4000 0011 2345 6789 01'
+        transferCodePrefix: { type: string, pattern: '^[A-Z]{2,5}$', description: Açıklama kodu öneki (2–5 büyük Latin harfi), example: OMV }
+        transferWindowMinutes: { type: integer, enum: [60, 120, 240], description: 'Havale süresi (1, 2 veya 4 saat)', example: 120 }
     ServiceStage:
       type: object
       required: [name, durationMinutes, staffBusy]
@@ -3113,6 +3481,8 @@ components:
         isNewCustomer: { type: boolean }
         isRecurring: { type: boolean }
         holdExpiresUtc: { type: [string, 'null'], format: date-time }
+        depositStatus: { $ref: '#/components/schemas/DepositStatus', description: Yalnız kapora istenmiş randevuda bulunur (bloktaki "Havale bildirildi" işareti) }
+        depositAmount: { $ref: '#/components/schemas/Money', description: İstenen kapora; yalnız kapora istenmiş randevuda bulunur }
         segments:
           type: array
           items: { $ref: '#/components/schemas/SegmentView' }
@@ -3188,10 +3558,23 @@ components:
       required: [required, status]
       properties:
         required: { $ref: '#/components/schemas/Money' }
-        status: { type: string, enum: [Awaiting, CustomerReported, Received, Refunded] }
+        status: { $ref: '#/components/schemas/DepositStatus' }
         transferCode: { type: string, example: OMV-7K2X }
         customerReportedUtc: { type: [string, 'null'], format: date-time }
         receivedUtc: { type: [string, 'null'], format: date-time }
+        remindedUtc:
+          type: [string, 'null']
+          format: date-time
+          description: Salonun "Hatırlat" ile kapora SMS'ini yeniden gönderdiği an (randevu başına en fazla bir kez); doluysa buton pasif
+        refundedUtc: { type: [string, 'null'], format: date-time, description: '"Salon iade etti" işaretlendiği an' }
+        refundedAmount: { $ref: '#/components/schemas/Money', description: İade edildi olarak işaretlenen tutar (alınan kaporayı aşmaz; kısmi olabilir) }
+    DepositStatus:
+      type: string
+      description: |
+        Randevu kaporasının durumu. Awaiting = havale bekleniyor; CustomerReported = müşteri "Havaleyi yaptım" dedi ("Havale bildirildi · kontrol edin");
+        Received = salon "Kapora geldi" dedi; Refunded = salon iade etti olarak işaretledi ("Salon iade etti"); Waived = salon "Kaporasız onayla" dedi,
+        kapora istenmiyor. İstemciler bilinmeyen değeri genel durum olarak ele alır.
+      enum: [Awaiting, CustomerReported, Received, Refunded, Waived]
     AppointmentHistoryEntry:
       type: object
       required: [occurredUtc, kind]
@@ -3199,8 +3582,8 @@ components:
         occurredUtc: { type: string, format: date-time }
         kind:
           type: string
-          enum: [Created, Approved, Declined, HoldExpired, Rescheduled, Cancelled, CheckedIn, NoShow, NoShowUndone, Completed, DepositReported, DepositReceived, NotificationSent]
-          description: 'Approved = "Onaylandı" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)'
+          enum: [Created, Approved, Declined, HoldExpired, Rescheduled, Cancelled, CheckedIn, NoShow, NoShowUndone, Completed, DepositReported, DepositReceived, NotificationSent, DepositWaived, DepositReminded, DepositRefunded]
+          description: 'Approved = "Onaylandı" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5), DepositReported = müşteri havaleyi bildirdi, DepositReceived = "Kapora geldi" (A3), DepositWaived = "Kaporasız onayla", DepositReminded = "Hatırlat" SMS''i, DepositRefunded = "Salon iade etti". İstemciler bilinmeyen değeri genel satır olarak gösterir'
         actorName: { type: [string, 'null'] }
         detail: { type: [string, 'null'], example: 'Online talep oluşturuldu, SMS ile doğrulandı' }
     AppointmentDetail:
@@ -3343,7 +3726,15 @@ components:
         waiveDeposit:
           type: boolean
           default: false
-          description: Kapora istenmiş ve gelmemişken kapora almadan onayla (Dilim 4'te anlam kazanır; Dilim 3'te yok sayılır)
+          description: '"Kaporasız onayla": kapora istenmiş ve gelmemişken kapora almadan onayla. Kapora bekleniyorken gönderilmezse 409 deposit_required'
+
+    DepositRefundRequest:
+      type: object
+      description: '"Salon iade etti" gövdesi; yalnız kayıt, para hareketi yok'
+      required: [amount]
+      properties:
+        amount: { $ref: '#/components/schemas/Money', description: İade edilen tutar; 0'dan büyük ve alınan kaporadan küçük veya eşit }
+        note: { type: [string, 'null'], maxLength: 300, description: 'Salon içi not (geçmişte görünür, müşteriye gösterilmez)' }
 
     # ───────── onay kuyruğu ─────────
     PendingApprovalItem:
@@ -3365,6 +3756,8 @@ components:
         holdExpiresUtc: { type: string, format: date-time, description: Bu anda yanıtlanmamışsa otomatik iptal olur (A5) }
         createdUtc: { type: string, format: date-time, description: Talebin geldiği an }
         channel: { $ref: '#/components/schemas/AppointmentChannel' }
+        depositStatus: { $ref: '#/components/schemas/DepositStatus', description: 'Yalnız kapora istenmiş talepte bulunur: Awaiting = "Kapora bekleniyor", CustomerReported = "Havale bildirildi · kontrol edin"' }
+        depositAmount: { $ref: '#/components/schemas/Money', description: İstenen kapora; yalnız kapora istenmiş talepte bulunur }
     PendingApprovalList:
       type: object
       description: '"Dikkat isteyenler" ve "Onay bekliyor" bentosu verisi'
@@ -3907,7 +4300,7 @@ components:
       properties:
         accountHolderName: { type: string, example: Elif Kaya }
         bankName: { type: [string, 'null'], example: Ziraat Bankası }
-        iban: { type: string, description: Boşluklu biçimde, example: 'TR12 0006 4000 0011 2345 6789 01' }
+        iban: { type: string, description: 'Tam IBAN, boşluklu biçimde (yalnız müşteriye bu alanda döner)', example: 'TR29 0006 4000 0011 2345 6789 01' }
         amount: { $ref: '#/components/schemas/Money' }
         transferCode: { type: string, example: OMV-7K2X }
         dueUtc: { type: string, format: date-time }

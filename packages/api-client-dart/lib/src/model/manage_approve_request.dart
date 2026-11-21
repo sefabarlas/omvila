@@ -23,7 +23,7 @@ class ManageApproveRequest {
      this.waiveDeposit = false,
   });
 
-      /// Kapora istenmiş ve gelmemişken kapora almadan onayla (Dilim 4'te anlam kazanır; Dilim 3'te yok sayılır)
+      /// \"Kaporasız onayla\": kapora istenmiş ve gelmemişken kapora almadan onayla. Kapora bekleniyorken gönderilmezse 409 deposit_required
   @JsonKey(
     defaultValue: false,
     name: r'waiveDeposit',
