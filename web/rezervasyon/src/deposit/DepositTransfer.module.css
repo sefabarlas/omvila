@@ -1,0 +1,165 @@
+/* Havale (rezervasyon-sayfasi/Havale.png). Yalnız mobil ölçeğin tokenları. */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.brand {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-govde-guclu-satir);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--blok-vurgu);
+  color: var(--blok-vurgu-metin);
+}
+
+.heroTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--bosluk-2);
+}
+
+.eyebrow {
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-etiket-kucuk-satir);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.timer {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-etiket-kucuk-satir);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount {
+  margin: 0;
+  font-size: var(--yazi-metrik-boyut);
+  font-weight: var(--yazi-metrik-agirlik);
+  line-height: var(--yazi-metrik-satir);
+  letter-spacing: var(--yazi-metrik-harf);
+  font-variant-numeric: tabular-nums;
+}
+
+.when {
+  margin: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.lead {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.info {
+  display: flex;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.info p {
+  margin: 0;
+}
+
+.infoIcon {
+  flex: none;
+}
+
+.reported {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--durum-onay-zemin);
+  color: var(--durum-onay-metin);
+}
+
+.reportedIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+}
+
+.reportedBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  min-width: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.reportedBody p {
+  margin: 0;
+}
+
+.reportedTitle {
+  margin: 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+/* Alt çubuk telefonda kenardan kenara (sayfanın iç boşluğu --bosluk-4). */
+@media (width < 960px) {
+  .footer {
+    margin: 0 calc(var(--bosluk-4) * -1) calc(var(--bosluk-4) * -1);
+  }
+}
+
+.error {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}

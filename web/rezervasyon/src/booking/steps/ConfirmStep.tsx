@@ -1,12 +1,12 @@
 import { BookingButton } from '@omvila/ui-web/booking';
-import { formatTime } from '@omvila/ui-web/format';
+import { formatMoney, formatTime } from '@omvila/ui-web/format';
 import { CalendarX } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { StateBanner } from '@/components/StateBanner';
 import { privacyNoticeVersion } from '@/lib/legal';
 import { createAppointment } from '../booking-api';
-import type { ItemRequest, PublicAppointment, Slot } from '../booking-api';
+import type { ItemRequest, Money, PublicAppointment, Slot } from '../booking-api';
 import { alternatives, messageFor, problemCode } from '../problem';
 import styles from './steps.module.css';
 
@@ -24,6 +24,11 @@ interface ConfirmStepProps {
   marketingConsent: boolean;
   /** Özet kartı. */
   summary: ReactNode;
+  /**
+   * Seçilen hizmetlerin kapora ipucu (katalog `depositHint`); yoksa null. Kesin tutar oluşturma yanıtındadır
+   * (müşteriye göre çözülür) ve Havale ekranında gösterilir.
+   */
+  depositHint: Money | null;
   onCreated: (appointment: PublicAppointment) => void;
   /** Saat doldu: alternatif saate geçiş (aynı gün). */
   onPickTime: (localTime: string) => void;
@@ -40,8 +45,8 @@ function joinTimes(times: string[]): string {
 }
 
 /**
- * Son kontrol (Onay.png): özet, "Randevuyu oluştur". Paket ve kapora kutuları Dilim 4–5'te. Saat dolduysa
- * Durumlar.png "saat az önce doldu" deseni ve alternatif saat çipleri.
+ * Son kontrol (Onay.png): özet, kapora kutusu (hizmette kapora varsa), "Randevuyu oluştur". Paket kutusu Dilim 5'te.
+ * Saat dolduysa Durumlar.png "saat az önce doldu" deseni ve alternatif saat çipleri.
  */
 export function ConfirmStep({
   branchId,
@@ -55,6 +60,7 @@ export function ConfirmStep({
   note,
   marketingConsent,
   summary,
+  depositHint,
   onCreated,
   onPickTime,
   onChangeTime,
@@ -107,6 +113,19 @@ export function ConfirmStep({
         Randevunuzu onaylamadan önce son bir kez bakın.
       </p>
       {summary}
+      {depositHint ? (
+        <section className={styles.deposit} aria-labelledby="kapora-kutusu">
+          <p className={styles.depositHead}>
+            <span id="kapora-kutusu">Kapora</span>
+            <span className={styles.depositAmount}>{formatMoney(depositHint)}</span>
+          </p>
+          <p>
+            Bu randevu {formatMoney(depositHint)} kapora ile kesinleşir. Randevuyu oluşturunca
+            salonun IBAN bilgisini göstereceğiz; havaleyi belirtilen süre içinde yapmanız gerekir.
+            Kapora salondaki tutardan düşülür.
+          </p>
+        </section>
+      ) : null}
       {taken ? (
         <StateBanner
           tone="hata"
@@ -154,7 +173,9 @@ export function ConfirmStep({
         Randevuyu oluştur
       </BookingButton>
       <p className={[styles.note, styles.center].join(' ')}>
-        Ödeme sayfadan alınmaz; ücreti salonda ödersiniz.
+        {depositHint
+          ? 'Ödeme sayfadan alınmaz; havaleyi kendi bankanızdan yaparsınız.'
+          : 'Ödeme sayfadan alınmaz; ücreti salonda ödersiniz.'}
       </p>
     </div>
   );

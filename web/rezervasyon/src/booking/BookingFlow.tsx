@@ -23,6 +23,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { BookingDisabled } from '@/components/BookingDisabled';
+import { depositHintTotal } from '@/lib/deposit';
 import { StateBanner } from '@/components/StateBanner';
 import type { PublicBrand } from '@/lib/brand';
 import { fetchCatalog, searchSlots } from './booking-api';
@@ -69,6 +70,9 @@ const DoneStep = lazy(() => import('./steps/DoneStep').then((m) => ({ default: m
 const RequestStep = lazy(() =>
   import('./steps/RequestStep').then((m) => ({ default: m.RequestStep })),
 );
+const DepositStep = lazy(() =>
+  import('./steps/DepositStep').then((m) => ({ default: m.DepositStep })),
+);
 
 function preloadSteps() {
   void import('./steps/StaffStep');
@@ -78,6 +82,7 @@ function preloadSteps() {
   void import('./steps/ConfirmStep');
   void import('./steps/DoneStep');
   void import('./steps/RequestStep');
+  void import('./steps/DepositStep');
 }
 
 const loadCatalog = (request: { branchId: string }) => fetchCatalog(request.branchId);
@@ -295,9 +300,21 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
       : null;
 
   const place = branch ? `${brand.name} · ${branch.addressLine}, ${branch.district}` : brand.name;
-  const summaryCard = (action?: ReactNode) =>
+  // Kapora ipucu (bilgi amaçlı); kesin kapora oluşturma yanıtında, müşteriye göre (sureler-ve-ayarlar.md § Kapora).
+  const depositHint = catalog
+    ? depositHintTotal(
+        catalog.services.filter((service) => selection.serviceIds.includes(service.id)),
+      )
+    : null;
+  const summaryCard = (action?: ReactNode, deposit: typeof depositHint = null) =>
     summary && slot && date ? (
-      <SummaryCard summary={summary} when={longWhen(date, slot)} place={place} action={action} />
+      <SummaryCard
+        summary={summary}
+        when={longWhen(date, slot)}
+        place={place}
+        action={action}
+        deposit={deposit}
+      />
     ) : null;
 
   const loadError = (onRetry: () => void) => (
@@ -485,7 +502,8 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
             fullName={form.fullName}
             note={form.note}
             marketingConsent={form.marketing}
-            summary={summaryCard()}
+            summary={summaryCard(undefined, depositHint)}
+            depositHint={depositHint}
             onCreated={(created) => {
               setAppointment(created);
               setRaw({ ...base, step: 'done' });
@@ -511,7 +529,13 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
         ) : null;
       case 'done':
         if (!appointment) return null;
-        // Onay gerektiren salonda talep (A1); kapora isteyen talep Havale ekranına gider (Dilim 4).
+        // Kapora isteyen randevu Havale ekranına (KK3); onay gerektiren salonda talep (A1); onaylı randevu Başarı.
+        if (
+          appointment.displayStatus === 'DepositPending' ||
+          appointment.cancellation?.reason === 'DepositNotReceived'
+        ) {
+          return <DepositStep appointment={appointment} clock={clock} onChange={setAppointment} />;
+        }
         return appointment.displayStatus === 'PendingApproval' ? (
           <RequestStep
             appointment={appointment}

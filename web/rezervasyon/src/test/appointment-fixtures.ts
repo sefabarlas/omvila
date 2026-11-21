@@ -1,5 +1,5 @@
 import type { PublicAppointment, SlotSearchResult } from '@/appointment/appointment-api';
-import { appointmentFixture } from './booking-fixtures';
+import { appointmentFixture, depositFixture } from './booking-fixtures';
 
 // SMS bağlantısı (/r/{kod}) testlerinin kurgusal verisi. "Şimdi" 24 Kasım 2026 Salı 10:00 (nowUtc); randevu
 // 25 Kasım Çarşamba 14:30 (Europe/Istanbul): iptal 24 saat, saat değişikliği 12 saat öncesine kadar.
@@ -90,6 +90,35 @@ export function requestCancelledFixture(
       reason,
     },
   });
+}
+
+/**
+ * Kapora bekleyen, bildirilmiş, alınmış veya iade edilmiş randevu (Dilim 4). Varsayılan linkAppointmentFixture
+ * kaporasızdır.
+ */
+export function linkDepositFixture(
+  status: NonNullable<PublicAppointment['deposit']>['status'],
+): PublicAppointment {
+  return depositFixture(status, linkAppointmentFixture());
+}
+
+/** Kapora süresinde gelmedi (A5, DepositNotReceived): sistem iptali. */
+export function depositExpiredFixture(): PublicAppointment {
+  return {
+    ...depositFixture('Awaiting', linkAppointmentFixture()),
+    status: 'Cancelled',
+    displayStatus: 'Cancelled',
+    holdExpiresUtc: null,
+    canCancel: false,
+    canReschedule: false,
+    cancelDeadlineUtc: null,
+    rescheduleDeadlineUtc: null,
+    cancellation: {
+      cancelledUtc: '2026-11-24T08:58:00Z',
+      cancelledBy: 'System',
+      reason: 'DepositNotReceived',
+    },
+  };
 }
 
 /** 15:15'e alınmış randevu. */

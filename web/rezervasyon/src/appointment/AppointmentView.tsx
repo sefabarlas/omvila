@@ -22,8 +22,11 @@ import {
   responseSentence,
   responseWindow,
 } from '@/lib/approval';
+import { awaitingTransfer, receivedDeposit } from '@/lib/deposit';
 import { directionsUrl } from '@/lib/directions';
-import type { PublicAppointment } from './appointment-api';
+import { DepositNotReceived } from '@/deposit/DepositNotReceived';
+import { DepositTransfer } from '@/deposit/DepositTransfer';
+import type { Loaded, PublicAppointment } from './appointment-api';
 import { durationMinutes, isActive, planText, staffNames, whenLabel } from './details';
 import styles from './appointment.module.css';
 
@@ -43,6 +46,10 @@ interface AppointmentViewProps {
   clock: ClockSource;
   onReschedule: () => void;
   onCancel: () => void;
+  /** "Havaleyi yaptım" sonrası güncel randevu ve ETag. */
+  onDepositReported: (loaded: Loaded) => void;
+  /** Kapora süresi sayfa açıkken doldu: randevu yeniden okunur. */
+  onRefresh: () => void;
 }
 
 function CallSalon({ phone }: { phone: string | null | undefined }) {
@@ -100,9 +107,10 @@ function NoticeBanner({ notice, appointment }: { notice: Notice; appointment: Pu
 /**
  * Randevum (Randevum.png): başlık bloğu, yol tarifi, kalemler ve tutar, "Plan değişti mi?" kartı. Onay bekleyen
  * talepte "Randevunuz · Onay bekliyor" ve kalan yanıt süresi; salonun onaylayamadığı veya zamanında yanıtlamadığı
- * talep "İptal" olarak gösterilir ("reddedildi" yazılmaz, kriter 3). Takvime ekle
- * (dosya indirme), kapora satırları (Dilim 4) ve uygulama tanıtımı (Dilim 5) yok. Süre geçmişse butonların yerine
- * "Salonu ara" (durum-makinesi.md § Müşteri sınırları, kriter 10).
+ * talep "İptal" olarak gösterilir ("reddedildi" yazılmaz, kriter 3). Kapora bekleniyorsa Havale ekranı (Dilim 4,
+ * bildirimden sonra "Salon onayı bekleniyor"); kapora alındıysa satırı ve "Salonda ödenecek" (toplam − kapora);
+ * süresinde gelmediyse Durumlar.png "Kapora gelmedi". Takvime ekle (dosya indirme) ve uygulama tanıtımı (Dilim 5)
+ * yok. Süre geçmişse butonların yerine "Salonu ara" (durum-makinesi.md § Müşteri sınırları, kriter 10).
  */
 export function AppointmentView({
   appointment,
@@ -111,10 +119,12 @@ export function AppointmentView({
   clock,
   onReschedule,
   onCancel,
+  onDepositReported,
+  onRefresh,
 }: AppointmentViewProps) {
   const { branch } = appointment;
   const cancelled = appointment.status === 'Cancelled';
-  // Kapora bekleyen talep (DepositPending) Dilim 4'te kendi kartını alır; burada yalnız onay bekleyen talep.
+  // Kapora bekleyen talep (DepositPending) Havale ekranında; burada yalnız onay bekleyen talep.
   const pending = appointment.displayStatus === 'PendingApproval';
   const active = isActive(appointment);
   const directions = cancelled ? null : directionsUrl(branch);
@@ -124,6 +134,61 @@ export function AppointmentView({
   useEffect(() => {
     if (notice?.kind === 'cancelled') cancelledRef.current?.focus();
   }, [notice]);
+
+  const deposit = receivedDeposit(appointment);
+  const depositNotReceived = appointment.cancellation?.reason === 'DepositNotReceived';
+  const planCard = active ? (
+    <section className={styles.card} aria-labelledby="plan-baslik">
+      <h2 id="plan-baslik" className={styles.cardTitle}>
+        Plan değişti mi?
+      </h2>
+      <p className={styles.text}>{planText(appointment)}</p>
+      <div className={styles.planActions}>
+        {appointment.canReschedule ? (
+          <BookingButton
+            variant="secondary"
+            size="md"
+            block
+            icon={<CalendarClock size={18} />}
+            onClick={onReschedule}
+          >
+            Saati değiştir
+          </BookingButton>
+        ) : null}
+        {appointment.canCancel ? (
+          <BookingButton variant="danger" size="md" block onClick={onCancel}>
+            Randevuyu iptal et
+          </BookingButton>
+        ) : null}
+        {!appointment.canCancel || !appointment.canReschedule ? (
+          <CallSalon phone={branch.phone} />
+        ) : null}
+      </div>
+    </section>
+  ) : null;
+  const footnote = (
+    <p className={styles.footnote}>Bu sayfa yalnızca bu bağlantıyı açan kişiye görünür.</p>
+  );
+
+  if (awaitingTransfer(appointment)) {
+    return (
+      <main className={styles.page} inert={inert}>
+        <div className={styles.body}>
+          {notice ? <NoticeBanner notice={notice} appointment={appointment} /> : null}
+          <DepositTransfer
+            appointment={appointment}
+            clock={clock}
+            headingLevel={1}
+            onReported={onDepositReported}
+            onStale={onRefresh}
+          >
+            {planCard}
+            {footnote}
+          </DepositTransfer>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={styles.page} inert={inert}>
@@ -163,9 +228,17 @@ export function AppointmentView({
                 ? 'Talebiniz iptal edildi'
                 : 'Randevunuz iptal edildi'}
             </h2>
-            <p className={styles.text}>
-              {cancellationText(appointment.brand.name, appointment.cancellation)}
-            </p>
+            {depositNotReceived ? (
+              <DepositNotReceived phone={branch.phone} />
+            ) : (
+              <p className={styles.text}>
+                {cancellationText(appointment.brand.name, appointment.cancellation)}
+                {appointment.deposit?.status === 'Received' &&
+                appointment.cancellation?.cancelledBy === 'Salon'
+                  ? ' Kapora iadesi için salon sizinle iletişime geçecek.'
+                  : null}
+              </p>
+            )}
             <LinkButton href={`/${encodeURIComponent(appointment.brand.slug)}`} block>
               Yeni randevu al
             </LinkButton>
@@ -202,6 +275,20 @@ export function AppointmentView({
                 </span>
               </li>
             ))}
+            {deposit?.status === 'Received' ? (
+              <li className={styles.row}>
+                <span className={styles.rowLabel}>Kapora alındı (havale ile)</span>
+                <span className={styles.rowValue}>−{formatMoney(deposit.required)}</span>
+              </li>
+            ) : null}
+            {deposit?.status === 'Refunded' ? (
+              <li className={styles.row}>
+                <span className={styles.rowLabel}>Kapora · Salon iade etti</span>
+                <span className={styles.rowValue}>
+                  {formatMoney(deposit.refundedAmount ?? deposit.required)}
+                </span>
+              </li>
+            ) : null}
             {cancelled ? null : (
               <li className={styles.row}>
                 <span className={styles.rowLabel}>Salonda ödenecek</span>
@@ -211,37 +298,9 @@ export function AppointmentView({
           </ul>
         </section>
 
-        {active ? (
-          <section className={styles.card} aria-labelledby="plan-baslik">
-            <h2 id="plan-baslik" className={styles.cardTitle}>
-              Plan değişti mi?
-            </h2>
-            <p className={styles.text}>{planText(appointment)}</p>
-            <div className={styles.planActions}>
-              {appointment.canReschedule ? (
-                <BookingButton
-                  variant="secondary"
-                  size="md"
-                  block
-                  icon={<CalendarClock size={18} />}
-                  onClick={onReschedule}
-                >
-                  Saati değiştir
-                </BookingButton>
-              ) : null}
-              {appointment.canCancel ? (
-                <BookingButton variant="danger" size="md" block onClick={onCancel}>
-                  Randevuyu iptal et
-                </BookingButton>
-              ) : null}
-              {!appointment.canCancel || !appointment.canReschedule ? (
-                <CallSalon phone={branch.phone} />
-              ) : null}
-            </div>
-          </section>
-        ) : null}
+        {planCard}
 
-        <p className={styles.footnote}>Bu sayfa yalnızca bu bağlantıyı açan kişiye görünür.</p>
+        {footnote}
       </div>
     </main>
   );

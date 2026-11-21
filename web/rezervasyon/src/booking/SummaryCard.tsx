@@ -1,5 +1,7 @@
-import { formatDuration, formatPrice } from '@omvila/ui-web/format';
+import { formatDuration, formatMoney, formatPrice } from '@omvila/ui-web/format';
 import type { ReactNode } from 'react';
+import { minus } from '@/lib/deposit';
+import type { Money } from './booking-api';
 import type { Summary } from './summary';
 import { totalLabel } from './summary';
 import styles from './SummaryCard.module.css';
@@ -12,11 +14,14 @@ interface SummaryCardProps {
   place: string;
   /** Başlığın sağındaki eylem ("Değiştir"). */
   action?: ReactNode;
+  /** Onay ekranında kapora (YROnay.png): "Kapora (havale ile) −150 ₺" ve "Salonda ödenecek" = toplam − kapora. */
+  deposit?: Money | null;
 }
 
 /** Telefon ve Onay ekranlarının özet kartı: tarih/saat, hizmet · personel · fiyat, toplam. */
-export function SummaryCard({ summary, when, place, action }: SummaryCardProps) {
+export function SummaryCard({ summary, when, place, action, deposit = null }: SummaryCardProps) {
   const total = totalLabel(summary);
+  const due = deposit && summary.total ? formatMoney(minus(summary.total, deposit)) : null;
   return (
     <section className={styles.card} aria-label="Randevu özeti">
       <div className={styles.head}>
@@ -36,10 +41,22 @@ export function SummaryCard({ summary, when, place, action }: SummaryCardProps) 
           </li>
         ))}
       </ul>
-      <p className={styles.total}>
+      <p className={deposit ? styles.line : styles.total}>
         <span>Toplam · {formatDuration(summary.durationMinutes)}</span>
         {total ? <span className={styles.amount}>{total}</span> : null}
       </p>
+      {deposit ? (
+        <p className={styles.line}>
+          <span>Kapora (havale ile)</span>
+          <span className={styles.amount}>−{formatMoney(deposit)}</span>
+        </p>
+      ) : null}
+      {due ? (
+        <p className={styles.total}>
+          <span>Salonda ödenecek</span>
+          <span className={styles.amount}>{summary.startingFrom ? `${due}'den` : due}</span>
+        </p>
+      ) : null}
     </section>
   );
 }
