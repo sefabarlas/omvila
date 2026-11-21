@@ -7,6 +7,8 @@ import { createNotificationsFake } from './fake-notifications';
 import type { NotificationsFakeOptions } from './fake-notifications';
 import { createNotificationSettingsFake } from './fake-notification-settings';
 import type { NotificationSettingsFakeOptions } from './fake-notification-settings';
+import { createQueuesFake } from './fake-queues';
+import type { QueuesFakeOptions } from './fake-queues';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -27,6 +29,8 @@ export const ownerPermissions = [
   'customer.edit',
   'report.view',
   'timeoff.request',
+  'waitlist.manage',
+  'walkin.manage',
 ];
 export const staffPermissions = [
   'calendar.view',
@@ -96,6 +100,8 @@ export interface FakeApiOptions {
   notifications?: NotificationsFakeOptions;
   /** Bildirim ve SMS ayarları uçları. */
   notificationSettings?: NotificationSettingsFakeOptions;
+  /** Bekleme listesi ve kapıda sıra uçları. */
+  queues?: QueuesFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -381,7 +387,9 @@ export function fakeFetch({
   customers = {},
   notifications = {},
   notificationSettings = {},
+  queues = {},
 }: FakeApiOptions = {}) {
+  const queuesFake = createQueuesFake(queues);
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
   const notificationsFake = createNotificationsFake(notifications);
@@ -412,6 +420,11 @@ export function fakeFetch({
           .json()
           .catch(() => null),
       );
+    }
+
+    const queuesResponse = await queuesFake(request);
+    if (queuesResponse) {
+      return queuesResponse;
     }
 
     const calendarResponse = await calendarFake(request);

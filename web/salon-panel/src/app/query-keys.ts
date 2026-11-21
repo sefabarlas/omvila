@@ -34,4 +34,8 @@ export const queryKeys = {
     ['customers', brandCustomerId, 'appointments'] as const,
   /** Bildirim paneli (zil): ilk sayfa ve okunmamış sayısı. */
   notifications: () => ['notifications'] as const,
+  /** Bekleme listesi (manageListWaitlist); önek ['waitlist'] bütün şubeleri geçersizler. */
+  waitlist: (branchId: string) => ['waitlist', branchId] as const,
+  /** Kapıda sıra (manageListWalkIns); önek ['walk-ins'] takvim ve Genel bakış sayısını da tazeler. */
+  walkIns: (branchId: string) => ['walk-ins', branchId] as const,
 };

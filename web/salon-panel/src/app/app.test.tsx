@@ -25,6 +25,7 @@ describe('oturum', () => {
       'Genel bakış',
       'Takvim',
       'Müşteriler',
+      'Bekleme listesi',
       'Hizmetler',
       'Personel',
       'Ayarlar',
@@ -49,7 +50,7 @@ describe('oturum', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Takvimim', 'Müşteriler']);
+    ).toEqual(['Takvimim', 'Müşteriler', 'Kapıda sıra']);
     expect(within(nav).getByText('Benim')).toBeTruthy();
     expect(within(nav).queryByText('Yönetim')).toBeNull();
     expect(within(nav).getByText('Personel')).toBeTruthy();
@@ -98,6 +99,7 @@ describe('menü', () => {
       'genel',
       'takvim',
       'musteriler',
+      'bekleme',
       'hizmetler',
       'personel',
       'ayarlar',
@@ -122,6 +124,10 @@ describe('menü', () => {
     expect(activeMenuKey('/', true)).toBe('takvimim');
     expect(activeMenuKey('/takvim', true)).toBe('takvimim');
     expect(activeMenuKey('/takvim')).toBe('takvim');
+    // Kapıda sıra Takvim altında: sahipte Takvim, personelde kendi öğesi (en uzun eşleşme).
+    expect(activeMenuKey('/takvim/kapida-sira')).toBe('takvim');
+    expect(activeMenuKey('/takvim/kapida-sira', true)).toBe('kapida');
+    expect(activeMenuKey('/bekleme')).toBe('bekleme');
     expect(activeMenuKey('/ayarlar/isletme')).toBe('ayarlar');
     expect(activeMenuKey('/musteriler/0193a8f0-0000-7000-8000-00000000c002')).toBe('musteriler');
     expect(activeMenuKey('/musteriler', true)).toBe('musteriler');

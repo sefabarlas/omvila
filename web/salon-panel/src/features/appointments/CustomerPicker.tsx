@@ -35,6 +35,8 @@ interface CustomerPickerProps {
   error?: string | undefined;
   /** Yeni müşteri alanlarının hataları. */
   draftErrors?: { fullName?: string | undefined; phone?: string | undefined };
+  /** Yeni müşteri alanlarının altındaki not (bekleme listesinde kayıtla birlikte açılır). */
+  newCustomerHint?: string;
 }
 
 /** "Derya Şahin · 0532 760 21 18 · 6 ziyaret · son 21 Ekim". */
@@ -57,6 +59,7 @@ export function CustomerPicker({
   today,
   error,
   draftErrors,
+  newCustomerHint = 'Müşteri kartı randevuyla birlikte açılır.',
 }: CustomerPickerProps) {
   const labelId = useId();
   return (
@@ -109,7 +112,7 @@ export function CustomerPicker({
             />
           </div>
           <div className={styles.actions}>
-            <span className={styles.subLabel}>Müşteri kartı randevuyla birlikte açılır.</span>
+            <span className={styles.subLabel}>{newCustomerHint}</span>
             <Button
               size="sm"
               variant="ghost"
