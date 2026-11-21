@@ -135,13 +135,13 @@ internal sealed class CustomerReader(CustomersDbContext db)
 
         if (digits.Length == LastDigitsSearchLength)
         {
-            return rows.Where(r => r.PhoneE164.EndsWith(digits));
+            return rows.Where(r => r.PhoneE164 != null && r.PhoneE164.EndsWith(digits));
         }
 
         if (digits.Length >= MinPartialPhoneDigits)
         {
             var part = digits.TrimStart('0');
-            return rows.Where(r => r.PhoneE164.Contains(part));
+            return rows.Where(r => r.PhoneE164 != null && r.PhoneE164.Contains(part));
         }
 
         return rows.Where(_ => false);

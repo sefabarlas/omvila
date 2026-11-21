@@ -17,6 +17,10 @@ internal sealed class SchedulingDbContext(DbContextOptions<SchedulingDbContext> 
 
     public DbSet<AppointmentAccessCode> AppointmentAccessCodes => Set<AppointmentAccessCode>();
 
+    public DbSet<WalkInTicket> WalkInTickets => Set<WalkInTicket>();
+
+    public DbSet<BranchQueueCounter> BranchQueueCounters => Set<BranchQueueCounter>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

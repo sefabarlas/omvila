@@ -170,7 +170,8 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         return (result.Status, result.Body.ValueKind == System.Text.Json.JsonValueKind.Undefined ? string.Empty : result.Body.GetRawText());
     }
 
-    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu.
+    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu,
+    // kapıda sıra bileti.
     // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
@@ -206,6 +207,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             allowOutsideWorkingHours = true,
         }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
         appointment.Status.ShouldBe(201, appointment.Body.ToString());
+        var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
         using var csv = new MultipartFormDataContent { { new StringContent("Ad;Telefon\nDerya Şahin;05550002118\n"), "file", "musteriler.csv" } };
         var import = await _api.SendRawAsync(HttpMethod.Post, "/api/v1/manage/customers/imports", csv, token,
             new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
@@ -221,6 +223,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["staffId"] = staffId,
             ["overrideId"] = overrideId,
             ["timeOffId"] = timeOff.Body.GetProperty("timeOff").GetProperty("id").GetString()!,
+            ["ticketId"] = ticketId,
         };
     }
 

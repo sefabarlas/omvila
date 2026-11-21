@@ -14,6 +14,7 @@ using Omvila.Modules.Scheduling.Features.Completion;
 using Omvila.Modules.Scheduling.Features.Deposits;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
+using Omvila.Modules.Scheduling.Features.WalkIns;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
 using Omvila.Modules.Scheduling.Infrastructure.ConflictGuard;
@@ -57,6 +58,9 @@ public static class SchedulingModule
         services.AddScoped<ApprovalQueueReader>();
         services.AddScoped<DepositReceipts>();
         services.AddScoped<DepositFollowUps>();
+        services.AddScoped<BranchQueueNumbers>();
+        services.AddScoped<WalkInTickets>();
+        services.AddScoped<WalkInQueueReader>();
         services.AddScoped<AppointmentCompletions>();
         services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
             o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
@@ -79,6 +83,7 @@ public static class SchedulingModule
         ManageAppointmentEndpoints.Map(app);
         ApprovalEndpoints.Map(app);
         DepositEndpoints.Map(app);
+        WalkInEndpoints.Map(app);
         CompletionEndpoints.Map(app);
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);

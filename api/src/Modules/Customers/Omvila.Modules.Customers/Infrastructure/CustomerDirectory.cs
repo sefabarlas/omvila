@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using NodaTime;
 using Omvila.Modules.Customers.Contracts;
 using Omvila.Modules.Customers.Domain;
 using Omvila.SharedKernel;
@@ -7,7 +8,7 @@ using ContractConsentType = Omvila.Modules.Customers.Contracts.ConsentType;
 
 namespace Omvila.Modules.Customers.Infrastructure;
 
-internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry registry, IIdGenerator ids) : ICustomerDirectory
+internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry registry, IIdGenerator ids, IClock clock) : ICustomerDirectory
 {
     public async Task<EnsuredBrandCustomer> EnsureBrandCustomerAsync(EnsureBrandCustomerRequest request, CancellationToken ct)
     {
@@ -16,6 +17,18 @@ internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry 
         var (card, created) = await registry.EnsureCardAsync(request.BrandId, customer.Id, request.FullName, ToDomain(request.Source), ct);
         await db.SaveChangesAsync(ct);
         return new EnsuredBrandCustomer(card.Id, customer.Id, created, card.IsBlocked, card.NoShowCount);
+    }
+
+    public async Task<EnsuredBrandCustomer> CreateWithoutPhoneAsync(Guid brandId, string fullName, CustomerSource source, CancellationToken ct)
+    {
+        var now = clock.GetCurrentInstant();
+        var customer = Customer.CreateWithoutPhone(ids.New(), fullName, now);
+        var card = BrandCustomer.Create(
+            ids.New(), brandId, customer.Id, customer.FullName, birthYear: null, notes: null, ToDomain(source), appointmentSmsEnabled: true, now);
+        db.Customers.Add(customer);
+        db.BrandCustomers.Add(card);
+        await db.SaveChangesAsync(ct);
+        return new EnsuredBrandCustomer(card.Id, customer.Id, Created: true, card.IsBlocked, card.NoShowCount);
     }
 
     public async Task<IReadOnlyDictionary<Guid, CustomerDisplayInfo>> GetDisplayInfoAsync(

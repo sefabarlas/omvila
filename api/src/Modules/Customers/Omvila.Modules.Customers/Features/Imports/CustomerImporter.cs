@@ -57,7 +57,7 @@ internal sealed class CustomerImporter(
         }
 
         var import = parsed.Value;
-        var registered = await RegisteredPhonesAsync(brandId, [.. import.Rows.Select(r => r.PhoneE164)], ct);
+        var registered = await RegisteredPhonesAsync(brandId, [.. import.Rows.Select(r => (string?)r.PhoneE164)], ct);
         var toMerge = import.Rows.Count(r => registered.Contains(r.PhoneE164));
         var preview = CustomerImport.Preview(
             ids.New(), brandId, Path.GetFileName(file.FileName), import.TotalRows, import.Rows.Count - toMerge, toMerge, import.InvalidRows,
@@ -109,8 +109,8 @@ internal sealed class CustomerImporter(
 
     private async Task<(int Created, int Merged)> ApplyAsync(Guid brandId, List<ImportRow> rows, bool sendInfoSms, Instant now, CancellationToken ct)
     {
-        var phones = rows.Select(r => r.PhoneE164).ToList();
-        var customers = await db.Customers.Where(c => phones.Contains(c.PhoneE164)).ToDictionaryAsync(c => c.PhoneE164, StringComparer.Ordinal, ct);
+        var phones = rows.Select(r => (string?)r.PhoneE164).ToList();
+        var customers = await db.Customers.Where(c => c.PhoneE164 != null && phones.Contains(c.PhoneE164)).ToDictionaryAsync(c => c.PhoneE164!, StringComparer.Ordinal, ct);
         var customerIds = customers.Values.Select(c => c.Id).ToList();
         var cards = await db.BrandCustomers.Where(b => b.BrandId == brandId && customerIds.Contains(b.CustomerId)).ToListAsync(ct);
         var mergedTargets = cards.Where(c => c.MergedIntoId is not null).Select(c => c.MergedIntoId!.Value).ToList();
@@ -149,11 +149,11 @@ internal sealed class CustomerImporter(
     }
 
     /// <summary>Markada (birleşmiş kartlar kalan karta giderek) kartı olan numaralar; anonim kartlar gerçek numarayı taşımaz.</summary>
-    private async Task<HashSet<string>> RegisteredPhonesAsync(Guid brandId, List<string> phones, CancellationToken ct) =>
+    private async Task<HashSet<string>> RegisteredPhonesAsync(Guid brandId, List<string?> phones, CancellationToken ct) =>
         [.. await (from b in db.BrandCustomers.AsNoTracking()
                    join c in db.Customers.AsNoTracking() on b.CustomerId equals c.Id
-                   where b.BrandId == brandId && phones.Contains(c.PhoneE164)
-                   select c.PhoneE164).ToListAsync(ct)];
+                   where b.BrandId == brandId && c.PhoneE164 != null && phones.Contains(c.PhoneE164)
+                   select c.PhoneE164!).ToListAsync(ct)];
 
     private static PhoneNumber Phone(string e164) =>
         PhoneNumber.TryParse(e164, out var phone) ? phone : throw new DomainException("Önizlemedeki telefon çözülemedi.");

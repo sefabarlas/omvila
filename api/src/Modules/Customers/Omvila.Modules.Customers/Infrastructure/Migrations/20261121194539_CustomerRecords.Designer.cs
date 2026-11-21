@@ -244,7 +244,6 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         .HasColumnName("language_code");
 
                     b.Property<string>("PhoneE164")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_e164");

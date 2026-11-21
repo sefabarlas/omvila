@@ -5,7 +5,9 @@ namespace Omvila.Modules.Customers.Domain;
 
 /// <summary>
 /// Telefonla tanınan gerçek kişi (alan-modeli.md § Customer). Bir markaya ait değildir; markalar bu kaydın tamamını
-/// görmez, yalnız kendi <see cref="BrandCustomer"/> kartını görür. Telefon benzersizdir.
+/// görmez, yalnız kendi <see cref="BrandCustomer"/> kartını görür. Telefon benzersizdir. Telefonu yalnız kapıda sıradan
+/// telefonsuz başlatılan müşteride boştur (alan-modeli.md § WalkInTicket; T-86 W6): o kişi telefonla bulunamaz, yalnız
+/// açıldığı markanın kartıyla görünür.
 /// </summary>
 internal sealed class Customer
 {
@@ -23,7 +25,7 @@ internal sealed class Customer
 
     public Guid Id { get; private set; }
 
-    public string PhoneE164 { get; private set; } = string.Empty;
+    public string? PhoneE164 { get; private set; }
 
     public string FullName { get; private set; } = string.Empty;
 
@@ -50,6 +52,19 @@ internal sealed class Customer
             BirthYear = birthYear,
             LanguageCode = DefaultLanguageCode,
             IsVerified = isVerified,
+            CreatedUtc = now,
+        };
+    }
+
+    /// <summary>Kapıda sıradan telefonsuz başlatılan müşteri (T-86 W6): telefonsuz, doğrulanmamış.</summary>
+    public static Customer CreateWithoutPhone(Guid id, string fullName, Instant now)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        return new Customer
+        {
+            Id = id,
+            FullName = fullName.Trim(),
+            LanguageCode = DefaultLanguageCode,
             CreatedUtc = now,
         };
     }
