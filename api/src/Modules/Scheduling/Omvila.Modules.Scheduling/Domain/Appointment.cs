@@ -208,9 +208,49 @@ internal sealed class Appointment
     }
 
     /// <summary>
+    /// A2: salon onay bekleyen talebi onaylar. Tutma süresi geçmişse (otomatik iptal işi henüz çalışmamış olsa da) 409
+    /// <c>hold_expired</c> (T-62 (1)); sınır tam eşitlikte geçmiş sayılır (A5 <c>HoldExpiresUtc &lt;= şimdi</c>). Kapora
+    /// (<c>waiveDeposit</c>) Dilim 4'tedir.
+    /// </summary>
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A2)
+    public Result Approve(Instant now, Guid? userId)
+    {
+        var pending = EnsureLivePending(now);
+        if (!pending.IsSuccess)
+        {
+            return pending;
+        }
+
+        Status = AppointmentStatus.Confirmed;
+        ConfirmedUtc = now;
+        HoldExpiresUtc = null;
+        HoldReason = null;
+        Touch(now, userId);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// A4: salon talebi reddeder. Neden sabit <c>DeclinedBySalon</c>, iptal eden Salon, not yok (sözleşme gövdesiz; T-62 (1)).
+    /// Segmentler pasifleşir, saat boşalır. Müşteriye "iptal" denir; "reddedildi" yalnız iç neden adıdır.
+    /// </summary>
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A4)
+    public Result Decline(Instant now, Guid? userId)
+    {
+        var pending = EnsureLivePending(now);
+        if (!pending.IsSuccess)
+        {
+            return pending;
+        }
+
+        Cancel(Domain.CancelledBy.Salon, Domain.CancellationReason.DeclinedBySalon, note: null, userId, now);
+        return Result.Success();
+    }
+
+    /// <summary>
     /// A5: süresi dolan tutma sistemce iptal edilir. Kapora istenmişse neden <c>DepositNotReceived</c>, değilse
-    /// <c>ApprovalExpired</c>. Yazma yolu, çakışma denetiminden önce aynı personelin süresi dolmuş tutmalarını bununla
-    /// satır içinde iptal eder (durum-makinesi.md § Sistem işleri); bildirim ve bekleme listesi yan etkileri Dilim 3–4'tedir.
+    /// <c>ApprovalExpired</c>. <c>ExpireAppointmentHolds</c> işi ve yazma yolu (çakışma denetiminden önce aynı personelin
+    /// süresi dolmuş tutmaları satır içinde; durum-makinesi.md § Sistem işleri) bunu çağırır ve
+    /// <c>AppointmentApprovalExpired</c> olayını yayımlar. Bekleme listesi yan etkisi Dilim 5'tedir.
     /// </summary>
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A5)
     public Result ExpireHold(Instant now)
@@ -286,11 +326,14 @@ internal sealed class Appointment
 
     /// <summary>
     /// A14: saat (ve gerekirse personel) değişikliği. <paramref name="plan"/> kalemleri mevcut kalemlerle aynı sırada ve
-    /// aynı hizmetlerdedir. Müşteri <paramref name="rescheduleCutoff"/> sınırına tabidir, salon değildir (S-04). Durum
-    /// aynı kalır; onaylı salonda müşteri değişikliğinin onaya düşmesi (A13) Dilim 3'tedir.
+    /// aynı hizmetlerdedir. Müşteri <paramref name="rescheduleCutoff"/> sınırına yalnız onaylı randevuda tabidir (onay
+    /// bekleyen talepte sınır yok; T-52 (6)), salon hiç tabi değildir (S-04). Durum aynı kalır; yalnız müşteri değiştirdiğinde
+    /// ve yeni plan onay istiyorsa (<paramref name="approvalHold"/> dolu) A13: randevu yeniden <c>PendingApproval</c> olur,
+    /// yeni tutma şimdi + süre (onay bekleyen talepte süre yeniden başlar; S-11).
     /// </summary>
-    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A14)
-    public Result Reschedule(AppointmentPlan plan, ChangeActor actor, Instant now, Duration rescheduleCutoff, IIdGenerator ids, Guid? userId)
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A13, A14)
+    public Result Reschedule(
+        AppointmentPlan plan, ChangeActor actor, Instant now, Duration rescheduleCutoff, IIdGenerator ids, Guid? userId, Duration? approvalHold = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(ids);
@@ -299,7 +342,7 @@ internal sealed class Appointment
             return InvalidTransition();
         }
 
-        if (actor == ChangeActor.Customer && StartUtc - now < rescheduleCutoff)
+        if (actor == ChangeActor.Customer && Status == AppointmentStatus.Confirmed && StartUtc - now < rescheduleCutoff)
         {
             return Error.Conflict(ErrorCodes.CutoffPassed);
         }
@@ -317,6 +360,13 @@ internal sealed class Appointment
 
         StartUtc = _items.Min(i => i.StartUtc);
         EndUtc = _items.Max(i => i.EndUtc);
+        if (actor == ChangeActor.Customer && approvalHold is { } hold)
+        {
+            Status = AppointmentStatus.PendingApproval;
+            HoldExpiresUtc = now + hold;
+            HoldReason = Domain.HoldReason.Approval;
+        }
+
         Touch(now, userId);
         return Result.Success();
     }
@@ -365,6 +415,17 @@ internal sealed class Appointment
     {
         UpdatedUtc = now;
         UpdatedByUserId = userId;
+    }
+
+    /// <summary>A2/A4 koruması: yalnız onay bekleyen ve tutma süresi geçmemiş talep yanıtlanır.</summary>
+    private Result EnsureLivePending(Instant now)
+    {
+        if (Status != AppointmentStatus.PendingApproval)
+        {
+            return InvalidTransition();
+        }
+
+        return HoldExpiresUtc is { } expires && expires <= now ? Error.Conflict(ErrorCodes.HoldExpired) : Result.Success();
     }
 
     private static Error InvalidTransition() => Error.Conflict(ErrorCodes.InvalidStateTransition);

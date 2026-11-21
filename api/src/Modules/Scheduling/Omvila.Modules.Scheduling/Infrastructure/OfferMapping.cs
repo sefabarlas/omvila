@@ -17,6 +17,7 @@ internal static class OfferMapping
             offer.StaffSurcharge,
             offer.BufferBeforeMinutes,
             offer.BufferAfterMinutes,
-            [.. offer.Stages.Select(s => new PlannedStage(s.Name, s.DurationMinutes, s.StaffBusy))]);
+            [.. offer.Stages.Select(s => new PlannedStage(s.Name, s.DurationMinutes, s.StaffBusy))],
+            offer.RequiresApproval);
     }
 }
