@@ -156,6 +156,15 @@
   --tabbar: 64px;
   --saat-dilimi: 44px;
   --ekran-genislik: 390px;
+  --sure-anlik: 80ms;
+  --sure-hizli: 150ms;
+  --sure-cikis: 180ms;
+  --sure-orta: 240ms;
+  --sure-yavas: 360ms;
+  --sure-azaltilmis: 120ms;
+  --egri-standart: cubic-bezier(0.2, 0, 0, 1);
+  --egri-giris: cubic-bezier(0, 0, 0, 1);
+  --egri-cikis: cubic-bezier(0.3, 0, 1, 1);
   --yazi-aile-sans: "Plus Jakarta Sans", "Plus Jakarta Sans TR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --yazi-buyuk-baslik-boyut: 34px;
   --yazi-buyuk-baslik-satir: 38px;

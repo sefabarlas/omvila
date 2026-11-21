@@ -16,6 +16,7 @@ interface TypeStyle {
   lineHeight: string;
   fontWeight: number;
   letterSpacing?: string;
+  usage?: string;
 }
 
 export interface TokenSource {
@@ -30,6 +31,8 @@ export interface TokenSource {
   radius: { tokens: Token<string>[] };
   shadow: { tokens: Token<Themed>[] };
   boyut?: { tokens: Token<string>[] };
+  /** Süre (`80ms`) ve eğri (`cubic-bezier(…)`) tokenları; yalnız mobil ölçekte. */
+  hareket?: { tokens: Token<string>[] };
 }
 
 export const scales = ['marka', 'panel', 'mobil'] as const;
@@ -94,6 +97,7 @@ export function generateCss(scale: Scale, source: TokenSource): string {
     ...source.spacing.tokens,
     ...source.radius.tokens,
     ...(source.boyut?.tokens ?? []),
+    ...(source.hareket?.tokens ?? []),
   ]) {
     light.push(`--${token.name}: ${token.value};`);
   }
@@ -145,6 +149,7 @@ export function generateTypeScript(sources: Record<Scale, TokenSource>): string 
       bosluk: s.spacing.tokens.map((t) => t.name),
       kose: s.radius.tokens.map((t) => t.name),
       boyut: s.boyut?.tokens.map((t) => t.name) ?? [],
+      hareket: s.hareket?.tokens.map((t) => t.name) ?? [],
       yazi: s.type.groups.flatMap((g) => g.styles.map((st) => st.name)),
     };
     lines.push(`export const ${scale}Tokens = {`);

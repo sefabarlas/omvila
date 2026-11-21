@@ -1,0 +1,34 @@
+# OMVILA ortak Flutter paketi: tema (design-tokens'dan üretilir), widget'lar, biçimlendirme, zaman, hata
+# mesajları ve API katmanı. Kurallar: packages/omvila_ui/AGENTS.md.
+name: omvila_ui
+description: OMVILA mobil uygulamalarının ortak teması, widget'ları ve API katmanı
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  dio: ^5.7.0
+  flutter:
+    sdk: flutter
+  omvila_api:
+    path: ../api-client-dart
+  timezone: ^0.10.0
+
+dev_dependencies:
+  alchemist: ^0.12.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: fonts/PlusJakartaSans-Latin-Variable.ttf
+    - family: PlusJakartaSansTR
+      fonts:
+        - asset: fonts/PlusJakartaSans-LatinExt-Variable.ttf
