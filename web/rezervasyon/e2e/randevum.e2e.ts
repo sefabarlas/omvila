@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { PublicAppointment } from '../src/appointment/appointment-api';
-import { accessCode, etag } from '../src/test/appointment-fixtures';
+import { accessCode, etag, requestCancelledFixture } from '../src/test/appointment-fixtures';
 import { appointmentApi } from './support';
 
 // SMS bağlantısı (/r/{kod}): Randevum, saat değiştir ve iptal. Ekran görüntüleri e2e-results/ekranlar altına
@@ -37,6 +37,16 @@ const screens: ScreenCase[] = [
     ready: async (page) => {
       await expect(page.getByText('Randevunuz · Onay bekliyor')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeVisible();
+    },
+  },
+  {
+    // Dilim 3: salonun onaylayamadığı talep müşteriye "İptal" (kriter 3; tasarımda ayrı görüntü yok).
+    name: 'RandevumTalepIptal',
+    path: `/r/${accessCode}`,
+    appointment: requestCancelledFixture('DeclinedBySalon'),
+    ready: async (page) => {
+      await expect(page.getByText('Randevunuz · İptal')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Talebiniz iptal edildi' })).toBeVisible();
     },
   },
   {

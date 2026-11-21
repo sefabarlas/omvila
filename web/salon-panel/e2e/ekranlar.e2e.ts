@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { calendarDemo, demoSunday } from './calendar-demo';
+import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
 
@@ -25,7 +25,13 @@ const customerTable = (page: Page) =>
   expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible();
 
 const screens: ScreenCase[] = [
-  { path: '/', name: 'GenelBakis', heading: /^(Hoş geldiniz|Günaydın|İyi günler|İyi akşamlar)/ },
+  {
+    path: '/',
+    name: 'GenelBakis',
+    heading: 'İyi günler, Elif',
+    setup: overviewDemo,
+    act: (page) => expect(page.getByText('2 online talep onay bekliyor')).toBeVisible(),
+  },
   { path: '/hizmetler', name: 'Hizmetler', heading: 'Hizmetler' },
   { path: '/personel', name: 'Personel', heading: 'Personel' },
   { path: '/ayarlar/isletme', name: 'AyarlarIsletme', heading: 'Ayarlar' },

@@ -27,3 +27,7 @@ Onaylı çalışan salonda online randevu talep olarak düşer, salon 120 dk iç
 9. Her SMS şablonu en uzun değerlerle ≤ 155 GSM-7 Türkçe karakter (test).
 10. Teslim raporu webhook'u imzasız istekleri reddeder; teslim edilen mesaj `Sent`, başarısızlar üstel geri çekilmeyle tekrar denenir, 5. denemede `Failed`.
 11. Gönderen adı başvurusu `Pending`; onaylanana kadar mesajlar `OMVILA` adıyla gider.
+
+## Uçtan uca ve tasarım
+- Kritik akış 3 (`test-stratejisi.md`): `web/rezervasyon/e2e/onay.e2e.ts`, `web/salon-panel/e2e/onay.e2e.ts`; müşteri SMS'leri `ApprovalTests`.
+- Tasarım karşılaştırması: [dilim-03-tasarim-karsilastirma.md](dilim-03-tasarim-karsilastirma.md).

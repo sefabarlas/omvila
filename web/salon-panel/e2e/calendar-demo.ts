@@ -176,28 +176,30 @@ export function demoAppointment(example: Record<string, unknown>) {
   };
 }
 
+/** Tam yetkili sahip oturumunun izinleri. */
+export const ownerPermissions = [
+  'settings.manage',
+  'service.manage',
+  'staff.manage',
+  'calendar.view',
+  'calendar.view.all-staff',
+  'appointment.create',
+  'appointment.update',
+  'appointment.cancel',
+  'appointment.approve',
+  'appointment.checkin',
+  'customer.view',
+  'customer.phone.view',
+  'customer.edit',
+  'report.view',
+];
+
+export const ownerMembership = { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId };
+
 /** Takvim, randevu ayrıntısı ve tam yetkili sahip oturumu (Main, HaftaTakvim, TakvimKapali, RandevuOnayli). */
 export async function calendarDemo(page: Page) {
   await page.clock.setFixedTime(demoNow);
-  await sessionAs(page, {
-    permissions: [
-      'settings.manage',
-      'service.manage',
-      'staff.manage',
-      'calendar.view',
-      'calendar.view.all-staff',
-      'appointment.create',
-      'appointment.update',
-      'appointment.cancel',
-      'appointment.approve',
-      'appointment.checkin',
-      'customer.view',
-      'customer.phone.view',
-      'customer.edit',
-      'report.view',
-    ],
-    membership: { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId },
-  });
+  await sessionAs(page, { permissions: ownerPermissions, membership: ownerMembership });
   await page.route(/\/api\/v1\/manage\/calendar\?/, (route) =>
     route.request().method() === 'OPTIONS'
       ? route.fallback()
@@ -214,6 +216,19 @@ export async function calendarDemo(page: Page) {
       corsJson(demoAppointment((await response.json()) as Record<string, unknown>)),
     );
   });
+}
+
+/**
+ * Genel bakış (GenelBakis): takvim demosu + kurulumu bitmiş salon. Prism'in oturum örneği Onboarding döner; genel
+ * bakış o hâlde kurulum adımlarını (KayitKurulum) gösterir. Onay kuyruğu Prism örneğinden (Pınar Yalçın, Deniz Acar).
+ */
+export async function overviewDemo(page: Page) {
+  await calendarDemo(page);
+  await sessionAs(page, (session) => ({
+    permissions: ownerPermissions,
+    membership: ownerMembership,
+    brand: { ...(session.brand as Record<string, unknown>), status: 'Active' },
+  }));
 }
 
 /** Örnek haftanın kapalı pazarı. */
