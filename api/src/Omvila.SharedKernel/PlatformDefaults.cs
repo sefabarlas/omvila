@@ -33,4 +33,13 @@ public static class PlatformDefaults
 
     /// <summary>musaitlik.md § Katman 2: randevu yazma kilidinin zaman aşımı (lock_timeout = 5s); aşılırsa 503 try_again.</summary>
     public const int AppointmentLockTimeoutSeconds = 5;
+
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: ReminderOffsetsMinutes [1440, 120] (marka ayarı ekranı D3'te; o zamana dek herkes için bu değer).</summary>
+    public static readonly IReadOnlyList<int> ReminderOffsetsMinutes = [1440, 120];
+
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: QuietHoursLocal başlangıcı (22:00, şube yerel).</summary>
+    public const int QuietHoursStartHour = 22;
+
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: QuietHoursLocal bitişi (08:00; müşteri hatırlatması bu saate kayar).</summary>
+    public const int QuietHoursEndHour = 8;
 }

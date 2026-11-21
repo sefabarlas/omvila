@@ -1,14 +1,20 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Omvila.Infrastructure.Jobs;
+using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Infrastructure;
+using Omvila.Modules.Notifications.IntegrationEventHandlers;
 using Omvila.Modules.Notifications.Jobs;
+using Omvila.Modules.Scheduling.Contracts;
 
 namespace Omvila.Modules.Notifications;
 
-/// <summary>Notifications modülü girişi (asgari D1 kapsamı: telefona SMS, sistem şablonu, sahte sağlayıcı).</summary>
+/// <summary>
+/// Notifications modülü girişi: telefona SMS (sistem şablonu, sahte sağlayıcı), kontör defteri; D2'de randevu olaylarından
+/// müşteri SMS'leri ve zamanlanmış hatırlatmalar (Scheduling olayları; Customers ve Tenancy sözleşmeleriyle).
+/// </summary>
 public static class NotificationsModule
 {
     public static IServiceCollection AddNotificationsModule(this IServiceCollection services, IConfiguration configuration)
@@ -20,6 +26,11 @@ public static class NotificationsModule
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
         services.AddScoped<ICreditLedger, CreditLedger>();
         services.AddPeriodicJob<DispatchNotifications>();
+        services.AddScoped<AppointmentSms>();
+        services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();
+        services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
+        services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();
+        services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, CancelRemindersOnCustomerCancel>();
         return services;
     }
 }
