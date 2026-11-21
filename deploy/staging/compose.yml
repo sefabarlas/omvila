@@ -24,6 +24,7 @@ x-api-env: &api-env
   Auth__SigningKeys__0__Kid: ${AUTH_SIGNING_KEY_ID:?AUTH_SIGNING_KEY_ID}
   Auth__SigningKeys__0__PrivateKeyPem: ${AUTH_SIGNING_KEY_PEM:?AUTH_SIGNING_KEY_PEM}
   Auth__Otp__HmacKey: ${AUTH_OTP_HMAC_KEY:?AUTH_OTP_HMAC_KEY}
+  Tenancy__IbanEncryptionKey: ${TENANCY_IBAN_KEY:?TENANCY_IBAN_KEY}
   Auth__PanelSignInUrl: ${SALON_URL:-https://salon.test.omvila.com.tr}/giris
   Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}/
   Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://salon.test.omvila.com.tr}
