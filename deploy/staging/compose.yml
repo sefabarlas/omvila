@@ -24,10 +24,10 @@ x-api-env: &api-env
   Auth__SigningKeys__0__Kid: ${AUTH_SIGNING_KEY_ID:?AUTH_SIGNING_KEY_ID}
   Auth__SigningKeys__0__PrivateKeyPem: ${AUTH_SIGNING_KEY_PEM:?AUTH_SIGNING_KEY_PEM}
   Auth__Otp__HmacKey: ${AUTH_OTP_HMAC_KEY:?AUTH_OTP_HMAC_KEY}
-  Auth__PanelSignInUrl: ${SALON_URL:-https://test.salon.omvila.com.tr}/giris
-  Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}/
-  Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://test.salon.omvila.com.tr}
-  Cors__Surfaces__Public__Origins__0: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}
+  Auth__PanelSignInUrl: ${SALON_URL:-https://salon.test.omvila.com.tr}/giris
+  Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}/
+  Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://salon.test.omvila.com.tr}
+  Cors__Surfaces__Public__Origins__0: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}
   # İstemci IP'si ve şeması Caddy'nin X-Forwarded-For/-Proto başlıklarından (OTP IP sınırı, T-07). Yalnız iç ağdan
   # gelen başlığa güvenilir; ağ aşağıda sabit alt ağla tanımlıdır (T-76).
   ForwardedHeaders__KnownNetworks__0: ${STAGING_SUBNET:-172.30.0.0/24}
@@ -100,7 +100,7 @@ services:
       context: ../..
       dockerfile: web/salon-panel/Dockerfile
       args:
-        VITE_API_URL: ${API_URL:-https://test.api.omvila.com.tr}
+        VITE_API_URL: ${API_URL:-https://api.test.omvila.com.tr}
     restart: unless-stopped
 
   rezervasyon:
@@ -109,8 +109,8 @@ services:
       context: ../..
       dockerfile: web/rezervasyon/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${API_URL:-https://test.api.omvila.com.tr}
-        NEXT_PUBLIC_SITE_URL: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}
+        NEXT_PUBLIC_API_URL: ${API_URL:-https://api.test.omvila.com.tr}
+        NEXT_PUBLIC_SITE_URL: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}
         NEXT_PUBLIC_PRIVACY_NOTICE_URL: ${PRIVACY_NOTICE_URL:-}
         NEXT_PUBLIC_PRIVACY_NOTICE_VERSION: ${PRIVACY_NOTICE_VERSION:-}
     restart: unless-stopped
@@ -130,11 +130,11 @@ services:
     environment:
       CADDY_HTTP_PORT: ${CADDY_HTTP_PORT:-80}
       CADDY_HTTPS_PORT: ${CADDY_HTTPS_PORT:-443}
-      SALON_HOST: ${SALON_HOST:-test.salon.omvila.com.tr}
-      API_HOST: ${API_HOST:-test.api.omvila.com.tr}
-      RANDEVU_HOST: ${RANDEVU_HOST:-test.randevu.omvila.com.tr}
-      SMS_HOST: ${SMS_HOST:-test.sms.omvila.com.tr}
-      POSTA_HOST: ${POSTA_HOST:-test.posta.omvila.com.tr}
+      SALON_HOST: ${SALON_HOST:-salon.test.omvila.com.tr}
+      API_HOST: ${API_HOST:-api.test.omvila.com.tr}
+      RANDEVU_HOST: ${RANDEVU_HOST:-randevu.test.omvila.com.tr}
+      SMS_HOST: ${SMS_HOST:-sms.test.omvila.com.tr}
+      POSTA_HOST: ${POSTA_HOST:-posta.test.omvila.com.tr}
       SMS_LOG_PATH: ${SMS_LOG_PATH:-/dev/sms}
       BASIC_AUTH_USER: ${BASIC_AUTH_USER:?BASIC_AUTH_USER}
       BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:?BASIC_AUTH_HASH}
@@ -146,7 +146,7 @@ services:
       default:
         # Rezervasyon sunucusunun (SSR) API çağrısı kamu adresine gider; iç ağda doğrudan Caddy'ye çözülür.
         aliases:
-          - ${API_HOST:-test.api.omvila.com.tr}
+          - ${API_HOST:-api.test.omvila.com.tr}
     depends_on:
       - api
       - salon-panel

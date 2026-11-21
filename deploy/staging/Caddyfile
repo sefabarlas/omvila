@@ -20,13 +20,13 @@
 	}
 }
 
-{$SALON_HOST:test.salon.omvila.com.tr} {
+{$SALON_HOST:salon.test.omvila.com.tr} {
 	import common
 	import protected
 	reverse_proxy salon-panel:8080
 }
 
-{$API_HOST:test.api.omvila.com.tr} {
+{$API_HOST:api.test.omvila.com.tr} {
 	import common
 	# SMS günlüğü yalnız kendi korumalı adresinden açılır; herkese açık API adresinden erişilmez (OTP kodları içerir).
 	@smslog path {$SMS_LOG_PATH:/dev/sms} {$SMS_LOG_PATH:/dev/sms}/*
@@ -34,7 +34,7 @@
 	reverse_proxy api:8080
 }
 
-{$RANDEVU_HOST:test.randevu.omvila.com.tr} {
+{$RANDEVU_HOST:randevu.test.omvila.com.tr} {
 	import common
 	import protected
 	reverse_proxy rezervasyon:3000
@@ -42,7 +42,7 @@
 
 # SMS günlüğü sayfası API kapsayıcısında sunulur (sahte sağlayıcının infra.dev_sms_log kayıtları).
 # SMS_LOG_PATH: API'deki yol (/dev/sms; Sms:DevLog ayarları, T-76).
-{$SMS_HOST:test.sms.omvila.com.tr} {
+{$SMS_HOST:sms.test.omvila.com.tr} {
 	import common
 	import protected
 	@root path /
@@ -50,7 +50,7 @@
 	reverse_proxy api:8080
 }
 
-{$POSTA_HOST:test.posta.omvila.com.tr} {
+{$POSTA_HOST:posta.test.omvila.com.tr} {
 	import common
 	import protected
 	reverse_proxy mailpit:8025
