@@ -1,4 +1,4 @@
-import { ApiProblem } from '@omvila/api-client-ts';
+import { ApiProblem, idempotencyKey } from '@omvila/api-client-ts';
 import { errorMessage } from '@omvila/ui-web/errors';
 import {
   formatDate,
@@ -12,15 +12,23 @@ import { displayStatus } from '@omvila/ui-web/status';
 import { addDays, toBranchDate } from '@omvila/ui-web/time';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { CalendarX2, Check, Clock, UserCheck } from 'lucide-react';
+import { Banknote, CalendarX2, Check, Clock, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useNow } from '@/app/clock';
 import { useSession } from '@/app/session';
 import { channelLabels } from '@/features/appointments/labels';
 import approvalStyles from '@/features/approvals/Approvals.module.css';
-import { HoldNotice, PendingApprovalDetails } from '@/features/approvals/PendingApprovalDetails';
+import {
+  AppointmentHistory,
+  HoldNotice,
+  PendingApprovalDetails,
+} from '@/features/approvals/PendingApprovalDetails';
 import { remainingMinutes } from '@/features/approvals/remaining';
+import { useMarkDepositReceived, useRemindDeposit } from '@/features/deposits/api';
+import { DepositSummary, PendingDepositSection } from '@/features/deposits/DepositSection';
+import { isDepositAwaited } from '@/features/deposits/deposit-view';
+import { RefundDepositModal } from '@/features/deposits/RefundDepositModal';
 import { ConflictBanner } from '@/shared/ConflictBanner';
 import { locativeTime } from '@/shared/turkish';
 import {
@@ -55,6 +63,8 @@ function dayLabel(date: string, today: string): string {
  * "Hizmet ekle" ve "Müşteriye SMS gönder" bu dilimde yok (acik-sorular.md T-54); "Müşteri kartı" kartı açar (T-57).
  * Onay bekleyen talepte (salon-paneli/RandevuPanel) kalan süre şeridi, ücretler, not, geçmiş ve altta Reddet / Onayla
  * (appointment.approve); 409 hold_expired → "Yanıt süresi doldu" şeridi, butonlar kalkar (acik-sorular.md T-67).
+ * Kapora bekleyen talepte (dilim-04 KK5, KK7) kapora bölümü, "Hatırlat", "Kaporasız onayla" ve alt buton "Kapora geldi"
+ * (appointment.deposit.mark); alınmış kaporada "Salon iade etti" (acik-sorular.md T-84).
  */
 export function AppointmentDrawer({ appointmentId, today, onClose }: AppointmentDrawerProps) {
   const api = useApi();
@@ -67,10 +77,15 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   const undo = useUndoNoShow();
   const approve = useApproveAppointment();
   const decline = useDeclineAppointment();
+  const markReceived = useMarkDepositReceived();
+  const remind = useRemindDeposit();
   const now = useNow();
   const [conflict, setConflict] = useState(false);
   const [holdExpired, setHoldExpired] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+  // "Kapora geldi" Payment yazar: yan panel açıkken aynı eylemin tekrarı aynı anahtarla gider.
+  const [receiveKey] = useState(() => idempotencyKey()['Idempotency-Key']);
   const detail = query.data;
 
   const onActionError = (error: unknown) => {
@@ -85,7 +100,13 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
       return;
     }
 
-    if (error instanceof ApiProblem && error.code === 'invalid_state_transition') {
+    // Durum veya kapora sunucuda değişmiş: güncel ayrıntı doğru butonları gösterir (ör. hatırlatma zaten gitmiş).
+    if (
+      error instanceof ApiProblem &&
+      ['invalid_state_transition', 'deposit_required', 'deposit_reminder_already_sent'].includes(
+        error.code,
+      )
+    ) {
       void query.refetch();
     }
 
@@ -130,9 +151,24 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   const showUndo = detail.status === 'NoShow' && date === today && can('appointment.checkin');
   const pending = detail.status === 'PendingApproval';
   const canApprove = can('appointment.approve');
+  // Kapora işaretleme (V5, V7): Owner ve BranchManager; personel görmez.
+  const canMark = can('appointment.deposit.mark');
   const minutesLeft = detail.holdExpiresUtc ? remainingMinutes(detail.holdExpiresUtc, now) : null;
+  // Kapora bekleyen randevuda düz "Onayla" yok: "Kapora geldi" (alt buton) veya "Kaporasız onayla" (kapora bölümü).
+  const depositAwaited = pending && isDepositAwaited(detail.deposit?.status);
+  const canDecide = canApprove || (depositAwaited && canMark);
   const showDecision =
-    pending && canApprove && !holdExpired && (minutesLeft === null || minutesLeft > 0);
+    pending && canDecide && !holdExpired && (minutesLeft === null || minutesLeft > 0);
+  const showHold =
+    pending &&
+    (depositAwaited
+      ? holdExpired || minutesLeft === 0 || !canDecide
+      : minutesLeft !== null || !canApprove || holdExpired);
+  const busy = approve.isPending || decline.isPending || markReceived.isPending || remind.isPending;
+  const decisionButtons = [
+    canApprove ? 'decline' : null,
+    depositAwaited ? (canMark ? 'received' : null) : 'approve',
+  ].filter(Boolean);
   const durationMinutes = Math.round(
     (Date.parse(detail.endUtc) - Date.parse(detail.startUtc)) / 60_000,
   );
@@ -147,60 +183,95 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
   return (
     <>
       <Drawer
-        open={!cancelling}
+        open={!cancelling && !refunding}
         onClose={onClose}
         title={title}
         {...(showDecision
           ? {
               footer: (
-                <div className={approvalStyles.decision}>
-                  <Button
-                    variant="danger"
-                    loading={decline.isPending}
-                    loadingLabel="İptal ediliyor…"
-                    disabled={approve.isPending}
-                    onClick={() => {
-                      decline.mutate(
-                        { detail, input: undefined },
-                        {
-                          onSuccess: () => {
-                            toast.show({
-                              tone: 'basari',
-                              title: 'Talep iptal edildi',
-                              message: 'Müşteriye iptal bildirimi gider.',
-                            });
+                <div
+                  className={
+                    decisionButtons.length > 1 ? approvalStyles.decision : approvalStyles.single
+                  }
+                >
+                  {canApprove ? (
+                    <Button
+                      variant="danger"
+                      loading={decline.isPending}
+                      loadingLabel="İptal ediliyor…"
+                      disabled={busy && !decline.isPending}
+                      onClick={() => {
+                        decline.mutate(
+                          { detail, input: undefined },
+                          {
+                            onSuccess: () => {
+                              toast.show({
+                                tone: 'basari',
+                                title: 'Talep iptal edildi',
+                                message: 'Müşteriye iptal bildirimi gider.',
+                              });
+                            },
+                            onError: onActionError,
                           },
-                          onError: onActionError,
-                        },
-                      );
-                    }}
-                  >
-                    Reddet
-                  </Button>
-                  <Button
-                    variant="primary"
-                    icon={<Check size={16} aria-hidden="true" />}
-                    loading={approve.isPending}
-                    loadingLabel="Onaylanıyor…"
-                    disabled={decline.isPending}
-                    onClick={() => {
-                      approve.mutate(
-                        { detail, input: undefined },
-                        {
-                          onSuccess: () => {
-                            toast.show({
-                              tone: 'basari',
-                              title: 'Randevu onaylandı',
-                              message: 'Müşteriye onay bildirimi gider.',
-                            });
+                        );
+                      }}
+                    >
+                      Reddet
+                    </Button>
+                  ) : null}
+                  {depositAwaited ? (
+                    canMark ? (
+                      <Button
+                        variant="primary"
+                        icon={<Banknote size={16} aria-hidden="true" />}
+                        loading={markReceived.isPending}
+                        loadingLabel="İşaretleniyor…"
+                        disabled={busy && !markReceived.isPending}
+                        onClick={() => {
+                          markReceived.mutate(
+                            { detail, input: { key: receiveKey } },
+                            {
+                              onSuccess: () => {
+                                toast.show({
+                                  tone: 'basari',
+                                  title: 'Kapora geldi olarak işaretlendi',
+                                  message: 'Randevu onaylandı, müşteriye SMS gider.',
+                                });
+                              },
+                              onError: onActionError,
+                            },
+                          );
+                        }}
+                      >
+                        Kapora geldi
+                      </Button>
+                    ) : null
+                  ) : (
+                    <Button
+                      variant="primary"
+                      icon={<Check size={16} aria-hidden="true" />}
+                      loading={approve.isPending}
+                      loadingLabel="Onaylanıyor…"
+                      disabled={busy && !approve.isPending}
+                      onClick={() => {
+                        approve.mutate(
+                          { detail, input: undefined },
+                          {
+                            onSuccess: () => {
+                              toast.show({
+                                tone: 'basari',
+                                title: 'Randevu onaylandı',
+                                message: 'Müşteriye onay bildirimi gider.',
+                              });
+                            },
+                            onError: onActionError,
                           },
-                          onError: onActionError,
-                        },
-                      );
-                    }}
-                  >
-                    Onayla
-                  </Button>
+                        );
+                      }}
+                    >
+                      Onayla
+                    </Button>
+                  )}
                 </div>
               ),
             }
@@ -275,11 +346,12 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
               ].join(' · ')}
             </span>
           </section>
-          {pending && (minutesLeft !== null || !canApprove || holdExpired) ? (
+          {showHold ? (
             <HoldNotice
               minutesLeft={minutesLeft ?? 0}
-              canApprove={canApprove}
+              canApprove={canDecide}
               expired={holdExpired}
+              deposit={depositAwaited}
             />
           ) : null}
           <section className={styles.customerCard} aria-label="Müşteri">
@@ -304,10 +376,56 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
               </Button>
             ) : null}
           </section>
+          {depositAwaited ? (
+            <PendingDepositSection
+              detail={detail}
+              minutesLeft={minutesLeft}
+              showActions={showDecision}
+              canMark={canMark}
+              canApprove={canApprove}
+              busy={busy}
+              reminding={remind.isPending}
+              waiving={approve.isPending}
+              onRemind={() => {
+                remind.mutate(detail.id, {
+                  onSuccess: () => {
+                    toast.show({
+                      tone: 'basari',
+                      title: 'Hatırlatma gönderildi',
+                      message: 'Kapora SMS’i müşteriye yeniden gider.',
+                    });
+                  },
+                  onError: onActionError,
+                });
+              }}
+              onWaive={() => {
+                approve.mutate(
+                  { detail, input: { waiveDeposit: true } },
+                  {
+                    onSuccess: () => {
+                      toast.show({
+                        tone: 'basari',
+                        title: 'Randevu kaporasız onaylandı',
+                        message: 'Müşteriye onay bildirimi gider.',
+                      });
+                    },
+                    onError: onActionError,
+                  },
+                );
+              }}
+            />
+          ) : null}
           {pending ? (
             <PendingApprovalDetails detail={detail} />
           ) : (
             <ul className={styles.actions}>
+              <DepositSummary
+                detail={detail}
+                canMark={canMark}
+                onRefund={() => {
+                  setRefunding(true);
+                }}
+              />
               {active && can('appointment.update') ? (
                 <li className={styles.action}>
                   <span className={styles.actionIcon} aria-hidden="true">
@@ -344,6 +462,8 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
               ) : null}
             </ul>
           )}
+          {/* Kaporalı randevuda geçmiş (DepositReceived, DepositWaived, DepositRefunded) onaydan sonra da görünür. */}
+          {!pending && detail.deposit ? <AppointmentHistory detail={detail} /> : null}
           {detail.status === 'Confirmed' && detail.noShowAtUtc ? (
             <p className={styles.note}>
               {`Gelmezse ${locativeTime(formatTime(detail.noShowAtUtc, tz))} otomatik "Gelmedi" olur.`}
@@ -369,6 +489,19 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
           }}
           onConflict={() => {
             setCancelling(false);
+            setConflict(true);
+          }}
+        />
+      ) : null}
+      {/* İade penceresi açıkken yan panel kapanır; kapanınca güncel ayrıntıyla geri açılır. */}
+      {refunding ? (
+        <RefundDepositModal
+          detail={detail}
+          onClose={() => {
+            setRefunding(false);
+          }}
+          onConflict={() => {
+            setRefunding(false);
             setConflict(true);
           }}
         />

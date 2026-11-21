@@ -3,6 +3,7 @@ import type { CalendarView } from './api';
 import {
   gridHours,
   summarize,
+  toBlocks,
   unavailableRanges,
   visibleWeekDays,
   weekDates,
@@ -74,6 +75,51 @@ describe('özet blokları', () => {
       line: 'Selin Öztürk · Saç kesimi · Elif',
     });
     expect(summary.today).toEqual({ appointments: 3, completed: 1 });
+  });
+
+  // acik-sorular.md T-72 (3): kapora bekleyen (status PendingApproval, displayStatus DepositPending) onay sayılmaz.
+  it('"Onay bekliyor" gösterim durumuyla sayılır; kapora bekleyen ve süresi sayılmaz', () => {
+    const view: CalendarView = {
+      ...empty,
+      appointments: [
+        {
+          ...item('p', '2026-11-25T13:00:00Z', 'PendingApproval'),
+          holdExpiresUtc: '2026-11-25T10:35:00Z',
+        },
+        {
+          ...item('k', '2026-11-25T11:30:00Z', 'PendingApproval'),
+          displayStatus: 'DepositPending' as const,
+          depositStatus: 'Awaiting' as const,
+          holdExpiresUtc: '2026-11-25T09:20:00Z',
+        },
+      ],
+    };
+    expect(summarize(view, new Date('2026-11-25T09:00:00Z')).pending).toEqual({
+      count: 1,
+      expiresInMinutes: 95,
+    });
+  });
+
+  it('havale bildirilen kapora bloğu "Havale bildirildi" işareti alır', () => {
+    const view: CalendarView = {
+      ...empty,
+      appointments: [
+        {
+          ...item('k', '2026-11-25T11:30:00Z', 'PendingApproval'),
+          displayStatus: 'DepositPending' as const,
+          depositStatus: 'CustomerReported' as const,
+        },
+        {
+          ...item('a', '2026-11-25T12:30:00Z', 'PendingApproval'),
+          displayStatus: 'DepositPending' as const,
+          depositStatus: 'Awaiting' as const,
+        },
+      ],
+    };
+    expect(toBlocks(view, true).map((block) => [block.status, block.note])).toEqual([
+      ['kapora', 'Havale bildirildi'],
+      ['kapora', undefined],
+    ]);
   });
 });
 

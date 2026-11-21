@@ -372,6 +372,22 @@ describe('AppointmentBlock', () => {
     expect(within(button).getByText('İptal')).toBeTruthy();
     expect(button.className).toContain('iptal');
   });
+
+  it('işaret (note) durumun yanında ve erişilebilir adda; kısa blokta da görünür', () => {
+    const block: CalendarBlock = { ...base, status: 'kapora', note: 'Havale bildirildi' };
+    const { rerender } = render(<AppointmentBlock block={block} timeZone={previewTimeZone} />);
+    const compact = screen.getByRole('button', { name: /Kapora bekleniyor, Havale bildirildi$/ });
+    expect(within(compact).getByText('Havale bildirildi')).toBeTruthy();
+    rerender(
+      <AppointmentBlock
+        block={{ ...block, endUtc: '2025-11-25T09:00:00Z' }}
+        timeZone={previewTimeZone}
+      />,
+    );
+    const full = screen.getByRole('button', { name: /Havale bildirildi$/ });
+    expect(within(full).getByText('Kapora bekleniyor')).toBeTruthy();
+    expect(within(full).getByText('Havale bildirildi')).toBeTruthy();
+  });
 });
 
 describe('Gün bildirimleri', () => {

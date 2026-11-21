@@ -13,7 +13,8 @@ interface CalendarSummaryBlocksProps {
 
 /**
  * Özet blokları (salon-paneli/Main): sıradaki, onay bekleyen, bugün. "Kapıda sırada" Dilim 5'te, ciro ("9.840 ₺")
- * kasa ile Dilim 5'te gelir; o zamana kadar Bugün bloğu randevu sayısını gösterir (sahte sayı yok).
+ * kasa ile Dilim 5'te gelir; o zamana kadar Bugün bloğu randevu sayısını gösterir (sahte sayı yok). "Onay bekliyor"
+ * kapora bekleyenleri saymaz (T-84 (3)).
  */
 export function CalendarSummaryBlocks({ view, now, showPending }: CalendarSummaryBlocksProps) {
   const summary = summarize(view, now);

@@ -25,6 +25,10 @@ export interface AppointmentBlockProps extends Omit<
 export function blockAccessibleName(block: CalendarBlock, timeZone: string): string {
   const time = `${formatTime(block.startUtc, timeZone)}–${formatTime(block.endUtc, timeZone)}`;
   const parts = [block.customerName, block.serviceName, time, statusLabels[block.status]];
+  if (block.note) {
+    parts.push(block.note);
+  }
+
   if (block.isRecurring) {
     parts.push('tekrarlayan');
   }
@@ -38,7 +42,8 @@ function durationMinutes(block: CalendarBlock): number {
 
 /**
  * Takvim bloğu (AppointmentBlock README): zemin ve üst şerit durum rengini taşır; 45 dakikadan kısa blok tek
- * satır; bekleyen (onay, kapora) kesik çizgili; iptal üstü çizili; bekleme dilimi taralı "Bekleme · müsait".
+ * satır; bekleyen (onay, kapora) kesik çizgili; iptal üstü çizili; bekleme dilimi taralı "Bekleme · müsait";
+ * `note` durumun yanında küçük işarettir ("Havale bildirildi").
  */
 export function AppointmentBlock({
   block,
@@ -86,6 +91,7 @@ export function AppointmentBlock({
         {compact ? <span className={styles.dot} /> : null}
         <strong className={styles.customer}>{block.customerName}</strong>
         {block.isRecurring ? <Repeat className={styles.repeat} size={12} strokeWidth={2} /> : null}
+        {compact && block.note ? <span className={styles.note}>{block.note}</span> : null}
         <span className={styles.time}>{formatTime(block.startUtc, timeZone)}</span>
       </span>
       {compact ? null : (
@@ -97,6 +103,7 @@ export function AppointmentBlock({
             <span className={styles.status} aria-hidden="true">
               <span className={styles.dot} />
               {statusLabels[block.status]}
+              {block.note ? <span className={styles.note}>{block.note}</span> : null}
             </span>
           ) : null}
         </>

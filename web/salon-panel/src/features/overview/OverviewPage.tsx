@@ -8,7 +8,7 @@ import { useSelectedBranch } from '@/app/branch';
 import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { useSession } from '@/app/session';
-import { approvalQueueQuery } from '@/features/approvals/api';
+import { approvalQueueQuery, splitQueue } from '@/features/approvals/api';
 import { firstExpiresLabel, remainingMinutes } from '@/features/approvals/remaining';
 import { calendarQuery } from '@/features/calendar/api';
 import { AppointmentDrawer } from '@/features/calendar/AppointmentDrawer';
@@ -107,13 +107,15 @@ export function OverviewPage() {
   const hello = greeting(branchHour(clock, defaultTimeZone));
   const rows = dayQuery.data ? dayFlowRows(dayQuery.data) : [];
   const queue = queueQuery.data;
-  const pendingCount = queue?.totalCount ?? 0;
+  // Bento salonun onayını bekleyenleri sayar; kapora bekleyenler "Dikkat isteyenler"de ayrı satırdır (GenelBakis).
+  const { approvals } = splitQueue(queue?.items ?? []);
+  const pendingCount = approvals.length;
   const loading = (dayQuery.isLoading || queueQuery.isLoading) && !dayQuery.data && !queue;
-  const active = rows.length > 0 || pendingCount > 0 || dayQuery.isError || queueQuery.isError;
+  const active =
+    rows.length > 0 || (queue?.totalCount ?? 0) > 0 || dayQuery.isError || queueQuery.isError;
+  // Kuyruk holdExpiresUtc'ye göre artan sıralı: ilk onay talebi en acilidir.
   const firstExpiry =
-    queue?.earliestHoldExpiresUtc != null
-      ? remainingMinutes(queue.earliestHoldExpiresUtc, queue.generatedUtc)
-      : 0;
+    queue && approvals[0] ? remainingMinutes(approvals[0].holdExpiresUtc, queue.generatedUtc) : 0;
 
   return (
     <Page
@@ -158,6 +160,7 @@ export function OverviewPage() {
             queue={queue}
             loading={queueQuery.isLoading}
             isError={queueQuery.isError}
+            canMarkDeposit={can('appointment.deposit.mark')}
             onRetry={() => void queueQuery.refetch()}
             onOpen={setOpenAppointment}
           />

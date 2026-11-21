@@ -51,6 +51,8 @@ export interface CalendarSearch {
   tarih?: string | undefined;
   gorunum?: CalendarMode | undefined;
   personel?: string | undefined;
+  /** Açılacak randevu yan paneli (bildirimden). */
+  randevu?: string | undefined;
 }
 
 type MoveProblem =
@@ -113,6 +115,8 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
   const canCreate = can('appointment.create');
   const readOnly = session.subscription.status === 'ReadOnly';
 
+  // Bloğa tıklama yerel seçimdir; bildirimden gelen ?randevu= de yan paneli açar (kapanınca adresten silinir).
+  const openAppointment = selected ?? search.randevu ?? null;
   const setSearch = (patch: Partial<CalendarSearch>) =>
     void navigate({ to: '/takvim', search: (prev) => ({ ...prev, ...patch }) });
   const step = mode === 'hafta' ? 7 : 1;
@@ -397,12 +401,16 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           {...(canMove ? { onMove, describeDrop } : {})}
         />
       )}
-      {selected ? (
+      {openAppointment ? (
         <AppointmentDrawer
-          appointmentId={selected}
+          key={openAppointment}
+          appointmentId={openAppointment}
           today={today}
           onClose={() => {
             setSelected(null);
+            if (search.randevu) {
+              setSearch({ randevu: undefined });
+            }
           }}
         />
       ) : null}

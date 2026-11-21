@@ -6,7 +6,8 @@ import { RequirePermission } from '@/shared/RequirePermission';
 const isDate = (value: unknown): value is string =>
   typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
 
-// Takvim (calendar.view): tarih, görünüm ve haftanın personeli adreste (?tarih=2026-11-25&gorunum=hafta&personel=…).
+// Takvim (calendar.view): tarih, görünüm ve haftanın personeli adreste (?tarih=2026-11-25&gorunum=hafta&personel=…);
+// ?randevu=… o randevunun yan panelini açar (bildirim paneli "Havale bildirildi").
 function CalendarRoute() {
   const search = Route.useSearch();
   return (
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/_panel/takvim')({
     ...(isDate(search.tarih) ? { tarih: search.tarih } : {}),
     ...(search.gorunum === 'hafta' ? { gorunum: 'hafta' as const } : {}),
     ...(typeof search.personel === 'string' ? { personel: search.personel } : {}),
+    ...(typeof search.randevu === 'string' ? { randevu: search.randevu } : {}),
   }),
   component: CalendarRoute,
 });
