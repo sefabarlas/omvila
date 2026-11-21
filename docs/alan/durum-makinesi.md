@@ -109,6 +109,8 @@ Ek bayrak: `depositCustomerReported: bool` ("Havaleyi yaptım" dendi; salon pane
 | Pending | Expired | Sistem (`ExpireWaitlistOffers`, her dakika) | Sıradakine teklif; kişi listede kalır |
 | Pending | Withdrawn | Salon "Teklifi geri al" (`waitlist.manage`) | Tutma kalkar, saat yeniden online görünür; otomatik olarak sıradakine teklif edilmez; kişi listede kalır; müşteriye bildirim yok |
 
+Kaydın `Expired` olması: istenen günlerin hepsi şubenin bugününden önce kalınca `ExpireWaitlistEntries` işi (saatlik); gün listesi boşsa ("Herhangi bir gün") kayıt süresiz bekler. Teklif motoru, tutma ve uygunluk kuralları: `docs/acik-sorular.md` T-90.
+
 ## 4. Kapıda sıra (`WalkInTicket.Status`)
 `Waiting` → `Called` (isteğe bağlı; "Sırası geldi" SMS'i) → `Served` (randevuya çevrildi) | `Left` ("Sıradan çıkar"). `Waiting` → `Served` doğrudan da olabilir ("Başlat").
 

@@ -66,4 +66,13 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Kapora: TransferWindowMinutes varsayılanı (havale süresi 120 dk).</summary>
     public const int TransferWindowMinutes = 120;
+
+    /// <summary>sureler-ve-ayarlar.md § Bekleme listesi ve kapıda sıra: WaitlistOfferHoldMinutes (boşalan saat 15 dk tutulur).</summary>
+    public const int WaitlistOfferHoldMinutes = 15;
+
+    /// <summary>sureler-ve-ayarlar.md § Bekleme listesi ve kapıda sıra: WaitlistMorningEndHour ("Sabah" 12:00'den önce başlayan saat; T-90).</summary>
+    public const int WaitlistMorningEndHour = 12;
+
+    /// <summary>sureler-ve-ayarlar.md § Bekleme listesi ve kapıda sıra: WaitlistAfternoonEndHour ("Öğleden sonra" 12:00–17:00, "Akşam" 17:00 ve sonrası; T-90).</summary>
+    public const int WaitlistAfternoonEndHour = 17;
 }

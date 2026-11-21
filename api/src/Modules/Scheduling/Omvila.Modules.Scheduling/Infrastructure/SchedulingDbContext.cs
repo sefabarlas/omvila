@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Omvila.Modules.Scheduling.Domain;
+using Omvila.Modules.Scheduling.Domain.Waitlist;
 
 namespace Omvila.Modules.Scheduling.Infrastructure;
 
@@ -20,6 +21,10 @@ internal sealed class SchedulingDbContext(DbContextOptions<SchedulingDbContext> 
     public DbSet<WalkInTicket> WalkInTickets => Set<WalkInTicket>();
 
     public DbSet<BranchQueueCounter> BranchQueueCounters => Set<BranchQueueCounter>();
+
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
+    public DbSet<WaitlistOffer> WaitlistOffers => Set<WaitlistOffer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

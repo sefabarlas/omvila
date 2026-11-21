@@ -474,7 +474,7 @@ internal sealed class Appointment
     /// A5: süresi dolan tutma sistemce iptal edilir. Kapora istenmişse neden <c>DepositNotReceived</c>, değilse
     /// <c>ApprovalExpired</c>. <c>ExpireAppointmentHolds</c> işi ve yazma yolu (çakışma denetiminden önce aynı personelin
     /// süresi dolmuş tutmaları satır içinde; durum-makinesi.md § Sistem işleri) bunu çağırır ve
-    /// <c>AppointmentApprovalExpired</c> olayını yayımlar. Bekleme listesi yan etkisi Dilim 5'tedir.
+    /// <c>AppointmentApprovalExpired</c> olayını yayımlar. Bekleme listesi teklifi olaydan (OfferVacatedSlotToWaitlist).
     /// </summary>
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A5)
     public Result ExpireHold(Instant now)

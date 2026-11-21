@@ -15,6 +15,7 @@ namespace Omvila.Modules.Scheduling.Contracts;
 /// <param name="Reason">CancellationReason metni.</param>
 /// <param name="NotifyCustomer">"Müşteriye bildir".</param>
 /// <param name="DepositReceived">Kapora alınmış ve iade işaretlenmemiş.</param>
+/// <param name="OfferToWaitlist">Boşalan saat bekleme listesindeki sıradaki uygun kişiye teklif edilsin (ManageCancelRequest.offerToWaitlist).</param>
 public sealed record AppointmentCancelledBySalon(
     Guid BrandId,
     Guid AppointmentId,
@@ -22,4 +23,5 @@ public sealed record AppointmentCancelledBySalon(
     Instant StartUtc,
     string Reason,
     bool NotifyCustomer,
-    bool DepositReceived = false) : IIntegrationEvent;
+    bool DepositReceived = false,
+    bool OfferToWaitlist = true) : IIntegrationEvent;

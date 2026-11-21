@@ -6,7 +6,7 @@ namespace Omvila.Modules.Scheduling.Contracts;
 /// <summary>
 /// Salon onay bekleyen talebi reddetti (A4 → Cancelled, neden DeclinedBySalon). Notifications müşteriye her zaman
 /// <c>appointment.declined</c> yazar ("talebinizi onaylayamadı, talep iptal edildi"; "reddedildi" geçmez) ve bekleyen
-/// satırları düşürür. Bekleme listesi Dilim 5'te.
+/// satırları düşürür. Scheduling boşalan saati bekleme listesine teklif eder (OfferVacatedSlotToWaitlist).
 /// </summary>
 /// <param name="BrandId">Marka.</param>
 /// <param name="AppointmentId">Randevu.</param>

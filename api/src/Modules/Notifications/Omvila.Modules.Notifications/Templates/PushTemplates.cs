@@ -30,6 +30,7 @@ internal static partial class PushTemplates
         [Key(NotificationEvents.AppointmentReminder, null)] = ("Hatırlatma", "Yarın {saat} {salon}."),
         [Key(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = ("Bugün {saat} {salon}", "Görüşmek üzere. Yol tarifi için dokunun."),
         [Key(NotificationEvents.ReviewInvite, null)] = ("Nasıldı?", "{salon|bulunma}ki randevunuzu değerlendirin."),
+        [Key(NotificationEvents.WaitlistOffer, null)] = ("Beklediğiniz saat boşaldı", "{salon} · {tarih} {saat} · {dakika} dk."),
         [Key(NotificationEvents.StaffApprovalNeeded, null)] = ("Onay bekliyor · {kalan süre}", "{müşteri} · {tarih saat} {hizmet}. Yanıtlanmazsa otomatik iptal olur."),
         [Key(NotificationEvents.StaffAppointmentCreated, null)] = ("Yeni randevu", "{müşteri} · {saat} {hizmet} · sizinle."),
         [Key(NotificationEvents.StaffAppointmentChanged, CancelledVariant)] = ("İptal", "{müşteri} · {saat} iptal etti. Neden: {neden}."),

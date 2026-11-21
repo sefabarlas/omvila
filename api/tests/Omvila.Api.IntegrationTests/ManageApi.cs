@@ -29,7 +29,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;
-            TRUNCATE scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;
+            TRUNCATE scheduling.waitlist_offers, scheduling.waitlist_entries, scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series;
             TRUNCATE sales.payment_allocations, sales.payments, sales.commission_entries;
             TRUNCATE reviews.reviews, reviews.review_invitations;
             TRUNCATE infra.outbox_events CASCADE;
