@@ -11,6 +11,7 @@ import 'package:omvila_api/src/model/appointment_history_entry.dart';
 import 'package:omvila_api/src/model/appointment_status.dart';
 import 'package:omvila_api/src/model/appointment_detail_cancellation.dart';
 import 'package:omvila_api/src/model/deposit_view.dart';
+import 'package:omvila_api/src/model/payment_view.dart';
 import 'package:omvila_api/src/model/display_status.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -70,6 +71,10 @@ class AppointmentDetail {
      this.noShowAtUtc,
 
      this.cancellation,
+
+     this.completedUtc,
+
+     this.payments,
 
     required  this.history,
 
@@ -335,6 +340,32 @@ class AppointmentDetail {
 
 
 
+      /// \"Tamamla ve ödeme al\" anı
+  @JsonKey(
+    
+    name: r'completedUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? completedUtc;
+
+
+
+      /// Randevuya tahsis edilen bütün tahsilatlar (kapora havalesi, salonda alınanlar, paketten düşülen kalemlerin 0 TL kaydı), eskiden yeniye. Yetkisi olmayan (payment.collect yok) kullanıcıda dönmez
+  @JsonKey(
+    
+    name: r'payments',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final List<PaymentView>? payments;
+
+
+
   @JsonKey(
     
     name: r'history',
@@ -385,6 +416,8 @@ class AppointmentDetail {
       other.seriesId == seriesId &&
       other.noShowAtUtc == noShowAtUtc &&
       other.cancellation == cancellation &&
+      other.completedUtc == completedUtc &&
+      other.payments == payments &&
       other.history == history &&
       other.version == version;
 
@@ -411,6 +444,8 @@ class AppointmentDetail {
         (seriesId == null ? 0 : seriesId.hashCode) +
         (noShowAtUtc == null ? 0 : noShowAtUtc.hashCode) +
         (cancellation == null ? 0 : cancellation.hashCode) +
+        (completedUtc == null ? 0 : completedUtc.hashCode) +
+        payments.hashCode +
         history.hashCode +
         version.hashCode;
 

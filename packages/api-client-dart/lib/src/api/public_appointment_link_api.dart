@@ -27,7 +27,7 @@ class PublicAppointmentLinkApi {
   ///
   /// Parameters:
   /// * [ifMatch] - GET yanıtındaki ETag değeri
-  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
   /// * [customerCancelRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -122,7 +122,7 @@ _responseData = rawData == null ? null : deserialize<PublicAppointment, PublicAp
   /// 
   ///
   /// Parameters:
-  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -194,7 +194,7 @@ _responseData = rawData == null ? null : deserialize<PublicAppointment, PublicAp
   /// Rezervasyon sayfası Havale ekranı. Müşteri havaleyi yaptığını salona bildirir: deposit.status CustomerReported, customerReportedUtc dolar, geçmişe DepositReported yazılır, salonun Owner ve BranchManager kullanıcılarına staff.deposit_reported push&#39;u ve panel bildirimi gider (\&quot;Havale bildirildi · kontrol edin\&quot;). Randevu durumu değişmez (PendingApproval, displayStatus DepositPending); ekran \&quot;Salon onayı bekleniyor\&quot; gösterir. Kendiliğinden idempotenttir: zaten CustomerReported ise 200 ile aynı sonuç döner, bildirim ikinci kez gitmez. Bu yüzden Idempotency-Key ve If-Match almaz. Kapora beklenmiyorsa (kapora yok, Received, Waived, Refunded veya randevu PendingApproval değil) 409 invalid_state_transition; tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired. Kod geçersizse 404 access_code_invalid. 
   ///
   /// Parameters:
-  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
   /// * [xClient] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -270,7 +270,7 @@ _responseData = rawData == null ? null : deserialize<PublicAppointment, PublicAp
   ///
   /// Parameters:
   /// * [ifMatch] - GET yanıtındaki ETag değeri
-  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
   /// * [publicRescheduleAppointmentRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
@@ -365,7 +365,7 @@ _responseData = rawData == null ? null : deserialize<PublicAppointment, PublicAp
   /// 
   ///
   /// Parameters:
-  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{accessCode})
+  /// * [accessCode] - SMS bağlantısındaki kod (omvila.com/r/{code} randevu, /b/{code} bekleme teklifi veya bekleme kaydı, /d/{code} değerlendirme)
   /// * [publicSearchRescheduleSlotsRequest] 
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request

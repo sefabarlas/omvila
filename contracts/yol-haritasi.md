@@ -1,8 +1,10 @@
 # Sözleşme yol haritası
 
-`openapi.yaml` şu an Dilim 1, 2, 3 ve 4'ü kapsar (86 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
+`openapi.yaml` şu an Dilim 1, 2, 3, 4'ü ve Dilim 5'in web/backend bölümünü kapsar (123 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
 
-## Dilim 5: Mobil uygulamalar + bekleme listesi + kapıda sıra + paket + kasa
+## Dilim 5: Mobil uygulamalar (kalan uçlar)
+Dilim 5'in web/backend uçları (tamamla ve ödeme al, kasa, paketler, değerlendirmeler, bekleme listesi, kapıda sıra, müşteri kartı sekmeleri, birleştirme, içe/dışa aktarma, KVKK silme) sözleşmeye alındı. Yol haritasında adı olmayan ve o PR'da konan adlar: `manageListPackages`, `manageCreatePackage`, `manageGetPackage`, `manageUpdatePackage`, `manageListAllCustomerPackages` (`GET /manage/customer-packages`), `manageRefundCustomerPackage`, `manageListCustomerPackages`, `manageListCustomerPayments`, `manageListCustomerReviews`, `manageGetCustomerDeletionPreview`, `manageListDeletionRequests` (`GET /manage/customer-deletion-requests`), `manageWithdrawWaitlistOffer` (`POST /manage/waitlist/{entryId}/offer/withdraw`, "Teklifi geri al"), `publicGetReviewInvite` ve `publicCreateReview` (`/public/reviews/{accessCode}`, değerlendirme bağlantısı `/d/`). Kalanlar (müşteri uygulaması ve işletme uygulamasına özel uçlar) sonraki sözleşme PR'ındadır:
+
 | Yöntem | Yol | operationId |
 |---|---|---|
 | POST | `/api/v1/me/auth/otp/request`, `/verify`, `/refresh`, `/logout` | `meRequestOtp`, `meVerifyOtp`, `meRefreshToken`, `meLogout` |
@@ -19,26 +21,7 @@
 | POST | `/api/v1/me/account/deletion` | `meRequestAccountDeletion` (OTP ile) |
 | POST | `/api/v1/me/devices` | `meRegisterDevice` |
 | GET | `/api/v1/me/notifications` | `meListNotifications` |
-| POST | `/api/v1/public/branches/{branchId}/waitlist` | `publicJoinWaitlist` |
-| GET | `/api/v1/public/waitlist-offers/{accessCode}` | `publicGetWaitlistOffer` |
-| POST | `/api/v1/public/waitlist-offers/{accessCode}/accept`, `/decline` | `publicAcceptWaitlistOffer`, `publicDeclineWaitlistOffer` |
-| POST | `/api/v1/public/waitlist/{accessCode}/leave` | `publicLeaveWaitlist` |
-| GET/POST | `/api/v1/manage/waitlist` | `manageListWaitlist`, `manageAddToWaitlist` |
-| POST | `/api/v1/manage/waitlist/{entryId}/offer` | `manageOfferSlot` ("Saat öner") |
-| GET/POST | `/api/v1/manage/walk-in-tickets` | `manageListWalkIns`, `manageCreateWalkIn` |
-| POST | `/api/v1/manage/walk-in-tickets/{ticketId}/start`, `/leave` | `manageStartWalkIn`, `manageLeaveWalkIn` |
-| POST | `/api/v1/manage/appointments/{appointmentId}/complete` | `manageCompleteAppointment` (ödeme kalemleriyle) |
-| GET | `/api/v1/manage/cash?branchId&date` | `manageGetCashDay` |
-| POST | `/api/v1/manage/cash/close` | `manageCloseCashDay` |
-| GET/POST/PUT | `/api/v1/manage/packages`, `/{packageId}` | Paket tanımları |
-| POST | `/api/v1/manage/customers/{brandCustomerId}/packages` | `manageSellPackage` |
-| GET | `/api/v1/manage/customers/{brandCustomerId}/packages`, `/payments`, `/reviews` | Müşteri kartı sekmeleri (Randevular sekmesi `manageListCustomerAppointments` Dilim 2'de sözleşmeye alındı) |
-| POST | `/api/v1/manage/customers/{brandCustomerId}/merge` | `manageMergeCustomers` |
-| POST | `/api/v1/manage/customers/imports`, `/imports/{importId}/commit` | `managePreviewImport`, `manageCommitImport` |
-| GET | `/api/v1/manage/customers/export` | `manageExportCustomers` |
-| POST | `/api/v1/manage/customers/{brandCustomerId}/deletion` | `manageRequestCustomerDeletion` |
 | POST | `/api/v1/manage/customers/{brandCustomerId}/reveal-phone` | `manageRevealCustomerPhone` (maskeli personelin "Ara" butonu; denetime yazılır) |
-| GET | `/api/v1/manage/reviews`, POST `/{reviewId}/reply` | `manageListReviews`, `manageReplyReview` |
 | GET | `/api/v1/manage/today` | `manageGetToday` (işletme uygulaması "Bugün" özeti) |
 
 ## Dilim 6: Abonelik + platform paneli + raporlar
