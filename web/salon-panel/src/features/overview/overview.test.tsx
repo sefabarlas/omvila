@@ -52,15 +52,18 @@ describe('ilk hafta', () => {
     renderApp('/', {
       session: sessionFixture({ brand: { ...sessionFixture().brand, status: 'Active' } }),
       doneSteps: ['BusinessCreated', 'WorkingHours', 'Services', 'Staff', 'ShareBookingLink'],
+      // Bugün randevu ve onay bekleyen talep yok: GenelBakisBos (dolu hâl approvals/approval.test.tsx).
+      calendar: { empty: true },
       calls,
     });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'İyi günler, Elif' })).toBeTruthy();
     expect(screen.getByText('Çarşamba, 25 Kasım · Merkez')).toBeTruthy();
+    // Takvim ve kuyruk yüklenince boş gün: bağlantı kartı ve ilk hafta blokları.
+    expect(await screen.findByText('Kurulum tamam')).toBeTruthy();
     const summary = screen.getByRole('group', { name: 'Özet' });
     expect(within(summary).getByText('talep yok')).toBeTruthy();
     expect(within(summary).getByText('—')).toBeTruthy();
-    expect(await screen.findByText('Kurulum tamam')).toBeTruthy();
 
     await userEvent.click(screen.getByRole('button', { name: 'Kopyala' }));
     expect(writeText).toHaveBeenCalledWith('https://omvila.com/kuafor-elif');
@@ -80,6 +83,7 @@ describe('ilk hafta', () => {
         membership: { role: 'BranchManager', branchIds: [], staffId: null },
         brand: { ...sessionFixture().brand, status: 'Active' },
       }),
+      calendar: { empty: true },
       calls,
     });
     await userEvent.click(await screen.findByRole('button', { name: 'Kopyala' }));

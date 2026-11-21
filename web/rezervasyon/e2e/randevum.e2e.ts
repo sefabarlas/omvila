@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import type { PublicAppointment } from '../src/appointment/appointment-api';
 import { accessCode, etag } from '../src/test/appointment-fixtures';
 import { appointmentApi } from './support';
 
@@ -11,6 +12,8 @@ import { appointmentApi } from './support';
 interface ScreenCase {
   name: string;
   path: string;
+  /** İlk okumanın alanları (ör. onay bekleyen talep). */
+  appointment?: Partial<PublicAppointment>;
   ready: (page: Page) => Promise<void>;
 }
 
@@ -20,6 +23,20 @@ const screens: ScreenCase[] = [
     path: `/r/${accessCode}`,
     ready: async (page) => {
       await expect(page.getByRole('heading', { name: 'Plan değişti mi?' })).toBeVisible();
+    },
+  },
+  {
+    // Dilim 3: Randevum'da "Onay bekliyor" (tasarımda ayrı görüntü yok; Randevum.png düzeni).
+    name: 'RandevumOnayBekliyor',
+    path: `/r/${accessCode}`,
+    appointment: {
+      status: 'PendingApproval',
+      displayStatus: 'PendingApproval',
+      holdExpiresUtc: '2026-11-24T08:35:00Z',
+    },
+    ready: async (page) => {
+      await expect(page.getByText('Randevunuz · Onay bekliyor')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeVisible();
     },
   },
   {
@@ -46,7 +63,7 @@ for (const theme of ['light', 'dark'] as const) {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.emulateMedia({ colorScheme: theme });
-      await appointmentApi(page);
+      await appointmentApi(page, screen.appointment);
       await page.goto(screen.path);
       await screen.ready(page);
       await page.screenshot({

@@ -6,6 +6,8 @@ export { BookingAvatar } from './BookingAvatar';
 export type { BookingAvatarProps } from './BookingAvatar';
 export { BookingButton } from './BookingButton';
 export type { BookingButtonProps, BookingButtonSize, BookingButtonVariant } from './BookingButton';
+export { BookingStatusBadge } from './BookingStatusBadge';
+export type { BookingStatusBadgeProps } from './BookingStatusBadge';
 export { BookingSteps, defaultBookingSteps } from './BookingSteps';
 export type { BookingStepsProps } from './BookingSteps';
 export { CategoryChips } from './CategoryChips';

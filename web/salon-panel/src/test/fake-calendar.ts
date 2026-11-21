@@ -159,7 +159,16 @@ export interface CalendarFakeOptions {
   createError?: 'slot_taken';
   /** Tekrarlayan randevuda atlanan tarihler. */
   skippedOccurrences?: string[];
+  /** Onay ve red yanıtı: kayıt çakışması (412) veya süresi dolmuş tutma (409 hold_expired). */
+  approvalError?: 'concurrency_conflict' | 'hold_expired';
+  /** Bugün randevusuz şube (GenelBakisBos): takvim ve onay kuyruğu boş. */
+  empty?: boolean;
+  /** Onay kuyruğu 500 döner (hata hâli). */
+  queueFails?: boolean;
 }
+
+/** Onay kuyruğunun "şimdi"si: test saatiyle aynı (25 Kasım 12:00 İstanbul). */
+export const queueGeneratedUtc = '2026-11-25T09:00:00Z';
 
 /** Yeni randevu boş saatleri (salon-paneli/YeniRandevu): dolu saatler üstü çizili. */
 export const fakeSlotTimes = ['10:30', '11:15', '13:45', '14:30', '16:45', '17:30'];
@@ -179,18 +188,20 @@ const shift = (iso: string, ms: number) => new Date(Date.parse(iso) + ms).toISOS
 
 /** Takvim uçlarını karşılar; ilgisiz istekte null döner (fakeFetch devam eder). */
 export function createCalendarFake(session: ManageSession, options: CalendarFakeOptions = {}) {
-  const store: Stored[] = rows.map((row) => {
-    const date = row.date ?? calendarDate;
-    return {
-      row,
-      date,
-      staffId: row.staffId,
-      startUtc: localDateTimeToUtc(date, row.start, tz),
-      endUtc: localDateTimeToUtc(date, row.end, tz),
-      status: row.status,
-      version: 1,
-    };
-  });
+  const store: Stored[] = rows
+    .filter(() => !options.empty)
+    .map((row) => {
+      const date = row.date ?? calendarDate;
+      return {
+        row,
+        date,
+        staffId: row.staffId,
+        startUtc: localDateTimeToUtc(date, row.start, tz),
+        endUtc: localDateTimeToUtc(date, row.end, tz),
+        status: row.status,
+        version: 1,
+      };
+    });
   const opened = new Map<string, { start: string; end: string }[]>();
 
   const toItem = (s: Stored): CalendarAppointment => {
@@ -256,8 +267,22 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       isRecurring: item.isRecurring,
       seriesId: s.row.seriesId ?? null,
       noShowAtUtc: s.status === 'Confirmed' ? shift(s.startUtc, 15 * 60_000) : null,
-      cancellation: null,
-      history: [],
+      cancellation:
+        s.status === 'Cancelled' && s.row.status === 'PendingApproval'
+          ? { cancelledUtc: queueGeneratedUtc, cancelledBy: 'Salon', reason: 'DeclinedBySalon' }
+          : null,
+      holdExpiresUtc: s.status === 'PendingApproval' ? (item.holdExpiresUtc ?? null) : null,
+      customerNote: s.row.status === 'PendingApproval' ? 'Parfümsüz ürün tercih ediyorum.' : null,
+      history:
+        s.row.status === 'PendingApproval'
+          ? [
+              {
+                occurredUtc: localDateTimeToUtc(s.date, '11:35', tz),
+                kind: 'Created',
+                detail: 'Online talep oluşturuldu, SMS ile doğrulandı',
+              },
+            ]
+          : [],
       version: String(s.version),
     };
   };
@@ -331,6 +356,44 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
     const path = url.pathname;
     if (path === '/api/v1/manage/calendar' && request.method === 'GET') {
       return json(200, calendar(url));
+    }
+
+    if (path === '/api/v1/manage/approval-queue' && request.method === 'GET') {
+      if (!session.permissions.includes('appointment.approve')) {
+        return json(403, { code: 'forbidden' });
+      }
+
+      if (options.queueFails) {
+        return json(500, { code: 'internal_error' });
+      }
+
+      const items = store
+        .filter((s) => s.status === 'PendingApproval')
+        .map((s) => {
+          const item = toItem(s);
+          return {
+            appointmentId: s.row.id,
+            branchId: session.branches[0]?.id ?? '',
+            branchName: session.branches[0]?.name ?? '',
+            timeZone: tz,
+            customerName: s.row.customer,
+            isNewCustomer: false,
+            serviceSummary: s.row.service,
+            staffName: staff.find((m) => m.staffId === s.staffId)?.fullName ?? null,
+            startUtc: s.startUtc,
+            endUtc: s.endUtc,
+            holdExpiresUtc: item.holdExpiresUtc ?? s.startUtc,
+            createdUtc: localDateTimeToUtc(s.date, '11:35', tz),
+            channel: s.row.channel ?? 'Online',
+          };
+        })
+        .sort((a, b) => a.holdExpiresUtc.localeCompare(b.holdExpiresUtc));
+      return json(200, {
+        generatedUtc: queueGeneratedUtc,
+        totalCount: items.length,
+        earliestHoldExpiresUtc: items[0]?.holdExpiresUtc ?? null,
+        items,
+      });
     }
 
     if (/^\/api\/v1\/manage\/branches\/[^/]+\/overrides$/.test(path) && request.method === 'POST') {
@@ -508,6 +571,25 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
 
         return save('Cancelled');
       }
+      case '/approve':
+      case '/decline':
+        if (!session.permissions.includes('appointment.approve')) {
+          return json(403, { code: 'forbidden' });
+        }
+
+        if (options.approvalError === 'concurrency_conflict') {
+          return json(412, { code: 'concurrency_conflict' });
+        }
+
+        if (options.approvalError === 'hold_expired') {
+          return json(409, { code: 'hold_expired' });
+        }
+
+        if (stored.status !== 'PendingApproval') {
+          return json(409, { code: 'invalid_state_transition' });
+        }
+
+        return save(action === '/approve' ? 'Confirmed' : 'Cancelled');
       case '/reschedule': {
         const body = (await request.clone().json()) as {
           startUtc: string;
