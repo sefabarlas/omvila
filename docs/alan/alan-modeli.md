@@ -47,7 +47,7 @@ Backend modüler monolittir. Her modül kendi PostgreSQL şemasına (schema) sah
 | Customers | `customers` | Customer, BrandCustomer, Tag, BrandCustomerTag, ConsentRecord, CustomerSavedBrand, DataDeletionRequest, CustomerImport |
 | Scheduling | `scheduling` | Appointment, AppointmentItem, AppointmentItemSegment, AppointmentItemResource, AppointmentSeries, AppointmentAccessCode, WaitlistEntry, WaitlistOffer, WalkInTicket, BranchQueueCounter |
 | Sales | `sales` | Payment, PaymentAllocation, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
-| Reviews | `reviews` | Review |
+| Reviews | `reviews` | Review, ReviewInvitation |
 | Notifications | `notifications` | NotificationOutbox, InAppNotification, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
 | Integrations | `integrations` | CalendarLink, AppointmentCalendarSync |
 | Platform | `platform` | Plan, CreditPackage, Subscription, SubscriptionInvoice, PaymentNotice, PlatformBankTransaction, AuditLog |
@@ -542,7 +542,8 @@ Kurallar: hizmet primi randevu `Completed` olunca kalem başına doğar. Taban, 
 ## Reviews
 
 ### Review
-`AppointmentId` (UNIQUE: bir randevu bir kez değerlendirilir), `BranchId`, `CustomerId`, `StaffId?`, `Rating` (1–5), `Comment?` (1000), `IsPublished`, `ReplyText?`, `RepliedUtc?`, `RepliedByUserId?`.
+`AppointmentId` (UNIQUE: bir randevu bir kez değerlendirilir), `BranchId`, `CustomerId`, `StaffId?`, `Rating` (1–5), `Comment?` (1000), `IsPublished`, `ReplyText?`, `RepliedUtc?`, `RepliedByUserId?`. Uygulamada ayrıca `ServiceNames` (randevudan kopya), `RepliedByName?` (yanıt anındaki personel adı) ve `CreatedUtc` tutulur; `CustomerId` markadaki müşteri kartıdır (`BrandCustomerId`). Çok kalemli randevuda `StaffId` = personeli olan ilk kalemin personeli (T-89).
+`ReviewInvitation`: `AppointmentId` (UNIQUE), `BranchId`, `SendAtUtc` (tamamlanma + `ReviewInviteDelayMinutes`), `CreatedUtc`. Davet oranı ("davet edilenlerin %38'i") bu kayıtlardan hesaplanır; gönderimin kendisi `NotificationOutbox`'tadır.
 Kural: yalnız `Completed` randevu değerlendirilebilir. Etiket ("Neler iyiydi?") yoktur. Rezervasyon sayfasında puan, yalnız yayınlanmış değerlendirme sayısı eşiği geçince gösterilir (bkz. ayarlar). Yorumda müşterinin yalnız adı ve soyadının baş harfi görünür.
 
 ---

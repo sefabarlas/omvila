@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Omvila.Modules.Reviews.Contracts\Omvila.Modules.Reviews.Contracts.csproj" />
+    <ProjectReference Include="..\..\Customers\Omvila.Modules.Customers.Contracts\Omvila.Modules.Customers.Contracts.csproj" />
+    <ProjectReference Include="..\..\Identity\Omvila.Modules.Identity.Contracts\Omvila.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\Scheduling\Omvila.Modules.Scheduling.Contracts\Omvila.Modules.Scheduling.Contracts.csproj" />
+    <ProjectReference Include="..\..\Tenancy\Omvila.Modules.Tenancy.Contracts\Omvila.Modules.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Omvila.Modules.Reviews.Tests" />
+  </ItemGroup>
+</Project>
