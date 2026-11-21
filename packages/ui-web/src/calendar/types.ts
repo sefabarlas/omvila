@@ -32,6 +32,8 @@ export interface CalendarBlock {
   serviceName: string;
   isRecurring?: boolean;
   segments?: readonly CalendarSegment[];
+  /** Durumun yanındaki kısa işaret ("Havale bildirildi"); erişilebilir ada da eklenir. */
+  note?: string;
   /** false: sürüklenemez (geçmiş, tamamlanmış randevu gibi; karar çağıranındır). Varsayılan true. */
   draggable?: boolean;
 }

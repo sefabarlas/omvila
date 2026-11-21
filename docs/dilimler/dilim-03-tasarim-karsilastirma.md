@@ -43,5 +43,5 @@ Durum: ✓ tasarımla uyumlu, ≈ bilinçli/kapsam dışı farkla uyumlu, ✗ d�
 
 ## Bulunan farklar
 
-- **Takvim bentosu kapora bekleyeni de "Onay bekliyor" sayar:** `summarize` (calendar-view.ts) `status === 'PendingApproval'` ile sayar; kapora bekleyen randevu da bu durumdadır (`displayStatus = DepositPending`). Tasarımda (Main, RandevuPanel) kapora bekleyen varken sayı 2. Genel bakış sayıyı onay kuyruğundan aldığı için etkilenmez. Kapora Dilim 4'te geldiği için bu PR'da değiştirilmedi; D4'te `displayStatus` ile sayılmalı.
+- **Takvim bentosu kapora bekleyeni de "Onay bekliyor" sayar:** `summarize` (calendar-view.ts) `status === 'PendingApproval'` ile sayar; kapora bekleyen randevu da bu durumdadır (`displayStatus = DepositPending`). Tasarımda (Main, RandevuPanel) kapora bekleyen varken sayı 2. Genel bakış sayıyı onay kuyruğundan aldığı için etkilenmez. Kapora Dilim 4'te geldiği için bu PR'da değiştirilmedi; D4'te `displayStatus` ile sayılmalı. **Düzeltildi (Dilim 4, T-84 (3)):** takvim bentosu `displayStatus` ile, Genel bakış kuyruktaki kapora bekleyenleri ayırarak sayar.
 - **GenelBakis görüntüsü yanlış ekranı çekiyordu** (düzeltildi; test verisi, ürün kodu değil).
