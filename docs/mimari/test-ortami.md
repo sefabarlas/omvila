@@ -15,11 +15,11 @@
 
 | Adres | Ne | Erişim |
 |---|---|---|
-| `https://test.salon.omvila.com.tr` | Salon paneli | Basic auth, ardından telefon + SMS kodu |
-| `https://test.randevu.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth |
-| `https://test.api.omvila.com.tr` | API | Açık (tarayıcı çapraz köken isteğinde basic auth göndermez); SMS günlüğü yolu bu adreste 404 |
-| `https://test.sms.omvila.com.tr` | Sahte SMS günlüğü (giriş kodları burada) | Basic auth |
-| `https://test.posta.omvila.com.tr` | Mailpit (e-posta altyapısı gelince) | Basic auth |
+| `https://salon.test.omvila.com.tr` | Salon paneli | Basic auth, ardından telefon + SMS kodu |
+| `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth |
+| `https://api.test.omvila.com.tr` | API | Açık (tarayıcı çapraz köken isteğinde basic auth göndermez); SMS günlüğü yolu bu adreste 404 |
+| `https://sms.test.omvila.com.tr` | Sahte SMS günlüğü (giriş kodları burada) | Basic auth |
+| `https://posta.test.omvila.com.tr` | Mailpit (e-posta altyapısı gelince) | Basic auth |
 
 Bütün yanıtlarda `X-Robots-Tag: noindex, nofollow` vardır. Basic auth kullanıcısı tektir; parolayı ürün sahibi ve geliştiriciler bilir, depoya girmez.
 
@@ -44,21 +44,33 @@ flowchart LR
 - api, worker, migrate ve seed aynı imajdır; yalnız `--role` değişir. `migrate` her açılışta önce çalışır ve çıkar; api ve worker onu bekler.
 - İmajlar: `ghcr.io/sefabarlas/omvila-<api|salon-panel|rezervasyon>:<TAG>`. API ve site adresleri web imajlarına derlemede gömülür; adres değişirse web imajları yeniden derlenir.
 
-## Sunucu gereksinimleri
+## Sunucu
 
-- Linux (Ubuntu 24.04 LTS önerilir), Docker Engine ve Docker Compose eklentisi.
-- En az 2 vCPU, 4 GB bellek, 40 GB disk (varsayım: yalnız demo verisi; ilk sunucu kendi üstünde derlerse derleme sırasında bellek sınırda kalabilir).
-- Güvenlik duvarı: 22 (SSH, mümkünse yalnız bilinen IP'lerden), 80, 443/tcp, 443/udp. Başka port açılmaz.
-- Barındırma yurt içi seçilirse canlıya geçişte aynı sağlayıcı değerlendirilebilir (T-07); test ortamı gerçek kişi verisi taşımadığından bu karar ona bağlı değildir.
+- Hostinger KVM 2 VPS (Almanya), 21 Kasım 2026'da 12 aylık alındı. Ubuntu 26.04 LTS, 2 vCPU, 8 GB bellek, 96 GB disk, 2 GB takas. Adres ve erişim ekipte bilinir; depo herkese açık olduğundan burada yazmaz. Komutlarda `<sunucu>` olarak geçer.
+- Erişim yalnız SSH anahtarıyla, `deploy` kullanıcısıyla (root ve parola girişi kapalı; `deploy` parolasız sudo yetkili).
+- Güvenlik duvarı (ufw): yalnız 22, 80, 443 (tcp ve udp).
+- Docker Engine 29 ve Compose v5, resmi Docker deposundan.
+- Hostinger'ın ücretsiz haftalık yedeği açık; ücretli günlük yedek alınmadı (veritabanı yedeği aşağıda).
+- Canlı barındırma ayrı karardır (T-07); test ortamı gerçek kişi verisi taşımadığından ona bağlı değildir.
+
+Sunucudaki düzen:
+
+| Yol | Ne |
+|---|---|
+| `/srv/omvila/app` | Çalışan kaynak kopyası (`git archive`; hangi commit olduğu `REVISION` dosyasında). Git deposu değildir. |
+| `/srv/omvila/app.prev` | Bir önceki dağıtımın kopyası |
+| `/srv/omvila/staging.env` | Gizli değerler ve adresler (izin 600) |
+| `/srv/omvila/basic-auth.txt` | Basic auth parolasının açık hâli (izin 600) |
+| `/srv/omvila/bin/pg-backup.sh` | Günlük veritabanı yedeği betiği |
+| `/srv/omvila/backups` | Yedekler (14 gün) |
 
 ## İlk kurulum
 
-1. **DNS:** beş adres için sunucunun IP'sine ayrı A kaydı (IPv6 varsa AAAA da) açın: `test.salon`, `test.api`, `test.randevu`, `test.sms`, `test.posta` (`omvila.com.tr` altında). Caddy ilk açılışta Let's Encrypt sertifikası alır; kayıtlar yayılmadan başlatılırsa sertifika alınamaz ve Caddy bir süre sonra yeniden dener.
-2. **Depo:** sunucuda depoyu klonlayın (compose dosyası, Caddyfile ve veritabanı açılış betikleri depodan okunur):
-   ```bash
-   git clone https://github.com/sefabarlas/omvila.git /opt/omvila && cd /opt/omvila
-   ```
-3. **Gizli değerler:** `cp deploy/staging/env.example deploy/staging/.env` ve değerleri doldurun. Dosya `.gitignore`'dadır; yalnız sunucuda durur ve yedeği parola yöneticisinde tutulur. Her değerin üretim komutu `env.example`'da yazar:
+Test sunucusu 21 Kasım 2026'da bu adımlarla kuruldu. Yeniden kurmak veya ikinci bir sunucu açmak için:
+
+1. **DNS:** Cloudflare'de `*.test.omvila.com.tr` için sunucunun IP'sine joker A kaydı açın. Proxy **kapalı** olmalı (gri bulut): Cloudflare'in ücretsiz sertifikası ikinci düzey jokeri kapsamaz, sertifikayı Caddy Let's Encrypt'ten alır. Kayıt yayılmadan yığın başlatılırsa sertifika alınamaz, Caddy bir süre sonra yeniden dener.
+2. **Sunucu:** `deploy` kullanıcısı (SSH anahtarı, sudo), ufw, Docker ve `/srv/omvila` klasörü (sahibi `deploy`).
+3. **Gizli değerler:** [`deploy/staging/env.example`](../../deploy/staging/env.example)'ı `/srv/omvila/staging.env` olarak kopyalayın (`chmod 600`) ve doldurun. Dosya depoya girmez; yedeği parola yöneticisinde tutulur. Her değerin üretim komutu `env.example`'da yazar:
 
    | Değişken | Ne | Üretim |
    |---|---|---|
@@ -70,16 +82,13 @@ flowchart LR
    | `BASIC_AUTH_USER`, `BASIC_AUTH_HASH` | Basic auth kullanıcısı ve bcrypt özeti | `docker run --rm caddy:2 caddy hash-password --plaintext '<parola>'` |
 
    Test ortamının anahtarları canlıda kullanılmaz; canlı için ayrı üretilir.
-4. **Başlatma:**
+4. **İlk dağıtım** (kendi bilgisayarınızdan, depo kökünde; bkz. Güncelleme):
    ```bash
-   docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env up -d --build --wait
+   STAGING_SSH=deploy@<sunucu> deploy/staging/deploy.sh
    ```
-   Dağıtım iş akışı GHCR'a imaj itmeye başladığında `--build` yerine `TAG=<sürüm>` ile `pull` kullanılır (bkz. Güncelleme).
-5. **Demo verisi:**
-   ```bash
-   docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env --profile seed run --rm seed
-   ```
-6. **Denetim:** `https://test.api.omvila.com.tr/health/ready` 200 dönmeli; `https://test.salon.omvila.com.tr`'de basic auth'tan sonra giriş ekranı açılmalı.
+5. **Demo verisi:** sunucuda, aşağıdaki `dc` kısaltmasıyla `dc --profile seed run --rm seed`.
+6. **Yedek zamanlayıcısı:** `pg-backup.sh` ve systemd `omvila-backup.service` + `omvila-backup.timer` (her gün 00:30 UTC).
+7. **Denetim:** `https://api.test.omvila.com.tr/health/ready` 200 dönmeli; `https://salon.test.omvila.com.tr`'de basic auth'tan sonra giriş ekranı açılmalı.
 
 ## Demo verisi
 
@@ -92,21 +101,21 @@ flowchart LR
 | 0555 000 00 03 | Can Yücel | Personel |
 | 0555 000 00 04 | Zeynep Aksoy | Şube yöneticisi |
 
-Giriş: salon panelinde telefonu yazın, gelen kodu `https://test.sms.omvila.com.tr`'den okuyun (en yeni üstte; `?telefon=05550000001` ile süzülür).
+Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com.tr`'den okuyun (en yeni üstte; `?telefon=05550000001` ile süzülür).
 
 - Komut idempotenttir: marka varsa bir şey yazmaz.
 - **Demodan önce sıfırlama:** randevu tarihleri çalıştırma anına göre yazıldığından demodan önce yenileyin. `--reset` yalnız demo markasını silip yeniden kurar; başka markalara dokunmaz:
   ```bash
-  docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env --profile seed run --rm seed --role=seed --reset
+  dc --profile seed run --rm seed --role=seed --reset
   ```
 - Test ortamında kayıt akışıyla açılan markalar da gerçek kişi verisi taşımamalıdır; deneme için `0555 000 …` biçimli uydurma numaralar kullanın.
 
 ## Günlük işler
 
-Kısaltma olarak (sunucuda `/opt/omvila` içinde):
+Sunucuda kısaltma olarak (`/srv/omvila/app` içinde çalışır):
 
 ```bash
-alias dc='docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env'
+alias dc='cd /srv/omvila/app && docker compose -f deploy/staging/compose.yml --env-file ../staging.env'
 ```
 
 | İş | Komut |
@@ -119,21 +128,29 @@ alias dc='docker compose -f deploy/staging/compose.yml --env-file deploy/staging
 
 ### Güncelleme
 
-Dağıtım iş akışı gelene kadar elle:
+Kendi bilgisayarınızdan, depo kökünde (main güncel iken):
 
 ```bash
-git pull && dc up -d --build --wait
+STAGING_SSH=deploy@<sunucu> deploy/staging/deploy.sh          # HEAD
+STAGING_SSH=deploy@<sunucu> deploy/staging/deploy.sh 1a2b3c4  # belirli bir commit
 ```
 
-Migration'lar `migrate` hizmetiyle kendiliğinden uygulanır. Dağıtım iş akışı (GitHub Actions, `staging` ortamı) main'e birleşen her değişiklikte imajları GHCR'a iter, sunucuya SSH ile bağlanıp `TAG`'i değiştirir, `dc pull && dc up -d --wait` çalıştırır ve `/health/ready`'yi bekler. Sunucu IP'si ve SSH kullanıcısı belli olunca eklenecek.
+[`deploy/staging/deploy.sh`](../../deploy/staging/deploy.sh) commit'i `git archive` ile `/srv/omvila/app.new`'e kopyalar ve imajları orada derler; çalışan yığın derleme süresince eski imajlarla sürer. Ardından kopyayı `app` yapar (eskisi `app.prev`), `up -d --wait` ile başlatır. Migration'lar `migrate` hizmetiyle kendiliğinden uygulanır, demo verisine dokunulmaz. İşlenmemiş yerel değişiklikler gönderilmez. İmajlar sunucuda derlenir, GHCR'a yayımlanmaz; API ve site adresleri derlemede `staging.env`'den gömülür.
+
+Hangi sürümün çalıştığı: `cat /srv/omvila/app/REVISION`.
+
+**Geri dönüş:** `app.prev`'i `app` yapıp `dc up -d --build --wait`, ya da önceki commit'i betikle yeniden dağıtın. Migration geri alınmaz; geri dönüş yalnız şemayı değiştirmeyen sürümler arasında güvenlidir.
+
+Otomatik dağıtım (main'e her birleşmede GitHub Actions) henüz yok: deponun GitHub ayarlarına bir dağıtım SSH anahtarı eklenmesini gerektirir.
 
 ### Yedek ve geri yükleme
 
-Test ortamında yalnız demo verisi olduğundan yedek zorunlu değildir; demo verisi her zaman yeniden kurulabilir. Elle denemede oluşan veriyi saklamak gerekirse:
+`omvila-backup.timer` her gün 00:30 UTC'de `/srv/omvila/bin/pg-backup.sh`'ı çalıştırır: `pg_dump` özel biçimde `/srv/omvila/backups/omvila-YYYYMMDD-HHMM.dump`, 14 gün saklanır. Sunucu dışına kopya yoktur (yalnız demo verisi; demo verisi her zaman yeniden kurulabilir).
 
 ```bash
-dc exec -T postgres pg_dump -U omvila_migrator -d omvila -Fc > omvila-$(date +%F).dump
-dc exec -T postgres pg_restore -U omvila_migrator -d omvila --clean --if-exists < omvila-2026-11-21.dump
+sudo systemctl start omvila-backup.service                 # elle yedek
+systemctl list-timers omvila-backup.timer                  # sıradaki çalışma
+dc exec -T postgres pg_restore -U omvila_migrator -d omvila --clean --if-exists < /srv/omvila/backups/omvila-20261122-0030.dump
 ```
 
 ### Parola veya anahtar değiştirme
