@@ -106,6 +106,8 @@ internal sealed class ServiceOffers(CatalogDbContext db) : IServiceOffers
             service.BufferAfterMinutes,
             offerStages,
             service.RequiresApproval,
-            service.IsOnlineBookable);
+            service.IsOnlineBookable,
+            service.MinNoticeMinutes,
+            service.MaxAdvanceDays);
     }
 }

@@ -27,6 +27,7 @@ public static class TenancyModule
         // Aynı anda iki işletme aynı adı alırsa ikincisi 409 olur (kilit kaçarsa son savunma: tek ad dizini).
         services.AddUniqueConstraintError("ix_brands_slug", ErrorCodes.SlugUnavailable);
         services.AddScoped<ITenantQueries, TenantQueries>();
+        services.AddScoped<IBranchScheduleQueries, BranchScheduleQueries>();
         services.AddScoped<OnboardingService>();
         services.AddScoped<StaffReader>();
         services.AddScoped<StaffWriter>();
