@@ -27,6 +27,7 @@ describe('İşletme bilgileri', () => {
       'Randevu kuralları',
       'Rezervasyon sayfası',
       'Bildirimler ve SMS',
+      'Kapora ve IBAN',
     ]);
     expect(
       within(nav).getByRole('link', { name: 'İşletme bilgileri' }).getAttribute('aria-current'),
@@ -143,7 +144,7 @@ describe('Randevu kuralları', () => {
   it('IBAN yoksa kapora seçenekleri pasif ve nedeni yazar; kayıtlı değer gönderilir', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/ayarlar/randevu-kurallari', { calls });
-    expect(await screen.findByText('Kapora için IBAN gerekir')).toBeTruthy();
+    expect(await screen.findByText('Kapora IBAN’ı tanımlı değil.')).toBeTruthy();
     expect(
       screen.getByRole<HTMLSelectElement>('combobox', { name: 'Kapora istenecek durumlar' })
         .disabled,

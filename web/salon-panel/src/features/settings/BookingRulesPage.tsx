@@ -1,10 +1,13 @@
-import { Banner, Select, Switch, useToast } from '@omvila/ui-web/panel';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { Banner, Button, Select, Switch, useToast } from '@omvila/ui-web/panel';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useApi } from '@/app/api-context';
+import { useSession } from '@/app/session';
 import { brandSettingsBody, brandSettingsQuery, useUpdateBrandSettings } from './api';
 import type { BrandSettings } from './api';
+import { bankAccountQuery, transferWindowLabel } from './bank-account-api';
 import { ConflictBanner } from '@/shared/ConflictBanner';
 import { describeSaveError } from './save-error';
 import styles from './Settings.module.css';
@@ -52,6 +55,7 @@ function numberOptions(values: number[], current: number, label: (n: number) => 
 }
 
 const asNumber = { setValueAs: (value: string) => Number(value) };
+const bankAccountRoute = '/ayarlar/kapora';
 
 /**
  * Ayarlar → Randevu kuralları (salon-paneli/Ayarlar). Dilim 1'de yalnız ayar kaydedilir; davranışı Dilim 2–3'te.
@@ -68,6 +72,14 @@ export function BookingRulesPage() {
   const requiresApproval = useWatch({ control: form.control, name: 'requiresApproval' });
   const allowStaffSelection = useWatch({ control: form.control, name: 'allowStaffSelection' });
   const depositAvailable = settings.depositAvailable === true;
+  const { can } = useSession();
+  const navigate = useNavigate();
+  // Hesap özeti ve havale süresi yalnız settings.payment izniyle okunur (V1: havale süresi Kapora ve IBAN'da düzenlenir).
+  const canPayment = can('settings.payment');
+  const account = useQuery({
+    ...bankAccountQuery(api),
+    enabled: canPayment && depositAvailable,
+  }).data;
 
   const onSubmit = form.handleSubmit(async (values) => {
     const body = brandSettingsBody(settings, values);
@@ -162,9 +174,35 @@ export function BookingRulesPage() {
         </SettingsCard>
 
         <SettingsCard title="Kapora">
-          {depositAvailable ? null : (
-            <Banner tone="bilgi" title="Kapora için IBAN gerekir">
-              Müşteri kaporayı salonun hesabına havale eder. IBAN tanımlı değilse kapora istenemez.
+          {depositAvailable ? (
+            <Banner
+              tone="basari"
+              title={[
+                'Kapora IBAN’ı tanımlı',
+                ...(account?.configured
+                  ? [account.accountHolderName ?? '', account.ibanMasked ?? '']
+                  : []),
+              ]
+                .filter((part) => part !== '')
+                .join(' · ')}
+            >
+              Müşteri kaporayı bu hesaba havale eder; geldiğinde randevuda “Kapora geldi” diye
+              işaretlersiniz. IBAN tanımlı değilse kapora istenemez.
+            </Banner>
+          ) : (
+            // salon-paneli/Durumlar "Kapora istenemiyor" (acik-sorular.md T-79).
+            <Banner
+              tone="bilgi"
+              title="Kapora IBAN’ı tanımlı değil."
+              action={
+                canPayment ? (
+                  <Button size="sm" onClick={() => void navigate({ to: bankAccountRoute })}>
+                    IBAN ekle
+                  </Button>
+                ) : undefined
+              }
+            >
+              IBAN eklenene kadar kapora gerektiren hizmetler kaporasız alınır.
             </Banner>
           )}
           <SettingRows>
@@ -182,6 +220,26 @@ export function BookingRulesPage() {
                 {...form.register('depositPolicy')}
               />
             </SettingRow>
+            {depositAvailable && account ? (
+              <SettingRow
+                id="havale"
+                title="Havale süresi"
+                description="Bu sürede “Kapora geldi” işaretlenmezse randevu otomatik iptal olur ve saat açılır."
+              >
+                <div className={styles.staticControl}>
+                  <span className={styles.staticValue}>
+                    {transferWindowLabel(account.transferWindowMinutes)}
+                  </span>
+                  <Link
+                    to={bankAccountRoute}
+                    className={styles.inlineLink}
+                    aria-label="Havale süresini Kapora ve IBAN’da değiştirin"
+                  >
+                    Değiştir
+                  </Link>
+                </div>
+              </SettingRow>
+            ) : null}
             <SettingRow
               id="riskli"
               title="Riskli müşteri tanımı"

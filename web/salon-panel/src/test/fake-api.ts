@@ -11,6 +11,7 @@ import type { NotificationSettingsFakeOptions } from './fake-notification-settin
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
   'settings.manage',
+  'settings.payment',
   'service.manage',
   'staff.manage',
   'calendar.view',
@@ -71,8 +72,12 @@ export interface FakeApiOptions {
   /** Tamamlanmış kurulum adımları (BusinessCreated kayıtla tamam). */
   doneSteps?: string[];
   /** Kaydetme yanıtı: 412 kayıt çakışması veya sunucu hata kodu (slug_unavailable, validation_failed:phone). */
-  saveError?: 'concurrency_conflict' | 'slug_unavailable' | 'validation_failed:phone';
-  /** Aktif IBAN var mı (kapora ayarları). */
+  saveError?:
+    | 'concurrency_conflict'
+    | 'slug_unavailable'
+    | 'validation_failed:phone'
+    | 'validation_failed:iban';
+  /** Aktif IBAN var mı (kapora ayarları; bank-account GET configured). */
   depositAvailable?: boolean;
   /** Şube eklerken plan sınırı (403 + meta.planLimit). */
   branchLimitReached?: boolean;
@@ -333,6 +338,30 @@ export const bookingPageFixture = {
   version: '1',
 };
 
+/** Kapora hesabı (sözleşme örnekleri: tanimli / tanimsiz). */
+export function bankAccountFixture(configured: boolean) {
+  return configured
+    ? {
+        configured: true,
+        isActive: true,
+        accountHolderName: 'Elif Kaya',
+        bankName: 'Ziraat Bankası',
+        ibanMasked: 'TR29 •••• 6789 01',
+        ibanLast4: '8901',
+        transferCodePrefix: 'OMV',
+        transferWindowMinutes: 120,
+        updatedUtc: '2026-11-20T10:15:00Z',
+        version: 'W/"5521"',
+      }
+    : {
+        configured: false,
+        isActive: false,
+        transferCodePrefix: 'OMV',
+        transferWindowMinutes: 120,
+        version: 'W/"0"',
+      };
+}
+
 const stepKeys = ['BusinessCreated', 'WorkingHours', 'Services', 'Staff', 'ShareBookingLink'];
 
 export function fakeFetch({
@@ -447,6 +476,8 @@ export function fakeFetch({
           return json(409, { code: 'slug_unavailable' });
         case 'validation_failed:phone':
           return json(400, { code: 'validation_failed', errors: { phone: ['invalid_format'] } });
+        case 'validation_failed:iban':
+          return json(400, { code: 'validation_failed', errors: { iban: ['invalid_format'] } });
         default:
           return null;
       }
@@ -629,6 +660,39 @@ export function fakeFetch({
       }
 
       return saveFailure() ?? json(200, { ...settings, ...(await body()), version: '4' });
+    }
+
+    if (path === '/api/v1/manage/brand/bank-account') {
+      if (!session.permissions.includes('settings.payment')) {
+        return json(403, { code: 'forbidden' });
+      }
+
+      const account = bankAccountFixture(depositAvailable);
+      if (request.method === 'GET') {
+        return json(200, account);
+      }
+
+      const saved = await body();
+      if (!account.configured && saved.iban === undefined) {
+        return json(400, { code: 'validation_failed', errors: { iban: ['required'] } });
+      }
+
+      const iban = typeof saved.iban === 'string' ? saved.iban : '';
+      return (
+        saveFailure() ??
+        json(200, {
+          ...bankAccountFixture(true),
+          ...saved,
+          iban: undefined,
+          ...(iban === ''
+            ? {}
+            : {
+                ibanMasked: `${iban.slice(0, 4)} •••• ${iban.slice(-6, -2)} ${iban.slice(-2)}`,
+                ibanLast4: iban.slice(-4),
+              }),
+          version: 'W/"5540"',
+        })
+      );
     }
 
     if (path === '/api/v1/manage/brand/booking-page') {
