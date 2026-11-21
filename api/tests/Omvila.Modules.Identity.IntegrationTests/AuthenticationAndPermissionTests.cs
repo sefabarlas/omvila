@@ -125,9 +125,15 @@ public sealed class AuthenticationAndPermissionTests(PostgresFixture db) : IAsyn
     {
         using var key = ECDsa.Create();
         key.ImportFromPem(TestSigningKey.PrivateKeyPem);
+        // İmza sağlayıcısı önbelleğe alınmaz: önbellek anahtarı açık anahtar parmak izidir; aynı anahtarla imzalayan
+        // SigningKeyStore sonraki testte burada dispose edilen ECDsa'yı alırdı (test sırasına bağlı ObjectDisposedException).
+        var securityKey = new ECDsaSecurityKey(key)
+        {
+            KeyId = TestSigningKey.Kid,
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false },
+        };
 
-        (await GetAsync("/api/test/settings", Craft(Audiences.Admin, new ECDsaSecurityKey(key) { KeyId = TestSigningKey.Kid })))
-            .Status.ShouldBe(401);
+        (await GetAsync("/api/test/settings", Craft(Audiences.Admin, securityKey))).Status.ShouldBe(401);
     }
 
     [Fact]

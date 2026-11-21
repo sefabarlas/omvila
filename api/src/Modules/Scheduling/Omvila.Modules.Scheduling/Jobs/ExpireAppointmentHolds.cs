@@ -28,8 +28,6 @@ internal sealed partial class ExpireAppointmentHolds(
 {
     public string Key => "ExpireAppointmentHolds";
 
-    public Duration Interval => Duration.FromMinutes(1);
-
     public async Task RunAsync(CancellationToken ct)
     {
         var now = clock.GetCurrentInstant();

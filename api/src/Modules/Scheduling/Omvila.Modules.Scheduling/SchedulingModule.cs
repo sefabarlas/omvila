@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using NodaTime;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
@@ -25,8 +27,11 @@ namespace Omvila.Modules.Scheduling;
 /// </summary>
 public static class SchedulingModule
 {
-    public static IServiceCollection AddSchedulingModule(this IServiceCollection services)
+    public static IServiceCollection AddSchedulingModule(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<SchedulingOptions>()
+            .Bind(configuration.GetSection(SchedulingOptions.Section))
+            .Validate(o => o.IsValid(), "Scheduling ayarları eksik veya geçersiz (appsettings \"Scheduling\").");
         services.AddModuleDbContext<SchedulingDbContext>(SchedulingDbContext.Schema);
         services.AddScoped<AvailabilitySnapshotLoader>();
         services.AddScoped<AppointmentLocks>();
@@ -41,9 +46,11 @@ public static class SchedulingModule
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
-        services.AddPeriodicJob<ExpireAppointmentHolds>();
-        services.AddPeriodicJob<MarkNoShows>();
-        services.AddPeriodicJob<ExtendRecurringSeries>();
+        services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
+            o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
+        services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
+        services.AddPeriodicJob<ExtendRecurringSeries, SchedulingOptions>(
+            o => Duration.FromMinutes(o.ExtendRecurringSeriesIntervalMinutes));
         return services;
     }
 

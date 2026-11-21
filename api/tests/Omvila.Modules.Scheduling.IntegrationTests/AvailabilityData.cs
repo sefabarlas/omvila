@@ -61,7 +61,7 @@ internal sealed class AvailabilityData
     public static ServiceProvider CreateServices(PostgresFixture db, IInterceptor? interceptor = null) =>
         db.CreateServices(configure: s =>
         {
-            s.AddTenancyModule(db.Configuration()).AddCatalogModule().AddSchedulingModule();
+            s.AddTenancyModule(db.Configuration()).AddCatalogModule().AddSchedulingModule(db.Configuration());
             if (interceptor is not null)
             {
                 s.AddSingleton(interceptor);

@@ -56,7 +56,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             .AddPlatformModule(configuration)
             .AddCatalogModule()
             .AddCustomersModule()
-            .AddSchedulingModule());
+            .AddSchedulingModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
         await services.GetRequiredService<PlanSeeder>().SeedAsync(MigratorConnectionString, CancellationToken.None);
     }
@@ -109,6 +109,9 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Notifications:MaxAttempts"] = "5",
             ["Notifications:RetryBaseDelaySeconds"] = "30",
             ["Notifications:RetryMaxDelaySeconds"] = "3600",
+            ["Scheduling:ExpireAppointmentHoldsIntervalSeconds"] = "60",
+            ["Scheduling:MarkNoShowsIntervalSeconds"] = "60",
+            ["Scheduling:ExtendRecurringSeriesIntervalMinutes"] = "60",
             ["Sms:Provider"] = "Fake",
             ["Push:Provider"] = "Fake",
             ["Sms:DefaultSender"] = "OMVILA",

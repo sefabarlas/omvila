@@ -7,9 +7,10 @@ using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Omvila.Infrastructure.Health;
+using Omvila.Infrastructure.Hosting;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
@@ -39,19 +40,7 @@ public static class InfrastructureServiceCollectionExtensions
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             options.SerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
         });
-        services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section));
-        services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
-        services.AddOptions<PushOptions>().Bind(configuration.GetSection(PushOptions.Section));
-        services.AddHttpClient(FcmPushSender.HttpClientName);
-        services.AddScoped<IPushSender>(sp => CreatePushSender(sp));
-
-        // Teslim raporu adaptörleri sağlayıcı koduyla kaydedilir (webhook yolu /webhooks/sms/{provider}); kayıtsız kod 404.
-        // Sahte sağlayıcının raporu yalnız sahte sağlayıcı seçiliyken (Development ve Testing) açılır.
-        services.AddOptions<FakeSmsProviderOptions>().Bind(configuration.GetSection(FakeSmsProviderOptions.Section));
-        if (string.Equals(configuration[$"{SmsOptions.Section}:{nameof(SmsOptions.Provider)}"], SmsOptions.FakeProvider, StringComparison.Ordinal))
-        {
-            services.AddKeyedSingleton<ISmsDeliveryReportVerifier, FakeSmsDeliveryReportVerifier>(FakeSmsDeliveryReportVerifier.ProviderCode);
-        }
+        AddMessagingProviders(services, configuration);
 
         // Veri kaynağı ilk kullanımda kurulur: OpenAPI belge üretimi gibi veritabanısız çalıştırmalar etkilenmez.
         // Bağlantılar bu veri kaynağından açılır ve DbContext'lere verilir: NodaTime eşlemesi burada da açık olmalı.
@@ -77,55 +66,68 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IntegrationEventRegistry>();
         services.AddScoped<IOutbox, Outbox>();
         services.AddSingleton<JobRunner>();
-        services.AddPeriodicJob<OutboxDispatcher>();
+        services.AddPeriodicJob<OutboxDispatcher, OutboxOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
 
         services.AddOptions<IdempotencyOptions>()
             .Bind(configuration.GetSection(IdempotencyOptions.Section))
             .Validate(o => o.IsValid(), "Idempotency ayarları eksik veya geçersiz (appsettings \"Idempotency\").");
-        services.AddPeriodicJob<PurgeIdempotencyKeys>();
+        services.AddPeriodicJob<PurgeIdempotencyKeys, IdempotencyOptions>(o => Duration.FromMinutes(o.PurgeIntervalMinutes));
 
         services.AddSurfaceCors(configuration);
+        services.AddTrustedForwardedHeaders(configuration);
 
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
         return services;
     }
 
-    // Sağlayıcı seçimi (T-03): şimdilik yalnız sahte sağlayıcı; o da yalnız Development ve test ortamında.
+    // SMS ve push sağlayıcıları, teslim raporu adaptörleri.
+    private static void AddMessagingProviders(IServiceCollection services, IConfiguration configuration)
+    {
+        // Sahte sağlayıcı izni ortama bağlı (HostEnvironmentExtensions.AllowsFakeProviders); izinsizse açılış durur.
+        services.AddOptions<StagingOptions>().Bind(configuration.GetSection(StagingOptions.Section));
+        services.AddSingleton<IValidateOptions<SmsOptions>, FakeProviderOptionsValidator>();
+        services.AddSingleton<IValidateOptions<PushOptions>, FakeProviderOptionsValidator>();
+        services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section)).ValidateOnStart();
+        services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
+        services.AddOptions<DevSmsLogOptions>()
+            .Bind(configuration.GetSection(DevSmsLogOptions.Section))
+            .Validate(o => o.IsValid(), "Sahte SMS günlüğü ayarları geçersiz (appsettings \"Sms:DevLog\": Limit 1–1000, RefreshSeconds 0–3600).");
+        services.AddOptions<PushOptions>().Bind(configuration.GetSection(PushOptions.Section)).ValidateOnStart();
+        services.AddHttpClient(FcmPushSender.HttpClientName);
+        services.AddScoped<IPushSender>(sp => CreatePushSender(sp));
+
+        // Teslim raporu adaptörleri sağlayıcı koduyla kaydedilir (webhook yolu /webhooks/sms/{provider}); kayıtsız kod 404.
+        // Sahte sağlayıcının raporu yalnız sahte sağlayıcı seçiliyken (Development, Testing, izinli Staging) açılır.
+        services.AddOptions<FakeSmsProviderOptions>().Bind(configuration.GetSection(FakeSmsProviderOptions.Section));
+        if (string.Equals(configuration[$"{SmsOptions.Section}:{nameof(SmsOptions.Provider)}"], SmsOptions.FakeProvider, StringComparison.Ordinal))
+        {
+            services.AddKeyedSingleton<ISmsDeliveryReportVerifier, FakeSmsDeliveryReportVerifier>(FakeSmsDeliveryReportVerifier.ProviderCode);
+        }
+    }
+
+    // Sağlayıcı seçimi (T-03): şimdilik yalnız sahte sağlayıcı. Ortam izni FakeProviderOptionsValidator'da (options çözülürken).
     private static FakeSmsSender CreateSmsSender(IServiceProvider services)
     {
-        var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SmsOptions>>().Value;
-        var environment = services.GetService<IHostEnvironment>();
+        var options = services.GetRequiredService<IOptions<SmsOptions>>().Value;
         if (!string.Equals(options.Provider, SmsOptions.FakeProvider, StringComparison.Ordinal))
         {
             throw new InvalidOperationException($"Desteklenmeyen SMS sağlayıcısı: '{options.Provider}' (T-03 karar bekliyor).");
         }
 
-        if (environment is not null && !environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
-        {
-            throw new InvalidOperationException("Sahte SMS sağlayıcısı yalnız Development ve Testing ortamında kullanılabilir.");
-        }
-
         return ActivatorUtilities.CreateInstance<FakeSmsSender>(services);
     }
 
-    // Push sağlayıcısı: boş → kapalı; Fake yalnız Development ve Testing'de; Fcm kimlik bilgisi yoksa kapalı (gizli depoda değil).
+    // Push sağlayıcısı: boş → kapalı; Fake ortam izniyle (FakeProviderOptionsValidator); Fcm kimlik bilgisi yoksa kapalı.
     private static IPushSender CreatePushSender(IServiceProvider services)
     {
-        var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<PushOptions>>().Value;
-        var environment = services.GetService<IHostEnvironment>();
-        switch (options.Provider)
+        var options = services.GetRequiredService<IOptions<PushOptions>>().Value;
+        return options.Provider switch
         {
-            case "":
-                return new DisabledPushSender();
-            case PushOptions.FakeProvider when environment is null || environment.IsDevelopment() || environment.IsEnvironment("Testing"):
-                return ActivatorUtilities.CreateInstance<FakePushSender>(services);
-            case PushOptions.FakeProvider:
-                throw new InvalidOperationException("Sahte push sağlayıcısı yalnız Development ve Testing ortamında kullanılabilir.");
-            case PushOptions.FcmProvider:
-                return options.Fcm.IsConfigured ? ActivatorUtilities.CreateInstance<FcmPushSender>(services) : new DisabledPushSender();
-            default:
-                throw new InvalidOperationException($"Desteklenmeyen push sağlayıcısı: '{options.Provider}'.");
-        }
+            "" => new DisabledPushSender(),
+            PushOptions.FakeProvider => ActivatorUtilities.CreateInstance<FakePushSender>(services),
+            PushOptions.FcmProvider => options.Fcm.IsConfigured ? ActivatorUtilities.CreateInstance<FcmPushSender>(services) : new DisabledPushSender(),
+            _ => throw new InvalidOperationException($"Desteklenmeyen push sağlayıcısı: '{options.Provider}'."),
+        };
     }
 
     /// <summary>

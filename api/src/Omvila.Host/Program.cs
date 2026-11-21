@@ -7,6 +7,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Catalog;
 using Omvila.Modules.Customers;
 using Omvila.Modules.Identity;
@@ -38,7 +39,7 @@ builder.Services.AddTenancyModule(builder.Configuration);
 builder.Services.AddPlatformModule(builder.Configuration);
 builder.Services.AddCatalogModule();
 builder.Services.AddCustomersModule();
-builder.Services.AddSchedulingModule();
+builder.Services.AddSchedulingModule(builder.Configuration);
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
@@ -55,9 +56,9 @@ builder.Services.AddOpenApi("v1", options => options.AddDocumentTransformer((doc
 
 var app = builder.Build();
 
-// `dotnet run --project src/Omvila.Host -- migrate`: migration'ları migrator rolüyle uygular ve çıkar.
-// Platform:SeedPlans doluysa (yalnız geliştirme yapılandırması) planlar da eklenir (S-14).
-if (args.Contains("migrate", StringComparer.Ordinal))
+// `--role=migrate` (veya eski biçim `migrate`): migration'ları migrator bağlantısıyla uygular ve çıkar; sunucu başlamaz.
+// Platform:SeedPlans doluysa (geliştirme ve test sunucusu yapılandırması) planlar da eklenir (S-14).
+if (role == HostRole.Migrate || args.Contains("migrate", StringComparer.Ordinal))
 {
     var migrator = builder.Configuration.GetConnectionString(InfrastructureServiceCollectionExtensions.MigratorConnectionName)
         ?? throw new InvalidOperationException("ConnectionStrings:Migrator tanımlı değil.");
@@ -66,6 +67,8 @@ if (args.Contains("migrate", StringComparer.Ordinal))
     return;
 }
 
+// Ters vekil başlıkları en başta: hız sınırı ve günlük gerçek istemci IP'sini ve şemayı görür (yalnız güvenilen vekilden).
+app.UseTrustedForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 // CORS kimlik doğrulama, hız sınırı ve idempotency'den önce: ön uçuş (OPTIONS) jetonsuz yanıtlanır.
@@ -89,6 +92,8 @@ if (role.HasFlag(HostRole.Api))
     app.MapCustomersEndpoints();
     app.MapSchedulingEndpoints();
     app.MapNotificationsEndpoints();
+    // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).
+    app.MapDevSmsLogPage();
 }
 
 HostLog.Started(app.Logger, role);
