@@ -1,0 +1,117 @@
+/* Kasa (salon-paneli/Kasa, KasaBos): tablo + "Kasa sayımı" kartı. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 416px;
+  align-items: start;
+  gap: var(--bosluk-4);
+}
+
+.card {
+  padding: var(--bosluk-8) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+}
+
+.item small {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.countTitle {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+  line-height: var(--yazi-kart-basligi-satir);
+}
+
+.countHint {
+  margin: var(--bosluk-1) 0 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.countLines {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.countLine {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.countLine:last-child {
+  border-bottom: 0;
+}
+
+.countLine dt {
+  color: var(--metin-ikincil);
+}
+
+.countLine dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.shortage {
+  color: var(--hata);
+}
+
+.surplus {
+  color: var(--basari);
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+/* Tablet (web/salon-panel/AGENTS.md: 1199 → sayım kartı daralır, 899 → tek sütun). */
+@media (width <= 1199px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+@media (width <= 899px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

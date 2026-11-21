@@ -144,7 +144,9 @@ describe('genel bakış (GenelBakis)', () => {
     );
 
     const summary = screen.getByRole('group', { name: 'Özet' });
-    expect(within(summary).getByText('7')).toBeTruthy();
+    // Kasayı görebilen sahipte "Bugünkü ciro" (manageGetCashDay, T-97).
+    expect(await within(summary).findByText('3.340 ₺')).toBeTruthy();
+    expect(within(summary).getByText('7 randevu')).toBeTruthy();
     expect(within(summary).getByText('Onay bekliyor')).toBeTruthy();
     expect(await within(summary).findByText('ilki 1 sa 35 dk içinde iptal olur')).toBeTruthy();
 

@@ -32,6 +32,7 @@ import { calendarQuery, useMoveAppointment } from './api';
 import type { CalendarRange, MoveInput } from './api';
 import { AppointmentDrawer } from './AppointmentDrawer';
 import styles from './Calendar.module.css';
+import { useDayRevenue } from '@/features/cash/api';
 import { CalendarSummaryBlocks } from './CalendarSummaryBlocks';
 import {
   findDay,
@@ -91,6 +92,8 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
   const today = branchToday(clock, timeZone);
   const date = search.tarih ?? today;
   const mode: CalendarMode = search.gorunum ?? 'gun';
+  // Bugün bloğunda günün tahsilatı (kasa; yalnız payment.collect).
+  const revenue = useDayRevenue(branchId, today, mode === 'gun' && date === today);
   const staffOptions = todayQuery.data?.staff ?? [];
   const ownStaffId = session.membership.staffId ?? undefined;
   const weekStaffId =
@@ -219,6 +222,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           view={todayQuery.data}
           now={clock.now()}
           showPending={can('appointment.approve')}
+          revenue={revenue}
         />
       ) : null}
       {problem?.kind === 'conflict' ? (

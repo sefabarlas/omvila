@@ -13,6 +13,8 @@ type AppointmentStatus = components['schemas']['AppointmentStatus'];
 type AppointmentCreate = components['schemas']['ManageAppointmentCreate'];
 type SlotSearchRequest = components['schemas']['SlotSearchRequest'];
 type HistoryKind = components['schemas']['AppointmentHistoryEntry']['kind'];
+type PaymentView = components['schemas']['PaymentView'];
+type CompleteRequest = components['schemas']['ManageCompleteRequest'];
 
 const tz = 'Europe/Istanbul';
 export const calendarDate = '2026-11-25';
@@ -251,6 +253,8 @@ interface Stored {
   status: AppointmentStatus;
   version: number;
   deposit?: DepositState | undefined;
+  /** "Tamamla ve ödeme al" ile yazılan tahsilatlar. */
+  payments?: PaymentView[];
 }
 
 export interface CalendarFakeOptions {
@@ -274,6 +278,8 @@ export interface CalendarFakeOptions {
   empty?: boolean;
   /** Onay kuyruğu 500 döner (hata hâli). */
   queueFails?: boolean;
+  /** "Tamamla ve ödeme al" yanıtı: sunucu toplam uyuşmazlığı (meta.expectedAmountMinor) veya kayıt çakışması. */
+  completeError?: 'payment_total_mismatch' | 'concurrency_conflict';
 }
 
 /** Onay kuyruğunun "şimdi"si: test saatiyle aynı (25 Kasım 12:00 İstanbul). */
@@ -365,6 +371,30 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
   };
   const opened = new Map<string, { start: string; end: string }[]>();
 
+  /** Randevunun tahsilatları: alınan kapora havalesi ve tamamlamada yazılanlar (eskiden yeniye). */
+  const payments = (s: Stored): PaymentView[] => {
+    const d = s.deposit;
+    const deposit: PaymentView[] =
+      d?.received !== undefined
+        ? [
+            {
+              id: `${s.row.id.slice(0, -4)}d${s.row.id.slice(-3)}`,
+              branchId: session.branches[0]?.id ?? '',
+              method: 'Transfer',
+              amount: money(d.amountMinor),
+              isDeposit: true,
+              status: d.refundedMinor ? 'PartiallyRefunded' : 'Recorded',
+              ...(d.refundedMinor ? { refundedAmount: money(d.refundedMinor) } : {}),
+              paidUtc: localDateTimeToUtc(s.date, d.received, tz),
+              purpose: 'Appointment',
+              appointmentId: s.row.id,
+              recordedAfterDayClose: false,
+            },
+          ]
+        : [];
+    return [...deposit, ...(s.payments ?? [])];
+  };
+
   const toItem = (s: Stored): CalendarAppointment => {
     const offset = Date.parse(s.startUtc) - Date.parse(localDateTimeToUtc(s.date, s.row.start, tz));
     const at = (time: string) => shift(localDateTimeToUtc(s.date, time, tz), offset);
@@ -432,7 +462,9 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       ],
       total: { amountMinor: 45000, currency: 'TRY' },
       // "Salonda ödenecek" alınan kapora kadar düşer (A3).
-      amountDue: money(s.deposit?.received ? 45000 - s.deposit.amountMinor : 45000),
+      amountDue: money(
+        s.status === 'Completed' ? 0 : s.deposit?.received ? 45000 - s.deposit.amountMinor : 45000,
+      ),
       deposit: depositView(s),
       isRecurring: item.isRecurring,
       seriesId: s.row.seriesId ?? null,
@@ -444,6 +476,8 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
       holdExpiresUtc: s.status === 'PendingApproval' ? (item.holdExpiresUtc ?? null) : null,
       customerNote: s.row.status === 'PendingApproval' ? 'Parfümsüz ürün tercih ediyorum.' : null,
       history: history(s),
+      ...(session.permissions.includes('payment.collect') ? { payments: payments(s) } : {}),
+      ...(s.status === 'Completed' && s.payments ? { completedUtc: queueGeneratedUtc } : {}),
       version: String(s.version),
     };
   };
@@ -783,6 +817,64 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
     }
 
     switch (action) {
+      case '/complete': {
+        if (!session.permissions.includes('appointment.complete')) {
+          return json(403, { code: 'forbidden' });
+        }
+
+        if (!request.headers.get('Idempotency-Key')) {
+          return json(400, { code: 'validation_failed' });
+        }
+
+        if (options.completeError === 'concurrency_conflict') {
+          return json(412, { code: 'concurrency_conflict' });
+        }
+
+        if (stored.status !== 'CheckedIn') {
+          return json(409, { code: 'invalid_state_transition' });
+        }
+
+        const body = (await request.clone().json()) as CompleteRequest;
+        const detail = toDetail(stored);
+        const expected =
+          detail.amountDue.amountMinor - (body.packageRedemptions?.length ?? 0) * 45000;
+        const paid = body.payments.reduce((sum, p) => sum + p.amount.amountMinor, 0);
+        if (options.completeError === 'payment_total_mismatch' || paid !== expected) {
+          return json(409, {
+            code: 'payment_total_mismatch',
+            meta: { expectedAmountMinor: expected },
+          });
+        }
+
+        stored.payments = [
+          ...body.payments.map((p, i) => ({
+            id: `${stored.row.id.slice(0, -4)}e${String(i)}${stored.row.id.slice(-2)}`,
+            branchId: session.branches[0]?.id ?? '',
+            method: p.method,
+            amount: p.amount,
+            isDeposit: false,
+            status: 'Recorded' as const,
+            paidUtc: queueGeneratedUtc,
+            purpose: 'Appointment' as const,
+            appointmentId: stored.row.id,
+            isBalanceAfterDeposit: stored.deposit?.received !== undefined,
+            recordedAfterDayClose: false,
+          })),
+          ...(body.packageRedemptions ?? []).map((r, i) => ({
+            id: `${stored.row.id.slice(0, -4)}f${String(i)}${stored.row.id.slice(-2)}`,
+            branchId: session.branches[0]?.id ?? '',
+            method: 'PackageRedemption' as const,
+            amount: money(0),
+            isDeposit: false,
+            status: 'Recorded' as const,
+            paidUtc: queueGeneratedUtc,
+            purpose: 'Appointment' as const,
+            appointmentId: r.appointmentItemId,
+            recordedAfterDayClose: false,
+          })),
+        ];
+        return save('Completed');
+      }
       case '/check-in':
         if (options.actionConflict) {
           return json(412, { code: 'concurrency_conflict' });

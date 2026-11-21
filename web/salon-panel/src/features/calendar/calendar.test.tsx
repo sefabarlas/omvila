@@ -45,9 +45,10 @@ describe('takvim gün görünümü', () => {
     expect(within(summary).getByText('Derya Şahin · Saç kesimi · Elif')).toBeTruthy();
     expect(within(summary).getByText('Onay bekliyor')).toBeTruthy();
     expect(within(summary).getByText('ilki 1 sa 35 dk içinde iptal olur')).toBeTruthy();
-    expect(within(summary).getByText('7')).toBeTruthy();
-    expect(within(summary).getByText('randevu · 1 tamamlandı')).toBeTruthy();
-    // Kapıda sıra ve ciro D5.
+    // Bugün bloğu kasayı görebilen sahipte günün tahsilatıdır (manageGetCashDay, T-97).
+    expect(await within(summary).findByText('3.340 ₺')).toBeTruthy();
+    expect(within(summary).getByText('7 randevu · 1 tamamlandı')).toBeTruthy();
+    // Kapıda sıra ayrı PR'da.
     expect(screen.getByRole('button', { name: 'Randevu ekle' })).toBeTruthy();
     expect(screen.queryByText(/Kapıda sırada/i)).toBeNull();
   });
