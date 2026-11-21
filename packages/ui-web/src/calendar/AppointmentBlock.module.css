@@ -1,0 +1,208 @@
+/* design/tasarim-sistemleri/panel/components/AppointmentBlock. Renk her zaman durumdan (durum-* tokenları). */
+.block {
+  --durum-zemin: var(--durum-onaylandi-zemin);
+  --durum-metin: var(--durum-onaylandi-metin);
+  --durum-nokta: var(--durum-onaylandi-nokta);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: var(--bosluk-1-5) var(--bosluk-2) var(--bosluk-1);
+  border: 0;
+  border-radius: var(--kose-sm);
+  background: var(--durum-zemin);
+  color: var(--durum-metin);
+  box-shadow: inset 0 3px 0 var(--durum-nokta);
+  font: inherit;
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  text-align: left;
+  cursor: pointer;
+  touch-action: none;
+  transition:
+    box-shadow 0.15s,
+    opacity 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    transition: none;
+  }
+}
+
+.placed {
+  position: absolute;
+  top: calc(var(--takvim-saat) * var(--blok-ust) + var(--bosluk-0-5));
+  left: calc(
+    var(--bosluk-1) + (100% - 2 * var(--bosluk-1)) * var(--blok-serit) / var(--blok-serit-sayisi)
+  );
+  z-index: 1;
+  width: calc((100% - 2 * var(--bosluk-1)) / var(--blok-serit-sayisi) - var(--bosluk-0-5));
+  height: calc(var(--takvim-saat) * var(--blok-boy) - var(--bosluk-1));
+}
+
+.block:hover {
+  z-index: 2;
+  box-shadow:
+    inset 0 3px 0 var(--durum-nokta),
+    var(--golge-md);
+}
+
+.block:focus-visible {
+  z-index: 2;
+  outline: none;
+  box-shadow:
+    inset 0 3px 0 var(--durum-nokta),
+    var(--odak-halkasi);
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+.top {
+  display: flex;
+  gap: var(--bosluk-1-5);
+  align-items: center;
+  min-width: 0;
+}
+
+.customer {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.time {
+  flex: none;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.repeat {
+  flex: none;
+  opacity: 0.8;
+}
+
+.service {
+  overflow: hidden;
+  font-size: var(--yazi-kucuk-boyut);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+}
+
+.status {
+  display: flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  margin-top: auto;
+  font-weight: 600;
+}
+
+.dot {
+  flex: none;
+  width: var(--bosluk-1-5);
+  height: var(--bosluk-1-5);
+  border-radius: var(--kose-tam);
+  background: var(--durum-nokta);
+}
+
+.compact {
+  justify-content: center;
+  padding-top: var(--bosluk-1);
+}
+
+/* Bekleme dilimi: personel bu aralıkta müsait (SegmentView.staffBusy = false). */
+.gap {
+  position: absolute;
+  top: calc(var(--takvim-saat) * var(--bekleme-ust) + var(--bosluk-0-5));
+  right: var(--bosluk-1-5);
+  left: var(--bosluk-1-5);
+  display: grid;
+  box-sizing: border-box;
+  height: calc(var(--takvim-saat) * var(--bekleme-boy) - var(--bosluk-1));
+  place-items: center;
+  border: 1px dashed var(--cizgi-guclu);
+  border-radius: var(--kose-sm);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--zemin-yukseltilmis) 0 6px,
+    var(--zemin-ikincil) 6px 12px
+  );
+  pointer-events: none;
+}
+
+.gap span {
+  padding: 0 var(--bosluk-1-5);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ust-etiket-boyut);
+  line-height: var(--yazi-ust-etiket-satir);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Bekleyen randevu: saat tutulmuş ama kesinleşmemiş. */
+.onay,
+.kapora {
+  outline: 1.5px dashed var(--durum-nokta);
+  outline-offset: -1.5px;
+}
+
+.onay {
+  --durum-zemin: var(--durum-onay-zemin);
+  --durum-metin: var(--durum-onay-metin);
+  --durum-nokta: var(--durum-onay-nokta);
+}
+
+.kapora {
+  --durum-zemin: var(--durum-kapora-zemin);
+  --durum-metin: var(--durum-kapora-metin);
+  --durum-nokta: var(--durum-kapora-nokta);
+}
+
+.geldi {
+  --durum-zemin: var(--durum-geldi-zemin);
+  --durum-metin: var(--durum-geldi-metin);
+  --durum-nokta: var(--durum-geldi-nokta);
+}
+
+.tamamlandi {
+  --durum-zemin: var(--durum-tamamlandi-zemin);
+  --durum-metin: var(--durum-tamamlandi-metin);
+  --durum-nokta: var(--durum-tamamlandi-nokta);
+}
+
+.gelmedi {
+  --durum-zemin: var(--durum-gelmedi-zemin);
+  --durum-metin: var(--durum-gelmedi-metin);
+  --durum-nokta: var(--durum-gelmedi-nokta);
+}
+
+.iptal {
+  --durum-zemin: var(--durum-iptal-zemin);
+  --durum-metin: var(--durum-iptal-metin);
+  --durum-nokta: var(--durum-iptal-nokta);
+}
+
+.iptal .customer,
+.iptal .service {
+  text-decoration: line-through;
+}
+
+@media (pointer: coarse) {
+  .compact {
+    min-height: var(--bosluk-6);
+  }
+}

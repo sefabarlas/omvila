@@ -13,6 +13,7 @@
     "./errors": "./src/errors/index.ts",
     "./status": "./src/status/index.ts",
     "./panel": "./src/panel/index.ts",
+    "./calendar": "./src/calendar/index.ts",
     "./time": "./src/time/index.ts"
   },
   "scripts": {
@@ -23,6 +24,7 @@
     "preview:build": "ladle build"
   },
   "dependencies": {
+    "@dnd-kit/core": "6.3.1",
     "@omvila/api-client-ts": "workspace:*",
     "@omvila/design-tokens": "workspace:*",
     "lucide-react": "^0.511.0"

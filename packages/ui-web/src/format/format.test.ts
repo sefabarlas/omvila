@@ -58,6 +58,7 @@ describe('formatDate', () => {
     ['long', '21 Kasım Cuma'],
     ['short', '21 Kas Cum'],
     ['numeric', '21.11.2025'],
+    ['weekdayShort', 'Cum'],
   ] as const)('%s', (style, expected) => {
     expect(formatDate('2025-11-21', style)).toBe(expected);
   });

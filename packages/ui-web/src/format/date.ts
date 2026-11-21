@@ -33,7 +33,7 @@ const shortMonths = [
 const weekdays = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const shortWeekdays = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
-export type DateStyle = 'long' | 'panel' | 'short' | 'numeric' | 'dayMonth';
+export type DateStyle = 'long' | 'panel' | 'short' | 'numeric' | 'dayMonth' | 'weekdayShort';
 
 interface Parts {
   year: number;
@@ -59,7 +59,7 @@ function parseLocalDate(localDate: string): Parts {
 
 /**
  * long "21 Kasım Cuma", panel "Salı, 25 Kasım", short "21 Kas Cum", numeric "21.11.2026", dayMonth "31 Aralık"
- * (salon-paneli/AyarlarSube özel günler).
+ * (salon-paneli/AyarlarSube özel günler), weekdayShort "Pzt" (salon-paneli/HaftaTakvim kolon başlığı).
  * @param localDate Takvim günü, yyyy-aa-gg.
  */
 export function formatDate(localDate: string, style: DateStyle = 'long'): string {
@@ -73,6 +73,8 @@ export function formatDate(localDate: string, style: DateStyle = 'long'): string
       return `${weekday}, ${String(p.day)} ${month}`;
     case 'short':
       return `${String(p.day)} ${shortMonths[p.month - 1] ?? ''} ${shortWeekdays[p.weekday] ?? ''}`;
+    case 'weekdayShort':
+      return shortWeekdays[p.weekday] ?? '';
     case 'dayMonth':
       return `${String(p.day)} ${month}`;
     case 'numeric':
