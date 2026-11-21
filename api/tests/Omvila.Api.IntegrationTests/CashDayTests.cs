@@ -286,6 +286,68 @@ public sealed class CashDayTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<long>("SELECT count(*) FROM sales.cash_day_closes")).ShouldBe(0);
     }
 
+    // Müşteri kartı Ödemeler sekmesi (sözleşme manageListCustomerPayments; T-96): kartın tahsilatları yeniden eskiye, imleçle.
+    [Fact]
+    public async Task CustomerPayments_NewestFirst_Paged_PackageAndAfterClose()
+    {
+        var appointmentId = await CompletedWalkInAsync("Cash");
+        var customer = await CustomerIdAsync();
+        var deposit = await InsertPaymentAsync("Transfer", 15000, Instant.FromUtc(2026, 11, 24, 10, 0), isDeposit: true, customerId: customer);
+        var package = await InsertPaymentAsync("Card", 50000, Instant.FromUtc(2026, 11, 20, 10, 0), targetType: "CustomerPackage", customerId: customer);
+        await InsertPaymentAsync("Cash", 99900, Instant.FromUtc(2026, 11, 25, 8, 0));
+        (await CloseAsync(Today, 144900, null)).Status.ShouldBe(200);
+        _factory.Clock.Advance(Duration.FromMinutes(5));
+        var late = await InsertPaymentAsync("Cash", 1000, _factory.Clock.GetCurrentInstant(), customerId: customer);
+
+        var first = await _api.GetAsync($"/api/v1/manage/customers/{customer}/payments?limit=2", _token);
+
+        first.Status.ShouldBe(200, first.Body.ToString());
+        var items = first.Body.GetProperty("items").EnumerateArray().ToList();
+        items.Select(i => i.GetProperty("id").GetString()).First().ShouldBe(late);
+        items[0].GetProperty("recordedAfterDayClose").GetBoolean().ShouldBeTrue();
+        items[1].GetProperty("appointmentId").GetString().ShouldBe(appointmentId);
+        items[1].GetProperty("recordedAfterDayClose").GetBoolean().ShouldBeFalse();
+        items[1].GetProperty("customer").GetProperty("fullName").GetString().ShouldBe("Okan Er");
+        var cursor = first.Body.GetProperty("nextCursor").GetString()!;
+
+        var second = await _api.GetAsync($"/api/v1/manage/customers/{customer}/payments?limit=2&cursor={Uri.EscapeDataString(cursor)}", _token);
+
+        second.Status.ShouldBe(200, second.Body.ToString());
+        var rest = second.Body.GetProperty("items").EnumerateArray().ToList();
+        rest.Select(i => i.GetProperty("id").GetString()).ShouldBe([deposit, package], "başka müşterinin tahsilatı yok");
+        rest[0].GetProperty("isDeposit").GetBoolean().ShouldBeTrue();
+        rest[1].GetProperty("purpose").GetString().ShouldBe("CustomerPackage");
+        second.Body.GetProperty("nextCursor").ValueKind.ShouldBe(JsonValueKind.Null);
+
+        var bad = await _api.GetAsync($"/api/v1/manage/customers/{customer}/payments?limit=0&cursor=bozuk", _token);
+        bad.Status.ShouldBe(400, bad.Body.ToString());
+        bad.Body.GetProperty("errors").GetProperty("limit")[0].GetString().ShouldBe("out_of_range");
+        bad.Body.GetProperty("errors").GetProperty("cursor")[0].GetString().ShouldBe("invalid_format");
+    }
+
+    [Fact]
+    public async Task CustomerPayments_Staff403_OtherBrand404_BranchManagerSeesOwnBranch()
+    {
+        await CompletedWalkInAsync("Cash");
+        var customer = await CustomerIdAsync();
+        var kadikoy = (await PostAsync("/api/v1/manage/branches", new { name = "Kadıköy", addressLine = "Moda Cad. 1", district = "Kadıköy", city = "İstanbul" }))
+            .Body.GetProperty("id").GetString()!;
+        await InsertPaymentAsync("Card", 30000, Instant.FromUtc(2026, 11, 20, 10, 0), branchId: kadikoy, customerId: customer);
+        var path = $"/api/v1/manage/customers/{customer}/payments";
+
+        (await _api.GetAsync(path, _token)).Body.GetProperty("items").GetArrayLength().ShouldBe(2);
+        var manager = await _api.AddMemberAndSignInAsync(_token, "+905382741906", "BranchManager", _merkez);
+        (await _api.GetAsync(path, manager)).Body.GetProperty("items").GetArrayLength().ShouldBe(1, "başka şubenin tahsilatı görünmez");
+        var staff = await _api.AddMemberAndSignInAsync(_token, "+905382741905", "Staff", _merkez);
+        (await _api.GetAsync(path, staff)).Status.ShouldBe(403);
+        var other = await _api.SignupAsync("+905427771122", "Berber Can");
+        (await _api.GetAsync(path, other)).Status.ShouldBe(404);
+        (await _api.GetAsync("/api/v1/manage/customers/0193a8f0-0000-7000-8000-0000000000ff/payments", _token)).Status.ShouldBe(404);
+    }
+
+    private Task<string> CustomerIdAsync() =>
+        _api.ScalarAsync<string>("SELECT brand_customer_id::text FROM sales.payments WHERE brand_customer_id IS NOT NULL LIMIT 1");
+
     /// <summary>KK7 günü: nakit 450 (randevu) + 3.000; kart 1.240; havale 150 kapora + 500 paket satışı.</summary>
     private async Task<string> SeedCriterion7Async()
     {
@@ -323,14 +385,20 @@ public sealed class CashDayTests(PostgresFixture db) : IAsyncLifetime
 
     /// <summary>Tahsilat kaydını doğrudan yazar (paket satışı ve geçmiş günler için; tahsis tek hedefe).</summary>
     private async Task<string> InsertPaymentAsync(
-        string method, long amountMinor, Instant paidUtc, bool isDeposit = false, string targetType = "Appointment", string? branchId = null)
+        string method,
+        long amountMinor,
+        Instant paidUtc,
+        bool isDeposit = false,
+        string targetType = "Appointment",
+        string? branchId = null,
+        string? customerId = null)
     {
         var id = $"0193a8f0-0000-7000-8000-{Interlocked.Increment(ref _requests) + 500000:D12}";
         var target = $"0193a8f0-0000-7000-8000-{Interlocked.Increment(ref _requests) + 600000:D12}";
         await _api.ScalarAsync<int>(
             $"""
-            INSERT INTO sales.payments (id, brand_id, branch_id, method, amount_minor, currency_code, is_deposit, status, refunded_amount_minor, paid_utc)
-              VALUES ('{id}', '{_brand}', '{branchId ?? _merkez}', '{method}', {amountMinor}, 'TRY', {isDeposit}, 'Recorded', 0, '{Iso(paidUtc)}');
+            INSERT INTO sales.payments (id, brand_id, branch_id, brand_customer_id, method, amount_minor, currency_code, is_deposit, status, refunded_amount_minor, paid_utc)
+              VALUES ('{id}', '{_brand}', '{branchId ?? _merkez}', {(customerId is null ? "NULL" : $"'{customerId}'")}, '{method}', {amountMinor}, 'TRY', {isDeposit}, 'Recorded', 0, '{Iso(paidUtc)}');
             INSERT INTO sales.payment_allocations (id, brand_id, payment_id, target_type, target_id, amount_minor)
               VALUES (gen_random_uuid(), '{_brand}', '{id}', '{targetType}', '{target}', {amountMinor});
             SELECT 1;
