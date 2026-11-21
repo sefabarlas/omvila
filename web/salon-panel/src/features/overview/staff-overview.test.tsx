@@ -43,14 +43,14 @@ describe('personel görünümü', () => {
     expect(screen.queryByRole('button', { name: 'Kopyala' })).toBeNull();
   });
 
-  it('menü yalnız Takvimim; ayarlar, hizmetler ve personel adresleri 403', async () => {
+  it('menü Takvimim ve Müşteriler; ayarlar, hizmetler ve personel adresleri 403', async () => {
     const { router } = renderApp('/', { session: deniz });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
     expect(
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Takvimim']);
+    ).toEqual(['Takvimim', 'Müşteriler']);
     expect(within(nav).getByRole('link', { name: 'Takvimim' }).getAttribute('aria-current')).toBe(
       'page',
     );

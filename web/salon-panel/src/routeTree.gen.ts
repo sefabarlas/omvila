@@ -23,6 +23,8 @@ import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
 import { Route as PanelAyarlarRezervasyonRouteImport } from './routes/_panel/ayarlar/rezervasyon'
 import { Route as PanelAyarlarSubeRouteImport } from './routes/_panel/ayarlar/sube'
+import { Route as PanelMusterilerIndexRouteImport } from './routes/_panel/musteriler/index'
+import { Route as PanelMusterilerIdRouteImport } from './routes/_panel/musteriler/$id'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
@@ -94,6 +96,16 @@ const PanelAyarlarSubeRoute = PanelAyarlarSubeRouteImport.update({
   path: '/sube',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelMusterilerIndexRoute = PanelMusterilerIndexRouteImport.update({
+  id: '/musteriler/',
+  path: '/musteriler/',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelMusterilerIdRoute = PanelMusterilerIdRouteImport.update({
+  id: '/musteriler/$id',
+  path: '/musteriler/$id',
+  getParentRoute: () => PanelRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
@@ -108,7 +120,9 @@ export interface FileRoutesByFullPath {
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
+  '/musteriler/$id': typeof PanelMusterilerIdRoute
   '/ayarlar/': typeof PanelAyarlarIndexRoute
+  '/musteriler/': typeof PanelMusterilerIndexRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
@@ -122,7 +136,9 @@ export interface FileRoutesByTo {
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
+  '/musteriler/$id': typeof PanelMusterilerIdRoute
   '/ayarlar': typeof PanelAyarlarIndexRoute
+  '/musteriler': typeof PanelMusterilerIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,7 +155,9 @@ export interface FileRoutesById {
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/_panel/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/_panel/ayarlar/sube': typeof PanelAyarlarSubeRoute
+  '/_panel/musteriler/$id': typeof PanelMusterilerIdRoute
   '/_panel/ayarlar/': typeof PanelAyarlarIndexRoute
+  '/_panel/musteriler/': typeof PanelMusterilerIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -156,7 +174,9 @@ export interface FileRouteTypes {
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
+    | '/musteriler/$id'
     | '/ayarlar/'
+    | '/musteriler/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/giris'
@@ -170,7 +190,9 @@ export interface FileRouteTypes {
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
+    | '/musteriler/$id'
     | '/ayarlar'
+    | '/musteriler'
   id:
     | '__root__'
     | '/_panel'
@@ -186,7 +208,9 @@ export interface FileRouteTypes {
     | '/_panel/ayarlar/randevu-kurallari'
     | '/_panel/ayarlar/rezervasyon'
     | '/_panel/ayarlar/sube'
+    | '/_panel/musteriler/$id'
     | '/_panel/ayarlar/'
+    | '/_panel/musteriler/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -295,6 +319,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarSubeRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/musteriler/': {
+      id: '/_panel/musteriler/'
+      path: '/musteriler'
+      fullPath: '/musteriler/'
+      preLoaderRoute: typeof PanelMusterilerIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/musteriler/$id': {
+      id: '/_panel/musteriler/$id'
+      path: '/musteriler/$id'
+      fullPath: '/musteriler/$id'
+      preLoaderRoute: typeof PanelMusterilerIdRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
@@ -325,6 +363,8 @@ interface PanelRouteChildren {
   PanelPersonelRoute: typeof PanelPersonelRoute
   PanelTakvimRoute: typeof PanelTakvimRoute
   PanelIndexRoute: typeof PanelIndexRoute
+  PanelMusterilerIdRoute: typeof PanelMusterilerIdRoute
+  PanelMusterilerIndexRoute: typeof PanelMusterilerIndexRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
@@ -334,6 +374,8 @@ const PanelRouteChildren: PanelRouteChildren = {
   PanelPersonelRoute: PanelPersonelRoute,
   PanelTakvimRoute: PanelTakvimRoute,
   PanelIndexRoute: PanelIndexRoute,
+  PanelMusterilerIdRoute: PanelMusterilerIdRoute,
+  PanelMusterilerIndexRoute: PanelMusterilerIndexRoute,
 }
 
 const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)
