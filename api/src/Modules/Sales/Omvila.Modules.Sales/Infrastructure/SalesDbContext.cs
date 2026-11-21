@@ -23,6 +23,8 @@ internal sealed class SalesDbContext(DbContextOptions<SalesDbContext> options) :
 
     public DbSet<PackageSessionUsage> PackageSessionUsages => Set<PackageSessionUsage>();
 
+    public DbSet<CashDayClose> CashDayCloses => Set<CashDayClose>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

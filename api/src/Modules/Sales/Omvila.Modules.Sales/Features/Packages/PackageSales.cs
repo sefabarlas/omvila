@@ -119,7 +119,7 @@ internal sealed class PackageSales(
                              join p in db.Payments on a.PaymentId equals p.Id
                              where a.BrandId == brandId && a.TargetType == AllocationTargetType.CustomerPackage && a.TargetId == package.Id
                              select p).SingleAsync(ct);
-        payment.MarkRefunded(amount.Value);
+        payment.MarkRefunded(amount.Value, now);
 
         var sale = await db.CommissionEntries.SingleOrDefaultAsync(
             c => c.BrandId == brandId && c.CustomerPackageId == package.Id && c.Type == CommissionType.Sale && c.ReversesEntryId == null, ct);

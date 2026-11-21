@@ -285,6 +285,47 @@ public sealed class PackageTests(PostgresFixture db) : IAsyncLifetime
         rejected.Body.GetProperty("code").GetString().ShouldBe("package_session_unavailable");
     }
 
+    // Kasa (T-96): paket satışı satırı ad, seans ve satan personelle; "Paketten" 0 TL satırı yalnız sayıya girer; paket iadesi
+    // işaretlendiği günün nakit iadesi olarak düşülür (W3).
+    [Fact]
+    public async Task CashDay_PackageSaleRow_RedemptionZeroRow_RefundOnRefundDay()
+    {
+        var package = await CreatePackageAsync("Fön paketi", 150000, 10, saleCommissionPercent: 10);
+        var sold = await SellAsync(package, "Cash");
+        var packageItem = sold.Body.GetProperty("items")[0].GetProperty("customerPackageItemId").GetString()!;
+        var saleDay = (await _api.GetAsync($"/api/v1/manage/cash?branchId={_merkez}&date=2026-11-25", _token)).Body;
+        var saleRow = saleDay.GetProperty("payments").EnumerateArray().ShouldHaveSingleItem();
+        saleRow.GetProperty("purpose").GetString().ShouldBe("CustomerPackage");
+        saleRow.GetProperty("customerPackageId").GetString().ShouldBe(sold.Body.GetProperty("id").GetString());
+        saleRow.GetProperty("packageName").GetString().ShouldBe("Fön paketi");
+        saleRow.GetProperty("packageSessionCount").GetInt32().ShouldBe(10);
+        saleRow.GetProperty("staffName").GetString().ShouldNotBeNullOrEmpty("satan personel");
+        saleDay.GetProperty("expectedCash").GetProperty("amountMinor").GetInt64().ShouldBe(150000);
+
+        var booked = await BookAsync(await VerifyAsync(CustomerPhone), FridayAt1430, packageItem);
+        var id = booked.Body.GetProperty("id").GetString()!;
+        _factory.Clock.Advance(Duration.FromHours(50));
+        var detail = await _api.GetAsync($"/api/v1/manage/appointments/{id}", _token);
+        var checkedIn = await _api.WriteAsync(HttpMethod.Post, $"/api/v1/manage/appointments/{id}/check-in", new { }, _token, detail.ETag);
+        (await CompleteAsync(id, checkedIn.ETag, new { payments = Array.Empty<object>() })).Status.ShouldBe(200);
+        var refunded = await _api.SendAsync(
+            HttpMethod.Post, $"/api/v1/manage/customer-packages/{sold.Body.GetProperty("id").GetString()}/refund", new { amount = Amount(90000) }, _token,
+            Headers(sold.ETag, Key()));
+        refunded.Status.ShouldBe(200, refunded.Body.ToString());
+
+        var serviceDay = (await _api.GetAsync($"/api/v1/manage/cash?branchId={_merkez}&date=2026-11-27", _token)).Body;
+        var redemption = serviceDay.GetProperty("payments").EnumerateArray().ShouldHaveSingleItem();
+        redemption.GetProperty("method").GetString().ShouldBe("PackageRedemption");
+        redemption.GetProperty("amount").GetProperty("amountMinor").GetInt64().ShouldBe(0);
+        redemption.GetProperty("appointmentId").GetString().ShouldBe(id);
+        redemption.GetProperty("isBalanceAfterDeposit").GetBoolean().ShouldBeFalse();
+        serviceDay.GetProperty("total").GetProperty("count").GetInt32().ShouldBe(1);
+        serviceDay.GetProperty("total").GetProperty("amount").GetProperty("amountMinor").GetInt64().ShouldBe(0);
+        serviceDay.GetProperty("cashRefunded").GetProperty("amountMinor").GetInt64().ShouldBe(90000, "paket iadesi iade gününde düşülür");
+        (await _api.GetAsync($"/api/v1/manage/cash?branchId={_merkez}&date=2026-11-25", _token)).Body
+            .GetProperty("cashRefunded").GetProperty("amountMinor").GetInt64().ShouldBe(0);
+    }
+
     [Fact]
     public async Task Refund_W9_ManualAmount_PaymentPartiallyRefunded_SaleCommissionReversed()
     {
