@@ -6,3 +6,4 @@ export type { MoneyValue, PriceDisplay } from './money';
 export { formatPhone, maskPhone, parseMobilePhone } from './phone';
 export { withTimeSuffix } from './suffix';
 export type { TimeSuffix } from './suffix';
+export { initials } from './name';
