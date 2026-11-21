@@ -2,6 +2,8 @@ import { BookingAvatar, DayStrip, FullDayNotice, TimeSlotGrid } from '@omvila/ui
 import type { TimeSlot } from '@omvila/ui-web/booking';
 import { formatDate, formatTime, withTimeSuffix } from '@omvila/ui-web/format';
 import { daysBetween, toBranchDate } from '@omvila/ui-web/time';
+import { WaitlistForm } from '@/waitlist/WaitlistForm';
+import type { WaitlistChoice } from '@/waitlist/WaitlistForm';
 import type { SlotSearchResult } from '../booking-api';
 import type { Day } from '../use-days';
 import styles from './steps.module.css';
@@ -22,6 +24,8 @@ interface TimeStepProps {
   onSelectTime: (time: string) => void;
   /** Dolu günden en yakın uygun saate geçiş (kriter 7). */
   onJump: (date: string, time: string) => void;
+  /** Dolu günde "Bekleme listesine katıl" (KK3); telefon doğrulaması sonraki adımda. */
+  onJoinWaitlist: (choice: WaitlistChoice) => void;
 }
 
 /** Gün kısa adıyla (≤ 6 gün sonra) ya da tarihle: "Cuma", "5 Aralık". */
@@ -36,7 +40,7 @@ function nearest(days: readonly Day[], date: string, nextAvailableUtc: string | 
   return later?.firstSlotUtc ?? nextAvailableUtc;
 }
 
-/** Gün şeridi + saat ızgarası (Saat.png); dolu gün kartı (DoluGun.png). Bekleme listesi Dilim 5'te. */
+/** Gün şeridi + saat ızgarası (Saat.png); dolu gün kartı ve bekleme listesi formu (DoluGun.png). */
 export function TimeStep({
   days,
   maxDate,
@@ -50,6 +54,7 @@ export function TimeStep({
   onSelectDate,
   onSelectTime,
   onJump,
+  onJoinWaitlist,
 }: TimeStepProps) {
   const selectedDay = days.find((day) => day.date === date);
   const full = selectedDay !== undefined && !selectedDay.hasAvailability && !selectedDay.isClosed;
@@ -106,8 +111,11 @@ export function TimeStep({
           {staffName} için uygun saatler
         </p>
       ) : null}
-      {full ? (
-        notice
+      {full && date ? (
+        <>
+          {notice}
+          <WaitlistForm date={date} staffName={staffName} onJoin={onJoinWaitlist} />
+        </>
       ) : slots === undefined ? (
         <div className={styles.skeleton} aria-hidden="true" />
       ) : (

@@ -10,6 +10,7 @@ import { toBranchDate } from '@omvila/ui-web/time';
 import type { Clock } from '@omvila/ui-web/time';
 import { Clock as ClockIcon, Info } from 'lucide-react';
 import { responseSentence, responseWindow } from '@/lib/approval';
+import { sentTo } from '@/lib/sent-to';
 import type { PublicAppointment } from '../booking-api';
 import styles from './RequestStep.module.css';
 import shared from './steps.module.css';
@@ -45,7 +46,7 @@ export function RequestStep({ appointment, phoneMasked, showPrices, clock }: Req
       <div className={shared.center} role="status">
         <h2 className={shared.titleMedium}>Talebiniz alındı</h2>
         <p className={styles.lead}>
-          {responseSentence(brand.name, window)} Onaylandığında {phoneMasked} numarasına SMS
+          {responseSentence(brand.name, window)} Onaylandığında {sentTo(phoneMasked)} SMS
           göndereceğiz.
         </p>
       </div>
