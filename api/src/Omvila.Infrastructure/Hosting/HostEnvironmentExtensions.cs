@@ -28,4 +28,14 @@ public static class HostEnvironmentExtensions
         ArgumentNullException.ThrowIfNull(staging);
         return environment.IsDevelopmentOrTesting() || (environment.IsStaging() && staging.AllowFakeProviders);
     }
+
+    /// <summary>
+    /// SMS metni (giriş kodu dahil) günlüğe yazılabilir mi: yalnız Development (kodlama-dotnet.md § Günlük). Test sunucusunda
+    /// metin günlüğe değil sahte SMS günlüğü sayfasına (/dev/sms, T-76) bakılarak okunur.
+    /// </summary>
+    public static bool AllowsSmsContentInLogs(this IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        return environment.IsDevelopment();
+    }
 }
