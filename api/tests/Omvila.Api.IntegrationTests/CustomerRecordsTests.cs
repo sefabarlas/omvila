@@ -92,6 +92,12 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
     public async Task Merge_MovesAppointmentAndPayment_SumsCounters_MergesNotes_ArchivesSource()
     {
         var (source, appointmentId) = await AyseWithReceivedDepositAsync();
+        // Değerlendirme: tamamlama akışı bu testin konusu değil; satır doğrudan yazılır.
+        await _api.ScalarAsync<string>($"""
+            INSERT INTO reviews.reviews (id, brand_id, branch_id, appointment_id, brand_customer_id, rating, service_names, is_published, created_utc)
+            SELECT gen_random_uuid(), brand_id, branch_id, id, brand_customer_id, 5, ARRAY['Balyaj'], true, now() FROM scheduling.appointments WHERE id = '{appointmentId}'
+            RETURNING id::text
+            """);
         await _api.ScalarAsync<int>($"UPDATE customers.brand_customers SET notes = 'Online kart notu', visit_count = 2, cancel_count = 1, total_spent_minor = 90000, first_visit_on = '2026-03-01', last_visit_on = '2026-10-01' WHERE id = '{source}' RETURNING 1");
         _factory.Clock.Advance(Duration.FromMinutes(1));
         var target = await CreateCustomerAsync("Ayşe Y.", AyseOtherPhone, notes: "Kısa saç sever");
@@ -116,6 +122,7 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
             WHERE a.id = '{appointmentId}' AND a.customer_id = b.customer_id
             """)).ShouldBe(1, "randevunun global kişisi de kalan kartınki");
         (await _api.ScalarAsync<string>("SELECT brand_customer_id::text FROM sales.payments")).ShouldBe(target, "tahsilat da taşınır");
+        (await _api.ScalarAsync<string>("SELECT brand_customer_id::text FROM reviews.reviews")).ShouldBe(target, "değerlendirme de taşınır");
 
         // Kaynak silinmez, arşivlenir; listede, aramada ve kart olarak görünmez.
         (await _api.ScalarAsync<string>($"SELECT merged_into_id::text FROM customers.brand_customers WHERE id = '{source}'")).ShouldBe(target);
