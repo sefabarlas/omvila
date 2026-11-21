@@ -909,6 +909,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/customers/{brandCustomerId}/reveal-phone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                brandCustomerId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Maskeli numarayı arama anında aç ("Ara", "SMS")
+         * @description İşletme uygulaması müşteri kartı ve randevu detayındaki "Ara" / "SMS" butonları. Personel rolünde MaskCustomerPhoneFromStaff açıkken listeler
+         *     yalnız phoneMasked döner; uygulama butona basılınca bu ucu çağırır, dönen numarayla tel: / sms: bağlantısını hemen açar ve numarayı ekranda
+         *     göstermez, saklamaz. Her çağrı denetime yazılır (AuditLog: kullanıcı, müşteri kaydı, amaç, an; numara günlüğe yazılmaz). Yanıt önbelleğe alınmaz
+         *     (Cache-Control: no-store). İzin customer.view; customer.phone.view izni olan kullanıcı da çağırabilir (aynı denetim kaydı). Başka markanın veya
+         *     kapsam dışı kaydın kimliği ve telefonsuz müşteri kaydı (kapıda sıra, T-86) 404 not_found. Hız sınırı 429 rate_limited.
+         */
+        post: operations["manageRevealCustomerPhone"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/customer-deletion-requests": {
         parameters: {
             query?: never;
@@ -1517,11 +1543,15 @@ export interface paths {
          * @description "Yalnızca sizin telefonunuza gelenler." Tercihler yalnız push'u etkiler; bildirim paneli kaydı her durumda tutulur.
          *     Sahip ve yönetici olayları (owner.credits_low, owner.subscription_payment_failed, staff.deposit_reported) kapatılamaz.
          *     Sessiz saat aralığı platform varsayılanıdır (22:00–08:00, kullanıcının şubesinin saat diliminde); v1'de yalnız açılıp kapatılır.
+         *     İşletme push'ları gönderilmeden önce alıcının bu tercihleriyle süzülür (anahtar → olay eşlemesi MyNotificationPreferences açıklamasında);
+         *     kapalı anahtarın olayı push olarak gitmez ama bildirim panelinde (manageListInAppNotifications) görünür. Kaydı olmayan kullanıcı için
+         *     varsayılanlar döner (gün sonu özeti kapalı, bildirimler.md; diğer anahtarlar ve sessiz saatler açık).
          */
         get: operations["manageGetMyNotificationPreferences"];
         /**
          * Kendi bildirim tercihlerimi kaydet
-         * @description Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır).
+         * @description "Bildirim ayarları" (BildirimAyar) anahtarları. Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır). Değişiklik
+         *     sonraki push'tan itibaren uygulanır; sessiz saatte ertelenmiş push'lar gönderim anındaki tercihe göre süzülür.
          */
         put: operations["manageUpdateMyNotificationPreferences"];
         post?: never;
@@ -1837,6 +1867,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bugün (işletme uygulaması ana ekranı)
+         * @description OMVILA İşletme "Bugün" (Main, MainBos). Tek çağrıda: "Sıradaki" kartı, "Onay bekliyor" sayısı, "Sırada · ~35 dk bekleme", kişisel prim kartı ("KASIM PRİMİ")
+         *     ve "Gün akışı" ("4/12 bitti"). Gün, şubenin saat dilimindeki bugündür; kalan süreler ("50 dk sonra") generatedUtc'ye göre sayılır, cihaz saati kullanılmaz.
+         *     branchId verilmezse kullanıcının birincil şubesi. Kapsam: Staff rolü (calendar.view K) yalnız kendi kalemlerinin randevularını görür (KK10); telefon bu
+         *     yanıtta hiç dönmez. Yetkiye bağlı kartlar: pendingApprovalCount yalnız appointment.approve izninde, walkIns yalnız walkin.manage izninde, commission yalnız
+         *     commission.view izninde ve kullanıcının bu markada personel kaydı varsa dolu; aksi hâlde null (kart gösterilmez). Gün akışında iptal edilen randevular yoktur.
+         */
+        get: operations["manageGetToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/me/commission-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Primim (kişisel prim özeti)
+         * @description İşletme uygulaması Profil ("KASIM PRİMİM 6.840 ₺", "Bu hafta", "Son primler"). Yalnız oturumdaki kullanıcının kendi personel kaydının primleri (KK10, K2);
+         *     rolü ne olursa olsun başka personelin primi bu uçtan görülmez (salon geneli rapor manageGetCommissionReport, Dilim 6). İzin commission.view;
+         *     kullanıcının bu markada personel kaydı yoksa 404 not_found.
+         *     Ay (PeriodYearMonth) şubenin yerel takvimidir; month verilmezse bu ay. Toplam = ay içindeki bütün kayıtlar (Accrued, Approved, Paid) + ters kayıtlar (Reversed, eksi);
+         *     ters kayıt yüzünden eksi olabileceği için tamsayı totalMinor ile döner. serviceRevenueMinor "Hizmet geliri" (hizmet primi tabanları toplamı).
+         *     appointmentCount ayda tamamlanan randevu sayısı, noShowPercent ayın sonuçlanan randevularında Gelmedi oranı, averageRating son 90 günün ortalaması.
+         *     "Prim randevu tamamlandığında hak edilir. Selin Öztürk randevusu bitince eklenecek." metni nextAccrual'dan (bugün Geldi olup tamamlanmamış ilk randevu) üretilir.
+         *     Ödeme günü ("ödeme ayın 1'inde") sözleşmede yoktur (ayar değil; docs/acik-sorular.md T-101).
+         */
+        get: operations["manageGetMyCommissionSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/brands/{brandSlug}": {
         parameters: {
             query?: never;
@@ -1993,6 +2074,9 @@ export interface paths {
          * @description Onay veya kapora gerekiyorsa randevu PendingApproval oluşur ve holdExpiresUtc döner.
          *     Kapora gerekiyorsa yanıtta depositInstructions (alıcı, IBAN, tutar, açıklama kodu, son zaman) bulunur.
          *     Saat dolmuşsa 409 slot_taken + meta.alternatives.
+         *     Müşteri uygulaması (YROnay) aynı ucu müşteri jetonuyla (meBearer, X-Client customer-app) çağırır: telefon jetondan gelir, kod adımı yoktur;
+         *     fullName profildeki adla doldurulur (profilde ad yoksa bu istekle profile de yazılır). Markada müşteri kaydı yoksa açılır ve marka "Salonlarım"a
+         *     (CustomerSavedBrand, Source Booking) eklenir. Oluşan randevu meListAppointments ve meGetAppointment'ta görünür.
          */
         post: operations["publicCreateAppointment"];
         delete?: never;
@@ -2267,6 +2351,506 @@ export interface paths {
          *     ReviewPublicThreshold'u geçince ve salon gösteriyorsa (showReviews) PublicBrand.rating ile döner.
          */
         post: operations["publicCreateReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/auth/otp/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS kodu iste (müşteri uygulaması girişi)
+         * @description Müşteri uygulaması "Giriş" ekranındaki "Kod gönder". Kod her zaman OMVILA adıyla SMS'tir (otp.code, OtpChallenge.Purpose CustomerLogin).
+         *     Numaranın kayıtlı olup olmadığı yanıtta açık edilmez (her durumda 202). Yeniden gönderim ve deneme sınırları salon girişiyle aynıdır
+         *     (429 otp_resend_too_soon, otp_attempts_exceeded).
+         */
+        post: operations["meRequestOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/auth/otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS kodunu doğrula, oturum aç ("GirisKod")
+         * @description Kod doğruysa müşteri oturumu açılır (CustomerSession). Numaraya ait global Customer kaydı yoksa açılır; kayıt IsVerified ve HasAppAccount olur.
+         *     Bu işlem hiçbir markada BrandCustomer açmaz. Jetonlar gövdede döner (yalnız mobil istemci); uygulama yenileme jetonunu
+         *     flutter_secure_storage'da saklar. rememberDevice alanı bu uçta yok sayılır. Kod hatalıysa 422 otp_invalid (meta.attemptsLeft),
+         *     süresi dolmuşsa 422 otp_expired.
+         */
+        post: operations["meVerifyOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erişim jetonunu yenile (müşteri)
+         * @description Yenileme jetonu gövdede gönderilir ve her kullanımda döndürülür (rotation): yanıttaki yeni refreshToken saklanır, eskisi geçersizdir.
+         *     Kullanılmış bir jeton yeniden gelirse o zincirdeki bütün jetonlar iptal edilir ve 401 unauthorized döner (uygulama girişe döner).
+         */
+        post: operations["meRefreshToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Oturumu kapat ("Çıkış yap")
+         * @description Gönderilen yenileme jetonunun zinciri iptal edilir. pushToken gönderilirse o cihaz kaydı pasifleşir (çıkış yapan telefona push gitmez).
+         *     Uygulama jetonları yerelde de siler. İstek kendiliğinden idempotenttir.
+         */
+        post: operations["meLogout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Profil ("Profil", "Profil bilgilerim")
+         * @description Global Customer kaydının müşteriye görünen alanları. Markalar bu kaydın tamamını görmez (ürün kuralı 5). Telefon giriş anahtarıdır, salt okunurdur
+         *     ("Değiştirmek için destek"). fullName, müşteri henüz ad vermediyse (ilk girişte, randevusuz) null'dır; uygulama selamlamayı adsız gösterir ve
+         *     randevu alırken adı ister. Profilde "Salonlarım" meListBrands'ten gelir.
+         */
+        get: operations["meGetProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Profil bilgilerini kaydet ("Kaydet")
+         * @description Gönderilmeyen alan değişmez; email için açıkça null gönderilirse e-posta silinir. Telefon bu uçla değişmez.
+         *     Dil v1'de yalnız tr'dir (uygulama arayüzü ve bildirim metinleri Türkçe; English seçeneği docs/acik-sorular.md T-101'de açık).
+         *     Biçim hatası 400 validation_failed (fullName too_short / too_long, email invalid_format).
+         */
+        patch: operations["meUpdateProfile"];
+        trace?: never;
+    };
+    "/api/v1/me/consents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * İzinlerim (salon bazında kampanya izni)
+         * @description "İzinlerim (KVKK)" ekranı. Randevu mesajları işlem mesajıdır, rızaya bağlı değildir ve kapatılamaz (ekrandaki açıklama metni; listede satırı yoktur).
+         *     Liste, müşterinin müşteri kaydı (BrandCustomer) olan markalardır; yalnız kaydedilen (randevu alınmamış) salon listede yoktur.
+         *     marketingGranted, o markadaki son Marketing* rıza kaydıdır (ConsentRecord; kayıt yoksa false). İYS'ye bildirim v1'de yapılmaz, rıza yalnız toplanır (T-09).
+         */
+        get: operations["meListConsents"];
+        /**
+         * Bir salonun kampanya iznini aç veya kapat
+         * @description Anahtar tek bir "Kampanya ve indirim mesajları" iznidir: sunucu o marka için MarketingSms, MarketingEmail ve MarketingPush rıza kayıtlarını
+         *     (ConsentRecord, Channel CustomerApp) aynı değerle ekler. Rıza defteri yalnız eklenir, güncellenmez; değer zaten aynıysa yeni satır yazılmaz.
+         *     Bu yüzden istek kendiliğinden idempotenttir ve If-Match almaz (son yazılan geçerlidir). Müşteri kaydı olmayan marka 404 not_found.
+         *     Yanıt güncel listedir.
+         */
+        put: operations["meUpdateMarketingConsent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/account/deletion/otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hesap silme için SMS kodu iste ("SMS koduyla onayla ve sil", 1. adım)
+         * @description HesapSil ekranı. Oturumdaki müşterinin kendi numarasına kod gönderir (OtpChallenge.Purpose AccountDeletion, OMVILA adıyla SMS).
+         *     Ekrandaki önizleme ("2 yaklaşan randevunuz iptal edilecek", "Kalan paket seansları") ayrı uçtan gelmez: uygulama meListAppointments(scope = Upcoming)
+         *     ve meListPackages yanıtlarından üretir. Sınırlar giriş koduyla aynıdır (429).
+         */
+        post: operations["meRequestAccountDeletionOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/account/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hesabı ve verileri sil (SMS koduyla onay, 2. adım)
+         * @description Kod doğruysa silme hemen uygulanır (KK9, docs/acik-sorular.md W7): yaklaşan randevular iptal edilir (CancellationReason AccountDeleted; salonlara
+         *     staff.appointment_changed bildirimi gider, seanslar geri döner), global kayıt ve bütün markalardaki müşteri kayıtları anonimleşir (ad, telefon,
+         *     e-posta, notlar), rıza kayıtları ve cihazlar pasifleşir, bütün oturumlar kapanır. Randevu, ödeme ve prim kayıtları salonlarda anonim olarak kalır
+         *     ("Salonlarda kalanlar"); kalan paket seansları kullanılamaz hâle gelir. DataDeletionRequest (BrandId boş, RequestedVia CustomerApp, Completed) yazılır.
+         *     Yanıttan sonra jetonlar geçersizdir; uygulama HesapSilindi ekranını gösterir. Kod hatalıysa 422 otp_invalid, süresi dolmuşsa 422 otp_expired.
+         */
+        post: operations["meRequestAccountDeletion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Randevularım (yaklaşan) ve Geçmiş
+         * @description Müşterinin bütün markalardaki randevuları (her markada yalnız kendi müşteri kaydının randevuları).
+         *     scope = Upcoming: PendingApproval, Confirmed veya CheckedIn olup bitişi gelmemiş randevular, başlangıca göre artan (Main: ilk kayıt büyük kart, kalanı "Yaklaşan").
+         *     scope = Past: geri kalanlar (Completed, Cancelled, NoShow ve bitişi geçmiş olanlar), başlangıca göre azalan (Gecmis; ay başlıkları istemcide şubenin saat diliminden).
+         *     notReviewed = true yalnız scope = Past ile kullanılır ve canReview = true olanları döndürür ("Değerlendirilmedi" sekmesi); Upcoming ile 400 validation_failed.
+         *     "Aynısını tekrar al" (MainYaklasanYok, KK2): Upcoming boşsa uygulama scope = Past, limit = 1 ister; satırdaki branch, items (serviceId, staffId) ve canRebook
+         *     rezervasyon akışını doldurur (publicSearchDays / publicSearchSlots). "Son randevunuz 12 Kasım'da Kuaför Elif'teydi" aynı satırdan üretilir.
+         */
+        get: operations["meListAppointments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments/{appointmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Randevu detayı ("RandevuDetay")
+         * @description Başka müşterinin randevusu 404 not_found döner. Kapora isteniyorsa deposit.instructions havale bilgisini taşır (YRHavale).
+         *     canCancel / canReschedule ve son süreler ErteleKapali ve "Salonu ara" gösterimini belirler; "İptal 24 saat, saat değişikliği 12 saat öncesine kadar"
+         *     metni son sürelerin başlangıca farkından üretilir. Degerlendir ekranı başlığı (salon, hizmet, personel, tarih) ve "Merve Y." (meGetProfile.reviewerDisplayName)
+         *     bu yanıttan gelir.
+         */
+        get: operations["meGetAppointment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments/{appointmentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Randevuyu iptal et ("Iptal", neden zorunlu)
+         * @description SMS bağlantısındaki iptal (publicCancelAppointment) ile aynı kurallar (A6): neden zorunlu, son süre geçtiyse 409 cutoff_passed ("Salonu ara").
+         *     Neden çipleri: PlanChanged "Planım değişti", Sick "Rahatsızlandım" (tasarımdaki "Hastayım" yerine; sağlık bilgisi izlenimi vermemek için), WantsDifferentTime
+         *     "Başka saat istiyorum", Other (not zorunlu). Alınmış kapora için "iadesi salonun iade koşullarına bağlıdır" uyarısı istemcidedir; OMVILA iade yapmaz.
+         */
+        post: operations["meCancelAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments/{appointmentId}/availability/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Saat değişikliği için boş saatler ("RandevuErtele")
+         * @description Aynı hizmetler ve aynı personelle bir günün boş saatleri; randevunun kendi süresi meşgul sayılmaz. Gün şeridindeki noktalar için uygulama
+         *     publicSearchDays'i randevunun kalemleriyle (items[].serviceId, staffId) çağırır. Son süre geçtiyse 409 cutoff_passed (ErteleKapali).
+         */
+        post: operations["meSearchRescheduleSlots"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments/{appointmentId}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Saati değiştir (müşteri)
+         * @description publicRescheduleAppointment ile aynı kurallar (A14): erteleme son süresi geçtiyse 409 cutoff_passed, saat dolduysa 409 slot_taken + meta.alternatives.
+         *     Salon onaylı çalışıyorsa randevu yeniden PendingApproval olur ("Salon onaylı çalışıyorsa yeni saat onaya düşer"); alınmış kapora yeni saate aktarılır.
+         */
+        post: operations["meRescheduleAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/appointments/{appointmentId}/deposit/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Havaleyi bildir ("Havaleyi yaptım, salona bildir", YRHavale)
+         * @description publicReportDepositTransfer ile aynı davranış: deposit.status CustomerReported olur, salona staff.deposit_reported gider, randevu durumu değişmez
+         *     ("Salon onayı bekleniyor"). Kendiliğinden idempotenttir (Idempotency-Key ve If-Match almaz). Kapora beklenmiyorsa 409 invalid_state_transition,
+         *     tutma süresi dolmuşsa 409 hold_expired. Uygulamada oluşturulan randevuda kimlik publicCreateAppointment yanıtındaki id'dir.
+         */
+        post: operations["meReportDepositTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Değerlendirmeyi gönder ("Degerlendir")
+         * @description publicCreateReview ile aynı kurallar (KK8): yalnız Completed randevu ve bir kez; değerlendirilmişse 409 already_reviewed, Completed değilse
+         *     409 invalid_state_transition, başka müşterinin randevusu 404 not_found. Etiket yok; puan, isteğe bağlı yorum. Yorumda "Merve Y." görünür.
+         */
+        post: operations["meCreateReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/brands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Salonlarım (randevu alınan + kaydedilen)
+         * @description YRSalon ("Hangi salon?") ve Profil "Salonlarım". Randevu alınan markalar (müşteri kaydı, BrandCustomer) ile QR veya bağlantıyla kaydedilenler
+         *     (CustomerSavedBrand) birlikte; son ziyarete göre azalan, ziyareti olmayanlar kaydedilme anına göre sonda. Sayfalanmaz (kısa liste). Boşsa YRSalonBos / MainBos.
+         *     activePackages "Fön paketiniz var" rozetini besler (Active ve kalan seansı olan paketler).
+         *     Uygulamadan randevu akışı (YR*) public uçlarla, müşteri jetonuyla yapılır: publicGetBrand(slug) → publicGetBranchCatalog (YRHizmet, YRPersonel) →
+         *     publicSearchDays / publicSearchSlots (YRSaat) → publicListMyPackages ("paketinizden düşülsün") → publicCreateAppointment (YROnay; Authorization meBearer,
+         *     X-Client customer-app, kod adımı yok) → kapora varsa meReportDepositTransfer (YRHavale). Bekleme listesi publicJoinWaitlist (meBearer).
+         */
+        get: operations["meListBrands"];
+        put?: never;
+        /**
+         * Salonu ekle ("QR kodu okut", "Bağlantıyı yapıştır")
+         * @description MainBos ve derin bağlantı (randevu.omvila.com.tr/{brandSlug}, K3). Uygulama QR veya yapıştırılan bağlantıdan brandSlug'ı çıkarır.
+         *     CustomerSavedBrand yazılır; BrandCustomer **oluşmaz** ve salon bu kişiyi müşteri listesinde görmez (KK1). Müşteri kaydı ilk randevuda açılır.
+         *     Eski bağlantı adı yönlendirmesi sürüyorsa güncel markaya kaydedilir. Zaten kayıtlı veya randevu alınmış marka için aynı satır 200 ile döner
+         *     (kendiliğinden idempotent; Idempotency-Key almaz). Bilinmeyen bağlantı 404 not_found ("Bu bağlantıda salon bulunamadı").
+         */
+        post: operations["meSaveBrand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Paketlerim
+         * @description Bütün markalardaki paketler. Önce kullanılabilir paketler (Active ve kalan seansı olan; son kullanım gününe göre artan), sonra "Biten paketler"
+         *     (seansı biten, süresi geçen, iade edilen; bitişe göre azalan). Başlıktaki "2 aktif paket" activeCount'tur. Boşsa PaketlerBos.
+         *     Paketler salondan satın alınır; uygulamada satın alma yoktur.
+         */
+        get: operations["meListPackages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ödemelerim (salt okunur)
+         * @description "Uygulamadan ödeme alınmaz." Kapora havaleleri ve salonda kaydedilen tahsilatlar, yeniden eskiye (ay başlıkları istemcide).
+         *     Satırlar: kind = Deposit (kapora havalesi), AppointmentPayment (salonda alınan randevu ödemesi), PackagePurchase (paket satın alma).
+         *     Kapora durumu (Dilim 4 KK9): status AwaitingConfirmation = müşteri "Havaleyi yaptım" dedi, salon henüz "Kapora geldi" demedi ("Salon onayı bekleniyor";
+         *     satır tahsilat kaydı değil, randevudan gelir, id randevunun kimliğidir); Recorded = "Alındı · 26 Kasım randevusu"; Refunded veya PartiallyRefunded =
+         *     "Salon iade etti". Bildirilmemiş (Awaiting) kapora, iptal edilmiş (Voided) kayıt ve paketten düşülen kalemlerin 0 TL kaydı listelenmez.
+         *     Yöntem metni istemcide: Cash "Nakit", Card "Kartla, salonda" (salonun kendi POS'u), Transfer "Havale". Boşsa OdemelerimBos.
+         */
+        get: operations["meListPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Müşteri uygulaması push jetonunu kaydet ("BildirimIzni")
+         * @description Müşteri kendi izin ekranımızda "Bildirimlere izin ver" dedikten sonra, açılışta ve FCM jetonu yenilendiğinde çağrılır (Device: OwnerType Customer, App Customer).
+         *     manageRegisterDevice ile aynı kurallar: doğal anahtar push jetonudur, aynı jeton güncellenir ve aynı deviceId döner (Idempotency-Key istenmez); jeton başka
+         *     hesaba kayıtlıysa o kayıt pasifleşir. Aktif cihaz varken müşteri bildirimleri önce push denenir, ulaşmazsa SMS'e düşer. "Şimdi değil" diyen kullanıcıda
+         *     cihaz kaydı yoktur, hatırlatmalar SMS ile gelir (MainBildirimKapali şeridi istemcidedir).
+         */
+        post: operations["meRegisterDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bildirimler (müşteri)
+         * @description Müşteriye giden push'lu olayların uygulama içi kaydı, yeniden eskiye (Bildirimler, BildirimlerBos). Kayıt push tercihinden ve teslimden bağımsız
+         *     yazılır (bildirim izni kapalı olsa da görünür). title ve body olay anındaki push metniyle aynıdır (docs/standartlar/bildirimler.md § Müşteri olayları);
+         *     kod, IBAN ve not içeriği yazılmaz. Zildeki nokta unreadCount > 0 iken gösterilir (sahte sayı yok). target dokununca açılacak ekrandır.
+         */
+        get: operations["meListNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bildirimleri okundu say
+         * @description manageMarkNotificationsRead ile aynı kurallar: notificationIds (dokunulan bildirim) veya all = true; ikisi birden veya hiçbiri 400 validation_failed.
+         *     İdempotenttir; başka müşterinin bildirimi sessizce yok sayılır. Yanıt güncel okunmamış sayısıdır.
+         */
+        post: operations["meMarkNotificationsRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3799,7 +4383,7 @@ export interface components {
          * @enum {string}
          */
         DevicePlatform: "iOS" | "Android";
-        /** @description İşletme uygulaması push jetonu kaydı */
+        /** @description Push jetonu kaydı (işletme uygulaması manageRegisterDevice, müşteri uygulaması meRegisterDevice) */
         DeviceRegistration: {
             platform: components["schemas"]["DevicePlatform"];
             /** @description FCM kayıt jetonu */
@@ -5234,6 +5818,775 @@ export interface components {
         DataDeletionRequestPage: {
             items: components["schemas"]["DataDeletionRequestView"][];
             nextCursor: string | null;
+        };
+        /** @description "Ara" / "SMS" butonu; amaç denetim kaydına yazılır */
+        PhoneRevealRequest: {
+            /**
+             * @description Call = "Ara"; Sms = "SMS"
+             * @enum {string}
+             */
+            purpose: "Call" | "Sms";
+        };
+        /** @description Maskesiz numara; istemci yalnız tel / sms bağlantısını açmak için kullanır, göstermez ve saklamaz */
+        RevealedPhone: {
+            phone: components["schemas"]["PhoneE164"];
+        };
+        /** @description Bugün ekranındaki randevu satırı ("12:00 · Deniz Acar · Saç kesimi · Can · Onay bekliyor"); işlem butonları istemcide durum ve izinden üretilir */
+        TodayAppointment: {
+            /**
+             * Format: uuid
+             * @description Randevu kimliği (RandevuDetay)
+             */
+            appointmentId: string;
+            /**
+             * Format: date-time
+             * @description Başlangıç
+             */
+            startUtc: string;
+            /**
+             * Format: date-time
+             * @description Bitiş; "45 dk" süre istemcide
+             */
+            endUtc: string;
+            status: components["schemas"]["AppointmentStatus"];
+            displayStatus: components["schemas"]["DisplayStatus"];
+            /**
+             * @description Müşteri adı
+             * @example Derya Şahin
+             */
+            customerName: string;
+            /** @description İlk randevusu mu */
+            isNewCustomer: boolean;
+            /**
+             * @description Hizmet adları; birden çok kalemde "Boya + Fön"
+             * @example Saç kesimi
+             */
+            serviceSummary: string;
+            /**
+             * @description Kalemlerin personeli (tekrarsız, kalem sırasıyla)
+             * @example [
+             *       "Can Yücel"
+             *     ]
+             */
+            staffNames: string[];
+            /**
+             * Format: date-time
+             * @description Yalnız PendingApproval; bu anda yanıtlanmazsa otomatik iptal
+             */
+            holdExpiresUtc?: string | null;
+            /** @description Yalnız kapora istenmiş randevuda bulunur */
+            depositStatus?: components["schemas"]["DepositStatus"];
+        };
+        /** @description "Sırada 3 · ~35 dk bekleme" kartı (WalkInQueue özeti) */
+        TodayWalkInSummary: {
+            /**
+             * @description Sırada bekleyen
+             * @example 3
+             */
+            waitingCount: number;
+            /**
+             * @description Yeni gelen için tahmini bekleme; müsait personel yoksa null
+             * @example 35
+             */
+            estimatedWaitMinutesForNew?: number | null;
+        };
+        /** @description Bir günün prim toplamı (grafik noktası) */
+        CommissionDayAmount: {
+            /**
+             * Format: date
+             * @description Şubenin yerel günü
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description O günün prim toplamı (kuruş; ters kayıt varsa eksi olabilir)
+             * @example 42000
+             */
+            amountMinor: number;
+        };
+        /** @description "KASIM PRİMİ 6.840 ₺" kartı ve çizgi grafiği */
+        TodayCommission: {
+            /**
+             * @description Yıl-ay (şubenin yerel takvimi)
+             * @example 2026-11
+             */
+            month: string;
+            /**
+             * Format: int64
+             * @description Ayın kişisel prim toplamı (kuruş; ters kayıtlar düşülmüş)
+             * @example 684000
+             */
+            totalMinor: number;
+            /**
+             * @description Para birimi
+             * @enum {string}
+             */
+            currency: "TRY";
+            /** @description Ayın başından bugüne prim olan günler (grafik istemcide kümülatif çizilir; kaydı olmayan gün listede yoktur) */
+            daily: components["schemas"]["CommissionDayAmount"][];
+        };
+        /** @description İşletme uygulaması "Bugün" verisi */
+        ManageToday: {
+            /**
+             * Format: uuid
+             * @description Şube
+             */
+            branchId: string;
+            /**
+             * @description Başlıktaki şube adı ("Salı 25 Kasım · Kadıköy")
+             * @example Kadıköy
+             */
+            branchName: string;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /**
+             * Format: date
+             * @description Şubenin yerel bugünü
+             */
+            date: string;
+            /**
+             * Format: date-time
+             * @description Sunucunun "şimdi"si; "50 dk sonra" buna göre sayılır
+             */
+            generatedUtc: string;
+            /** @description "Sıradaki": başlangıcı gelmemiş ilk Confirmed veya PendingApproval randevu; yoksa null */
+            next: null | components["schemas"]["TodayAppointment"];
+            /**
+             * @description "Onay bekliyor" (şubedeki PendingApproval talepler); appointment.approve izni yoksa null
+             * @example 2
+             */
+            pendingApprovalCount: number | null;
+            /** @description Kapıda sıra özeti; walkin.manage izni yoksa null */
+            walkIns: null | components["schemas"]["TodayWalkInSummary"];
+            /** @description Kişisel prim kartı; commission.view izni veya personel kaydı yoksa null */
+            commission: null | components["schemas"]["TodayCommission"];
+            /**
+             * @description "4/12 bitti": tamamlanan
+             * @example 4
+             */
+            completedCount: number;
+            /**
+             * @description "4/12 bitti": iptal edilmemiş bütün randevular
+             * @example 12
+             */
+            totalCount: number;
+            /** @description Gün akışı, başlangıca göre artan; iptal edilenler yok. Boşsa MainBos */
+            items: components["schemas"]["TodayAppointment"][];
+        };
+        /**
+         * @description Service = hizmet primi (randevu tamamlanınca), Sale = paket satış primi
+         * @enum {string}
+         */
+        CommissionEntryType: "Service" | "Sale";
+        /**
+         * @description docs/alan/durum-makinesi.md § Prim. Reversed = iptal veya iade ters kaydı (eksi tutar). İstemciler bilinmeyen değeri genel durum olarak gösterir
+         * @enum {string}
+         */
+        CommissionEntryStatus: "Accrued" | "Approved" | "Paid" | "Reversed";
+        /** @description "Son primler" satırı ("Ayşe Yılmaz · Bugün 09:30 · Saç kesimi · +90 ₺") */
+        MyCommissionEntry: {
+            /**
+             * Format: uuid
+             * @description Prim kaydı
+             */
+            id: string;
+            type: components["schemas"]["CommissionEntryType"];
+            /**
+             * Format: int64
+             * @description Tutar (kuruş); Reversed kayıtta eksi
+             * @example 9000
+             */
+            amountMinor: number;
+            status: components["schemas"]["CommissionEntryStatus"];
+            /**
+             * Format: date-time
+             * @description Hizmet priminde randevu başlangıcı; satış priminde satış anı
+             */
+            occurredUtc: string;
+            /**
+             * @description Müşteri adı
+             * @example Ayşe Yılmaz
+             */
+            customerName: string;
+            /**
+             * @description Hizmet adı veya paket adı
+             * @example Saç kesimi
+             */
+            description: string;
+            /**
+             * Format: uuid
+             * @description Hizmet priminde randevu
+             */
+            appointmentId?: string | null;
+            /**
+             * Format: uuid
+             * @description Satış priminde müşteri paketi
+             */
+            customerPackageId?: string | null;
+        };
+        /** @description "Bu hafta" çubuğu */
+        CommissionWeekDay: {
+            /**
+             * Format: date
+             * @description Şubenin yerel günü
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description Günün prim toplamı (kuruş)
+             * @example 42000
+             */
+            amountMinor: number;
+            /**
+             * @description Günün tamamlanan randevu sayısı ("Sal en yoğun")
+             * @example 6
+             */
+            appointmentCount: number;
+        };
+        /** @description Kişisel prim özeti (işletme uygulaması Profil, "Primim") */
+        MyCommissionSummary: {
+            /**
+             * Format: uuid
+             * @description Oturumdaki kullanıcının personel kaydı
+             */
+            staffId: string;
+            /** @example Elif Kaya */
+            staffName: string;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /**
+             * @description Yıl-ay
+             * @example 2026-11
+             */
+            month: string;
+            /**
+             * Format: date
+             * @description Dönem başı ("1–25 Kasım")
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Dönem sonu; bu ayda bugün
+             */
+            to: string;
+            /**
+             * Format: int64
+             * @description Ayın kişisel prim toplamı (kuruş; ters kayıtlar düşülmüş, eksi olabilir)
+             * @example 684000
+             */
+            totalMinor: number;
+            /**
+             * Format: int64
+             * @description "Hizmet geliri" (hizmet primi tabanları; ters kayıtlar düşülmüş)
+             * @example 2850000
+             */
+            serviceRevenueMinor: number;
+            /**
+             * @description Para birimi
+             * @enum {string}
+             */
+            currency: "TRY";
+            /**
+             * @description "Randevu": ayda tamamlanan
+             * @example 94
+             */
+            appointmentCount: number;
+            /**
+             * @description "Gelmedi %4": ayın sonuçlanan randevularında Gelmedi oranı; sonuçlanan yoksa null
+             * @example 4
+             */
+            noShowPercent: number | null;
+            /**
+             * @description "Puan": son 90 gündeki değerlendirmelerin ortalaması; yoksa null
+             * @example 4.9
+             */
+            averageRating: number | null;
+            /** @description Ayın prim olan günleri (Bugün kartındaki çizgi) */
+            daily: components["schemas"]["CommissionDayAmount"][];
+            /** @description Bu haftanın (Pazartesi başlar) bugüne kadarki günleri */
+            thisWeek: components["schemas"]["CommissionWeekDay"][];
+            /** @description Ayın bütün prim kayıtları, yeniden eskiye ("Son primler" ilk satırları, "Tümü" hepsi) */
+            entries: components["schemas"]["MyCommissionEntry"][];
+            /** @description Bugün Geldi olup henüz tamamlanmamış ilk randevu ("Selin Öztürk randevusu bitince eklenecek"); yoksa null */
+            nextAccrual: null | {
+                /** Format: uuid */
+                appointmentId: string;
+                /** @example Selin Öztürk */
+                customerName: string;
+            };
+        };
+        /** @description Müşteri uygulaması giriş kodu isteği */
+        MeOtpRequest: {
+            phone: components["schemas"]["PhoneInput"];
+        };
+        /** @description Müşteri oturumu (aud=me). Jetonlar gövdede; uygulama yenileme jetonunu güvenli depoda tutar */
+        MeAuthResult: {
+            /** @description Erişim jetonu */
+            accessToken: string;
+            /** @example 900 */
+            expiresInSeconds: number;
+            /** @description Yenileme jetonu (her kullanımda döndürülür) */
+            refreshToken: string;
+            /** @description Uygulamaya ilk giriş (HasAppAccount bu istekle açıldı); BildirimIzni ve MainBos akışı için */
+            isNewAccount: boolean;
+        };
+        /** @description Müşteri jetonu yenileme */
+        MeRefreshRequest: {
+            /** @description Saklanan yenileme jetonu */
+            refreshToken: string;
+        };
+        /** @description Çıkışta iptal edilecek jeton ve pasifleşecek cihaz */
+        MeLogoutRequest: {
+            /** @description Zinciri iptal edilecek yenileme jetonu */
+            refreshToken?: string;
+            /** @description Bu telefonun FCM jetonu; cihaz kaydı pasifleşir */
+            pushToken?: string;
+        };
+        /**
+         * @description Uygulama ve bildirim dili. v1'de yalnız tr (docs/acik-sorular.md T-101); istemciler bilinmeyen değeri tr sayar
+         * @enum {string}
+         */
+        MeLanguage: "tr";
+        /** @description Müşterinin kendi profili (global Customer) */
+        MeProfile: {
+            /**
+             * Format: uuid
+             * @description Customer kimliği
+             */
+            id: string;
+            /**
+             * @description Ad soyad; henüz verilmediyse null
+             * @example Merve Yıldız
+             */
+            fullName: string | null;
+            /**
+             * @description Değerlendirmede görünen ad ("Merve Y."); ad yoksa null
+             * @example Merve Y.
+             */
+            reviewerDisplayName: string | null;
+            phone: components["schemas"]["PhoneE164"];
+            /**
+             * Format: email
+             * @description "Makbuz ve hatırlatma için" (isteğe bağlı)
+             */
+            email: string | null;
+            language: components["schemas"]["MeLanguage"];
+            version: components["schemas"]["Version"];
+        };
+        /** @description "Profil bilgilerim" kaydı; gönderilmeyen alan değişmez */
+        MeProfileUpdate: {
+            /** @description Ad soyad */
+            fullName?: string;
+            /**
+             * Format: email
+             * @description null = e-postayı sil
+             */
+            email?: string | null;
+            language?: components["schemas"]["MeLanguage"];
+        };
+        /** @description Müşteri yüzeyindeki marka özeti (rozette baş harfler istemcide) */
+        MeBrandRef: {
+            /** Format: uuid */
+            id: string;
+            /** @example Kuaför Elif */
+            name: string;
+            /** @example kuafor-elif */
+            slug: string;
+            logoUrl?: string | null;
+        };
+        /** @description Şube özeti */
+        MeBranchRef: {
+            /** Format: uuid */
+            id: string;
+            /** @example Kadıköy */
+            name: string;
+            /** @example Kadıköy */
+            district: string;
+        };
+        /** @description Randevu kalemi; serviceId ve staffId "Aynısını tekrar al" ve saat değişikliği gün şeridi için */
+        MeAppointmentItem: {
+            /** Format: uuid */
+            serviceId: string;
+            /** @example Saç kesimi */
+            serviceName: string;
+            /** Format: uuid */
+            staffId?: string | null;
+            /** @example Elif Kaya */
+            staffName?: string | null;
+            /** Format: date-time */
+            startUtc: string;
+            /** Format: date-time */
+            endUtc: string;
+            price: components["schemas"]["Money"];
+            /** @description Paketten düşüldü */
+            paidFromPackage: boolean;
+        };
+        /** @description Gönderilmiş değerlendirmenin özeti (Geçmiş satırındaki yıldızlar) */
+        MeAppointmentReview: {
+            /** @example 5 */
+            rating: number;
+            /** Format: date-time */
+            createdUtc: string;
+        };
+        /** @description Randevularım / Geçmiş satırı */
+        MeAppointmentSummary: {
+            /** Format: uuid */
+            id: string;
+            brand: components["schemas"]["MeBrandRef"];
+            branch: components["schemas"]["MeBranchRef"];
+            timeZone: components["schemas"]["TimeZoneId"];
+            /** Format: date-time */
+            startUtc: string;
+            /** Format: date-time */
+            endUtc: string;
+            status: components["schemas"]["AppointmentStatus"];
+            displayStatus: components["schemas"]["DisplayStatus"];
+            /**
+             * Format: date-time
+             * @description Yalnız PendingApproval
+             */
+            holdExpiresUtc?: string | null;
+            /** @description Yalnız kapora istenmiş randevuda bulunur */
+            depositStatus?: components["schemas"]["DepositStatus"];
+            items: components["schemas"]["MeAppointmentItem"][];
+            total: components["schemas"]["Money"];
+            /** @description "350 ₺ salonda" */
+            amountDue: components["schemas"]["Money"];
+            /** @description Gönderilmiş değerlendirme; yoksa null */
+            review: null | components["schemas"]["MeAppointmentReview"];
+            /** @description Completed ve değerlendirilmemiş ("Değerlendir") */
+            canReview: boolean;
+            /** @description "Aynısını tekrar al": salon online randevu alıyor ve kalemlerin hizmetleri şubede online açık */
+            canRebook: boolean;
+        };
+        MeAppointmentPage: {
+            items: components["schemas"]["MeAppointmentSummary"][];
+            nextCursor: string | null;
+        };
+        /** @description Müşterinin randevu detayı (RandevuDetay, Iptal, RandevuErtele, YRHavale) */
+        MeAppointment: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * @description Kısa görünen numara
+             * @example A-20512
+             */
+            reference?: string;
+            brand: components["schemas"]["MeBrandRef"];
+            branch: {
+                /** Format: uuid */
+                id: string;
+                /** @example Kadıköy */
+                name: string;
+                /** @example Moda Cad. 42 */
+                addressLine: string;
+                /** @example Kadıköy */
+                district: string;
+                /** @description "Ara" */
+                phone?: string | null;
+                /** @description "Yol tarifi" */
+                latitude?: number | null;
+                longitude?: number | null;
+            };
+            timeZone: components["schemas"]["TimeZoneId"];
+            /** Format: date-time */
+            startUtc: string;
+            /** Format: date-time */
+            endUtc: string;
+            status: components["schemas"]["AppointmentStatus"];
+            displayStatus: components["schemas"]["DisplayStatus"];
+            /** Format: date-time */
+            holdExpiresUtc?: string | null;
+            items: components["schemas"]["MeAppointmentItem"][];
+            total: components["schemas"]["Money"];
+            /** @description "Salonda ödenecek" */
+            amountDue: components["schemas"]["Money"];
+            /** @description Kapora; istenmiyorsa null. instructions yalnız kapora bekleniyorken (Awaiting, CustomerReported) bulunur */
+            deposit: null | (components["schemas"]["DepositView"] & {
+                instructions?: components["schemas"]["DepositInstructions"];
+            });
+            canCancel: boolean;
+            /** Format: date-time */
+            cancelDeadlineUtc: string | null;
+            canReschedule: boolean;
+            /** Format: date-time */
+            rescheduleDeadlineUtc: string | null;
+            canReview: boolean;
+            canRebook: boolean;
+            review: null | components["schemas"]["MeAppointmentReview"];
+            /** @description Salonun randevu öncesi notu */
+            preAppointmentNote?: string | null;
+            /** @description "Salona notunuz" */
+            customerNote?: string | null;
+            cancellation: null | {
+                /** Format: date-time */
+                cancelledUtc: string;
+                /** @enum {string} */
+                cancelledBy: "Customer" | "Salon" | "System";
+                reason: components["schemas"]["CancellationReason"];
+            };
+            version: components["schemas"]["Version"];
+        };
+        /** @description Saat değişikliği için gün */
+        MeRescheduleSlotSearch: {
+            /**
+             * Format: date
+             * @description Şubenin yerel günü
+             */
+            date: string;
+        };
+        /** @description Yeni başlangıç (meSearchRescheduleSlots'tan) */
+        MeRescheduleRequest: {
+            /** Format: date-time */
+            startUtc: string;
+        };
+        /** @description Degerlendir gövdesi */
+        MeReviewCreate: {
+            /** Format: uuid */
+            appointmentId: string;
+            /** @example 4 */
+            rating: number;
+            /** @description "Yorum (isteğe bağlı)" */
+            comment?: string | null;
+        };
+        /** @description Gönderilen değerlendirme */
+        MeReview: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            appointmentId: string;
+            rating: number;
+            comment: string | null;
+            /** Format: date-time */
+            createdUtc: string;
+        };
+        /** @description "Fön paketiniz var" rozeti */
+        MeBrandPackageBadge: {
+            /** Format: uuid */
+            customerPackageId: string;
+            /** @example Fön paketi */
+            packageName: string;
+            /** @example 2 */
+            remainingSessions: number;
+        };
+        /** @description Salonlarım satırı (YRSalon, Profil) */
+        MeBrand: {
+            /** Format: uuid */
+            id: string;
+            /** @example Kuaför Elif */
+            name: string;
+            /** @example kuafor-elif */
+            slug: string;
+            logoUrl: string | null;
+            /**
+             * @description Rozet zemini (rezervasyon sayfası kapak rengi)
+             * @enum {string}
+             */
+            coverColor: "petrol" | "mercan" | "kum";
+            /** @description false ise "Online randevu kapalı · Salonu arayın" */
+            bookingEnabled: boolean;
+            /** @description Bu markada müşteri kaydı (randevu) var */
+            hasBooked: boolean;
+            /**
+             * Format: date-time
+             * @description QR veya bağlantıyla eklendiği an (CustomerSavedBrand); yalnız randevuyla gelen markada null
+             */
+            savedUtc: string | null;
+            /**
+             * Format: date
+             * @description "son ziyaret 12 Kas" (son tamamlanan randevu, şubenin yerel günü)
+             */
+            lastVisitOn: string | null;
+            /** @description Şubeler ("Kadıköy", "Online ve Şişli") */
+            branches: components["schemas"]["MeBranchRef"][];
+            activePackages: components["schemas"]["MeBrandPackageBadge"][];
+        };
+        MeBrandList: {
+            items: components["schemas"]["MeBrand"][];
+        };
+        /** @description QR veya yapıştırılan bağlantıdan çıkarılan bağlantı adı */
+        MeSaveBrandRequest: {
+            /** @example spa-moda */
+            brandSlug: string;
+            /**
+             * @description CustomerSavedBrand.Source (Booking yalnız sunucu yazar)
+             * @enum {string}
+             */
+            source: "Qr" | "Link";
+        };
+        /** @description Paketlerim kartı ("Fön paketi · Kuaför Elif · Kadıköy · 2 / 5 seans kaldı · Son kullanım 31 Aralık") */
+        MePackage: {
+            /**
+             * Format: uuid
+             * @description CustomerPackage
+             */
+            id: string;
+            brand: components["schemas"]["MeBrandRef"];
+            /** @description Yalnız satıldığı şubede geçerliyse şube adı; bütün şubelerde geçerliyse null */
+            branchName: string | null;
+            isAvailableAllBranches: boolean;
+            /** @example Fön paketi */
+            packageName: string;
+            status: components["schemas"]["CustomerPackageStatus"];
+            items: components["schemas"]["CustomerPackageItemView"][];
+            /** @example 5 */
+            totalSessions: number;
+            /** @example 2 */
+            remainingSessions: number;
+            /**
+             * Format: date
+             * @description Son kullanım günü
+             */
+            expiresOn: string;
+            /** @description Active ve kalan seansı var (üstteki kartlar); false ise "Biten paketler" */
+            isUsable: boolean;
+            /** @description "Az kaldı": kullanılabilir ve kalan seans PackageLowSessionThreshold'u geçmiyor veya son kullanım PackageExpiringSoonDays içinde */
+            isRunningLow: boolean;
+            /**
+             * Format: date
+             * @description "Eylül'de bitti": son seansın, son kullanım gününün veya iadenin yerel günü; kullanılabilirse null
+             */
+            finishedOn: string | null;
+        };
+        MePackageList: {
+            /**
+             * @description "2 aktif paket"
+             * @example 2
+             */
+            activeCount: number;
+            /** @description Önce kullanılabilirler, sonra bitenler */
+            items: components["schemas"]["MePackage"][];
+        };
+        /**
+         * @description Deposit = kapora havalesi, AppointmentPayment = salonda alınan randevu ödemesi, PackagePurchase = paket satın alma. İstemciler bilinmeyen değeri genel satır olarak gösterir
+         * @enum {string}
+         */
+        MePaymentKind: "Deposit" | "AppointmentPayment" | "PackagePurchase";
+        /**
+         * @description AwaitingConfirmation = "Salon onayı bekleniyor" (havale bildirildi, salon onaylamadı); Recorded = kayıtlı ("Alındı"); PartiallyRefunded / Refunded = "Salon iade etti"
+         * @enum {string}
+         */
+        MePaymentStatus: "AwaitingConfirmation" | "Recorded" | "PartiallyRefunded" | "Refunded";
+        /** @description Ödemelerim satırı (salt okunur) */
+        MePaymentRow: {
+            /**
+             * Format: uuid
+             * @description Tahsilat kaydı; AwaitingConfirmation satırında randevu kimliği
+             */
+            id: string;
+            kind: components["schemas"]["MePaymentKind"];
+            status: components["schemas"]["MePaymentStatus"];
+            brand: components["schemas"]["MeBrandRef"];
+            amount: components["schemas"]["Money"];
+            method: components["schemas"]["PaymentMethod"];
+            /**
+             * Format: date-time
+             * @description Tahsilat anı; AwaitingConfirmation satırında müşterinin bildirdiği an
+             */
+            occurredUtc: string;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /** @description Yalnız iade işaretlendiyse */
+            refundedAmount?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Kapora ve randevu ödemesinde randevu
+             */
+            appointmentId?: string | null;
+            /**
+             * Format: date-time
+             * @description "Alındı · 26 Kasım randevusu"
+             */
+            appointmentStartUtc?: string | null;
+            /** @description Randevu ödemesinde hizmetler ("Boya ve fön") */
+            serviceNames?: string[];
+            /**
+             * @description Paket satın almada
+             * @example Fön paketi
+             */
+            packageName?: string | null;
+            /**
+             * @description "5 seans"
+             * @example 5
+             */
+            packageSessionCount?: number | null;
+        };
+        MePaymentPage: {
+            items: components["schemas"]["MePaymentRow"][];
+            nextCursor: string | null;
+        };
+        /** @description İzinlerim satırı ("Kampanya ve indirim mesajları") */
+        MeConsent: {
+            brand: components["schemas"]["MeBrandRef"];
+            /** @description Son kampanya rızası verilmiş mi */
+            marketingGranted: boolean;
+            /**
+             * Format: date-time
+             * @description Son rıza kaydının anı; hiç kayıt yoksa null
+             */
+            updatedUtc: string | null;
+        };
+        MeConsentList: {
+            items: components["schemas"]["MeConsent"][];
+        };
+        /** @description Bir markanın kampanya izni anahtarı */
+        MeMarketingConsentUpdate: {
+            /** Format: uuid */
+            brandId: string;
+            granted: boolean;
+        };
+        /** @description Hesap silme onay kodu (meRequestAccountDeletionOtp'tan) */
+        MeAccountDeletionConfirm: {
+            /** Format: uuid */
+            otpId: string;
+            /** @example 482193 */
+            code: string;
+        };
+        /** @description Hesap silindi (HesapSilindi) */
+        MeAccountDeletionResult: {
+            /** Format: date-time */
+            deletedUtc: string;
+            /** @description İptal edilen yaklaşan randevular */
+            cancelledAppointmentCount: number;
+        };
+        /**
+         * @description Müşteri uygulaması bildirim listesindeki olay kodu (docs/standartlar/bildirimler.md § Müşteri olayları; push metni olan olaylar). CustomerNotificationEvent
+         *     salonun ezebildiği SMS şablonlarıdır; bu enum ondan ayrıdır ve deposit.received'ı da içerir. Yalnız SMS olan olaylar (otp.code, deposit.awaiting,
+         *     deposit.not_received, walkin.almost_turn) listede yoktur. İstemciler bilinmeyen değeri genel bildirim olarak gösterir.
+         * @enum {string}
+         */
+        MeNotificationEvent: "appointment.confirmed" | "appointment.requested" | "appointment.approved" | "appointment.approval_expired" | "appointment.declined" | "appointment.reminder" | "appointment.rescheduled" | "appointment.cancelled_by_salon" | "deposit.received" | "waitlist.offer" | "review.invite";
+        /** @description Müşteri bildirimine dokununca açılacak ekran */
+        MeNotificationTarget: {
+            /**
+             * @description Appointment = RandevuDetay (appointmentId); WaitlistOffer = BeklemeTeklif (accessCode ile public waitlist-offer uçları); Review = Degerlendir (appointmentId); Booking = rezervasyon akışı (brandSlug; "Başka bir saat seçin")
+             * @enum {string}
+             */
+            type: "Appointment" | "WaitlistOffer" | "Review" | "Booking";
+            /** Format: uuid */
+            appointmentId?: string | null;
+            /** @description Bekleme teklifi kodu (/b/{code}) */
+            accessCode?: string | null;
+            brandSlug?: string | null;
+        };
+        /** @description Müşteri bildirim satırı */
+        MeNotification: {
+            /** Format: uuid */
+            id: string;
+            event: components["schemas"]["MeNotificationEvent"];
+            /** @example Randevunuz onaylandı */
+            title: string;
+            /** @example Kuaför Elif · Yarın 14:30. Görüşmek üzere. */
+            body: string;
+            /** Format: date-time */
+            createdUtc: string;
+            /** Format: date-time */
+            readUtc: string | null;
+            brand: null | components["schemas"]["MeBrandRef"];
+            target: components["schemas"]["MeNotificationTarget"];
+        };
+        MeNotificationPage: {
+            items: components["schemas"]["MeNotification"][];
+            nextCursor: string | null;
+            /** @example 2 */
+            unreadCount: number;
         };
     };
     responses: {
@@ -7092,6 +8445,49 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
+        };
+    };
+    manageRevealCustomerPhone: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                brandCustomerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "purpose": "Call"
+                 *     }
+                 */
+                "application/json": components["schemas"]["PhoneRevealRequest"];
+            };
+        };
+        responses: {
+            /** @description Maskesiz numara */
+            200: {
+                headers: {
+                    /** @description no-store */
+                    "Cache-Control"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "phone": "+905321234521"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RevealedPhone"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     manageListDeletionRequests: {
@@ -9197,6 +10593,194 @@ export interface operations {
             412: components["responses"]["PreconditionFailed"];
         };
     };
+    manageGetToday: {
+        parameters: {
+            query?: {
+                branchId?: components["parameters"]["BranchIdQueryOptional"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bugün */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *       "branchName": "Kadıköy",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "date": "2026-11-25",
+                     *       "generatedUtc": "2026-11-25T09:10:00Z",
+                     *       "next": {
+                     *         "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d01",
+                     *         "startUtc": "2026-11-25T10:00:00Z",
+                     *         "endUtc": "2026-11-25T10:45:00Z",
+                     *         "status": "Confirmed",
+                     *         "displayStatus": "Confirmed",
+                     *         "customerName": "Derya Şahin",
+                     *         "isNewCustomer": false,
+                     *         "serviceSummary": "Saç kesimi",
+                     *         "staffNames": [
+                     *           "Elif Kaya"
+                     *         ]
+                     *       },
+                     *       "pendingApprovalCount": 2,
+                     *       "walkIns": {
+                     *         "waitingCount": 3,
+                     *         "estimatedWaitMinutesForNew": 35
+                     *       },
+                     *       "commission": {
+                     *         "month": "2026-11",
+                     *         "totalMinor": 684000,
+                     *         "currency": "TRY",
+                     *         "daily": [
+                     *           {
+                     *             "date": "2026-11-24",
+                     *             "amountMinor": 42000
+                     *           },
+                     *           {
+                     *             "date": "2026-11-25",
+                     *             "amountMinor": 9000
+                     *           }
+                     *         ]
+                     *       },
+                     *       "completedCount": 4,
+                     *       "totalCount": 12,
+                     *       "items": [
+                     *         {
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d02",
+                     *           "startUtc": "2026-11-25T07:30:00Z",
+                     *           "endUtc": "2026-11-25T09:00:00Z",
+                     *           "status": "CheckedIn",
+                     *           "displayStatus": "CheckedIn",
+                     *           "customerName": "Selin Öztürk",
+                     *           "isNewCustomer": false,
+                     *           "serviceSummary": "Boya ve fön",
+                     *           "staffNames": [
+                     *             "Elif Kaya"
+                     *           ]
+                     *         },
+                     *         {
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a62",
+                     *           "startUtc": "2026-11-25T09:00:00Z",
+                     *           "endUtc": "2026-11-25T09:45:00Z",
+                     *           "status": "PendingApproval",
+                     *           "displayStatus": "PendingApproval",
+                     *           "customerName": "Deniz Acar",
+                     *           "isNewCustomer": true,
+                     *           "serviceSummary": "Saç kesimi",
+                     *           "staffNames": [
+                     *             "Can Yücel"
+                     *           ],
+                     *           "holdExpiresUtc": "2026-11-25T11:10:00Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ManageToday"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageGetMyCommissionSummary: {
+        parameters: {
+            query?: {
+                /** @description Yıl-ay (YYYY-MM), şubenin yerel takvimi */
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kişisel prim özeti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *       "staffName": "Elif Kaya",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "month": "2026-11",
+                     *       "from": "2026-11-01",
+                     *       "to": "2026-11-25",
+                     *       "totalMinor": 684000,
+                     *       "serviceRevenueMinor": 2850000,
+                     *       "currency": "TRY",
+                     *       "appointmentCount": 94,
+                     *       "noShowPercent": 4,
+                     *       "averageRating": 4.9,
+                     *       "daily": [
+                     *         {
+                     *           "date": "2026-11-24",
+                     *           "amountMinor": 42000
+                     *         },
+                     *         {
+                     *           "date": "2026-11-25",
+                     *           "amountMinor": 9000
+                     *         }
+                     *       ],
+                     *       "thisWeek": [
+                     *         {
+                     *           "date": "2026-11-24",
+                     *           "amountMinor": 42000,
+                     *           "appointmentCount": 6
+                     *         },
+                     *         {
+                     *           "date": "2026-11-25",
+                     *           "amountMinor": 9000,
+                     *           "appointmentCount": 9
+                     *         }
+                     *       ],
+                     *       "entries": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d10",
+                     *           "type": "Service",
+                     *           "amountMinor": 9000,
+                     *           "status": "Accrued",
+                     *           "occurredUtc": "2026-11-25T06:30:00Z",
+                     *           "customerName": "Ayşe Yılmaz",
+                     *           "description": "Saç kesimi",
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d03"
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d11",
+                     *           "type": "Service",
+                     *           "amountMinor": 42000,
+                     *           "status": "Accrued",
+                     *           "occurredUtc": "2026-11-24T14:00:00Z",
+                     *           "customerName": "Buse Kaya",
+                     *           "description": "Keratin",
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d04"
+                     *         }
+                     *       ],
+                     *       "nextAccrual": {
+                     *         "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d02",
+                     *         "customerName": "Selin Öztürk"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MyCommissionSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     publicGetBrand: {
         parameters: {
             query?: never;
@@ -9966,6 +11550,1256 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
+        };
+    };
+    meRequestOtp: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client"?: components["parameters"]["ClientHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "phone": "0532 611 24 67"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeOtpRequest"];
+            };
+        };
+        responses: {
+            /** @description Kod gönderildi */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "otpId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c01",
+                     *       "expiresInSeconds": 180,
+                     *       "resendAfterSeconds": 60,
+                     *       "phoneMasked": "0532 *** ** 67"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OtpChallengeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    meVerifyOtp: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Client"?: components["parameters"]["ClientHeader"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OtpVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Oturum açıldı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "accessToken": "eyJhbGciOiJFUzI1NiJ9.me.signature",
+                     *       "expiresInSeconds": 900,
+                     *       "refreshToken": "rt_9f8e7d6c5b4a",
+                     *       "isNewAccount": false
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeAuthResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    meRefreshToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Yeni jetonlar (refreshToken her zaman dolu) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "accessToken": "eyJhbGciOiJFUzI1NiJ9.me.signature",
+                     *       "expiresInSeconds": 900,
+                     *       "refreshToken": "rt_1a2b3c4d5e6f"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meLogout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeLogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Kapatıldı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meGetProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profil */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c10",
+                     *       "fullName": "Merve Yıldız",
+                     *       "reviewerDisplayName": "Merve Y.",
+                     *       "phone": "+905326112467",
+                     *       "email": "merve.yildiz@example.com",
+                     *       "language": "tr",
+                     *       "version": "W/\"5120\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeProfile"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meUpdateProfile: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "fullName": "Merve Yıldız",
+                 *       "email": "merve.yildiz@example.com"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeProfile"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    meListConsents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kampanya izinleri */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "marketingGranted": true,
+                     *           "updatedUtc": "2026-10-21T09:12:00Z"
+                     *         },
+                     *         {
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21",
+                     *             "name": "Nail Studio Moda",
+                     *             "slug": "nail-studio-moda",
+                     *             "logoUrl": null
+                     *           },
+                     *           "marketingGranted": false,
+                     *           "updatedUtc": null
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeConsentList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meUpdateMarketingConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21",
+                 *       "granted": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeMarketingConsentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeConsentList"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    meRequestAccountDeletionOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kod gönderildi */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OtpChallengeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    meRequestAccountDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeAccountDeletionConfirm"];
+            };
+        };
+        responses: {
+            /** @description Hesap silindi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "deletedUtc": "2026-11-25T10:05:00Z",
+                     *       "cancelledAppointmentCount": 2
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeAccountDeletionResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    meListAppointments: {
+        parameters: {
+            query: {
+                /** @description Upcoming = yaklaşan, Past = geçmiş */
+                scope: "Upcoming" | "Past";
+                /** @description Yalnız değerlendirilebilir, değerlendirilmemiş geçmiş randevular ("Değerlendirilmedi") */
+                notReviewed?: boolean;
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Randevular */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "nextCursor": null,
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "branch": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *             "name": "Kadıköy",
+                     *             "district": "Kadıköy"
+                     *           },
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "startUtc": "2026-11-12T11:00:00Z",
+                     *           "endUtc": "2026-11-12T13:15:00Z",
+                     *           "status": "Completed",
+                     *           "displayStatus": "Completed",
+                     *           "items": [
+                     *             {
+                     *               "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d31",
+                     *               "serviceName": "Boya ve fön",
+                     *               "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *               "staffName": "Elif Kaya",
+                     *               "startUtc": "2026-11-12T11:00:00Z",
+                     *               "endUtc": "2026-11-12T13:15:00Z",
+                     *               "price": {
+                     *                 "amountMinor": 144000,
+                     *                 "currency": "TRY"
+                     *               },
+                     *               "paidFromPackage": false
+                     *             }
+                     *           ],
+                     *           "total": {
+                     *             "amountMinor": 144000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "amountDue": {
+                     *             "amountMinor": 0,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "review": null,
+                     *           "canReview": true,
+                     *           "canRebook": true
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c31",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21",
+                     *             "name": "Nail Studio Moda",
+                     *             "slug": "nail-studio-moda",
+                     *             "logoUrl": null
+                     *           },
+                     *           "branch": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c51",
+                     *             "name": "Kadıköy",
+                     *             "district": "Kadıköy"
+                     *           },
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "startUtc": "2026-11-04T08:00:00Z",
+                     *           "endUtc": "2026-11-04T08:40:00Z",
+                     *           "status": "Completed",
+                     *           "displayStatus": "Completed",
+                     *           "items": [
+                     *             {
+                     *               "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c61",
+                     *               "serviceName": "Manikür",
+                     *               "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c62",
+                     *               "staffName": "Gizem Er",
+                     *               "startUtc": "2026-11-04T08:00:00Z",
+                     *               "endUtc": "2026-11-04T08:40:00Z",
+                     *               "price": {
+                     *                 "amountMinor": 35000,
+                     *                 "currency": "TRY"
+                     *               },
+                     *               "paidFromPackage": false
+                     *             }
+                     *           ],
+                     *           "total": {
+                     *             "amountMinor": 35000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "amountDue": {
+                     *             "amountMinor": 0,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "review": {
+                     *             "rating": 5,
+                     *             "createdUtc": "2026-11-04T12:10:00Z"
+                     *           },
+                     *           "canReview": false,
+                     *           "canRebook": true
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeAppointmentPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meGetAppointment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Randevu */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32",
+                     *       "reference": "A-20512",
+                     *       "brand": {
+                     *         "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *         "name": "Kuaför Elif",
+                     *         "slug": "kuafor-elif",
+                     *         "logoUrl": null
+                     *       },
+                     *       "branch": {
+                     *         "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *         "name": "Kadıköy",
+                     *         "addressLine": "Moda Cad. 42",
+                     *         "district": "Kadıköy",
+                     *         "phone": "+902163450012",
+                     *         "latitude": 40.9871,
+                     *         "longitude": 29.0262
+                     *       },
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "startUtc": "2026-11-26T11:30:00Z",
+                     *       "endUtc": "2026-11-26T12:45:00Z",
+                     *       "status": "Confirmed",
+                     *       "displayStatus": "Confirmed",
+                     *       "holdExpiresUtc": null,
+                     *       "items": [
+                     *         {
+                     *           "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d32",
+                     *           "serviceName": "Saç kesimi",
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *           "staffName": "Elif Kaya",
+                     *           "startUtc": "2026-11-26T11:30:00Z",
+                     *           "endUtc": "2026-11-26T12:15:00Z",
+                     *           "price": {
+                     *             "amountMinor": 45000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "paidFromPackage": false
+                     *         },
+                     *         {
+                     *           "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33",
+                     *           "serviceName": "Fön",
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *           "staffName": "Elif Kaya",
+                     *           "startUtc": "2026-11-26T12:15:00Z",
+                     *           "endUtc": "2026-11-26T12:45:00Z",
+                     *           "price": {
+                     *             "amountMinor": 25000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "paidFromPackage": false
+                     *         }
+                     *       ],
+                     *       "total": {
+                     *         "amountMinor": 70000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "amountDue": {
+                     *         "amountMinor": 50000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "deposit": {
+                     *         "required": {
+                     *           "amountMinor": 20000,
+                     *           "currency": "TRY"
+                     *         },
+                     *         "status": "Received",
+                     *         "transferCode": "OMV-4H8M",
+                     *         "customerReportedUtc": "2026-11-24T18:02:00Z",
+                     *         "receivedUtc": "2026-11-24T19:30:00Z"
+                     *       },
+                     *       "canCancel": true,
+                     *       "cancelDeadlineUtc": "2026-11-25T11:30:00Z",
+                     *       "canReschedule": true,
+                     *       "rescheduleDeadlineUtc": "2026-11-25T23:30:00Z",
+                     *       "canReview": false,
+                     *       "canRebook": true,
+                     *       "review": null,
+                     *       "preAppointmentNote": null,
+                     *       "customerNote": null,
+                     *       "cancellation": null,
+                     *       "version": "W/\"9012\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeAppointment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    meCancelAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "PlanChanged"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CustomerCancelRequest"];
+            };
+        };
+        responses: {
+            /** @description İptal edildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeAppointment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    meSearchRescheduleSlots: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "date": "2026-11-28"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeRescheduleSlotSearch"];
+            };
+        };
+        responses: {
+            /** @description Saatler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlotSearchResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    meRescheduleAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "startUtc": "2026-11-28T12:15:00Z"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeRescheduleRequest"];
+            };
+        };
+        responses: {
+            /** @description Değiştirildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeAppointment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    meReportDepositTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bildirildi (veya zaten bildirilmişti) */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeAppointment"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    meCreateReview: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30",
+                 *       "rating": 4,
+                 *       "comment": "Boya tam istediğim gibi oldu."
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeReviewCreate"];
+            };
+        };
+        responses: {
+            /** @description Değerlendirme kaydedildi */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c40",
+                     *       "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30",
+                     *       "rating": 4,
+                     *       "comment": "Boya tam istediğim gibi oldu.",
+                     *       "createdUtc": "2026-11-12T15:20:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeReview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    meListBrands: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Salonlar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *           "name": "Kuaför Elif",
+                     *           "slug": "kuafor-elif",
+                     *           "logoUrl": null,
+                     *           "coverColor": "kum",
+                     *           "bookingEnabled": true,
+                     *           "hasBooked": true,
+                     *           "savedUtc": null,
+                     *           "lastVisitOn": "2026-11-12",
+                     *           "branches": [
+                     *             {
+                     *               "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *               "name": "Kadıköy",
+                     *               "district": "Kadıköy"
+                     *             }
+                     *           ],
+                     *           "activePackages": [
+                     *             {
+                     *               "customerPackageId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c70",
+                     *               "packageName": "Fön paketi",
+                     *               "remainingSessions": 2
+                     *             }
+                     *           ]
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c22",
+                     *           "name": "Diyetisyen Ece Arslan",
+                     *           "slug": "dyt-ece-arslan",
+                     *           "logoUrl": null,
+                     *           "coverColor": "mercan",
+                     *           "bookingEnabled": true,
+                     *           "hasBooked": true,
+                     *           "savedUtc": "2026-09-01T07:00:00Z",
+                     *           "lastVisitOn": "2026-10-09",
+                     *           "branches": [
+                     *             {
+                     *               "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c52",
+                     *               "name": "Online",
+                     *               "district": "Online"
+                     *             },
+                     *             {
+                     *               "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c53",
+                     *               "name": "Şişli",
+                     *               "district": "Şişli"
+                     *             }
+                     *           ],
+                     *           "activePackages": []
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeBrandList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meSaveBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "brandSlug": "spa-moda",
+                 *       "source": "Qr"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MeSaveBrandRequest"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi (veya zaten listedeydi) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23",
+                     *       "name": "Spa Moda",
+                     *       "slug": "spa-moda",
+                     *       "logoUrl": null,
+                     *       "coverColor": "petrol",
+                     *       "bookingEnabled": true,
+                     *       "hasBooked": false,
+                     *       "savedUtc": "2026-11-25T09:40:00Z",
+                     *       "lastVisitOn": null,
+                     *       "branches": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c54",
+                     *           "name": "Moda",
+                     *           "district": "Kadıköy"
+                     *         }
+                     *       ],
+                     *       "activePackages": []
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeBrand"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    meListPackages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paketler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "activeCount": 1,
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c70",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "branchName": "Kadıköy",
+                     *           "isAvailableAllBranches": false,
+                     *           "packageName": "Fön paketi",
+                     *           "status": "Active",
+                     *           "items": [
+                     *             {
+                     *               "customerPackageItemId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c72",
+                     *               "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33",
+                     *               "serviceName": "Fön",
+                     *               "totalSessions": 5,
+                     *               "remainingSessions": 2
+                     *             }
+                     *           ],
+                     *           "totalSessions": 5,
+                     *           "remainingSessions": 2,
+                     *           "expiresOn": "2026-12-31",
+                     *           "isUsable": true,
+                     *           "isRunningLow": true,
+                     *           "finishedOn": null
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c71",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "branchName": null,
+                     *           "isAvailableAllBranches": true,
+                     *           "packageName": "Cilt bakımı",
+                     *           "status": "Active",
+                     *           "items": [
+                     *             {
+                     *               "customerPackageItemId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c73",
+                     *               "serviceId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d34",
+                     *               "serviceName": "Cilt bakımı",
+                     *               "totalSessions": 4,
+                     *               "remainingSessions": 0
+                     *             }
+                     *           ],
+                     *           "totalSessions": 4,
+                     *           "remainingSessions": 0,
+                     *           "expiresOn": "2027-01-15",
+                     *           "isUsable": false,
+                     *           "isRunningLow": false,
+                     *           "finishedOn": "2026-09-18"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MePackageList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meListPayments: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ödemeler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "nextCursor": null,
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c34",
+                     *           "kind": "Deposit",
+                     *           "status": "AwaitingConfirmation",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23",
+                     *             "name": "Spa Moda",
+                     *             "slug": "spa-moda",
+                     *             "logoUrl": null
+                     *           },
+                     *           "amount": {
+                     *             "amountMinor": 20000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "method": "Transfer",
+                     *           "occurredUtc": "2026-11-25T08:52:00Z",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c34",
+                     *           "appointmentStartUtc": "2026-11-28T13:00:00Z",
+                     *           "serviceNames": [
+                     *             "Masaj"
+                     *           ]
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c80",
+                     *           "kind": "Deposit",
+                     *           "status": "Recorded",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "amount": {
+                     *             "amountMinor": 15000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "method": "Transfer",
+                     *           "occurredUtc": "2026-11-24T19:30:00Z",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32",
+                     *           "appointmentStartUtc": "2026-11-26T11:30:00Z",
+                     *           "serviceNames": [
+                     *             "Saç kesimi",
+                     *             "Fön"
+                     *           ]
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c81",
+                     *           "kind": "AppointmentPayment",
+                     *           "status": "Recorded",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "amount": {
+                     *             "amountMinor": 124000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "method": "Card",
+                     *           "occurredUtc": "2026-11-12T13:20:00Z",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30",
+                     *           "appointmentStartUtc": "2026-11-12T11:00:00Z",
+                     *           "serviceNames": [
+                     *             "Boya ve fön"
+                     *           ]
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c82",
+                     *           "kind": "PackagePurchase",
+                     *           "status": "Recorded",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "amount": {
+                     *             "amountMinor": 100000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "method": "Transfer",
+                     *           "occurredUtc": "2026-10-02T10:00:00Z",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "packageName": "Fön paketi",
+                     *           "packageSessionCount": 5
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MePaymentPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meRegisterDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceRegistration"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi veya güncellendi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredDevice"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meListNotifications: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Yalnız okunmamışlar */
+                unreadOnly?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bildirimler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 2,
+                     *       "nextCursor": null,
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c90",
+                     *           "event": "waitlist.offer",
+                     *           "title": "Beklediğiniz saat boşaldı",
+                     *           "body": "Spa Moda · Cuma 16:00. 15 dakika içinde onaylarsanız sizin.",
+                     *           "createdUtc": "2026-11-25T09:58:00Z",
+                     *           "readUtc": null,
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23",
+                     *             "name": "Spa Moda",
+                     *             "slug": "spa-moda",
+                     *             "logoUrl": null
+                     *           },
+                     *           "target": {
+                     *             "type": "WaitlistOffer",
+                     *             "appointmentId": null,
+                     *             "accessCode": "Wq7Lm2Xa",
+                     *             "brandSlug": "spa-moda"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c91",
+                     *           "event": "appointment.confirmed",
+                     *           "title": "Randevunuz onaylandı",
+                     *           "body": "Kuaför Elif · Yarın 14:30. Görüşmek üzere.",
+                     *           "createdUtc": "2026-11-25T07:30:00Z",
+                     *           "readUtc": null,
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "target": {
+                     *             "type": "Appointment",
+                     *             "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32",
+                     *             "accessCode": null,
+                     *             "brandSlug": "kuafor-elif"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c92",
+                     *           "event": "review.invite",
+                     *           "title": "Nasıldı?",
+                     *           "body": "Kuaför Elif'teki randevunuzu değerlendirin.",
+                     *           "createdUtc": "2026-11-12T15:15:00Z",
+                     *           "readUtc": "2026-11-12T16:00:00Z",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20",
+                     *             "name": "Kuaför Elif",
+                     *             "slug": "kuafor-elif",
+                     *             "logoUrl": null
+                     *           },
+                     *           "target": {
+                     *             "type": "Review",
+                     *             "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30",
+                     *             "accessCode": null,
+                     *             "brandSlug": "kuafor-elif"
+                     *           }
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MeNotificationPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    meMarkNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkNotificationsReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Okundu sayıldı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCount"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
         };
     };
     webhookSmsDeliveryReport: {

@@ -29,7 +29,7 @@ class ManageNotificationsApi {
   const ManageNotificationsApi(this._dio);
 
   /// Kendi bildirim tercihlerim (işletme uygulaması \&quot;Bildirim ayarları\&quot;)
-  /// \&quot;Yalnızca sizin telefonunuza gelenler.\&quot; Tercihler yalnız push&#39;u etkiler; bildirim paneli kaydı her durumda tutulur. Sahip ve yönetici olayları (owner.credits_low, owner.subscription_payment_failed, staff.deposit_reported) kapatılamaz. Sessiz saat aralığı platform varsayılanıdır (22:00–08:00, kullanıcının şubesinin saat diliminde); v1&#39;de yalnız açılıp kapatılır. 
+  /// \&quot;Yalnızca sizin telefonunuza gelenler.\&quot; Tercihler yalnız push&#39;u etkiler; bildirim paneli kaydı her durumda tutulur. Sahip ve yönetici olayları (owner.credits_low, owner.subscription_payment_failed, staff.deposit_reported) kapatılamaz. Sessiz saat aralığı platform varsayılanıdır (22:00–08:00, kullanıcının şubesinin saat diliminde); v1&#39;de yalnız açılıp kapatılır. İşletme push&#39;ları gönderilmeden önce alıcının bu tercihleriyle süzülür (anahtar → olay eşlemesi MyNotificationPreferences açıklamasında); kapalı anahtarın olayı push olarak gitmez ama bildirim panelinde (manageListInAppNotifications) görünür. Kaydı olmayan kullanıcı için varsayılanlar döner (gün sonu özeti kapalı, bildirimler.md; diğer anahtarlar ve sessiz saatler açık). 
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -640,7 +640,7 @@ _responseData = rawData == null ? null : deserialize<SmsSender, SmsSender>(rawDa
   }
 
   /// Kendi bildirim tercihlerimi kaydet
-  /// Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır).
+  /// \&quot;Bildirim ayarları\&quot; (BildirimAyar) anahtarları. Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır). Değişiklik sonraki push&#39;tan itibaren uygulanır; sessiz saatte ertelenmiş push&#39;lar gönderim anındaki tercihe göre süzülür. 
   ///
   /// Parameters:
   /// * [ifMatch] - GET yanıtındaki ETag değeri
