@@ -1,0 +1,48 @@
+.banner {
+  display: flex;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+}
+
+.hata {
+  background: var(--hata-zemin);
+  color: var(--hata);
+}
+
+.uyari {
+  background: var(--uyari-zemin);
+  color: var(--uyari);
+}
+
+.icon {
+  display: flex;
+  flex-shrink: 0;
+  padding-top: var(--bosluk-1);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  line-height: var(--yazi-govde-guclu-satir);
+  font-weight: 700;
+}
+
+.description {
+  margin: 0;
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  margin-top: var(--bosluk-3);
+}

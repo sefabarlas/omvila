@@ -42,3 +42,7 @@ build/
 # Playwright çıktıları
 web/salon-panel/e2e-results/
 web/salon-panel/e2e-report/
+
+# Next.js (derlemede üretilir)
+web/*/next-env.d.ts
+web/*/.lighthouseci/

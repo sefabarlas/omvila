@@ -162,6 +162,51 @@ jobs:
             web/salon-panel/e2e-results/
           retention-days: 7
 
+  # Rezervasyon sayfası performans bütçesi (Lighthouse CI, Prism mock'a karşı `next start`;
+  # web/rezervasyon/AGENTS.md § Performans). e2e gibi zorunlu denetimlere eklenmedi.
+  lighthouse:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RUN: ${{ needs.changes.outputs.web }}
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        if: env.RUN == 'true'
+      - uses: actions/setup-node@v7
+        if: env.RUN == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Bağımlılıklar
+        if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
+      - name: Derleme
+        if: env.RUN == 'true'
+        run: pnpm turbo run build --filter=@omvila/rezervasyon
+      - name: Prism mock
+        if: env.RUN == 'true'
+        run: |
+          pnpm --filter @omvila/contracts mock > prism.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -s -o /dev/null http://localhost:4010/api/v1/public/brands/kuafor-elif && exit 0
+            sleep 1
+          done
+          cat prism.log; exit 1
+      # Runner'daki Chrome kullanılır; sunucuyu lhci başlatır (lighthouserc.cjs).
+      - name: Lighthouse
+        if: env.RUN == 'true'
+        working-directory: web/rezervasyon
+        run: pnpm lighthouse
+      - name: Lighthouse raporları
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rezervasyon-lighthouse
+          path: web/rezervasyon/.lighthouseci/
+          retention-days: 7
+
   flutter:
     needs: changes
     runs-on: ubuntu-latest
