@@ -1,28 +1,11 @@
 # Sözleşme yol haritası
 
-`openapi.yaml` şu an Dilim 1, 2, 3, 4'ü ve Dilim 5'in web/backend bölümünü kapsar (123 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
+`openapi.yaml` şu an Dilim 1–5'i kapsar (150 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
 
-## Dilim 5: Mobil uygulamalar (kalan uçlar)
-Dilim 5'in web/backend uçları (tamamla ve ödeme al, kasa, paketler, değerlendirmeler, bekleme listesi, kapıda sıra, müşteri kartı sekmeleri, birleştirme, içe/dışa aktarma, KVKK silme) sözleşmeye alındı. Yol haritasında adı olmayan ve o PR'da konan adlar: `manageListPackages`, `manageCreatePackage`, `manageGetPackage`, `manageUpdatePackage`, `manageListAllCustomerPackages` (`GET /manage/customer-packages`), `manageRefundCustomerPackage`, `manageListCustomerPackages`, `manageListCustomerPayments`, `manageListCustomerReviews`, `manageGetCustomerDeletionPreview`, `manageListDeletionRequests` (`GET /manage/customer-deletion-requests`), `manageWithdrawWaitlistOffer` (`POST /manage/waitlist/{entryId}/offer/withdraw`, "Teklifi geri al"), `publicGetReviewInvite` ve `publicCreateReview` (`/public/reviews/{accessCode}`, değerlendirme bağlantısı `/d/`). Kalanlar (müşteri uygulaması ve işletme uygulamasına özel uçlar) sonraki sözleşme PR'ındadır:
-
-| Yöntem | Yol | operationId |
-|---|---|---|
-| POST | `/api/v1/me/auth/otp/request`, `/verify`, `/refresh`, `/logout` | `meRequestOtp`, `meVerifyOtp`, `meRefreshToken`, `meLogout` |
-| GET/PATCH | `/api/v1/me/profile` | `meGetProfile`, `meUpdateProfile` |
-| GET | `/api/v1/me/appointments?scope=Upcoming\|Past` | `meListAppointments` |
-| GET | `/api/v1/me/appointments/{appointmentId}` | `meGetAppointment` |
-| POST | `/api/v1/me/appointments/{appointmentId}/cancel`, `/reschedule`, `/availability/slots` | `meCancelAppointment`, `meRescheduleAppointment`, `meSearchRescheduleSlots` |
-| POST | `/api/v1/me/appointments/{appointmentId}/deposit/report` | `meReportDepositTransfer` |
-| GET | `/api/v1/me/brands` | `meListBrands` (randevu alınan + kaydedilen) |
-| POST | `/api/v1/me/brands` | `meSaveBrand` (QR / bağlantı) |
-| GET | `/api/v1/me/packages`, `/api/v1/me/payments` | `meListPackages`, `meListPayments` |
-| POST | `/api/v1/me/reviews` | `meCreateReview` |
-| GET/PUT | `/api/v1/me/consents` | `meListConsents`, `meUpdateMarketingConsent` |
-| POST | `/api/v1/me/account/deletion` | `meRequestAccountDeletion` (OTP ile) |
-| POST | `/api/v1/me/devices` | `meRegisterDevice` |
-| GET | `/api/v1/me/notifications` | `meListNotifications` |
-| POST | `/api/v1/manage/customers/{brandCustomerId}/reveal-phone` | `manageRevealCustomerPhone` (maskeli personelin "Ara" butonu; denetime yazılır) |
-| GET | `/api/v1/manage/today` | `manageGetToday` (işletme uygulaması "Bugün" özeti) |
+## Dilim 5: tamamlandı
+Dilim 5'in bütün uçları sözleşmede (web/backend: T-86; müşteri ve işletme uygulaması: T-101). Yol haritasında adı olmayan ve sözleşmede konan adlar:
+- Web/backend PR'ı: `manageListPackages`, `manageCreatePackage`, `manageGetPackage`, `manageUpdatePackage`, `manageListAllCustomerPackages` (`GET /manage/customer-packages`), `manageRefundCustomerPackage`, `manageListCustomerPackages`, `manageListCustomerPayments`, `manageListCustomerReviews`, `manageGetCustomerDeletionPreview`, `manageListDeletionRequests` (`GET /manage/customer-deletion-requests`), `manageWithdrawWaitlistOffer` (`POST /manage/waitlist/{entryId}/offer/withdraw`), `publicGetReviewInvite` ve `publicCreateReview` (`/public/reviews/{accessCode}`).
+- Mobil PR'ı: `meRequestAccountDeletionOtp` (`POST /me/account/deletion/otp`, hesap silme kodunun 1. adımı; `meRequestAccountDeletion` 2. adımdır), `meMarkNotificationsRead` (`POST /me/notifications/read`), `manageGetMyCommissionSummary` (`GET /manage/me/commission-summary`, kişisel prim özeti; K2). Müşteri uygulamasından randevu almak için ayrı `/me` ucu yoktur: `publicGetBrand`, `publicGetBranchCatalog`, `publicSearchDays`, `publicSearchSlots`, `publicListMyPackages`, `publicCreateAppointment` ve `publicJoinWaitlist` müşteri jetonuyla (`meBearer`) çağrılır. Kişisel bildirim tercihleri `manageGetMyNotificationPreferences` / `manageUpdateMyNotificationPreferences` Dilim 3'ten beri sözleşmededir.
 
 ## Dilim 6: Abonelik + platform paneli + raporlar
 | Yöntem | Yol | operationId |

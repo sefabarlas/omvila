@@ -580,6 +580,7 @@ Bir randevu iptal olunca onun için bekleyen hatırlatmalar `Cancelled` yapılı
 
 ### InAppNotification (bildirim paneli)
 Paneldeki zil ve BildirimPaneli satırı (T-71). İşletme kullanıcısı başına bir satır: `BrandId`, `UserId`, `EventCode` (işletme olay kodu, ör. `staff.approval_needed`, `owner.credits_low`), `Title` (≤ 80), `Body` (≤ 200; olay anındaki push metni, müşteri adı "Ad Soyad"), `BranchId?` (marka düzeyindeki olayda boş), `TargetType` (sözleşme `NotificationTarget.type`), `TargetId?`, `HoldExpiresUtc?` (yalnız onay talebinde; talep yanıtlanınca boşalır), `CreatedUtc`, `ReadUtc?`. Push tercihlerinden bağımsız yazılır; alıcıyı olay işleyicisi rol ve şube kapsamına göre seçer.
+Müşteri uygulamasının bildirim listesi (`meListNotifications`) aynı kaydın müşteri karşılığıdır: `CustomerId` (`UserId` yerine), `BrandId?`, `EventCode` (push metni olan müşteri olayları, sözleşme `MeNotificationEvent`), `Title`, `Body`, `TargetType` (`MeNotificationTarget.type`), `TargetAppointmentId?`, `TargetAccessCode?` (bekleme teklifi), `CreatedUtc`, `ReadUtc?`. Olay outbox'a yazılırken, cihaz ve teslimden bağımsız yazılır; hesap silinince silinir (T-101).
 
 ### NotificationTemplate
 `BrandId?` (`null` = sistem şablonu), `EventCode`, `Channel`, `LanguageCode`, `Subject?`, `Body`, `IsActive`. Salon yalnız izin verilen şablonları ezebilir ("Salon metniniz" / "Sistem şablonu").
