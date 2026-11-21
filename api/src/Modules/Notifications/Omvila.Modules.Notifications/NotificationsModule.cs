@@ -37,6 +37,8 @@ public static class NotificationsModule
         services.AddScoped<AppointmentSms>();
         services.AddScoped<InAppNotifier>();
         services.AddScoped<SmsUsage>();
+        // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
+        services.AddBrandDataEraser<NotificationsDbContext>();
         services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();
