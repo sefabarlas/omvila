@@ -17,6 +17,8 @@ export const queryKeys = {
   calendar: (branchId: string, from: string, to: string, staffId?: string) =>
     ['calendar', branchId, from, to, staffId ?? 'all'] as const,
   appointment: (appointmentId: string) => ['appointment', appointmentId] as const,
+  /** Onay kuyruğu (manageListPendingApprovals); önek ['approval-queue'] bütün şubeleri geçersizler. */
+  approvalQueue: (branchId: string | undefined) => ['approval-queue', branchId ?? 'all'] as const,
   /** Yeni randevu boş saatleri (hizmetler ve personel). */
   slots: (branchId: string, date: string, serviceIds: readonly string[], staffId: string) =>
     ['slots', branchId, date, serviceIds.join(','), staffId] as const,

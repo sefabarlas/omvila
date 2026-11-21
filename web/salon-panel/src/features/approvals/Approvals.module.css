@@ -1,0 +1,98 @@
+/* salon-paneli/RandevuPanel: onay bekleyen randevunun ücret satırları, müşteri notu, geçmiş ve alt butonlar. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row dt {
+  color: var(--metin-ikincil);
+}
+
+.row dd {
+  margin: 0;
+  color: var(--metin);
+  font-weight: var(--yazi-govde-guclu-agirlik);
+  font-variant-numeric: tabular-nums;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  line-height: var(--yazi-govde-guclu-satir);
+  font-weight: var(--yazi-govde-guclu-agirlik);
+}
+
+.noteBox {
+  margin: 0;
+  padding: var(--bosluk-3);
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  overflow-wrap: anywhere;
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historyItem {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.historyDot {
+  flex: none;
+  width: var(--bosluk-2);
+  height: var(--bosluk-2);
+  border-radius: var(--kose-tam);
+  background: var(--durum-onay-nokta);
+}
+
+.historyText {
+  flex: 1;
+  color: var(--metin);
+}
+
+.historyTime {
+  flex: none;
+  color: var(--metin-ikincil);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Alt butonlar: Reddet dar, Onayla geniş (tasarımdaki 1 : 2). */
+.decision {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--bosluk-2);
+  width: 100%;
+}

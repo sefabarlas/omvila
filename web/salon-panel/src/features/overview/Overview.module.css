@@ -259,3 +259,189 @@ a.step:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* salon-paneli/GenelBakis: "Gün akışı" ve "Dikkat isteyenler". */
+.overviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.cardHead {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: var(--bosluk-2);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.cardLink {
+  color: var(--metin-marka);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.cardError {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+  color: var(--metin-ikincil);
+}
+
+.cardError p {
+  margin: 0;
+}
+
+.flow,
+.attention {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flow li + li {
+  border-top: 1px solid var(--cizgi);
+}
+
+.flowRow {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--kontrol-lg);
+  padding: var(--bosluk-2) 0;
+  border: 0;
+  border-radius: var(--kose-sm);
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.flowRow:hover {
+  background: var(--zemin-hover);
+}
+
+.flowRow:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.flowTime {
+  flex: none;
+  min-width: var(--bosluk-12);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.flowDot {
+  flex: none;
+  width: var(--bosluk-3);
+  height: var(--bosluk-3);
+  border-radius: var(--kose-tam);
+  background: var(--metin-ikincil);
+}
+
+.flowDot.onay {
+  background: var(--durum-onay-nokta);
+}
+
+.flowDot.kapora {
+  background: var(--durum-kapora-nokta);
+}
+
+.flowDot.onaylandi {
+  background: var(--durum-onaylandi-nokta);
+}
+
+.flowDot.geldi {
+  background: var(--durum-geldi-nokta);
+}
+
+.flowDot.tamamlandi {
+  background: var(--durum-tamamlandi-nokta);
+}
+
+.flowDot.gelmedi {
+  background: var(--durum-gelmedi-nokta);
+}
+
+.flowDot.iptal {
+  background: var(--durum-iptal-nokta);
+}
+
+.flowText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flowDetail {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.attentionRow {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-2) 0;
+}
+
+.attentionIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-md);
+  height: var(--kontrol-md);
+  border-radius: var(--kose-md);
+  background: var(--bilgi-zemin);
+  color: var(--bilgi);
+}
+
+.attentionText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.attentionText small {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+@media (width <= 899px) {
+  .overviewGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
