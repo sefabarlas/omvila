@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
+import { depositSetup } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
 // yazılır; tasarım görüntüleriyle (design/ekranlar/salon-paneli) yan yana insan gözüyle karşılaştırılır. Otomatik piksel
@@ -36,7 +37,43 @@ const screens: ScreenCase[] = [
   { path: '/personel', name: 'Personel', heading: 'Personel' },
   { path: '/ayarlar/isletme', name: 'AyarlarIsletme', heading: 'Ayarlar' },
   { path: '/ayarlar/sube', name: 'AyarlarSube', heading: 'Ayarlar' },
-  { path: '/ayarlar/randevu-kurallari', name: 'Ayarlar', heading: 'Ayarlar' },
+  {
+    path: '/ayarlar/randevu-kurallari',
+    name: 'Ayarlar',
+    heading: 'Ayarlar',
+    setup: (page) => depositSetup(page, true),
+    act: (page) => expect(page.getByText(/^Kapora IBAN’ı tanımlı · /)).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/randevu-kurallari',
+    name: 'AyarlarKaporaYok',
+    heading: 'Ayarlar',
+    setup: (page) => depositSetup(page, false),
+    act: (page) => expect(page.getByRole('button', { name: 'IBAN ekle' })).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/kapora',
+    name: 'AyarlarOdeme',
+    heading: 'Ayarlar',
+    setup: (page) => depositSetup(page),
+    act: (page) => expect(page.getByText('OMVILA ödeme almaz.')).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/kapora',
+    name: 'AyarlarOdeme1199',
+    heading: 'Ayarlar',
+    setup: (page) => depositSetup(page),
+    act: (page) => expect(page.getByText('OMVILA ödeme almaz.')).toBeVisible(),
+    viewport: { width: 1199, height: 900 },
+  },
+  {
+    path: '/ayarlar/kapora',
+    name: 'AyarlarOdeme899',
+    heading: 'Ayarlar',
+    setup: (page) => depositSetup(page),
+    act: (page) => expect(page.getByText('OMVILA ödeme almaz.')).toBeVisible(),
+    viewport: { width: 899, height: 1200 },
+  },
   { path: '/ayarlar/rezervasyon', name: 'AyarlarRezervasyon', heading: 'Ayarlar' },
   {
     path: '/ayarlar/bildirimler',

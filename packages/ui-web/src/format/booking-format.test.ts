@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatIban, formatPrice, normalizeIban, withTimeSuffix } from './index';
+import {
+  formatDate,
+  formatIban,
+  formatPrice,
+  isValidIban,
+  normalizeIban,
+  withTimeSuffix,
+} from './index';
 import { initials } from './name';
 
 // Kural: rezervasyon sayfası ekranlarındaki metinler birebir (design/ekranlar/rezervasyon-sayfasi).
@@ -33,6 +40,28 @@ describe('formatIban', () => {
   it('dörtlü gruplar, kopyalanan değer boşluksuz', () => {
     expect(formatIban('TR120006400000112345678901')).toBe('TR12 0006 4000 0011 2345 6789 01');
     expect(normalizeIban('tr12 0006 4000 0011 2345 6789 01')).toBe('TR120006400000112345678901');
+  });
+});
+
+// Kural: dilim-04 kapsamı (IBAN: TR biçim + mod-97), sözleşme BankAccountWrite.iban.
+describe('isValidIban', () => {
+  it.each([
+    'TR29 0006 4000 0011 2345 6789 01',
+    'TR290006400000112345678901',
+    'tr33 0006 1005 1978 6457 8413 26',
+  ])('geçerli: %s', (iban) => {
+    expect(isValidIban(iban)).toBe(true);
+  });
+
+  it.each([
+    ['denetim hanesi yanlış', 'TR12 0006 4000 0011 2345 6789 01'],
+    ['kısa', 'TR29 0006 4000 0011 2345 6789 0'],
+    ['uzun', 'TR29 0006 4000 0011 2345 6789 012'],
+    ['başka ülke', 'DE89 3704 0044 0532 0130 00'],
+    ['harf içerir', 'TR29 0006 4000 0011 2345 6789 0A'],
+    ['boş', ''],
+  ])('geçersiz (%s): %s', (_, iban) => {
+    expect(isValidIban(iban)).toBe(false);
   });
 });
 
