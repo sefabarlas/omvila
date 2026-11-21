@@ -44,6 +44,11 @@ public static class SchedulingModule
         services.AddPeriodicJob<ExpireAppointmentHolds>();
         services.AddPeriodicJob<MarkNoShows>();
         services.AddPeriodicJob<ExtendRecurringSeries>();
+        // Demo verisi (--role=seed; T-74): randevular AppointmentWriter ile; --reset'te markanın randevuları.
+        services.AddScoped(sp => new DemoData.SchedulingDemoData(
+            sp.GetRequiredService<SchedulingDbContext>(), sp.GetRequiredService<AppointmentWriter>(),
+            sp.GetRequiredService<Tenancy.Contracts.ITenantQueries>(), sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>()));
+        services.AddBrandDataEraser<SchedulingDbContext>();
         return services;
     }
 

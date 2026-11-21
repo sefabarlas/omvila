@@ -8,7 +8,7 @@ Zorunlu okuma: [docs/mimari/mimari.md](../docs/mimari/mimari.md), [docs/standart
 ```
 api/
   Omvila.slnx  global.json  Directory.Build.props  Directory.Packages.props  BannedSymbols.txt  .editorconfig
-  src/Omvila.Host/                     # Program.cs; --role=api|worker|all
+  src/Omvila.Host/                     # Program.cs; --role=api|worker|all|seed
   src/Omvila.SharedKernel/             # Result, Error, ErrorCodes, Money, PhoneNumber, Ids, IClock, IIdGenerator
   src/Omvila.Infrastructure/           # bağlantı + transaction, RLS kurulumu, outbox, iş zamanlayıcı, idempotency, dış servis adaptörleri
   src/Modules/<Modül>/Omvila.Modules.<Modül>/            # Domain/ Features/ Infrastructure/ Jobs/ IntegrationEventHandlers/
@@ -80,7 +80,7 @@ scripts/export-openapi.sh && oasdiff diff ../contracts/openapi.yaml artifacts/op
 - Yerelde 5432'de başka bir PostgreSQL çalışıyorsa `localhost` ona gider; `ConnectionStrings__Default/Migrator` ile portu değiştirin.
 
 ## Geliştirme verisi
-`dotnet run --project api/src/Omvila.Host -- seed` tasarım ekranlarındaki verileri kurar: Kuaför Elif (Kadıköy, Nişantaşı), personel Elif Kaya, Mert Demir, Zeynep Aksoy, Can Yücel; hizmetler Saç/Renk/Bakım/Tırnak; örnek müşteriler. Seed yalnız `Development` ortamında çalışır.
+`dotnet run --project src/Omvila.Host -- --role=seed` demo markasını kurar ve çıkar (T-74): Kuaför Elif (`kuafor-elif`; Kadıköy, Nişantaşı), personel Elif Kaya (Owner), Mert Demir, Can Yücel, Zeynep Aksoy (giriş +90 555 000 00 01–04, kod `infra.dev_sms_log`'da), 4 kategori, 10 hizmet, 15 müşteri, son ve gelecek iki haftanın randevuları (Onaylandı, Onay bekliyor, Geldi, Gelmedi, İptal), 1000 kontör. İdempotent: marka varsa bir şey yazmaz. `-- --role=seed --reset` yalnız demo markasını (sahibin telefonuyla tanınır) her modülün `IBrandDataEraser`'ı ile silip yeniden kurar; tarihler çalıştırma anına göre olduğundan demo öncesi önerilir. Yalnız Development, Staging ve Testing; Production'da hata ile çıkar. Kod `Host/Seeding` (içerik `DemoDataSet`) ve modüllerin `DemoData/` klasörleri; randevular `AppointmentWriter` ile, olay yazılmaz (SMS üretmez).
 
 ## Analizör istisnaları
 `api/.editorconfig` kapatılan kuralları gerekçesiyle listeler (CA1716, CA1000, MA0008, MA0004; testlerde CA1707; EF migration dosyaları `generated_code`). Yeni istisna gerekçesiz eklenmez.

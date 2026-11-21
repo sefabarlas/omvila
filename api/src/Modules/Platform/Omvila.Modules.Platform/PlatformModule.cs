@@ -18,6 +18,8 @@ public static class PlatformModule
         services.AddScoped<ISubscriptionProvisioning, SubscriptionProvisioning>();
         services.AddScoped<ISubscriptionQueries, SubscriptionQueries>();
         services.AddSingleton<PlanSeeder>();
+        // Demo verisi --reset (T-74): markanın aboneliği.
+        services.AddBrandDataEraser<PlatformDbContext>();
         return services;
     }
 }

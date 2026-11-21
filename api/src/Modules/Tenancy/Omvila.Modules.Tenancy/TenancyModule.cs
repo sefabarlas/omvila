@@ -39,6 +39,11 @@ public static class TenancyModule
         services.AddScoped<IOnboardingStepProvider, WorkingHoursStep>();
         services.AddScoped<IOnboardingStepProvider, StaffStep>();
         services.AddScoped<IOnboardingStepProvider, ShareBookingLinkStep>();
+        // Demo verisi (--role=seed; T-74): şube, saat, personel, kurulum; --reset'te markanın satırları (marka en son).
+        services.AddScoped(sp => new DemoData.TenancyDemoData(
+            sp.GetRequiredService<TenancyDbContext>(), sp.GetRequiredService<Identity.Contracts.IStaffMemberships>(),
+            sp.GetRequiredService<OnboardingService>(), sp.GetRequiredService<IIdGenerator>(), sp.GetRequiredService<NodaTime.IClock>()));
+        services.AddBrandDataEraser<TenancyDbContext>(typeof(Domain.Brand));
         return services;
     }
 
