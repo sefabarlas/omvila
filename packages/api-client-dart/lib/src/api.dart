@@ -13,10 +13,12 @@ import 'package:omvila_api/src/api/manage_brand_api.dart';
 import 'package:omvila_api/src/api/manage_calendar_api.dart';
 import 'package:omvila_api/src/api/manage_catalog_api.dart';
 import 'package:omvila_api/src/api/manage_customers_api.dart';
+import 'package:omvila_api/src/api/manage_notifications_api.dart';
 import 'package:omvila_api/src/api/manage_session_api.dart';
 import 'package:omvila_api/src/api/manage_staff_api.dart';
 import 'package:omvila_api/src/api/public_appointment_link_api.dart';
 import 'package:omvila_api/src/api/public_booking_api.dart';
+import 'package:omvila_api/src/api/webhooks_api.dart';
 
 class OmvilaApi {
   static const String basePath = r'http://localhost:5080';
@@ -145,6 +147,12 @@ class OmvilaApi {
     return ManageCustomersApi(dio);
   }
 
+  /// Get ManageNotificationsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageNotificationsApi getManageNotificationsApi() {
+    return ManageNotificationsApi(dio);
+  }
+
   /// Get ManageSessionApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   ManageSessionApi getManageSessionApi() {
@@ -167,5 +175,11 @@ class OmvilaApi {
   /// by doing that all interceptors will not be executed
   PublicBookingApi getPublicBookingApi() {
     return PublicBookingApi(dio);
+  }
+
+  /// Get WebhooksApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  WebhooksApi getWebhooksApi() {
+    return WebhooksApi(dio);
   }
 }

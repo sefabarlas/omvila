@@ -19,6 +19,8 @@ abstract class _$ManageSessionCWProxy {
 
   ManageSession subscription(SubscriptionBanner subscription);
 
+  ManageSession smsCredits(ManageSessionSmsCredits? smsCredits);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ManageSession(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -32,6 +34,7 @@ abstract class _$ManageSessionCWProxy {
     List<String> permissions,
     List<BranchRef> branches,
     SubscriptionBanner subscription,
+    ManageSessionSmsCredits? smsCredits,
   });
 }
 
@@ -63,6 +66,10 @@ class _$ManageSessionCWProxyImpl implements _$ManageSessionCWProxy {
       this(subscription: subscription);
 
   @override
+  ManageSession smsCredits(ManageSessionSmsCredits? smsCredits) =>
+      this(smsCredits: smsCredits);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ManageSession(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -76,6 +83,7 @@ class _$ManageSessionCWProxyImpl implements _$ManageSessionCWProxy {
     Object? permissions = const $CopyWithPlaceholder(),
     Object? branches = const $CopyWithPlaceholder(),
     Object? subscription = const $CopyWithPlaceholder(),
+    Object? smsCredits = const $CopyWithPlaceholder(),
   }) {
     return ManageSession(
       user: user == const $CopyWithPlaceholder()
@@ -102,6 +110,10 @@ class _$ManageSessionCWProxyImpl implements _$ManageSessionCWProxy {
           ? _value.subscription
           // ignore: cast_nullable_to_non_nullable
           : subscription as SubscriptionBanner,
+      smsCredits: smsCredits == const $CopyWithPlaceholder()
+          ? _value.smsCredits
+          // ignore: cast_nullable_to_non_nullable
+          : smsCredits as ManageSessionSmsCredits?,
     );
   }
 }
@@ -156,6 +168,12 @@ ManageSession _$ManageSessionFromJson(Map<String, dynamic> json) =>
           'subscription',
           (v) => SubscriptionBanner.fromJson(v as Map<String, dynamic>),
         ),
+        smsCredits: $checkedConvert(
+          'smsCredits',
+          (v) => v == null
+              ? null
+              : ManageSessionSmsCredits.fromJson(v as Map<String, dynamic>),
+        ),
       );
       return val;
     });
@@ -168,4 +186,5 @@ Map<String, dynamic> _$ManageSessionToJson(ManageSession instance) =>
       'permissions': instance.permissions,
       'branches': instance.branches.map((e) => e.toJson()).toList(),
       'subscription': instance.subscription.toJson(),
+      'smsCredits': ?instance.smsCredits?.toJson(),
     };

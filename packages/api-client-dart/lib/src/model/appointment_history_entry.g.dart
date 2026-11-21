@@ -132,6 +132,7 @@ const _$AppointmentHistoryEntryKindEnumEnumMap = {
   AppointmentHistoryEntryKindEnum.created: 'Created',
   AppointmentHistoryEntryKindEnum.approved: 'Approved',
   AppointmentHistoryEntryKindEnum.declined: 'Declined',
+  AppointmentHistoryEntryKindEnum.holdExpired: 'HoldExpired',
   AppointmentHistoryEntryKindEnum.rescheduled: 'Rescheduled',
   AppointmentHistoryEntryKindEnum.cancelled: 'Cancelled',
   AppointmentHistoryEntryKindEnum.checkedIn: 'CheckedIn',

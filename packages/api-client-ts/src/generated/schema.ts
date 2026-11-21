@@ -835,6 +835,265 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/appointments/{appointmentId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Onay bekleyen talebi onayla ("Onayla")
+         * @description Randevu yan paneli (RandevuPanel) "Onayla" butonu. Geçiş A2: PendingApproval → Confirmed; holdExpiresUtc temizlenir,
+         *     müşteriye appointment.approved bildirimi gider, hatırlatmalar planlanır.
+         *     Gövde isteğe bağlıdır. waiveDeposit Dilim 4'te anlam kazanır: kapora istenmiş ve gelmemişse onay için waiveDeposit = true gerekir
+         *     (kapora alınmadan onayla). Dilim 3'te kapora olmadığından alan yok sayılır.
+         *     Durum PendingApproval değilse 409 invalid_state_transition. Tutma süresi dolmuş ama otomatik iptal işi henüz çalışmamışsa 409 hold_expired.
+         *     İzin: appointment.approve (Owner, BranchManager kendi şubesinde). Personel rolü 403 forbidden alır; kapsam dışı randevu 404.
+         */
+        post: operations["manageApproveAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/appointments/{appointmentId}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Onay bekleyen talebi reddet ("Reddet")
+         * @description Randevu yan paneli (RandevuPanel) "Reddet" butonu. Geçiş A4: PendingApproval → Cancelled, neden sabit DeclinedBySalon
+         *     (cancellation.cancelledBy = Salon). Segmentler pasifleşir, slot boşalır, paket seansı geri verilir, bekleme listesi tetiklenir.
+         *     Müşteriye appointment.declined bildirimi gider; müşteri metninde ve Randevum sayfasında "iptal" yazar, "reddedildi" geçmez.
+         *     Gövde yoktur: tasarımda neden veya not alanı bulunmaz, müşteriye bildirim her zaman gider (talep yanıtsız kalmamalı).
+         *     Durum PendingApproval değilse 409 invalid_state_transition; tutma süresi dolmuşsa 409 hold_expired.
+         *     İzin: appointment.approve. Personel rolü 403 forbidden alır; kapsam dışı randevu 404.
+         */
+        post: operations["manageDeclineAppointment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/approval-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Onay bekleyen talepler ("Dikkat isteyenler", "Onay bekliyor" bentosu)
+         * @description Genel bakış "Onay bekliyor" bentosu ("ilki 1 sa 35 dk içinde iptal olur"), "Dikkat isteyenler" kartındaki
+         *     "2 online talep onay bekliyor" satırı ve takvim üst bandı. Yalnız PendingApproval randevular, holdExpiresUtc'ye göre artan sıralı
+         *     (en acil önce). Sayfalanmaz: talepler en geç onay süresi (en fazla 240 dk) içinde düştüğü için liste kısadır.
+         *     Kalan süre istemcide holdExpiresUtc ile generatedUtc farkından sayılır; cihaz saati kullanılmaz (generatedUtc sunucunun "şimdi"sidir).
+         *     branchId verilirse yalnız o şube; verilmezse kullanıcının kapsamındaki bütün şubeler.
+         *     İzin: appointment.approve. Personel rolü 403 forbidden alır (onay butonlarını görmez).
+         */
+        get: operations["manageListPendingApprovals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bildirim paneli (zil)
+         * @description Üst bardaki zil ve BildirimPaneli. Oturumdaki kullanıcıya düşen işletme olayları (staff.*, owner.*), yeniden eskiye.
+         *     Zildeki sayı unreadCount'tur (sahte sayı gösterilmez; 0 ise rozet yok). Panel kaydı push tercihlerinden bağımsız tutulur:
+         *     kullanıcı push'u kapatsa da olay panelde görünür. title ve body olay anındaki push metniyle aynıdır (docs/standartlar/bildirimler.md),
+         *     sunucuda üretilir ve müşteri adını "Ad Soyad" biçiminde taşır (kilit ekranı kısaltması yalnız push'ta). Not içeriği yazılmaz.
+         *     target, tıklanınca açılacak ekranı söyler.
+         */
+        get: operations["manageListInAppNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bildirimleri okundu say ("Tümünü okundu say")
+         * @description Ya notificationIds (tıklanan bildirim) ya da all = true ("Tümünü okundu say") gönderilir; ikisi birden veya hiçbiri 400 validation_failed.
+         *     all = true, isteğin sunucuya ulaştığı ana kadar oluşmuş bildirimleri okundu sayar. İşlem idempotenttir: okunmuş bildirim
+         *     yeniden okundu sayılmaz (readUtc değişmez), başka kullanıcının bildirimi sessizce yok sayılır. Yanıt güncel okunmamış sayısıdır.
+         */
+        post: operations["manageMarkNotificationsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/brand/notification-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bildirim ayarları (hatırlatmalar, değerlendirme daveti, mesaj şablonları)
+         * @description Ayarlar → Bildirimler ve SMS (AyarlarBildirim) ekranının "Hatırlatmalar" ve "Mesaj şablonları" bölümleri.
+         *     Hatırlatma zamanları ve değerlendirme daveti için kanonik uç budur. BrandSettings.reminderOffsetsMinutes ve
+         *     BrandSettings.reviewInviteEnabled aynı saklanan değerlerin aynasıdır ve geriye uyumluluk için durur (deprecated); hangi uçtan
+         *     yazılırsa yazılsın iki yanıt da aynı değeri gösterir ve iki kaynağın ETag'i birlikte değişir.
+         *     templates yalnız salonun ezebildiği SMS şablonlarını listeler; her satırda sistem metni, salon metni (varsa) ve kullanılabilir
+         *     değişkenler bulunur ("Düzenle"). Satır adları ("Randevu onaylandı", "Hatırlatma") istemcide eventCode + variant'tan üretilir.
+         *     İzin: settings.manage.
+         */
+        get: operations["manageGetNotificationSettings"];
+        /**
+         * Bildirim ayarlarını kaydet ("Değişiklikleri kaydet")
+         * @description reminderOffsetsMinutes ve reviewInviteEnabled her istekte tam gönderilir. templates isteğe bağlıdır: gönderilmeyen şablon değişmez;
+         *     customBody metin ise salon metni olur, null ise sistem şablonuna dönülür.
+         *     Şablon doğrulaması (400 validation_failed, alan yolu templates[i].customBody): en uzun gerçekçi değerlerle 155 GSM-7 Türkçe
+         *     karakteri geçerse too_long, listede olmayan değişken invalid_format, zorunlu değişken (ör. {bağlantı}) eksikse required.
+         *     Ezilemeyen olay kodu (ör. otp.code, deposit.*) templates[i].eventCode için invalid_format.
+         *     Hatırlatma zamanları tekrarsız olmalıdır (tekrar varsa invalid_format). İzin: settings.manage.
+         */
+        put: operations["manageUpdateNotificationSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/brand/sms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SMS özeti (kontör, bu ay gönderilen, gönderen adı)
+         * @description AyarlarBildirim üst kartları: "SMS kontörü 1.240 · bu tempoyla ~18 gün yeter", "Bu ay gönderilen 862 SMS · 1.904 bildirim",
+         *     "Gönderen adı KUAFORELIF · operatör onaylı" ve alttaki "Bakiye 200'ün altına düşünce size haber veririz" uyarısı.
+         *     Kontör markaya aittir (şube kırılımı yok). "Bu ay" markanın ana şubesinin saat dilimindeki takvim ayıdır.
+         *     İzin: settings.manage.
+         */
+        get: operations["manageGetSmsOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/brand/sms-sender": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gönderen adı başvurusu yap
+         * @description SMS'lerin salon adıyla (originator) gitmesi için başvuru. Başvuru Pending olur; platform ekibi operatör onayını alınca
+         *     Approved yapar (Dilim 6 platform paneli). Onaylanana kadar mesajlar OMVILA adıyla gider (effectiveName).
+         *     Ad operatör kurallarına uyar: 3–11 karakter, yalnız büyük Latin harfi ve rakam, en az bir harf; Türkçe karakter, boşluk ve
+         *     noktalama yok (istemci girişi büyük harfe çevirir, Ç→C, Ğ→G, İ→I, Ö→O, Ş→S, Ü→U). Biçim hatası 400 validation_failed (name: invalid_format).
+         *     Bekleyen başvuru varken yeni başvuru 409 invalid_state_transition. Onaylı ad varken yapılan başvuru onaylanana kadar eski onaylı ad
+         *     kullanılmaya devam eder. İzin: settings.manage.
+         */
+        post: operations["manageRequestSmsSender"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * İşletme uygulaması push jetonunu kaydet
+         * @description OMVILA İşletme uygulaması açılışta ve FCM jetonu yenilendiğinde çağırır. Doğal anahtar push jetonudur: aynı jeton tekrar gelirse
+         *     kayıt güncellenir (sahip, platform, uygulama sürümü, lastSeenUtc) ve aynı deviceId döner. Bu yüzden Idempotency-Key istenmez;
+         *     istek doğası gereği idempotenttir. Jeton başka bir kullanıcıya kayıtlıysa o kayıt pasifleşir ve jeton oturumdaki kullanıcıya geçer
+         *     (aynı telefonda hesap değişimi). Sağlayıcı "geçersiz jeton" derse kayıt sunucuda pasifleşir.
+         *     Kaydı silme ucu yol haritasında yoktur (açık soru): şimdilik kayıt geçersiz jeton geri bildirimiyle veya jeton başka kullanıcıya
+         *     geçince pasifleşir; uygulama oturum kapatırken jetonu yerelde siler.
+         */
+        post: operations["manageRegisterDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/me/notification-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kendi bildirim tercihlerim (işletme uygulaması "Bildirim ayarları")
+         * @description "Yalnızca sizin telefonunuza gelenler." Tercihler yalnız push'u etkiler; bildirim paneli kaydı her durumda tutulur.
+         *     Sahip ve yönetici olayları (owner.credits_low, owner.subscription_payment_failed, staff.deposit_reported) kapatılamaz.
+         *     Sessiz saat aralığı platform varsayılanıdır (22:00–08:00, kullanıcının şubesinin saat diliminde); v1'de yalnız açılıp kapatılır.
+         */
+        get: operations["manageGetMyNotificationPreferences"];
+        /**
+         * Kendi bildirim tercihlerimi kaydet
+         * @description Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır).
+         */
+        put: operations["manageUpdateMyNotificationPreferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/brands/{brandSlug}": {
         parameters: {
             query?: never;
@@ -1086,6 +1345,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/webhooks/sms/{provider}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SMS sağlayıcı adaptörünün kodu (ör. netgsm). Sağlayıcı henüz seçilmedi (acik-sorular T-03); bilinmeyen kod 404. */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS teslim raporu (sağlayıcıdan gelen geri çağrı)
+         * @description SMS sağlayıcısı mesaj teslim edildiğinde veya başarısız olduğunda çağırır. OMVILA JWT'si taşımaz (security: []); kimlik doğrulama
+         *     sağlayıcıya göre adaptörde yapılır: sağlayıcının kendi imza başlığı (HMAC, ör. X-Signature) gövdenin ham baytları üzerinden ve
+         *     ortam gizlisiyle sabit zamanlı karşılaştırılır; imza sunmayan bir sağlayıcı seçilirse yol gizli jetonu ve IP izin listesi kullanılır.
+         *     İmzasız veya imzası tutmayan istek 401 unauthorized alır ve hiçbir kayda dokunmaz (kabul kriteri 10).
+         *     Gövde sağlayıcıya özgüdür; sözleşme serbest biçimli JSON nesnesi olarak tanımlar, adaptör ProviderMessageId ile
+         *     NotificationOutbox satırını bulur. Teslim edildi → Sent; başarısız → üstel geri çekilmeyle yeniden denenir, 5. denemede Failed.
+         *     Bilinmeyen mesaj kimliği ve tekrar gelen rapor 204 ile sessizce kabul edilir (sağlayıcı tekrar denemesin; işlem idempotent).
+         *     Form kodlu gövde gönderen bir sağlayıcı seçilirse ilgili içerik türü buraya eklenir (geriye uyumlu).
+         */
+        post: operations["webhookSmsDeliveryReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1262,6 +1551,19 @@ export interface components {
             permissions: components["schemas"]["Permission"][];
             branches: components["schemas"]["BranchRef"][];
             subscription: components["schemas"]["SubscriptionBanner"];
+            /**
+             * @description "Kontör az" şeridi (Durumlar: "SMS kontörünüz 180'e düştü."). Yalnız settings.manage izni olan kullanıcıya döner; diğerlerinde alan yoktur.
+             *     Ayrıntı manageGetSmsOverview'dadır.
+             */
+            smsCredits?: {
+                /**
+                 * @description SMS kontörü bakiyesi
+                 * @example 180
+                 */
+                balance: number;
+                /** @description Bakiye LowCreditThreshold'un altında */
+                isLow: boolean;
+            };
         };
         /** @description Panel şeritleri için abonelik özeti */
         SubscriptionBanner: {
@@ -1344,12 +1646,19 @@ export interface components {
             riskyCustomerNoShowThreshold: number;
             maskCustomerPhoneFromStaff: boolean;
             /**
+             * @deprecated
+             * @description Kanonik uç manageGetNotificationSettings / manageUpdateNotificationSettings'tir. Bu alan aynı saklanan değeri yansıtır ve
+             *     geriye uyumluluk için durur: okunur ve PUT ile yazılırsa aynı değer değişir. Yeni istemci bu alanı mevcut değeriyle geri gönderir.
              * @example [
              *       1440,
              *       120
              *     ]
              */
             reminderOffsetsMinutes: number[];
+            /**
+             * @deprecated
+             * @description Kanonik uç bildirim ayarlarıdır (NotificationSettings.reviewInviteEnabled); bu alan aynı değerin aynasıdır.
+             */
             reviewInviteEnabled: boolean;
             /** @description Aktif IBAN var mı (yoksa kapora ayarları kapalı gösterilir) */
             readonly depositAvailable?: boolean;
@@ -1918,8 +2227,11 @@ export interface components {
         AppointmentHistoryEntry: {
             /** Format: date-time */
             occurredUtc: string;
-            /** @enum {string} */
-            kind: "Created" | "Approved" | "Declined" | "Rescheduled" | "Cancelled" | "CheckedIn" | "NoShow" | "NoShowUndone" | "Completed" | "DepositReported" | "DepositReceived" | "NotificationSent";
+            /**
+             * @description Approved = "Onaylandı" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
+             * @enum {string}
+             */
+            kind: "Created" | "Approved" | "Declined" | "HoldExpired" | "Rescheduled" | "Cancelled" | "CheckedIn" | "NoShow" | "NoShowUndone" | "Completed" | "DepositReported" | "DepositReceived" | "NotificationSent";
             actorName?: string | null;
             /** @example Online talep oluşturuldu, SMS ile doğrulandı */
             detail?: string | null;
@@ -2079,6 +2391,421 @@ export interface components {
              * @default true
              */
             offerToWaitlist?: boolean;
+        };
+        /** @description "Onayla" gövdesi (isteğe bağlı) */
+        ManageApproveRequest: {
+            /**
+             * @description Kapora istenmiş ve gelmemişken kapora almadan onayla (Dilim 4'te anlam kazanır; Dilim 3'te yok sayılır)
+             * @default false
+             */
+            waiveDeposit?: boolean;
+        };
+        /** @description Onay bekleyen tek talep ("Pınar Yalçın 16:00") */
+        PendingApprovalItem: {
+            /**
+             * Format: uuid
+             * @description Randevu kimliği (yan paneli açar)
+             */
+            appointmentId: string;
+            /**
+             * @description Kısa görünen numara
+             * @example A-20481
+             */
+            reference?: string;
+            /**
+             * Format: uuid
+             * @description Şube
+             */
+            branchId: string;
+            /**
+             * @description Şube adı (çok şubeli markada gösterilir)
+             * @example Kadıköy
+             */
+            branchName: string;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /**
+             * @description Müşteri adı
+             * @example Pınar Yalçın
+             */
+            customerName: string;
+            /** @description İlk randevusu mu */
+            isNewCustomer: boolean;
+            /**
+             * @description Hizmet adları; birden çok kalemde "Saç kesimi + Fön"
+             * @example Cilt bakımı
+             */
+            serviceSummary: string;
+            /**
+             * @description İlk kalemin personeli
+             * @example Zeynep Aksoy
+             */
+            staffName?: string | null;
+            /**
+             * Format: date-time
+             * @description Randevu başlangıcı
+             */
+            startUtc: string;
+            /**
+             * Format: date-time
+             * @description Randevu bitişi
+             */
+            endUtc: string;
+            /**
+             * Format: date-time
+             * @description Bu anda yanıtlanmamışsa otomatik iptal olur (A5)
+             */
+            holdExpiresUtc: string;
+            /**
+             * Format: date-time
+             * @description Talebin geldiği an
+             */
+            createdUtc: string;
+            channel: components["schemas"]["AppointmentChannel"];
+        };
+        /** @description "Dikkat isteyenler" ve "Onay bekliyor" bentosu verisi */
+        PendingApprovalList: {
+            /**
+             * Format: date-time
+             * @description Sunucunun "şimdi"si; kalan süre bu ana göre sayılır
+             */
+            generatedUtc: string;
+            /**
+             * @description Onay bekleyen talep sayısı ("Onay bekliyor 2")
+             * @example 2
+             */
+            totalCount: number;
+            /**
+             * Format: date-time
+             * @description En yakın otomatik iptal anı ("ilki 1 sa 35 dk içinde iptal olur"); liste boşsa null
+             */
+            earliestHoldExpiresUtc: string | null;
+            /** @description holdExpiresUtc'ye göre artan sıralı */
+            items: components["schemas"]["PendingApprovalItem"][];
+        };
+        /**
+         * @description İşletme olay kodu (docs/standartlar/bildirimler.md § İşletme olayları). Olay kodları katalogdaki biçimiyle (nokta ve alt çizgi) yazılır,
+         *     PascalCase'e çevrilmez; tek kaynak olay kataloğudur. İstemciler bilinmeyen değeri genel bildirim olarak gösterir.
+         * @enum {string}
+         */
+        StaffNotificationEvent: "staff.approval_needed" | "staff.appointment_created" | "staff.appointment_changed" | "staff.customer_checked_in" | "staff.deposit_reported" | "staff.review_received" | "staff.walkin_queue" | "staff.daily_summary" | "owner.credits_low" | "owner.subscription_payment_failed" | "owner.trial_ending";
+        /** @description Bildirime dokununca açılacak ekran */
+        NotificationTarget: {
+            /**
+             * @description Appointment = randevu yan paneli; Calendar = takvim (id randevu); Today = bugün; Deposit = "Kapora geldi mi?"; Reviews = değerlendirmeler; WalkInQueue = kapıda sıra; SmsCredits = Ayarlar → Bildirimler ve SMS; Subscription = Ayarlar → Abonelik
+             * @enum {string}
+             */
+            type: "Appointment" | "Calendar" | "Today" | "Deposit" | "Reviews" | "WalkInQueue" | "SmsCredits" | "Subscription";
+            /**
+             * Format: uuid
+             * @description Hedef kayıt (randevu, değerlendirme…); ekran düzeyindeki hedeflerde null
+             */
+            id?: string | null;
+            /**
+             * Format: date-time
+             * @description Yalnız staff.approval_needed; panelde canlı kalan süre ("1 sa 35 dk kaldı") bundan sayılır. Talep yanıtlandıysa null
+             */
+            holdExpiresUtc?: string | null;
+        };
+        /** @description Bildirim paneli satırı */
+        InAppNotification: {
+            /**
+             * Format: uuid
+             * @description Bildirim kimliği
+             */
+            id: string;
+            event: components["schemas"]["StaffNotificationEvent"];
+            /**
+             * @description Başlık (push başlığıyla aynı dil)
+             * @example Yeni online talep · Pınar Yalçın
+             */
+            title: string;
+            /**
+             * @description Metin; sağlık bilgisi ve not içeriği yazılmaz
+             * @example Cilt bakımı, bugün 16:00
+             */
+            body: string;
+            /**
+             * Format: date-time
+             * @description Olayın oluştuğu an (satırdaki "12:02", "Dün")
+             */
+            createdUtc: string;
+            /**
+             * Format: date-time
+             * @description Okundu sayıldığı an; null = okunmadı
+             */
+            readUtc: string | null;
+            /**
+             * Format: uuid
+             * @description Olayın şubesi; marka düzeyindeki olaylarda (kontör, abonelik) null
+             */
+            branchId?: string | null;
+            target: components["schemas"]["NotificationTarget"];
+        };
+        /** @description Bildirim paneli sayfası */
+        InAppNotificationPage: {
+            /** @description Yeniden eskiye */
+            items: components["schemas"]["InAppNotification"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+            /**
+             * @description Zildeki rozet; sayfadan bağımsız toplam okunmamış
+             * @example 3
+             */
+            unreadCount: number;
+        };
+        /** @description notificationIds veya all = true (tam biri) */
+        MarkNotificationsReadRequest: {
+            /** @description Okundu sayılacak bildirimler */
+            notificationIds?: string[];
+            /** @description "Tümünü okundu say" */
+            all?: boolean;
+        };
+        /** @description Güncel okunmamış sayısı */
+        UnreadNotificationCount: {
+            /**
+             * @description Zildeki rozet
+             * @example 0
+             */
+            unreadCount: number;
+        };
+        /**
+         * @description Salonun metnini ezebileceği müşteri olay kodları (docs/standartlar/bildirimler.md § Müşteri olayları). otp.code ve deposit.* bilerek
+         *     dışarıdadır: kod ve IBAN/tutar içeren mesajlar yalnız sistem metniyle gider. Hangi şablonların ezilebildiğini GET yanıtındaki templates listesi söyler.
+         * @enum {string}
+         */
+        CustomerNotificationEvent: "appointment.confirmed" | "appointment.requested" | "appointment.approved" | "appointment.approval_expired" | "appointment.declined" | "appointment.reminder" | "appointment.rescheduled" | "appointment.cancelled_by_salon" | "waitlist.offer" | "review.invite";
+        /** @description "Mesaj şablonları" satırı ("Sizin metniniz" / "Sistem şablonu", "Düzenle") */
+        NotificationTemplateSetting: {
+            eventCode: components["schemas"]["CustomerNotificationEvent"];
+            /**
+             * @description Aynı olayın ikinci metni (ör. aynı gün hatırlatması same_day); null = temel metin (T-53)
+             * @example same_day
+             */
+            variant: string | null;
+            /**
+             * @description Şablon kanalı; v1'de yalnız SMS metni ezilir, push metni sabittir
+             * @enum {string}
+             */
+            channel: "Sms";
+            /** @description Sistem şablonu (değişkenler süslü parantezle) */
+            systemBody: string;
+            /** @description Salon metni; null = sistem şablonu kullanılıyor */
+            customBody: string | null;
+            /**
+             * @description Metinde kullanılabilen değişkenler ({salon}, {tarih}…); süslü parantezsiz
+             * @example [
+             *       "salon",
+             *       "ad",
+             *       "tarih",
+             *       "saat",
+             *       "hizmet",
+             *       "personel",
+             *       "bağlantı"
+             *     ]
+             */
+            variables: string[];
+            /**
+             * @description Salon metninde bulunması zorunlu değişkenler (ör. bağlantı)
+             * @example [
+             *       "bağlantı"
+             *     ]
+             */
+            requiredVariables: string[];
+            /**
+             * @description En uzun gerçekçi değerlerle izin verilen GSM-7 Türkçe karakter (1 kontör)
+             * @example 155
+             */
+            maxLength: number;
+        };
+        /**
+         * @description Ayarlar → Bildirimler ve SMS. reminderOffsetsMinutes ve reviewInviteEnabled için kanonik kaynak; BrandSettings'teki aynı adlı alanlar
+         *     aynı saklanan değeri yansıtır (deprecated).
+         */
+        NotificationSettings: {
+            /**
+             * @description "Randevu hatırlatma zamanları" (dakika, randevudan önce); boş dizi = hatırlatma yok. 1440 = "1 gün önce", 120 = "2 saat önce"
+             * @example [
+             *       1440,
+             *       120
+             *     ]
+             */
+            reminderOffsetsMinutes: number[];
+            /** @description "Değerlendirme daveti" (randevu tamamlandıktan sonra) */
+            reviewInviteEnabled: boolean;
+            /** @description Salonun ezebildiği SMS şablonları */
+            templates: components["schemas"]["NotificationTemplateSetting"][];
+            version: components["schemas"]["Version"];
+        };
+        /** @description Bildirim ayarlarını kaydetme gövdesi */
+        NotificationSettingsUpdate: {
+            /**
+             * @description Hatırlatma zamanları (dakika)
+             * @example [
+             *       1440,
+             *       120
+             *     ]
+             */
+            reminderOffsetsMinutes: number[];
+            /** @description Değerlendirme daveti açık mı */
+            reviewInviteEnabled: boolean;
+            /** @description Değiştirilen şablonlar; gönderilmeyen şablon olduğu gibi kalır */
+            templates?: {
+                eventCode: components["schemas"]["CustomerNotificationEvent"];
+                /** @description Şablon varyantı; null = temel metin */
+                variant?: string | null;
+                /**
+                 * @description Salon metni; null = sistem şablonuna dön
+                 * @example Merhaba {ad}, {tarih} {saat} randevunuz onaylandı. Değişiklik ve iptal: {bağlantı}
+                 */
+                customBody: string | null;
+            }[];
+        };
+        /**
+         * @description Gönderen adı durumu; None = hiç başvuru yok
+         * @enum {string}
+         */
+        SmsSenderStatus: "None" | "Pending" | "Approved" | "Rejected";
+        /** @description Gönderen adı (BrandSmsSender) ve SMS'lerin şu an gittiği ad */
+        SmsSender: {
+            /**
+             * @description Son başvurulan ad; hiç başvuru yoksa null
+             * @example KUAFORELIF
+             */
+            name: string | null;
+            status: components["schemas"]["SmsSenderStatus"];
+            /**
+             * @description SMS'lerin şu an gittiği ad; onaylı ad yoksa platform varsayılanı OMVILA. Yeni başvuru beklerken önceki onaylı ad sürer
+             * @example OMVILA
+             */
+            effectiveName: string;
+            /**
+             * Format: date-time
+             * @description Başvuru anı
+             */
+            submittedUtc?: string | null;
+            /**
+             * Format: date-time
+             * @description Onay veya ret anı
+             */
+            decidedUtc?: string | null;
+            /** @description Ret nedeni (platform ekibinin yazdığı metin) */
+            rejectionReason?: string | null;
+        };
+        /** @description Gönderen adı başvurusu */
+        SmsSenderRequest: {
+            /**
+             * @description 3–11 karakter, büyük Latin harfi ve rakam, en az bir harf (operatör başlık kuralı)
+             * @example KUAFORELIF
+             */
+            name: string;
+        };
+        /** @description AyarlarBildirim üst kartları ve kontör uyarısı */
+        SmsOverview: {
+            /**
+             * @description SMS kontörü bakiyesi
+             * @example 1240
+             */
+            creditBalance: number;
+            /**
+             * @description "bu tempoyla ~18 gün yeter"; son 30 günün ortalama tüketimine göre. Yeterli geçmiş yoksa veya tüketim yoksa null
+             * @example 18
+             */
+            estimatedDaysLeft: number | null;
+            /**
+             * @description Bu değerin altında "Kontör az" uyarısı (LowCreditThreshold)
+             * @example 200
+             */
+            lowCreditThreshold: number;
+            /** @description creditBalance < lowCreditThreshold */
+            isLow: boolean;
+            /** @description "Bu ay gönderilen" */
+            sentThisMonth: {
+                /**
+                 * Format: date
+                 * @description Ayın ilk günü (yerel)
+                 */
+                month: string;
+                /**
+                 * @description Gönderilen SMS sayısı ("862 SMS")
+                 * @example 862
+                 */
+                smsCount: number;
+                /**
+                 * @description Düşülen kontör
+                 * @example 862
+                 */
+                creditsUsed: number;
+                /**
+                 * @description Bütün kanallarda gönderilen bildirim ("1.904 bildirim")
+                 * @example 1904
+                 */
+                notificationCount: number;
+            };
+            sender: components["schemas"]["SmsSender"];
+        };
+        /** @description Sağlayıcıya özgü teslim raporu gövdesi; alanları adaptör yorumlar (T-03) */
+        SmsDeliveryReportPayload: {
+            [key: string]: unknown;
+        };
+        /**
+         * @description Cihaz platformu (alan modeli Device.Platform)
+         * @enum {string}
+         */
+        DevicePlatform: "iOS" | "Android";
+        /** @description İşletme uygulaması push jetonu kaydı */
+        DeviceRegistration: {
+            platform: components["schemas"]["DevicePlatform"];
+            /** @description FCM kayıt jetonu */
+            pushToken: string;
+            /**
+             * @description Uygulama sürümü
+             * @example 1.0.3
+             */
+            appVersion: string;
+        };
+        /** @description Kaydedilen cihaz */
+        RegisteredDevice: {
+            /**
+             * Format: uuid
+             * @description Cihaz kaydı kimliği
+             */
+            deviceId: string;
+            platform: components["schemas"]["DevicePlatform"];
+            /**
+             * Format: date-time
+             * @description Son kayıt/yenileme anı
+             */
+            lastSeenUtc: string;
+        };
+        /**
+         * @description İşletme uygulaması "Bildirim ayarları" (NotificationPreference). Anahtar → olay: newOnlineAppointment = staff.appointment_created
+         *     (online) ve staff.approval_needed ("Onay bekleyenler dahil"); cancellationAndReschedule = staff.appointment_changed (kendi randevuları);
+         *     customerCheckedIn = staff.customer_checked_in; walkInQueue = staff.walkin_queue; newReview = staff.review_received;
+         *     dailySummary = staff.daily_summary. quietHoursEnabled açıkken işletme push'ları sessiz saatte gönderilmez, sabaha ertelenir.
+         */
+        MyNotificationPreferences: {
+            /** @description "Yeni online randevu · Onay bekleyenler dahil" */
+            newOnlineAppointment: boolean;
+            /** @description "İptal ve saat değişikliği · Sizin randevularınızda" */
+            cancellationAndReschedule: boolean;
+            /** @description "Müşteri geldi · Resepsiyon check-in yapınca" */
+            customerCheckedIn: boolean;
+            /** @description "Kapıda sıra · Sıra size gelince" */
+            walkInQueue: boolean;
+            /** @description "Yeni değerlendirme · Sizi puanlayanlar" */
+            newReview: boolean;
+            /** @description "Gün sonu özeti" */
+            dailySummary: boolean;
+            /** @description Gün sonu özetinin gönderildiği yerel saat ("Her akşam 20:00"); platform ayarı */
+            readonly dailySummaryLocalTime?: components["schemas"]["LocalTime"];
+            /** @description "Sessiz saatler" */
+            quietHoursEnabled: boolean;
+            /** @description Sessiz saat başlangıcı (QuietHoursLocal, şube yerel saati) */
+            readonly quietHoursStartLocal?: components["schemas"]["LocalTime"];
+            /** @description Sessiz saat bitişi */
+            readonly quietHoursEndLocal?: components["schemas"]["LocalTime"];
+            /** @description Kaynak sürümü (ETag ile aynı) */
+            readonly version?: components["schemas"]["Version"];
         };
         DaySearchRequest: {
             items: components["schemas"]["AppointmentItemRequest"][];
@@ -2438,7 +3165,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban) */
+        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban) */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -4064,6 +4791,540 @@ export interface operations {
             412: components["responses"]["PreconditionFailed"];
         };
     };
+    manageApproveAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ManageApproveRequest"];
+            };
+        };
+        responses: {
+            /** @description Onaylandı */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageDeclineAppointment: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                appointmentId: components["parameters"]["AppointmentIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Talep iptal edildi (DeclinedBySalon) */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentDetail"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageListPendingApprovals: {
+        parameters: {
+            query?: {
+                branchId?: components["parameters"]["BranchIdQueryOptional"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onay bekleyenler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "generatedUtc": "2026-11-25T09:25:00Z",
+                     *       "totalCount": 2,
+                     *       "earliestHoldExpiresUtc": "2026-11-25T11:00:00Z",
+                     *       "items": [
+                     *         {
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a61",
+                     *           "reference": "A-20481",
+                     *           "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *           "branchName": "Kadıköy",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "customerName": "Pınar Yalçın",
+                     *           "isNewCustomer": false,
+                     *           "serviceSummary": "Cilt bakımı",
+                     *           "staffName": "Zeynep Aksoy",
+                     *           "startUtc": "2026-11-25T13:00:00Z",
+                     *           "endUtc": "2026-11-25T14:00:00Z",
+                     *           "holdExpiresUtc": "2026-11-25T11:00:00Z",
+                     *           "createdUtc": "2026-11-25T09:00:00Z",
+                     *           "channel": "Online"
+                     *         },
+                     *         {
+                     *           "appointmentId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a62",
+                     *           "reference": "A-20484",
+                     *           "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *           "branchName": "Kadıköy",
+                     *           "timeZone": "Europe/Istanbul",
+                     *           "customerName": "Deniz Acar",
+                     *           "isNewCustomer": true,
+                     *           "serviceSummary": "Saç kesimi",
+                     *           "staffName": "Can Yücel",
+                     *           "startUtc": "2026-11-25T09:00:00Z",
+                     *           "endUtc": "2026-11-25T09:45:00Z",
+                     *           "holdExpiresUtc": "2026-11-25T11:10:00Z",
+                     *           "createdUtc": "2026-11-25T09:10:00Z",
+                     *           "channel": "Online"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PendingApprovalList"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageListInAppNotifications: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+                /** @description Yalnız okunmamışlar */
+                unreadOnly?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bildirimler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 3,
+                     *       "nextCursor": null,
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b01",
+                     *           "event": "staff.approval_needed",
+                     *           "title": "Yeni online talep · Pınar Yalçın",
+                     *           "body": "Cilt bakımı, bugün 16:00",
+                     *           "createdUtc": "2026-11-25T09:02:00Z",
+                     *           "readUtc": null,
+                     *           "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *           "target": {
+                     *             "type": "Appointment",
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a61",
+                     *             "holdExpiresUtc": "2026-11-25T11:00:00Z"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b02",
+                     *           "event": "staff.appointment_changed",
+                     *           "title": "Müşteri iptal etti · Hande Er",
+                     *           "body": "Saç kesimi 15:00 · Mert · sebep: planım değişti",
+                     *           "createdUtc": "2026-11-25T07:15:00Z",
+                     *           "readUtc": null,
+                     *           "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *           "target": {
+                     *             "type": "Calendar",
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a70"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b03",
+                     *           "event": "owner.credits_low",
+                     *           "title": "SMS kontörü azalıyor",
+                     *           "body": "1.240 kontör · ~18 gün",
+                     *           "createdUtc": "2026-11-24T08:00:00Z",
+                     *           "readUtc": null,
+                     *           "branchId": null,
+                     *           "target": {
+                     *             "type": "SmsCredits",
+                     *             "id": null
+                     *           }
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["InAppNotificationPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    manageMarkNotificationsRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkNotificationsReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Okundu sayıldı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadNotificationCount"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    manageGetNotificationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ayarlar */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "reminderOffsetsMinutes": [
+                     *         1440,
+                     *         120
+                     *       ],
+                     *       "reviewInviteEnabled": true,
+                     *       "templates": [
+                     *         {
+                     *           "eventCode": "appointment.confirmed",
+                     *           "variant": null,
+                     *           "channel": "Sms",
+                     *           "systemBody": "{salon}: Randevunuz onaylandı. {tarih} {saat}, {hizmet} ({personel}). Değişiklik ve iptal: {bağlantı}",
+                     *           "customBody": "Merhaba {ad}, {tarih} {saat} randevunuz onaylandı. Değişiklik ve iptal: {bağlantı}",
+                     *           "variables": [
+                     *             "salon",
+                     *             "ad",
+                     *             "tarih",
+                     *             "saat",
+                     *             "hizmet",
+                     *             "personel",
+                     *             "bağlantı"
+                     *           ],
+                     *           "requiredVariables": [
+                     *             "bağlantı"
+                     *           ],
+                     *           "maxLength": 155
+                     *         },
+                     *         {
+                     *           "eventCode": "appointment.reminder",
+                     *           "variant": null,
+                     *           "channel": "Sms",
+                     *           "systemBody": "Hatırlatma: Yarın {saat}'da {salon}'te randevunuz var. Değişiklik için: {bağlantı}",
+                     *           "customBody": null,
+                     *           "variables": [
+                     *             "salon",
+                     *             "ad",
+                     *             "tarih",
+                     *             "saat",
+                     *             "hizmet",
+                     *             "personel",
+                     *             "bağlantı"
+                     *           ],
+                     *           "requiredVariables": [
+                     *             "bağlantı"
+                     *           ],
+                     *           "maxLength": 155
+                     *         },
+                     *         {
+                     *           "eventCode": "waitlist.offer",
+                     *           "variant": null,
+                     *           "channel": "Sms",
+                     *           "systemBody": "{salon}: Beklediğiniz {tarih} {saat} boşaldı. 15 dk içinde onaylarsanız sizin: {bağlantı}",
+                     *           "customBody": null,
+                     *           "variables": [
+                     *             "salon",
+                     *             "tarih",
+                     *             "saat",
+                     *             "hizmet",
+                     *             "bağlantı"
+                     *           ],
+                     *           "requiredVariables": [
+                     *             "bağlantı"
+                     *           ],
+                     *           "maxLength": 155
+                     *         }
+                     *       ],
+                     *       "version": "W/\"9120\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageUpdateNotificationSettings: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationSettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageGetSmsOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SMS özeti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "creditBalance": 1240,
+                     *       "estimatedDaysLeft": 18,
+                     *       "lowCreditThreshold": 200,
+                     *       "isLow": false,
+                     *       "sentThisMonth": {
+                     *         "month": "2026-11-01",
+                     *         "smsCount": 862,
+                     *         "creditsUsed": 862,
+                     *         "notificationCount": 1904
+                     *       },
+                     *       "sender": {
+                     *         "name": "KUAFORELIF",
+                     *         "status": "Approved",
+                     *         "effectiveName": "KUAFORELIF",
+                     *         "submittedUtc": "2026-11-03T10:12:00Z",
+                     *         "decidedUtc": "2026-11-05T14:30:00Z",
+                     *         "rejectionReason": null
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SmsOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageRequestSmsSender: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmsSenderRequest"];
+            };
+        };
+        responses: {
+            /** @description Başvuru alındı (Pending) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "name": "KUAFORELIF",
+                     *       "status": "Pending",
+                     *       "effectiveName": "OMVILA",
+                     *       "submittedUtc": "2026-11-25T09:30:00Z",
+                     *       "decidedUtc": null,
+                     *       "rejectionReason": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SmsSender"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    manageRegisterDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeviceRegistration"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi veya güncellendi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegisteredDevice"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    manageGetMyNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tercihler */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "newOnlineAppointment": true,
+                     *       "cancellationAndReschedule": true,
+                     *       "customerCheckedIn": false,
+                     *       "walkInQueue": true,
+                     *       "newReview": true,
+                     *       "dailySummary": false,
+                     *       "dailySummaryLocalTime": "20:00",
+                     *       "quietHoursEnabled": true,
+                     *       "quietHoursStartLocal": "22:00",
+                     *       "quietHoursEndLocal": "08:00",
+                     *       "version": "W/\"412\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MyNotificationPreferences"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    manageUpdateMyNotificationPreferences: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MyNotificationPreferences"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyNotificationPreferences"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
     publicGetBrand: {
         parameters: {
             query?: never;
@@ -4422,6 +5683,34 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    webhookSmsDeliveryReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SMS sağlayıcı adaptörünün kodu (ör. netgsm). Sağlayıcı henüz seçilmedi (acik-sorular T-03); bilinmeyen kod 404. */
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SmsDeliveryReportPayload"];
+            };
+        };
+        responses: {
+            /** @description Rapor alındı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
         };
     };
 }
