@@ -11,7 +11,7 @@ internal sealed class CustomerRow
 
     public string FullName { get; init; } = string.Empty;
 
-    public string PhoneE164 { get; init; } = string.Empty;
+    public string? PhoneE164 { get; init; }
 
     public int? BirthYear { get; init; }
 
