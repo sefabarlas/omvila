@@ -6,7 +6,7 @@ namespace Omvila.Modules.Sales.Infrastructure;
 
 /// <summary>
 /// Müşteri birleştirme ve KVKK silmesinde Sales'in payı (T-92): tahsilatlar hedef karta taşınır; silmede ödeme kayıtları
-/// anonim karta bağlı kalır (yasal saklama), yalnız sayılır. Paketler paket modülüyle eklenecek.
+/// anonim karta bağlı kalır (yasal saklama), yalnız sayılır. Paketler <see cref="CustomerPackagesParticipant"/>.
 /// </summary>
 internal sealed class CustomerPaymentsParticipant(SalesDbContext db) : ICustomerMergeParticipant, ICustomerErasureParticipant
 {

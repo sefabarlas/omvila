@@ -173,6 +173,11 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
                         .HasDatabaseName("ix_commission_entries_brand_id_appointment_item_id")
                         .HasFilter("type = 'Service' AND reverses_entry_id IS NULL");
 
+                    b.HasIndex("BrandId", "CustomerPackageId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_commission_entries_brand_id_customer_package_id")
+                        .HasFilter("type = 'Sale' AND reverses_entry_id IS NULL");
+
                     b.HasIndex("BrandId", "StaffId", "PeriodYearMonth")
                         .HasDatabaseName("ix_commission_entries_brand_id_staff_id_period_year_month");
 
@@ -188,6 +193,331 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
 
                             t.HasCheckConstraint("ck_commission_entries_type", "type IN ('Service', 'Sale')");
                         });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CustomerPackage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_customer_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<Instant?>("ExpiredUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expired_utc");
+
+                    b.Property<LocalDate>("ExpiresOn")
+                        .HasColumnType("date")
+                        .HasColumnName("expires_on");
+
+                    b.Property<bool>("IsAvailableAllBranches")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_available_all_branches");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<string>("PackageNameSnapshot")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("package_name_snapshot");
+
+                    b.Property<long>("PricePaidMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("price_paid_minor");
+
+                    b.Property<Instant>("PurchasedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("purchased_utc");
+
+                    b.Property<string>("RefundNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("refund_note");
+
+                    b.Property<long?>("RefundedAmountMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("refunded_amount_minor");
+
+                    b.Property<Guid?>("RefundedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("refunded_by_user_id");
+
+                    b.Property<Instant?>("RefundedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("refunded_utc");
+
+                    b.Property<Guid?>("SoldByStaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sold_by_staff_id");
+
+                    b.Property<Guid?>("SoldByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sold_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TransferredToBrandCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transferred_to_brand_customer_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_packages");
+
+                    b.HasIndex("BrandId", "BrandCustomerId")
+                        .HasDatabaseName("ix_customer_packages_brand_id_brand_customer_id");
+
+                    b.HasIndex("BrandId", "PackageId")
+                        .HasDatabaseName("ix_customer_packages_brand_id_package_id");
+
+                    b.HasIndex("Status", "ExpiresOn")
+                        .HasDatabaseName("ix_customer_packages_status_expires_on");
+
+                    b.ToTable("customer_packages", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_packages_price", "price_paid_minor > 0");
+
+                            t.HasCheckConstraint("ck_customer_packages_refund", "(status = 'Refunded') = (refunded_amount_minor IS NOT NULL) AND (refunded_amount_minor IS NULL OR (refunded_amount_minor > 0 AND refunded_amount_minor <= price_paid_minor))");
+
+                            t.HasCheckConstraint("ck_customer_packages_status", "status IN ('Active', 'Expired', 'Refunded', 'Transferred')");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CustomerPackageItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("CustomerPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_package_id");
+
+                    b.Property<int>("SeqNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("seq_no");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.Property<int>("TotalSessions")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_sessions");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_package_items");
+
+                    b.HasIndex("CustomerPackageId")
+                        .HasDatabaseName("ix_customer_package_items_customer_package_id");
+
+                    b.HasIndex("BrandId", "CustomerPackageId")
+                        .HasDatabaseName("ix_customer_package_items_brand_id_customer_package_id");
+
+                    b.ToTable("customer_package_items", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_package_items_total_sessions", "total_sessions > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.Package", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<bool>("IsAvailableAllBranches")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_available_all_branches");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("PriceMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("price_minor");
+
+                    b.Property<decimal?>("SaleCommissionPercentOverride")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("sale_commission_percent_override");
+
+                    b.Property<Instant?>("UpdatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_utc");
+
+                    b.Property<int>("ValidityDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("validity_days");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_packages");
+
+                    b.HasIndex("BrandId", "IsActive")
+                        .HasDatabaseName("ix_packages_brand_id_is_active");
+
+                    b.ToTable("packages", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_packages_price", "price_minor > 0");
+
+                            t.HasCheckConstraint("ck_packages_sale_commission_percent", "sale_commission_percent_override IS NULL OR (sale_commission_percent_override >= 0 AND sale_commission_percent_override <= 100)");
+
+                            t.HasCheckConstraint("ck_packages_validity_days", "validity_days BETWEEN 1 AND 1095");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.PackageItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("PackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("package_id");
+
+                    b.Property<int>("SeqNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("seq_no");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.Property<int>("SessionCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("session_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_package_items");
+
+                    b.HasIndex("PackageId")
+                        .HasDatabaseName("ix_package_items_package_id");
+
+                    b.HasIndex("BrandId", "PackageId", "ServiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_package_items_brand_id_package_id_service_id");
+
+                    b.ToTable("package_items", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_package_items_session_count", "session_count BETWEEN 1 AND 100");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.PackageSessionUsage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<Guid>("AppointmentItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_item_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("CustomerPackageItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_package_item_id");
+
+                    b.Property<Instant?>("RevertedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reverted_utc");
+
+                    b.Property<Instant>("UsedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("used_utc");
+
+                    b.HasKey("Id")
+                        .HasName("pk_package_session_usages");
+
+                    b.HasIndex("CustomerPackageItemId")
+                        .HasDatabaseName("ix_package_session_usages_customer_package_item_id");
+
+                    b.HasIndex("BrandId", "AppointmentId")
+                        .HasDatabaseName("ix_package_session_usages_brand_id_appointment_id");
+
+                    b.HasIndex("BrandId", "AppointmentItemId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_package_session_usages_brand_id_appointment_item_id")
+                        .HasFilter("reverted_utc IS NULL");
+
+                    b.HasIndex("BrandId", "CustomerPackageItemId")
+                        .HasDatabaseName("ix_package_session_usages_brand_id_customer_package_item_id");
+
+                    b.ToTable("package_session_usages", "sales");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Sales.Domain.Payment", b =>
@@ -273,7 +603,7 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
 
                     b.ToTable("payments", "sales", t =>
                         {
-                            t.HasCheckConstraint("ck_payments_amounts", "amount_minor > 0 AND refunded_amount_minor >= 0 AND refunded_amount_minor <= amount_minor");
+                            t.HasCheckConstraint("ck_payments_amounts", "(amount_minor > 0 OR (method = 'PackageRedemption' AND amount_minor = 0)) AND refunded_amount_minor >= 0 AND refunded_amount_minor <= amount_minor");
 
                             t.HasCheckConstraint("ck_payments_method", "method IN ('Cash', 'Card', 'Transfer', 'PackageRedemption')");
 
@@ -320,10 +650,40 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
 
                     b.ToTable("payment_allocations", "sales", t =>
                         {
-                            t.HasCheckConstraint("ck_payment_allocations_amount", "amount_minor > 0");
+                            t.HasCheckConstraint("ck_payment_allocations_amount", "amount_minor >= 0");
 
                             t.HasCheckConstraint("ck_payment_allocations_target_type", "target_type IN ('Appointment', 'CustomerPackage')");
                         });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CustomerPackageItem", b =>
+                {
+                    b.HasOne("Omvila.Modules.Sales.Domain.CustomerPackage", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CustomerPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_customer_package_items_customer_packages_customer_package_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.PackageItem", b =>
+                {
+                    b.HasOne("Omvila.Modules.Sales.Domain.Package", null)
+                        .WithMany("Items")
+                        .HasForeignKey("PackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_package_items_packages_package_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.PackageSessionUsage", b =>
+                {
+                    b.HasOne("Omvila.Modules.Sales.Domain.CustomerPackageItem", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerPackageItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_package_session_usages_customer_package_items_customer_pack");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Sales.Domain.PaymentAllocation", b =>
@@ -334,6 +694,16 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_payment_allocations_payments_payment_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CustomerPackage", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.Package", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Sales.Domain.Payment", b =>

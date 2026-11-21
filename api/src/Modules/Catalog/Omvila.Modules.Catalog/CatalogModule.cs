@@ -24,6 +24,7 @@ public static class CatalogModule
         services.AddScoped<IStaffServiceAssignments, StaffServiceAssignments>();
         services.AddScoped<IServiceOffers, ServiceOffers>();
         services.AddScoped<IServiceDeposits, ServiceDeposits>();
+        services.AddScoped<IServiceDirectory, ServiceDirectory>();
         services.AddIntegrationEventHandler<BranchCreated, CopyBranchPricesOnBranchCreated>();
         // Demo verisi (--role=seed; T-74).
         services.AddScoped(sp => new DemoData.CatalogDemoData(

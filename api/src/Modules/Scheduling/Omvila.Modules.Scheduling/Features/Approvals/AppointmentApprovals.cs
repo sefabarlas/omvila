@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Messaging;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Domain;
+using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.SharedKernel;
 
@@ -16,7 +18,7 @@ namespace Omvila.Modules.Scheduling.Features.Approvals;
 /// yazılmadığı için kilit alınmaz; otomatik iptalle yarışta xmin denetimi ve işin <c>FOR UPDATE SKIP LOCKED</c> seçimi tam
 /// olarak birinin kazanmasını sağlar (kaybeden onay 412 alır; T-63).
 /// </summary>
-internal sealed class AppointmentApprovals(SchedulingDbContext db, IOutbox outbox, IClock clock)
+internal sealed class AppointmentApprovals(SchedulingDbContext db, IOutbox outbox, IPackageSessions packageSessions, IClock clock)
 {
     // Kural: durum-makinesi.md A2
     public async Task<Result<Appointment>> ApproveAsync(
@@ -55,6 +57,7 @@ internal sealed class AppointmentApprovals(SchedulingDbContext db, IOutbox outbo
         }
 
         await db.SaveChangesAsync(ct);
+        await packageSessions.ReleaseAsync(appointment.Value.BrandId, [appointment.Value], ct);
         await outbox.EnqueueAsync(ApprovalEvents.Declined(appointment.Value, userId), ct);
         return appointment;
     }

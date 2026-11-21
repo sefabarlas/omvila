@@ -13,6 +13,16 @@ internal sealed class SalesDbContext(DbContextOptions<SalesDbContext> options) :
 
     public DbSet<CommissionEntry> CommissionEntries => Set<CommissionEntry>();
 
+    public DbSet<Package> Packages => Set<Package>();
+
+    public DbSet<PackageItem> PackageItems => Set<PackageItem>();
+
+    public DbSet<CustomerPackage> CustomerPackages => Set<CustomerPackage>();
+
+    public DbSet<CustomerPackageItem> CustomerPackageItems => Set<CustomerPackageItem>();
+
+    public DbSet<PackageSessionUsage> PackageSessionUsages => Set<PackageSessionUsage>();
+
     public DbSet<CashDayClose> CashDayCloses => Set<CashDayClose>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

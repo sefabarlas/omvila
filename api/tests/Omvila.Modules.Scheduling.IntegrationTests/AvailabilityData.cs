@@ -6,6 +6,7 @@ using NodaTime;
 using Npgsql;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Catalog;
+using Omvila.Modules.Sales;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Tenancy;
@@ -61,7 +62,7 @@ internal sealed class AvailabilityData
     public static ServiceProvider CreateServices(PostgresFixture db, IInterceptor? interceptor = null, Action<IServiceCollection>? configure = null) =>
         db.CreateServices(configure: s =>
         {
-            s.AddTenancyModule(db.Configuration()).AddCatalogModule().AddSchedulingModule(db.Configuration());
+            s.AddTenancyModule(db.Configuration()).AddCatalogModule().AddSalesModule().AddSchedulingModule(db.Configuration());
             if (interceptor is not null)
             {
                 s.AddSingleton(interceptor);

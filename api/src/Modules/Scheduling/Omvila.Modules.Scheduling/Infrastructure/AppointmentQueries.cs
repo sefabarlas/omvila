@@ -97,6 +97,18 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
         return rows.ToDictionary(r => r.BrandCustomerId, r => r.Next);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Instant>> GetStartTimesAsync(Guid brandId, IReadOnlyCollection<Guid> appointmentIds, CancellationToken ct)
+    {
+        if (appointmentIds.Count == 0)
+        {
+            return new Dictionary<Guid, Instant>();
+        }
+
+        return await db.Appointments.AsNoTracking()
+            .Where(a => a.BrandId == brandId && appointmentIds.Contains(a.Id))
+            .ToDictionaryAsync(a => a.Id, a => a.StartUtc, ct);
+    }
+
     public async Task<AppointmentNotificationInfo?> GetNotificationInfoAsync(Guid brandId, Guid appointmentId, CancellationToken ct)
     {
         var appointment = await db.Appointments.AsNoTracking().Include(a => a.Items)

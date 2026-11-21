@@ -35,5 +35,9 @@ internal sealed class CommissionEntryConfiguration : IEntityTypeConfiguration<Co
         builder.HasIndex(x => new { x.BrandId, x.AppointmentItemId })
             .IsUnique()
             .HasFilter("type = 'Service' AND reverses_entry_id IS NULL");
+        // Bir müşteri paketinin tek asıl satış primi olur; iade ters kaydı için asıl kayıt bulunur.
+        builder.HasIndex(x => new { x.BrandId, x.CustomerPackageId })
+            .IsUnique()
+            .HasFilter("type = 'Sale' AND reverses_entry_id IS NULL");
     }
 }

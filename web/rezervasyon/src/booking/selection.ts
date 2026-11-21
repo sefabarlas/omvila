@@ -13,6 +13,7 @@ export const steps = [
   'code',
   'confirm',
   'done',
+  'waitlisted',
 ] as const;
 export type Step = (typeof steps)[number];
 
@@ -74,7 +75,7 @@ export function parseSelection(search: string): Selection {
  * Tek şubeli markada şube yazılmaz (`includeBranch` false).
  */
 export function serializeSelection(selection: Selection, includeBranch = true): string {
-  if (selection.step === 'done') return '';
+  if (selection.step === 'done' || selection.step === 'waitlisted') return '';
   const params = new URLSearchParams();
   if (selection.step !== 'services') params.set('step', selection.step);
   if (includeBranch && selection.branchId) params.set('branch', selection.branchId);
@@ -137,8 +138,9 @@ export function itemRequests(selection: Selection, catalog: Catalog) {
 /**
  * Kataloğa göre geçersiz seçimi temizler ve adımı ilk eksik adıma çeker (yenilemede ya da eski bağlantıda).
  * Bellek adımları (kod, onay) burada değil, akışta jeton/kod durumuna göre düzeltilir.
+ * @param withoutTime Bekleme listesi kipi: dolu gün seçili, saat yok; bilgiler ve kod adımları saatsiz açılır.
  */
-export function reconcile(selection: Selection, catalog: Catalog): Selection {
+export function reconcile(selection: Selection, catalog: Catalog, withoutTime = false): Selection {
   const known = new Set(catalog.services.map((service) => service.id));
   const serviceIds = [...new Set(selection.serviceIds.filter((id) => known.has(id)))].slice(
     0,
@@ -161,7 +163,8 @@ export function reconcile(selection: Selection, catalog: Catalog): Selection {
     };
   }
   if (next.step === 'staff' && !catalog.allowStaffSelection) return { ...next, step: 'time' };
-  if (order > steps.indexOf('time') && (!next.date || !next.time)) return { ...next, step: 'time' };
+  if (order > steps.indexOf('time') && (!next.date || (!next.time && !withoutTime)))
+    return { ...next, step: 'time' };
   return next;
 }
 
