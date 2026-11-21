@@ -1,0 +1,6 @@
+# Platform goldenleri gerçek yazı tipiyle yalnız yerelde bakmak içindir (test/flutter_test_config.dart);
+# depoya CI goldenleri girer. Başarısız golden karşılaştırmaları da depoya girmez.
+test/**/goldens/macos/
+test/**/goldens/linux/
+test/**/goldens/windows/
+test/**/failures/
