@@ -17,6 +17,16 @@ public interface ICustomerDirectory
     /// <param name="ct">İptal belirteci.</param>
     Task<EnsuredBrandCustomer> EnsureBrandCustomerAsync(EnsureBrandCustomerRequest request, CancellationToken ct);
 
+    /// <summary>
+    /// Telefonsuz kişi ve markada kartını açar (kapıda sıradan telefonsuz başlatılan müşteri; alan-modeli.md § WalkInTicket,
+    /// T-86 W6). Kişi telefonla bulunamaz; her çağrı yeni kişi açar.
+    /// </summary>
+    /// <param name="brandId">Marka (kiracı bağlamıyla aynı olmalı).</param>
+    /// <param name="fullName">Ad.</param>
+    /// <param name="source">Kartın ilk kanalı.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<EnsuredBrandCustomer> CreateWithoutPhoneAsync(Guid brandId, string fullName, CustomerSource source, CancellationToken ct);
+
     /// <summary>Markadaki kartların görünen bilgisi; bulunmayan kimlikler sonuçta yer almaz.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="brandCustomerIds">Kart kimlikleri.</param>
