@@ -4,8 +4,8 @@ using Omvila.SharedKernel;
 namespace Omvila.Modules.Sales.Domain;
 
 /// <summary>
-/// Tahsilat kaydı (alan-modeli.md § Payment). OMVILA para almaz: bu, salonun kendi tahsilatının kaydıdır. Dilim 4'te yalnız
-/// kapora havalesi yazılır ("Kapora geldi", durum-makinesi.md A3) ve iade işaretlenir ("Salon iade etti", V7;
+/// Tahsilat kaydı (alan-modeli.md § Payment). OMVILA para almaz: bu, salonun kendi tahsilatının kaydıdır. Kapora havalesi
+/// ("Kapora geldi", durum-makinesi.md A3), "Tamamla ve ödeme al" satırları (A11) ve iade işareti ("Salon iade etti", V7;
 /// <see cref="RefundedAmountMinor"/>, <see cref="PaymentStatus.Refunded"/> / <see cref="PaymentStatus.PartiallyRefunded"/>).
 /// </summary>
 internal sealed class Payment
@@ -85,6 +85,44 @@ internal sealed class Payment
             PaidUtc = now,
             CollectedByUserId = userId,
             Reference = cleaned,
+        };
+        payment._allocations.Add(PaymentAllocation.Create(ids.New(), brandId, payment.Id, AllocationTargetType.Appointment, appointmentId, amount.AmountMinor));
+        return payment;
+    }
+
+    /// <summary>
+    /// "Tamamla ve ödeme al" satırı (A11): salonda alınan nakit, salonun kendi POS'u (Card) veya havale. <c>IsDeposit = false</c>,
+    /// <c>Status = Recorded</c>, tutarın tamamı randevuya tahsis edilir. Paketten düşüm (PackageRedemption) bu yolla yazılmaz.
+    /// </summary>
+    // Kural: durum-makinesi.md A11 ("tahsilatlar kaydedilir"); alan-modeli.md § PaymentAllocation
+    public static Payment RecordCollected(
+        IIdGenerator ids, Guid brandId, Guid branchId, Guid brandCustomerId, Guid appointmentId, PaymentMethod method, Money amount, Guid? userId, Instant now)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        if (method is not (PaymentMethod.Cash or PaymentMethod.Card or PaymentMethod.Transfer))
+        {
+            throw new DomainException("Salonda alınan tahsilat nakit, kart veya havale olmalı.");
+        }
+
+        if (amount.AmountMinor <= 0)
+        {
+            throw new DomainException("Tahsilat tutarı sıfırdan büyük olmalı.");
+        }
+
+        var payment = new Payment
+        {
+            Id = ids.New(),
+            BrandId = brandId,
+            BranchId = branchId,
+            BrandCustomerId = brandCustomerId,
+            Method = method,
+            AmountMinor = amount.AmountMinor,
+            CurrencyCode = amount.Currency.ToString(),
+            IsDeposit = false,
+            Status = PaymentStatus.Recorded,
+            RefundedAmountMinor = 0,
+            PaidUtc = now,
+            CollectedByUserId = userId,
         };
         payment._allocations.Add(PaymentAllocation.Create(ids.New(), brandId, payment.Id, AllocationTargetType.Appointment, appointmentId, amount.AmountMinor));
         return payment;

@@ -79,6 +79,43 @@ public sealed class PaymentTests
         payment.RefundedAmountMinor.ShouldBe(10000);
     }
 
+    // Kural: durum-makinesi.md A11 ("Tamamla ve ödeme al" satırları; ikinci ödeme ayrı kayıt).
+    [Theory]
+    [InlineData("Cash")]
+    [InlineData("Card")]
+    [InlineData("Transfer")]
+    public void RecordCollected_IsRecordedNonDeposit_WholeAmountAllocatedToAppointment(string methodName)
+    {
+        var method = Enum.Parse<PaymentMethod>(methodName);
+        var payment = Payment.RecordCollected(new Ids(), Brand, Branch, Customer, Appointment, method, Money.Try(124000), User, Now);
+
+        payment.Method.ShouldBe(method);
+        payment.IsDeposit.ShouldBeFalse();
+        payment.Status.ShouldBe(PaymentStatus.Recorded);
+        payment.AmountMinor.ShouldBe(124000);
+        payment.CurrencyCode.ShouldBe("TRY");
+        payment.RefundedAmountMinor.ShouldBe(0);
+        payment.Reference.ShouldBeNull();
+        payment.PaidUtc.ShouldBe(Now);
+        payment.CollectedByUserId.ShouldBe(User);
+        payment.BrandCustomerId.ShouldBe(Customer);
+        var allocation = payment.Allocations.ShouldHaveSingleItem();
+        allocation.TargetType.ShouldBe(AllocationTargetType.Appointment);
+        allocation.TargetId.ShouldBe(Appointment);
+        allocation.AmountMinor.ShouldBe(124000);
+    }
+
+    [Fact]
+    public void RecordCollected_PackageRedemptionOrZero_IsProgrammerError()
+    {
+        Should.Throw<DomainException>(() =>
+            Payment.RecordCollected(new Ids(), Brand, Branch, Customer, Appointment, PaymentMethod.PackageRedemption, Money.Try(100), User, Now));
+        Should.Throw<DomainException>(() =>
+            Payment.RecordCollected(new Ids(), Brand, Branch, Customer, Appointment, PaymentMethod.Cash, Money.Try(0), User, Now));
+        Should.Throw<ArgumentNullException>(() =>
+            Payment.RecordCollected(null!, Brand, Branch, Customer, Appointment, PaymentMethod.Cash, Money.Try(100), User, Now));
+    }
+
     private sealed class Ids : IIdGenerator
     {
         private int _next;

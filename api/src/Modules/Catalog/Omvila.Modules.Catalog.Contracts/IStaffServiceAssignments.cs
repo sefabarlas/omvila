@@ -14,6 +14,14 @@ public interface IStaffServiceAssignments
     Task<IReadOnlyList<StaffServiceAssignment>> GetAsync(Guid brandId, Guid staffId, CancellationToken ct);
 
     /// <summary>
+    /// Verilen personelin etkin hizmet atamalarındaki personele özel prim oranları (yalnız oranı dolu olanlar; Sales hizmet primi).
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffIds">Personel kimlikleri.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<StaffServiceCommission>> GetCommissionOverridesAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
+
+    /// <summary>
     /// Personelin hizmet listesini değiştirir. Hizmet markada aktif olmalı, özel süre aşamalara sığmalı, ek ücret
     /// hizmetin para biriminde olmalı; aksi alan hatası "{fieldPrefix}[i].…".
     /// </summary>
