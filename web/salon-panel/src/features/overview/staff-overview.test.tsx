@@ -61,7 +61,9 @@ describe('personel görünümü', () => {
       ).toBeTruthy();
     }
 
+    // Takvimim takvimi açar (T-54); ana sayfa kişisel özet olarak kalır.
     await userEvent.click(within(nav).getByRole('link', { name: 'Takvimim' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Merhaba Deniz' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Takvimim' })).toBeTruthy();
+    expect(router.state.location.pathname).toBe('/takvim');
   });
 });

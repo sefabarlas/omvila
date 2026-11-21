@@ -13,4 +13,8 @@ export const queryKeys = {
   serviceTemplates: (industryCode: string) => ['service-templates', industryCode] as const,
   staff: () => ['staff'] as const,
   staffDetail: (staffId: string) => ['staff', staffId] as const,
+  /** Takvim (gün: from = to; hafta: tek personel). Önek ['calendar'] bütün takvim sorgularını geçersizler. */
+  calendar: (branchId: string, from: string, to: string, staffId?: string) =>
+    ['calendar', branchId, from, to, staffId ?? 'all'] as const,
+  appointment: (appointmentId: string) => ['appointment', appointmentId] as const,
 };

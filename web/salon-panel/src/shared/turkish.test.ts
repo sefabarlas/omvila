@@ -1,0 +1,47 @@
+import { describe, expect, it } from 'vitest';
+import { dative, locativeTime } from './turkish';
+
+// Kural: dilim-02 kabul kriteri 12 ("Zeynep Aksoy'a taşı"), RandevuOnayli ("Gelmezse 13:15'te otomatik").
+describe('yönelme eki', () => {
+  it.each([
+    ['Zeynep Aksoy', "Zeynep Aksoy'a"],
+    ['Mert Demir', "Mert Demir'e"],
+    ['Can Yücel', "Can Yücel'e"],
+    ['Elif Kaya', "Elif Kaya'ya"],
+    ['Deniz Acar', "Deniz Acar'a"],
+    ['Tuna Oral', "Tuna Oral'a"],
+    ['Buse Kaya', "Buse Kaya'ya"],
+    ['Hande Er', "Hande Er'e"],
+    ['Gül', "Gül'e"],
+    ['Mehmet', "Mehmet'e"],
+    ['Ece', "Ece'ye"],
+    ['Okan', "Okan'a"],
+  ])('%s → %s', (name, expected) => {
+    expect(dative(name)).toBe(expected);
+  });
+
+  it('cins adda kesme işareti yok: Salıya, Perşembeye, Pazara', () => {
+    expect(dative('Salı', false)).toBe('Salıya');
+    expect(dative('Perşembe', false)).toBe('Perşembeye');
+    expect(dative('Pazar', false)).toBe('Pazara');
+    expect(dative('Cuma', false)).toBe('Cumaya');
+  });
+});
+
+describe('saatin bulunma eki', () => {
+  it.each([
+    ['13:15', "13:15'te"],
+    ['13:00', "13:00'te"],
+    ['12:30', "12:30'da"],
+    ['12:45', "12:45'te"],
+    ['09:40', "09:40'ta"],
+    ['10:00', "10:00'da"],
+    ['14:20', "14:20'de"],
+    ['16:50', "16:50'de"],
+    ['11:06', "11:06'da"],
+    ['12:00', "12:00'de"],
+    ['19:00', "19:00'da"],
+  ])('%s → %s', (time, expected) => {
+    expect(locativeTime(time)).toBe(expected);
+  });
+});
