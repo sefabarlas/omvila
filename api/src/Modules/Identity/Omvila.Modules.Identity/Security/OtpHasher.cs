@@ -9,7 +9,7 @@ namespace Omvila.Modules.Identity.Security;
 
 /// <summary>
 /// OTP özeti: HMAC-SHA256(anahtar, amaç | telefon | kod). Amaç ve telefon özete bağlıdır: bir amacın kodu
-/// başka amaçta veya başka telefonda geçmez (ADR-0007). Anahtar yoksa yalnız Development'ta geçici anahtar.
+/// başka amaçta veya başka telefonda geçmez (ADR-0007). Anahtar yoksa yalnız Development ve Testing'de geçici anahtar; Staging/Production'da açılış durur (T-73).
 /// </summary>
 internal sealed partial class OtpHasher
 {
@@ -17,25 +17,20 @@ internal sealed partial class OtpHasher
 
     public OtpHasher(IOptions<OtpOptions> options, ILogger<OtpHasher> logger, IHostEnvironment? environment = null)
     {
-        var configured = options.Value.HmacKey;
-        if (string.IsNullOrWhiteSpace(configured))
+        // Ortam bilinmiyorsa güvenli taraf: anahtar zorunlu (IdentitySecrets).
+        if (IdentitySecrets.OtpKeyError(options.Value, environment) is { } error)
         {
-            // Ortam bilinmiyorsa güvenli taraf: anahtar zorunlu.
-            if (environment is null || (!environment.IsDevelopment() && !environment.IsEnvironment("Testing")))
-            {
-                throw new InvalidOperationException("Auth:Otp:HmacKey tanımlı değil (base64, kasadan).");
-            }
+            throw new InvalidOperationException(error);
+        }
 
+        if (string.IsNullOrWhiteSpace(options.Value.HmacKey))
+        {
             LogEphemeralKey(logger);
-            _key = RandomNumberGenerator.GetBytes(32);
+            _key = RandomNumberGenerator.GetBytes(IdentitySecrets.MinOtpKeyBytes);
         }
         else
         {
-            _key = Convert.FromBase64String(configured);
-            if (_key.Length < 32)
-            {
-                throw new InvalidOperationException("Auth:Otp:HmacKey en az 32 bayt olmalı.");
-            }
+            _key = Convert.FromBase64String(options.Value.HmacKey);
         }
     }
 
