@@ -41,6 +41,7 @@ class AppointmentHistoryEntry {
 
 
 
+      /// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
   @JsonKey(
     
     name: r'kind',
@@ -105,6 +106,7 @@ class AppointmentHistoryEntry {
 
 }
 
+/// Approved = \"Onaylandı\" (A2), Declined = salon reddetti (A4; müşteriye iptal), HoldExpired = onay veya kapora süresi doldu, otomatik iptal (A5)
 enum AppointmentHistoryEntryKindEnum {
 @JsonValue(r'Created')
 created(r'Created'),
@@ -112,6 +114,8 @@ created(r'Created'),
 approved(r'Approved'),
 @JsonValue(r'Declined')
 declined(r'Declined'),
+@JsonValue(r'HoldExpired')
+holdExpired(r'HoldExpired'),
 @JsonValue(r'Rescheduled')
 rescheduled(r'Rescheduled'),
 @JsonValue(r'Cancelled')

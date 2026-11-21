@@ -1,21 +1,6 @@
 # Sözleşme yol haritası
 
-`openapi.yaml` şu an Dilim 1 ve 2'yi kapsar (67 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
-
-## Dilim 3: Onay akışı + SMS
-| Yöntem | Yol | operationId | Not |
-|---|---|---|---|
-| POST | `/api/v1/manage/appointments/{appointmentId}/approve` | `manageApproveAppointment` | `waiveDeposit?` (Dilim 4'te anlam kazanır) |
-| POST | `/api/v1/manage/appointments/{appointmentId}/decline` | `manageDeclineAppointment` | Neden `DeclinedBySalon`; müşteriye "iptal" |
-| GET | `/api/v1/manage/approval-queue` | `manageListPendingApprovals` | "Dikkat isteyenler", kalan süreyle |
-| GET | `/api/v1/manage/notifications` | `manageListInAppNotifications` | Bildirim paneli; `Tümünü okundu say` |
-| POST | `/api/v1/manage/notifications/read` | `manageMarkNotificationsRead` | |
-| GET/PUT | `/api/v1/manage/brand/notification-settings` | `manageGet/UpdateNotificationSettings` | Hatırlatma ofsetleri, değerlendirme daveti, şablon ezmeleri |
-| GET | `/api/v1/manage/brand/sms` | `manageGetSmsOverview` | Kontör bakiyesi, bu ay gönderilen, gönderen adı durumu |
-| POST | `/api/v1/manage/brand/sms-sender` | `manageRequestSmsSender` | Gönderen adı başvurusu |
-| POST | `/api/v1/manage/devices` | `manageRegisterDevice` | İşletme uygulaması push jetonu |
-| GET/PUT | `/api/v1/manage/me/notification-preferences` | `manageGet/UpdateMyNotificationPreferences` | İşletme uygulaması bildirim ayarları |
-| POST | `/api/v1/webhooks/sms/{provider}` | `webhookSmsDeliveryReport` | Teslim raporu; imza doğrulamalı |
+`openapi.yaml` şu an Dilim 1, 2 ve 3'ü kapsar (80 işlem). Aşağıdaki uçlar ilgili dilime başlanırken **önce sözleşmeye** eklenir, sonra uygulanır. Adlar ve yollar burada sabittir. Değiştirmek gerekirse önce bu dosya güncellenir.
 
 ## Dilim 4: Kapora havalesi
 | Yöntem | Yol | operationId | Not |

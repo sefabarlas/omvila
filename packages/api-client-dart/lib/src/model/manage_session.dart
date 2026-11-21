@@ -8,6 +8,7 @@ import 'package:omvila_api/src/model/manage_session_membership.dart';
 import 'package:omvila_api/src/model/subscription_banner.dart';
 import 'package:omvila_api/src/model/manage_session_user.dart';
 import 'package:omvila_api/src/model/branch_ref.dart';
+import 'package:omvila_api/src/model/manage_session_sms_credits.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -36,6 +37,8 @@ class ManageSession {
     required  this.branches,
 
     required  this.subscription,
+
+     this.smsCredits,
   });
 
   @JsonKey(
@@ -110,6 +113,18 @@ class ManageSession {
 
 
 
+  @JsonKey(
+    
+    name: r'smsCredits',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final ManageSessionSmsCredits? smsCredits;
+
+
+
 
 
     @override
@@ -119,7 +134,8 @@ class ManageSession {
       other.membership == membership &&
       other.permissions == permissions &&
       other.branches == branches &&
-      other.subscription == subscription;
+      other.subscription == subscription &&
+      other.smsCredits == smsCredits;
 
     @override
     int get hashCode =>
@@ -128,7 +144,8 @@ class ManageSession {
         membership.hashCode +
         permissions.hashCode +
         branches.hashCode +
-        subscription.hashCode;
+        subscription.hashCode +
+        smsCredits.hashCode;
 
   factory ManageSession.fromJson(Map<String, dynamic> json) => _$ManageSessionFromJson(json);
 

@@ -242,6 +242,8 @@ class BrandSettings {
 
 
 
+      /// Kanonik uç manageGetNotificationSettings / manageUpdateNotificationSettings'tir. Bu alan aynı saklanan değeri yansıtır ve geriye uyumluluk için durur: okunur ve PUT ile yazılırsa aynı değer değişir. Yeni istemci bu alanı mevcut değeriyle geri gönderir. 
+  @Deprecated('reminderOffsetsMinutes has been deprecated')
   @JsonKey(
     
     name: r'reminderOffsetsMinutes',
@@ -254,6 +256,8 @@ class BrandSettings {
 
 
 
+      /// Kanonik uç bildirim ayarlarıdır (NotificationSettings.reviewInviteEnabled); bu alan aynı değerin aynasıdır.
+  @Deprecated('reviewInviteEnabled has been deprecated')
   @JsonKey(
     
     name: r'reviewInviteEnabled',
