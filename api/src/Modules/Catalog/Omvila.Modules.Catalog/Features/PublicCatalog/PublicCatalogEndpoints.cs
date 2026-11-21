@@ -67,7 +67,7 @@ internal static class PublicCatalogEndpoints
             .ThenBy(s => s.SortOrder)
             .ThenBy(s => s.Name, StringComparer.Ordinal)
             .ToList();
-        var serviceItems = ServiceItems(listed, branchPrices, assignments, staffIds, options.ShowPrices);
+        var serviceItems = ServiceItems(listed, branchPrices, assignments, staffIds, options);
         var staffItems = StaffItems(listed, assignments, staff, options.ShowPrices);
 
         var categoryItems = listed.Select(s => s.CategoryId).Distinct()
@@ -83,27 +83,31 @@ internal static class PublicCatalogEndpoints
         Dictionary<Guid, BranchServicePrice> branchPrices,
         ILookup<Guid, ServiceStaff> assignments,
         List<Guid> staffIds,
-        bool showPrices)
+        PublicBookingOptions options)
     {
         var staffOrder = staffIds.Select((id, index) => (id, index)).ToDictionary(x => x.id, x => x.index);
         return [.. listed.Select(s =>
         {
             var branch = branchPrices.GetValueOrDefault(s.Id);
             var price = branch is null ? s.BasePrice : new Money(branch.PriceMinor, s.BasePrice.Currency);
+            var deposit = DepositResolver.ResolveHint(s.Deposit, price, options.DepositAvailable, ParsePolicy(options.DepositPolicy));
             return new PublicCatalogResponse.ServiceItem(
                 s.Id,
                 s.CategoryId,
                 s.Name,
                 s.Description,
                 branch?.DurationOverrideMinutes ?? s.DurationMinutes,
-                showPrices ? price : null,
+                options.ShowPrices ? price : null,
                 s.PriceDisplay == PriceDisplay.StartingFrom ? "StartingFrom" : "Fixed",
-                // Kapora salon IBAN'ı ile Dilim 4'te gelir (S-22); o zamana kadar kapora istenmez.
-                HasDeposit: false,
-                DepositHint: null,
+                HasDeposit: deposit is not null,
+                // Fiyatlar gizliyken yüzde kaporanın tutarı fiyatı açık eder; tutar yalnız sabit kaporada yazılır (T-78).
+                DepositHint: options.ShowPrices || s.Deposit.Amount is not null ? deposit : null,
                 [.. assignments[s.Id].Select(a => a.StaffId).OrderBy(id => staffOrder[id])]);
         })];
     }
+
+    private static BrandDepositPolicy ParsePolicy(string policy) =>
+        Enum.TryParse<BrandDepositPolicy>(policy, ignoreCase: false, out var parsed) ? parsed : BrandDepositPolicy.None;
 
     /// <summary>Listelenen hizmetlerden en az birini veren personel; ek ücretler fiyatlar görünürse yazılır.</summary>
     private static List<PublicCatalogResponse.StaffItem> StaffItems(

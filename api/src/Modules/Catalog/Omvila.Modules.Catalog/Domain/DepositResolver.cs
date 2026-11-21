@@ -35,6 +35,15 @@ internal static class DepositResolver
         return applies ? Amount(rule, itemPrice) : null;
     }
 
+    /// <summary>
+    /// Rezervasyon sayfasındaki bilgi amaçlı kapora ("Kapora 300 ₺"; sözleşme publicGetBranchCatalog hasDeposit/depositHint):
+    /// online kanalda, geçmişi olmayan müşteri için çözüm. Riskli müşteri eşiği en az 1 olduğundan "yalnız riskli müşterilerde"
+    /// politikası bu görünümde kapora istemez; kesin kapora randevu oluşturulurken müşteriye göre hesaplanır.
+    /// </summary>
+    public static Money? ResolveHint(DepositRule rule, Money itemPrice, bool hasActiveBankAccount, BrandDepositPolicy brandPolicy) =>
+        Resolve(rule, itemPrice, new DepositContext(
+            hasActiveBankAccount, IsOnlineChannel: true, IsPackageRedemption: false, brandPolicy, CustomerNoShowCount: 0, RiskyCustomerNoShowThreshold: 1));
+
     private static Money? Amount(DepositRule rule, Money itemPrice)
     {
         if (rule.Amount is { } amount)

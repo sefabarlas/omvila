@@ -18,6 +18,8 @@ public sealed class BankAccountTests(PostgresFixture db) : IAsyncLifetime
     private ManageApi _api = null!;
     private string _token = null!;
     private string _merkez = null!;
+    private string _ownerStaffId = null!;
+    private int _requests;
 
     public async ValueTask InitializeAsync()
     {
@@ -27,6 +29,7 @@ public sealed class BankAccountTests(PostgresFixture db) : IAsyncLifetime
         _token = await _api.SignupAsync("+905324187705", "Kuaför Elif");
         var session = (await _api.GetAsync("/api/v1/manage/session", _token)).Body;
         _merkez = session.GetProperty("branches")[0].GetProperty("id").GetString()!;
+        _ownerStaffId = session.GetProperty("membership").GetProperty("staffId").GetString()!;
     }
 
     public async ValueTask DisposeAsync() => await _factory.DisposeAsync();
@@ -145,8 +148,71 @@ public sealed class BankAccountTests(PostgresFixture db) : IAsyncLifetime
         always.Body.GetProperty("depositPolicy").GetString().ShouldBe("Always");
     }
 
+    [Fact]
+    public async Task ServiceDepositAlways_WithoutAccount409_WithAccountCreated()
+    {
+        var category = await CategoryAsync();
+        var without = await CreateServiceAsync(category, "Balyaj", depositAmountMinor: 30000);
+        without.Status.ShouldBe(409);
+        without.Body.GetProperty("code").GetString().ShouldBe("deposit_unavailable_no_iban");
+
+        await SaveAccountAsync();
+
+        (await CreateServiceAsync(category, "Balyaj", depositAmountMinor: 30000)).Status.ShouldBe(201);
+    }
+
+    [Fact]
+    public async Task PublicCatalog_ShowsDepositOnlyWithActiveAccount()
+    {
+        var category = await CategoryAsync();
+        var haircut = (await CreateServiceAsync(category, "Saç kesimi", depositMode: "Inherit")).Body.GetProperty("id").GetString();
+
+        var none = await CatalogServiceAsync(haircut!);
+        none.GetProperty("hasDeposit").GetBoolean().ShouldBeFalse();
+
+        await SaveAccountAsync();
+        var balyaj = (await CreateServiceAsync(category, "Balyaj", depositAmountMinor: 30000)).Body.GetProperty("id").GetString();
+
+        var withDeposit = await CatalogServiceAsync(balyaj!);
+        withDeposit.GetProperty("hasDeposit").GetBoolean().ShouldBeTrue();
+        withDeposit.GetProperty("depositHint").GetProperty("amountMinor").GetInt64().ShouldBe(30000);
+        (await CatalogServiceAsync(haircut!)).GetProperty("hasDeposit").GetBoolean()
+            .ShouldBeFalse("devralan hizmet, varsayılan 'yalnız riskli müşterilerde' politikasında yeni müşteriye kapora göstermez");
+    }
+
     private async Task SaveAccountAsync() =>
         (await _api.WriteAsync(HttpMethod.Put, Path, Body(iban: ValidIban), _token, "W/\"0\"")).Status.ShouldBe(200);
+
+    private async Task<JsonElement> CatalogServiceAsync(string serviceId)
+    {
+        var catalog = await _api.SendAsync(HttpMethod.Get, $"/api/v1/public/branches/{_merkez}/catalog", null);
+        catalog.Status.ShouldBe(200, catalog.Body.ToString());
+        return catalog.Body.GetProperty("services").EnumerateArray()
+            .Single(s => string.Equals(s.GetProperty("id").GetString(), serviceId, StringComparison.Ordinal));
+    }
+
+    private async Task<string> CategoryAsync() =>
+        (await _api.SendAsync(HttpMethod.Post, "/api/v1/manage/service-categories", new { name = "Saç" }, _token)).Body.GetProperty("id").GetString()!;
+
+    private Task<ManageApi.Response> CreateServiceAsync(string categoryId, string name, string depositMode = "Always", long? depositAmountMinor = null) =>
+        _api.SendAsync(
+            HttpMethod.Post,
+            "/api/v1/manage/services",
+            new
+            {
+                categoryId,
+                name,
+                durationMinutes = 60,
+                price = new { amountMinor = 250000, currency = "TRY" },
+                priceDisplay = "Fixed",
+                deposit = depositAmountMinor is { } amount
+                    ? (object)new { mode = depositMode, amount = new { amountMinor = amount, currency = "TRY" } }
+                    : new { mode = depositMode },
+                isOnlineBookable = true,
+                staffIds = new[] { _ownerStaffId },
+            },
+            _token,
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
 
     private static object Body(string? iban, string prefix = "OMV", int window = 120) => iban is null
         ? new { accountHolderName = "Elif Kaya", bankName = "Ziraat Bankası", transferCodePrefix = prefix, transferWindowMinutes = window }
