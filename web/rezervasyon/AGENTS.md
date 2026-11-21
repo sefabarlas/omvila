@@ -12,7 +12,7 @@ Next.js (App Router), React 19, TypeScript strict, CSS Modules + `@omvila/design
 | Rota | Render | Not |
 |---|---|---|
 | `/[brandSlug]` | Sunucu (`generateMetadata` ile Open Graph: salon adı, logo) + istemci adımları | Şube tekse şube adımı atlanır |
-| `/r/[code]` | İstemci | Randevum, saat değiştir, iptal |
+| `/r/[code]` | İstemci | Randevum; saat değiştir `?islem=saat`, iptal `?islem=iptal` (T-59) |
 | `/b/[code]` | İstemci | Bekleme teklifi (15 dk geri sayım) |
 | `/d/[code]` | İstemci | Değerlendirme (Dilim 5) |
 
