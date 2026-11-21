@@ -97,6 +97,18 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
             .ToDictionaryAsync(s => s.StaffId, ct);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, decimal>> GetServiceCommissionPercentsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)
+    {
+        if (staffIds.Count == 0)
+        {
+            return new Dictionary<Guid, decimal>();
+        }
+
+        return await db.Staff.AsNoTracking()
+            .Where(s => s.BrandId == brandId && staffIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => s.ServiceCommissionPercent, ct);
+    }
+
     public async Task<IReadOnlyList<StaffTimeOffDetail>> GetTimeOffsAsync(
         Guid brandId, IReadOnlyCollection<Guid> staffIds, Instant fromUtc, Instant toUtc, CancellationToken ct)
     {

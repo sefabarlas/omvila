@@ -21,6 +21,20 @@ internal sealed class StaffServiceAssignments(CatalogDbContext db, IIdGenerator 
             r.x.CommissionPercentOverride))];
     }
 
+    public async Task<IReadOnlyList<StaffServiceCommission>> GetCommissionOverridesAsync(
+        Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)
+    {
+        if (staffIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await db.ServiceStaff.AsNoTracking()
+            .Where(x => x.BrandId == brandId && x.IsActive && staffIds.Contains(x.StaffId) && x.CommissionPercentOverride != null)
+            .Select(x => new StaffServiceCommission(x.StaffId, x.ServiceId, x.CommissionPercentOverride!.Value))
+            .ToListAsync(ct);
+    }
+
     public async Task<Result> SetAsync(
         Guid brandId, Guid staffId, IReadOnlyList<StaffServiceAssignment> assignments, string fieldPrefix, CancellationToken ct)
     {

@@ -338,6 +338,33 @@ public sealed class DepositTransitionTests
         appointment.DepositTransferCode.ShouldBe("OMV-7K2X");
     }
 
+    // Kural: durum-makinesi.md A11; dilim-05 KK5 (toplam − alınmış kapora salonda alınır).
+    [Fact]
+    public void A11_Complete_ReceivedDeposit_DueIsTotalMinusDeposit_ThenZero()
+    {
+        var appointment = DepositPending();
+        appointment.MarkDepositReceived(PaymentId, Created + Duration.FromMinutes(40), UserId).IsSuccess.ShouldBeTrue();
+        appointment.CheckIn(Start, UserId).IsSuccess.ShouldBeTrue();
+        appointment.RetainedDepositMinor.ShouldBe(Deposit);
+
+        appointment.Complete(appointment.TotalAmountMinor, Start, UserId).Error!.Code.ShouldBe(ErrorCodes.PaymentTotalMismatch);
+        appointment.Complete(appointment.TotalAmountMinor - Deposit, Start, UserId).IsSuccess.ShouldBeTrue();
+
+        appointment.AmountDueMinor.ShouldBe(0);
+        appointment.RetainedDepositMinor.ShouldBe(Deposit, "kapora tahsilatı randevuda kalır");
+    }
+
+    [Fact]
+    public void RetainedDeposit_PartialRefund_IsReceivedMinusRefunded_NoDepositIsZero()
+    {
+        var appointment = DepositPending();
+        appointment.RetainedDepositMinor.ShouldBe(0, "kapora gelmeden salonda kapora yok");
+        appointment.MarkDepositReceived(PaymentId, Created + Duration.FromMinutes(40), UserId).IsSuccess.ShouldBeTrue();
+        appointment.MarkDepositRefunded(5_000, null, Created + Duration.FromHours(1), UserId).IsSuccess.ShouldBeTrue();
+
+        appointment.RetainedDepositMinor.ShouldBe(Deposit - 5_000);
+    }
+
     private static AppointmentPlan Plan(Instant start) => AppointmentPlanner.Plan(start, [Offers.Haircut(), Offers.BlowDry()]).Value;
 
     private static string[] Kinds(Appointment appointment) => [.. AppointmentDetailReader.History(appointment).Select(e => e.Kind)];

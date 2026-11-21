@@ -14,7 +14,8 @@ namespace Omvila.Modules.Scheduling.Features;
 /// <param name="OwnStaffId">Jetondaki personel; üyelik personele bağlı değilse null (K kapsamında hiçbir kayıt görünmez).</param>
 /// <param name="SeesAllStaff">calendar.view.all-staff (diğer personelin kolonları).</param>
 /// <param name="HasPhoneView">customer.phone.view (marka maskelemiyorsa herkes tam numarayı görür; T-46).</param>
-internal sealed record ManageAccess(BranchScope Branches, bool OwnOnly, Guid? OwnStaffId, bool SeesAllStaff, bool HasPhoneView)
+/// <param name="HasPaymentView">payment.collect (randevu ayrıntısında tahsilatlar; sözleşme AppointmentDetail.payments).</param>
+internal sealed record ManageAccess(BranchScope Branches, bool OwnOnly, Guid? OwnStaffId, bool SeesAllStaff, bool HasPhoneView, bool HasPaymentView = false)
 {
     public static ManageAccess For(ClaimsPrincipal user, IPermissionResolver resolver, string permission)
     {
@@ -25,7 +26,8 @@ internal sealed record ManageAccess(BranchScope Branches, bool OwnOnly, Guid? Ow
         var staffId = Guid.TryParse(user.FindFirst(OmvilaClaims.StaffId)?.Value, out var id) ? id : (Guid?)null;
         var seesAll = role is not null && resolver.Resolve(role, Permissions.Calendar.ViewAllStaff) is not null;
         var phoneView = role is not null && resolver.Resolve(role, Permissions.Customer.PhoneView) is not null;
-        return new ManageAccess(BranchScope.From(user), scope == PermissionScope.Own, staffId, seesAll, phoneView);
+        var paymentView = role is not null && resolver.Resolve(role, Permissions.Payment.Collect) is not null;
+        return new ManageAccess(BranchScope.From(user), scope == PermissionScope.Own, staffId, seesAll, phoneView, paymentView);
     }
 
     /// <summary>Personel K kapsamında bu personelin kaydı mı (K değilse her personel).</summary>
