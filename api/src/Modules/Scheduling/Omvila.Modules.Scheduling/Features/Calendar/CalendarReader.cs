@@ -111,8 +111,15 @@ internal sealed class CalendarReader(
             customer?.IsNewOn(today) ?? false,
             a.SeriesId is not null,
             a.HoldExpiresUtc,
+            a.DepositStatus?.ToString(),
+            DepositAmount(a),
             [.. item.CurrentSegments.Select(s => new SegmentView(s.During.Start, s.During.End, s.StaffBusy))]);
     }
+
+    private static Money? DepositAmount(Appointment a) =>
+        a.DepositRequiredMinor is { } amount
+            ? new Money(amount, Enum.TryParse<Currency>(a.CurrencyCode, out var c) ? c : PlatformDefaults.DefaultCurrency)
+            : null;
 
     /// <summary>
     /// Kolon özeti: randevu sayısı ve "bekleyen var" (personelin bekleme diliminde, başka bir meşgul dilimle dolmamış boşluk).

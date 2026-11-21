@@ -42,6 +42,7 @@ internal static class PublicAppointmentEndpoints
         PublicAppointmentCreator creator,
         IPublicBookingQueries booking,
         ITenantQueries tenants,
+        IBrandBankAccounts bankAccounts,
         IClock clock,
         CancellationToken ct)
     {
@@ -69,8 +70,9 @@ internal static class PublicAppointmentEndpoints
         var settings = await tenants.GetAppointmentSettingsAsync(scope.BrandId, ct);
         var staffIds = appointment.Items.Where(i => i.StaffId is not null).Select(i => i.StaffId!.Value).Distinct().ToList();
         var staff = await PublicAvailabilityEndpoints.PublicNamesAsync(tenants, scope.BrandId, staffIds, ct);
+        var account = appointment.DisplayStatus == DisplayStatus.DepositPending ? await bankAccounts.GetActiveAsync(scope.BrandId, ct) : null;
         var view = PublicAppointmentMapper.Map(
-            appointment, accessCode!.Code, booking.AppointmentPageUrl(accessCode.Code), card!, settings!, staff, clock.GetCurrentInstant());
+            appointment, accessCode!.Code, booking.AppointmentPageUrl(accessCode.Code), card!, settings!, staff, account, clock.GetCurrentInstant());
         http.Response.Headers.ETag = ETagVersion.Format(appointment.Version);
         return TypedResults.Created($"/api/v1/public/appointments/{accessCode.Code}", view);
     }

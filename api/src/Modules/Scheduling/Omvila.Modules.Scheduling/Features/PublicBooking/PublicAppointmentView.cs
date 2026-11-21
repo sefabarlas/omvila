@@ -4,8 +4,8 @@ using Omvila.SharedKernel;
 namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 
 /// <summary>
-/// Sözleşme PublicAppointment (rezervasyon başarı ekranı ve SMS bağlantısı "Randevum"). <see cref="Deposit"/> Dilim 4'e
-/// kadar yazılmaz (kapora yok).
+/// Sözleşme PublicAppointment (rezervasyon başarı ekranı, Havale ekranı ve SMS bağlantısı "Randevum"). <see cref="Deposit"/>
+/// kapora istenmemişse yazılmaz.
 /// </summary>
 internal sealed record PublicAppointmentView(
     Guid Id,
@@ -22,7 +22,7 @@ internal sealed record PublicAppointmentView(
     IReadOnlyList<PublicAppointmentView.ItemView> Items,
     Money Total,
     Money AmountDue,
-    object? Deposit,
+    DepositView? Deposit,
     bool CanCancel,
     Instant? CancelDeadlineUtc,
     bool CanReschedule,

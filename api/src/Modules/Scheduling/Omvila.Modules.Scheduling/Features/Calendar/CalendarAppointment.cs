@@ -1,9 +1,10 @@
 using System.Text.Json.Serialization;
 using NodaTime;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Features.Calendar;
 
-/// <summary>Sözleşme CalendarAppointment: takvim bloğu (bir kalem = bir blok). staffId zorunlu ve null olabilir.</summary>
+/// <summary>Sözleşme CalendarAppointment: takvim bloğu (bir kalem = bir blok). staffId zorunlu ve null olabilir; kapora alanları yalnız kapora istenmiş randevuda.</summary>
 internal sealed record CalendarAppointment(
     Guid AppointmentId,
     Guid ItemId,
@@ -17,4 +18,6 @@ internal sealed record CalendarAppointment(
     bool IsNewCustomer,
     bool IsRecurring,
     Instant? HoldExpiresUtc,
+    string? DepositStatus,
+    Money? DepositAmount,
     IReadOnlyList<SegmentView> Segments);
