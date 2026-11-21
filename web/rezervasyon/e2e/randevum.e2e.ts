@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import type { PublicAppointment } from '../src/appointment/appointment-api';
-import { accessCode, etag, requestCancelledFixture } from '../src/test/appointment-fixtures';
+import {
+  accessCode,
+  depositExpiredFixture,
+  etag,
+  linkDepositFixture,
+  requestCancelledFixture,
+} from '../src/test/appointment-fixtures';
 import { appointmentApi } from './support';
 
 // SMS bağlantısı (/r/{kod}): Randevum, saat değiştir ve iptal. Ekran görüntüleri e2e-results/ekranlar altına
@@ -63,6 +69,45 @@ const screens: ScreenCase[] = [
     ready: async (page) => {
       await page.getByText('Başka saat istiyorum').click();
       await expect(page.getByText('İptal yerine saati değiştirebilirsiniz')).toBeVisible();
+    },
+  },
+  // Dilim 4: SMS bağlantısında Havale (Havale.png düzeni), kapora alındı, iptalde kapora uyarısı (Iptal.png),
+  // Durumlar.png "Kapora gelmedi".
+  {
+    name: 'RandevumHavale',
+    path: `/r/${accessCode}`,
+    appointment: linkDepositFixture('Awaiting'),
+    ready: async (page) => {
+      await expect(
+        page.getByRole('heading', { name: 'Kaporayı havale ile gönderin' }),
+      ).toBeVisible();
+      await expect(page.getByText('1 sa 58 dk kaldı')).toBeVisible();
+    },
+  },
+  {
+    name: 'RandevumKaporaAlindi',
+    path: `/r/${accessCode}`,
+    appointment: linkDepositFixture('Received'),
+    ready: async (page) => {
+      await expect(page.getByText('Kapora alındı (havale ile)')).toBeVisible();
+    },
+  },
+  {
+    name: 'IptalKapora',
+    path: `/r/${accessCode}?islem=iptal`,
+    appointment: linkDepositFixture('Received'),
+    ready: async (page) => {
+      await expect(
+        page.getByText(/kaporanın iadesi salonun iade koşullarına bağlıdır/),
+      ).toBeVisible();
+    },
+  },
+  {
+    name: 'DurumKaporaGelmedi',
+    path: `/r/${accessCode}`,
+    appointment: depositExpiredFixture(),
+    ready: async (page) => {
+      await expect(page.getByText('Kapora süresinde gelmedi, randevu iptal edildi.')).toBeVisible();
     },
   },
 ];

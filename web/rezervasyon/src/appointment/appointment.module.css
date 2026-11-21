@@ -401,3 +401,14 @@
 .pending .muted {
   color: inherit;
 }
+
+/* İptal: kapora uyarısı (Iptal.png) */
+.depositWarning {
+  margin: 0;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--uyari-zemin);
+  color: var(--uyari);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}

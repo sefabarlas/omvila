@@ -4,7 +4,7 @@ import { BookingButton } from '@omvila/ui-web/booking';
 import { systemClock } from '@omvila/ui-web/time';
 import type { Clock } from '@omvila/ui-web/time';
 import { WifiOff } from 'lucide-react';
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { StateBanner } from '@/components/StateBanner';
 import { problemCode } from '@/booking/problem';
 import { actionParam, actionSearch, parseAction } from './action';
@@ -86,6 +86,10 @@ export function AppointmentManager({
   const reload = (after?: Notice) => {
     setRequest((previous) => ({ attempt: previous.attempt + 1, ...(after ? { after } : {}) }));
   };
+  // Havale ekranının geri sayımı dolunca (DepositTransfer etkisinin bağımlılığı: kimliği sabit).
+  const refresh = useCallback(() => {
+    setRequest((previous) => ({ attempt: previous.attempt + 1 }));
+  }, []);
 
   useEffect(() => {
     const onPop = () => {
@@ -229,6 +233,11 @@ export function AppointmentManager({
           onCancel={() => {
             open('cancel');
           }}
+          onDepositReported={(loaded) => {
+            setNotice(null);
+            setState({ kind: 'ready', loaded });
+          }}
+          onRefresh={refresh}
         />
       )}
       {shown === 'cancel' ? (

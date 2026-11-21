@@ -47,6 +47,7 @@ export function ServicesStep({ catalog, selected, onChange, showPrices }: Servic
                   price={showPrices ? (service.price ?? null) : null}
                   priceDisplay={service.priceDisplay}
                   description={service.description ?? null}
+                  depositHint={service.hasDeposit ? (service.depositHint ?? null) : null}
                   checked={checked}
                   disabled={!checked && full}
                   onCheckedChange={(next) => {

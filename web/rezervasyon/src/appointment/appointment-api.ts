@@ -85,6 +85,15 @@ export async function searchRescheduleSlots(code: string, date: string): Promise
   return data;
 }
 
+/** "Havaleyi yaptım, salona bildir" (KK4). Kendiliğinden idempotent, If-Match almaz; randevu durumu değişmez. */
+export function reportDepositTransfer(code: string): Promise<Loaded> {
+  return loaded(
+    api().POST('/api/v1/public/appointments/{accessCode}/deposit/report', {
+      params: { path: { accessCode: code } },
+    }),
+  );
+}
+
 /** Saat değişikliği (A14); `If-Match` GET'in ETag'i. */
 export function rescheduleAppointment(
   code: string,

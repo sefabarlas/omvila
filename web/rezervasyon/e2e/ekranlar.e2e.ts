@@ -97,6 +97,29 @@ const screens: ScreenCase[] = [
       await expect(page.getByRole('heading', { name: 'Talebiniz alındı' })).toBeVisible();
     },
   },
+  // Dilim 4: Onay.png kapora kutusu, Havale.png, havale bildirildikten sonra "Salon onayı bekleniyor".
+  { name: 'OnayKapora', api: { deposit: true }, reach: confirm },
+  {
+    name: 'Havale',
+    api: { deposit: true },
+    reach: async (page) => {
+      await confirm(page);
+      await page.getByRole('button', { name: 'Randevuyu oluştur' }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Kaporayı havale ile gönderin' }),
+      ).toBeVisible();
+    },
+  },
+  {
+    name: 'HavaleBildirildi',
+    api: { deposit: true },
+    reach: async (page) => {
+      await confirm(page);
+      await page.getByRole('button', { name: 'Randevuyu oluştur' }).click();
+      await page.getByRole('button', { name: 'Havaleyi yaptım, salona bildir' }).click();
+      await expect(page.getByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeVisible();
+    },
+  },
   { name: 'Masaustu', desktop: true, reach: services },
   { name: 'MasaustuSaat', desktop: true, reach: time },
   { name: 'MasaustuOnay', desktop: true, reach: confirm },

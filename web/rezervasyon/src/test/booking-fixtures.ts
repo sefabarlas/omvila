@@ -211,6 +211,67 @@ export function appointmentFixture(overrides: Partial<PublicAppointment> = {}): 
   };
 }
 
+/** Kaporalı katalog: Saç kesiminde "Kapora 150 ₺" ipucu (Onay.png). */
+export function depositCatalogFixture(): Catalog {
+  const catalog = catalogFixture();
+  return {
+    ...catalog,
+    services: catalog.services.map((service) =>
+      service.id === ids.sac ? { ...service, hasDeposit: true, depositHint: tl(150) } : service,
+    ),
+  };
+}
+
+type DepositStatus = NonNullable<PublicAppointment['deposit']>['status'];
+
+/** Havale son zamanı: "şimdi"den 1 sa 58 dk sonra (Havale.png "1 sa 58 dk kaldı"), İstanbul 11:58. */
+export const depositDueUtc = '2026-11-24T08:58:00Z';
+
+/**
+ * Kapora istenmiş randevu (KK2): `Awaiting` / `CustomerReported` kapora bekler (PendingApproval, DepositPending);
+ * `Received` onaylı ve "Salonda ödenecek" kapora kadar düşük; `Refunded` salon iade etti olarak işaretledi.
+ * Hesap kurgusaldır.
+ */
+export function depositFixture(
+  status: DepositStatus,
+  base: PublicAppointment = appointmentFixture(),
+): PublicAppointment {
+  const waiting = status === 'Awaiting' || status === 'CustomerReported';
+  const required = tl(150);
+  return {
+    ...base,
+    status: waiting ? 'PendingApproval' : base.status,
+    displayStatus: waiting ? 'DepositPending' : base.displayStatus,
+    holdExpiresUtc: waiting ? depositDueUtc : null,
+    amountDue: {
+      amountMinor: base.total.amountMinor - required.amountMinor,
+      currency: 'TRY',
+    },
+    deposit: {
+      required,
+      status,
+      transferCode: 'OMV-7K2X',
+      customerReportedUtc: status === 'Awaiting' ? null : '2026-11-24T06:55:00Z',
+      receivedUtc: status === 'Received' || status === 'Refunded' ? '2026-11-24T06:58:00Z' : null,
+      ...(status === 'Refunded'
+        ? { refundedUtc: '2026-11-24T06:59:00Z', refundedAmount: tl(100) }
+        : {}),
+      ...(waiting
+        ? {
+            instructions: {
+              accountHolderName: 'Elif Kaya',
+              bankName: 'Ziraat Bankası',
+              iban: 'TR12 0006 4000 0011 2345 6789 01',
+              amount: required,
+              transferCode: 'OMV-7K2X',
+              dueUtc: depositDueUtc,
+            },
+          }
+        : {}),
+    },
+  };
+}
+
 export const challengeFixture = {
   otpId: '0190f000-0000-7000-8000-000000000001',
   expiresInSeconds: 180,

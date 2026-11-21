@@ -216,3 +216,33 @@
 .welcome strong {
   font-weight: 800;
 }
+
+/* Onay kapora kutusu (Onay.png) */
+.deposit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--uyari-zemin);
+  color: var(--metin);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.deposit p {
+  margin: 0;
+}
+
+.depositHead {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.depositAmount {
+  font-variant-numeric: tabular-nums;
+}

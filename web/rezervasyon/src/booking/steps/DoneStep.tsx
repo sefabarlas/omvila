@@ -16,8 +16,8 @@ const managePath = (accessCode: string) => `/r/${encodeURIComponent(accessCode)}
 
 /**
  * Başarı (Basari.png). "Randevunuz onaylandı" yalnız gerçekten onaylı randevuda (S-03); onay bekleyen talep
- * RequestStep'te (Talep.png); kapora bekleyen randevu Havale ekranı gelene kadar (Dilim 4) burada talep
- * metniyle. Takvime ekleme (dosya indirme) ve uygulama tanıtımı bu dilimde yok.
+ * RequestStep'te (Talep.png), kapora bekleyen randevu DepositStep'te (Havale.png). Takvime ekleme (dosya indirme) ve
+ * uygulama tanıtımı bu dilimde yok.
  */
 export function DoneStep({ appointment, phoneMasked }: DoneStepProps) {
   const confirmed = appointment.status === 'Confirmed';

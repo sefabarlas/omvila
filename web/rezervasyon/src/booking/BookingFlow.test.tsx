@@ -3,9 +3,12 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { brandFixture, json, problem } from '@/test/api-mock';
+import { depositExpiredFixture } from '@/test/appointment-fixtures';
 import {
   appointmentFixture,
   catalogFixture,
+  depositCatalogFixture,
+  depositFixture,
   ids,
   mockBooking,
   nowUtc,
@@ -431,10 +434,131 @@ describe('online randevu akışı', () => {
     );
   });
 
+  it('kaporasız hizmette kapora kutusu ve satırı yok', async () => {
+    mockBooking();
+    const user = renderFlow(detailsSearch());
+    await fillDetails(user);
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Doğrulama kodu, hane 1' }),
+      '482193',
+    );
+    expect(await screen.findByRole('button', { name: 'Randevuyu oluştur' })).toBeTruthy();
+    expect(screen.queryByText('Kapora (havale ile)')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Kapora' })).toBeNull();
+    expect(screen.getByText('Ödeme sayfadan alınmaz; ücreti salonda ödersiniz.')).toBeTruthy();
+  });
+
   it('adres çubuğundaki seçimle kaldığı adımdan açılır, geçersiz seçim geri çekilir', async () => {
     mockBooking();
     renderFlow(`?step=time&services=${ids.bakim}&staff=${ids.elif}`);
     // Elif Saç bakımı vermiyor: personel adımına döner.
     expect(await screen.findByRole('heading', { name: 'Personel seçin' })).toBeTruthy();
+  });
+});
+
+describe('kapora havalesi (Dilim 4)', () => {
+  const isPath = (request: Request, suffix: string) =>
+    new URL(request.url).pathname.endsWith(suffix);
+
+  async function reachConfirm(user: ReturnType<typeof userEvent.setup>) {
+    await fillDetails(user);
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Doğrulama kodu, hane 1' }),
+      '482193',
+    );
+  }
+
+  it('hizmet listesinde kapora ipucu', async () => {
+    mockBooking({ catalog: depositCatalogFixture() });
+    renderFlow();
+    expect(await screen.findByRole('checkbox', { name: 'Saç kesimi' })).toBeTruthy();
+    expect(screen.getByText('45 dk · Kapora 150 ₺')).toBeTruthy();
+  });
+
+  it('onayda kapora kutusu ve satırı; oluşturunca Havale, bildirince "Salon onayı bekleniyor" (KK3, KK4, S-03)', async () => {
+    const calls = mockBooking({
+      catalog: depositCatalogFixture(),
+      routes: [
+        (request) =>
+          isPath(request, '/appointments') ? json(201, depositFixture('Awaiting')) : undefined,
+        (request) =>
+          isPath(request, '/deposit/report')
+            ? json(200, depositFixture('CustomerReported'), { ETag: 'W/"2"' })
+            : undefined,
+      ],
+    });
+    const user = renderFlow(detailsSearch());
+    await reachConfirm(user);
+
+    const summary = within(await screen.findByRole('region', { name: 'Randevu özeti' }));
+    expect(summary.getByText('Toplam · 1 sa 15 dk')).toBeTruthy();
+    expect(summary.getByText('750 ₺')).toBeTruthy();
+    expect(summary.getByText('Kapora (havale ile)')).toBeTruthy();
+    expect(summary.getByText('−150 ₺')).toBeTruthy();
+    expect(summary.getByText('Salonda ödenecek')).toBeTruthy();
+    expect(summary.getByText('600 ₺')).toBeTruthy();
+    const box = within(screen.getByRole('region', { name: 'Kapora' }));
+    expect(box.getByText('150 ₺')).toBeTruthy();
+    expect(box.getByText(/^Bu randevu 150 ₺ kapora ile kesinleşir\./)).toBeTruthy();
+    expect(
+      screen.getByText('Ödeme sayfadan alınmaz; havaleyi kendi bankanızdan yaparsınız.'),
+    ).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Randevuyu oluştur' }));
+
+    expect(
+      await screen.findByRole('heading', { name: 'Kaporayı havale ile gönderin' }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Randevunuz onaylandı' })).toBeNull();
+    const hero = within(screen.getByRole('region', { name: 'Kapora bekleniyor' }));
+    expect(hero.getByText('1 sa 58 dk kaldı')).toBeTruthy();
+    expect(hero.getByText('150 ₺')).toBeTruthy();
+    expect(hero.getByText('Sal 24 Kas · 14:30 · Kuaför Elif')).toBeTruthy();
+    expect(screen.getByText('Elif Kaya')).toBeTruthy();
+    expect(screen.getByText('TR12 0006 4000 0011 2345 6789 01')).toBeTruthy();
+    expect(screen.getByText('OMV-7K2X')).toBeTruthy();
+    expect(
+      screen.getByText(/Kapora 11:58'e kadar gelmezse randevu otomatik iptal olur/),
+    ).toBeTruthy();
+    expect(screen.getByText('Bu bilgiler SMS ile de gönderildi.')).toBeTruthy();
+
+    // IBAN boşluksuz, tutar sembolsüz kopyalanır.
+    await user.click(screen.getByRole('button', { name: 'Kopyala IBAN' }));
+    expect(await navigator.clipboard.readText()).toBe('TR120006400000112345678901');
+    expect(screen.getByRole('button', { name: 'Kopyalandı IBAN' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Kopyala Tutar' }));
+    expect(await navigator.clipboard.readText()).toBe('150');
+
+    await user.click(screen.getByRole('button', { name: 'Havaleyi yaptım, salona bildir' }));
+    expect(await screen.findByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeTruthy();
+    expect(
+      calls.filter((call) => call.path === '/api/v1/public/appointments/7Kx2Pq9a/deposit/report'),
+    ).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Havaleyi yaptım, salona bildir' })).toBeNull();
+    expect(document.body.textContent).not.toContain('onaylandı');
+  });
+
+  it('bildirimde süre dolmuşsa (hold_expired) randevu yeniden okunur: "Kapora gelmedi"', async () => {
+    mockBooking({
+      catalog: depositCatalogFixture(),
+      routes: [
+        (request) =>
+          isPath(request, '/appointments') ? json(201, depositFixture('Awaiting')) : undefined,
+        (request) =>
+          isPath(request, '/deposit/report') ? problem(409, 'hold_expired') : undefined,
+        (request) =>
+          isPath(request, '/appointments/7Kx2Pq9a')
+            ? json(200, depositExpiredFixture(), { ETag: 'W/"3"' })
+            : undefined,
+      ],
+    });
+    const user = renderFlow(detailsSearch());
+    await reachConfirm(user);
+    await user.click(await screen.findByRole('button', { name: 'Randevuyu oluştur' }));
+    await user.click(await screen.findByRole('button', { name: 'Havaleyi yaptım, salona bildir' }));
+
+    expect(await screen.findByText('Kapora süresinde gelmedi, randevu iptal edildi.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Salonu ara' }).getAttribute('href')).toBe(
+      'tel:+905321234567',
+    );
   });
 });

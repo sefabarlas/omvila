@@ -1,12 +1,14 @@
 import { fixedClock } from '@omvila/ui-web/time';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { json } from '@/test/api-mock';
 import {
   accessCode,
   cancelledFixture,
+  depositExpiredFixture,
   etag,
+  linkDepositFixture,
   linkAppointmentFixture,
   pendingFixture,
   requestCancelledFixture,
@@ -117,7 +119,8 @@ describe('Randevum (/r/[code])', () => {
     expect(screen.getByRole('link', { name: 'Yol tarifi' }).getAttribute('href')).toContain(
       encodeURIComponent('Moda Cad. 42, Kadıköy'),
     );
-    // Takvime ekle (dosya indirme), kapora (D4) ve uygulama tanıtımı (D5) yok.
+    // Takvime ekle (dosya indirme) ve uygulama tanıtımı (D5) yok; bu randevu kaporasız, kapora satırı yok
+    // (kaporalı fikstürler aşağıda, "kapora (Dilim 4)").
     expect(screen.queryByText('Takvime ekle')).toBeNull();
     expect(screen.queryByText('Kapora')).toBeNull();
     expect(screen.queryByText('Randevularınız bir arada')).toBeNull();
@@ -208,6 +211,148 @@ describe('onay bekleyen talep (Dilim 3)', () => {
       expect(screen.queryByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeNull();
     },
   );
+});
+
+describe('kapora (Dilim 4)', () => {
+  it('kapora bekleniyor: Havale ekranı, dört kopyalanabilir alan; bildirince "Salon onayı bekleniyor" (KK3, KK4)', async () => {
+    let reported = false;
+    const calls = mockLink({
+      appointment: () => linkDepositFixture(reported ? 'CustomerReported' : 'Awaiting'),
+      routes: [
+        (call) => {
+          if (call.path !== `${base}/deposit/report`) return undefined;
+          reported = true;
+          return json(200, linkDepositFixture('CustomerReported'), { ETag: 'W/"8820"' });
+        },
+      ],
+    });
+    const user = renderPage();
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Kaporayı havale ile gönderin' }),
+    ).toBeTruthy();
+    const hero = within(screen.getByRole('region', { name: 'Kapora bekleniyor' }));
+    expect(hero.getByText('1 sa 58 dk kaldı')).toBeTruthy();
+    expect(hero.getByText('Çar 25 Kas · 14:30 · Kuaför Elif')).toBeTruthy();
+    for (const label of ['Alıcı', 'IBAN', 'Açıklama kodu', 'Tutar']) {
+      expect(screen.getByRole('button', { name: `Kopyala ${label}` })).toBeTruthy();
+    }
+    expect(planCard().getByRole('button', { name: 'Randevuyu iptal et' })).toBeTruthy();
+    expect(screen.queryByText(/Onaylandı/)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Havaleyi yaptım, salona bildir' }));
+    expect(await screen.findByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeTruthy();
+    const report = calls.filter((call) => call.path === `${base}/deposit/report`);
+    expect(report).toHaveLength(1);
+    expect(report[0]?.ifMatch).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Havaleyi yaptım, salona bildir' })).toBeNull();
+    // Bildirimden sonra iptal yeni ETag ile gider.
+    await user.click(planCard().getByRole('button', { name: 'Randevuyu iptal et' }));
+    await user.click(await screen.findByRole('radio', { name: 'Planım değişti' }));
+    await user.click(screen.getByRole('button', { name: 'İptal et' }));
+    await waitFor(() => {
+      expect(calls.find((call) => call.path === `${base}/cancel`)?.ifMatch).toBe('W/"8820"');
+    });
+  });
+
+  it('havale bildirilmişse "Salon onayı bekleniyor", bildirme butonu yok', async () => {
+    mockLink({ appointment: () => linkDepositFixture('CustomerReported') });
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeTruthy();
+    expect(screen.getByText('Kapora bekleniyor')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Havaleyi yaptım, salona bildir' })).toBeNull();
+  });
+
+  it('süre sayfa açıkken dolunca randevu yeniden okunur: "Kapora gelmedi" (KK6)', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    let now = new Date(nowUtc);
+    let expired = false;
+    const calls = mockLink({
+      appointment: () => (expired ? depositExpiredFixture() : linkDepositFixture('Awaiting')),
+    });
+    window.history.replaceState(null, '', `/r/${accessCode}`);
+    render(
+      <AppointmentManager code={accessCode} initialAction="view" clock={{ now: () => now }} />,
+    );
+    expect(await screen.findByText('1 sa 58 dk kaldı')).toBeTruthy();
+
+    expired = true;
+    now = new Date('2026-11-24T08:58:30Z');
+    act(() => {
+      vi.advanceTimersByTime(15_000);
+    });
+    expect(await screen.findByText('Kapora süresinde gelmedi, randevu iptal edildi.')).toBeTruthy();
+    expect(screen.getByText('Randevunuz · İptal')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Randevunuz iptal edildi' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Salonu ara' }).getAttribute('href')).toBe(
+      'tel:+905321234567',
+    );
+    expect(gets(calls)).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it('kapora alındı: satır ve "Salonda ödenecek" = toplam − kapora (KK5)', async () => {
+    mockLink({ appointment: () => linkDepositFixture('Received') });
+    renderPage();
+    expect(await screen.findByText('Randevunuz · Onaylandı')).toBeTruthy();
+    const rows = within(screen.getByRole('region', { name: 'Hizmetler ve tutar' }));
+    expect(rows.getByText('Kapora alındı (havale ile)')).toBeTruthy();
+    expect(rows.getByText('−150 ₺')).toBeTruthy();
+    expect(rows.getByText('Salonda ödenecek')).toBeTruthy();
+    expect(rows.getByText('600 ₺')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Kaporayı havale ile gönderin' })).toBeNull();
+  });
+
+  it('kapora alınmışsa iptal sayfası iade uyarısı gösterir (Iptal.png)', async () => {
+    mockLink({ appointment: () => linkDepositFixture('Received') });
+    renderPage('cancel');
+    expect(
+      await screen.findByText(
+        '150 ₺ kaporanın iadesi salonun iade koşullarına bağlıdır. Ödeme salonun hesabına yapıldığı için iadeyi salon yapar.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('kaporasız randevunun iptal sayfasında kapora uyarısı yok', async () => {
+    mockLink();
+    renderPage('cancel');
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(screen.queryByText(/kaporanın iadesi/)).toBeNull();
+  });
+
+  it('saat değiştirmede "Kapora yeni saate aktarılır" (A14)', async () => {
+    mockLink({ appointment: () => linkDepositFixture('Received') });
+    renderPage('reschedule');
+    expect(await screen.findByText('Kapora yeni saate aktarılır.')).toBeTruthy();
+  });
+
+  it('salon iptalinde alınmış kapora: iade için salon iletişime geçer; iade işaretlenmişse "Salon iade etti"', async () => {
+    const salonCancelled = {
+      status: 'Cancelled' as const,
+      displayStatus: 'Cancelled' as const,
+      canCancel: false,
+      canReschedule: false,
+      cancellation: {
+        cancelledUtc: '2026-11-24T06:50:00Z',
+        cancelledBy: 'Salon' as const,
+        reason: 'StaffUnavailable' as const,
+      },
+    };
+    mockLink({ appointment: () => ({ ...linkDepositFixture('Received'), ...salonCancelled }) });
+    const { unmount } = render(
+      <AppointmentManager code={accessCode} initialAction="view" clock={clock} />,
+    );
+    expect(
+      await screen.findByText(/Kapora iadesi için salon sizinle iletişime geçecek\./),
+    ).toBeTruthy();
+    unmount();
+
+    mockLink({ appointment: () => ({ ...linkDepositFixture('Refunded'), ...salonCancelled }) });
+    renderPage();
+    const rows = within(await screen.findByRole('region', { name: 'Hizmetler ve tutar' }));
+    expect(rows.getByText('Kapora · Salon iade etti')).toBeTruthy();
+    expect(rows.getByText('100 ₺')).toBeTruthy();
+  });
 });
 
 describe('iptal', () => {
