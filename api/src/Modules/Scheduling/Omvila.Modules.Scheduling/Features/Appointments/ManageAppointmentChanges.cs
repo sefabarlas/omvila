@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using NodaTime;
+using Npgsql;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Infrastructure;
@@ -26,6 +27,7 @@ internal sealed class ManageAppointmentChanges(
     ICustomerDirectory customers,
     ITenantQueries tenants,
     IOutbox outbox,
+    IPackageSessions packageSessions,
     IIdGenerator ids,
     IClock clock)
 {
@@ -169,6 +171,7 @@ internal sealed class ManageAppointmentChanges(
         }
 
         await db.SaveChangesAsync(ct);
+        await packageSessions.ReleaseAsync(brandId, all, ct);
         var notify = body.NotifyCustomer ?? true;
         var offerToWaitlist = body.OfferToWaitlist ?? true;
         foreach (var a in all)

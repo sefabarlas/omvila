@@ -60,6 +60,16 @@ public interface ITenantQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyDictionary<Guid, decimal>> GetServiceCommissionPercentsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
 
+    /// <summary>
+    /// Personelin "Paket satış primi" oranı (Staff.SaleCommissionPercent, 0–100); personel etkin değilse veya şubede etkin
+    /// çalışmıyorsa null (paket satışında "Satan personel").
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffId">Personel.</param>
+    /// <param name="branchId">Satış şubesi.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<decimal?> GetBranchSellerCommissionPercentAsync(Guid brandId, Guid staffId, Guid branchId, CancellationToken ct);
+
     /// <summary>Verilen personelin [<paramref name="fromUtc"/>, <paramref name="toUtc"/>) aralığına değen izinleri, başlangıca göre sıralı.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="staffIds">Personel kimlikleri.</param>

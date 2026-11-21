@@ -1,6 +1,7 @@
 using NodaTime;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
@@ -21,7 +22,8 @@ namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 /// <see cref="AppointmentConfirmed"/> (dilim-03 kabul kriteri 1). Markanın aktif kapora hesabı varsa kalem kaporaları yazma
 /// yolunda çözülür (müşterinin gelmeme sayısıyla; dilim-04 kabul kriteri 2): kapora varsa randevu Kapora bekleniyor başlar,
 /// tutma şimdi + havale süresi, olay yine <see cref="AppointmentRequested"/> (müşteriye "Talebiniz alındı" yerine
-/// <c>deposit.awaiting</c> gider; T-81).
+/// <c>deposit.awaiting</c> gider; T-81). "Fön paketinizden düşülsün" (usePackageItems) kalemleri paketten düşer: kaporaya ve
+/// "Salonda ödenecek"e girmez, seans randevuyla aynı transaction'da Sales'te ayrılır (T-95).
 /// </summary>
 internal sealed class PublicAppointmentCreator(
     AppointmentWriter writer,
@@ -29,6 +31,7 @@ internal sealed class PublicAppointmentCreator(
     IPublicBookingQueries booking,
     ITenantQueries tenants,
     IBrandBankAccounts bankAccounts,
+    IPackageSessions packageSessions,
     IOutbox outbox,
     IClock clock)
 {
@@ -37,6 +40,9 @@ internal sealed class PublicAppointmentCreator(
     private const int CustomerNoteMaxLength = 500;
     private const int DocumentVersionMaxLength = 20;
     private const int AlternativeCount = 3;
+
+    // Sözleşme PublicAppointmentCreate.items maxItems: her kalem en çok bir kez paketten düşülür.
+    private const int MaxPackageUses = 5;
 
     // Kural: durum-makinesi.md A1, dilim-02 § Alan kuralları (online oluşturma), guvenlik-kvkk.md § Rıza
     public async Task<Result<AppointmentWriteResult>> CreateAsync(PublicBookingRequest context, PublicAppointmentCreate body, CancellationToken ct)
@@ -73,11 +79,17 @@ internal sealed class PublicAppointmentCreator(
         var written = await writer.CreateAsync(
             new CreateAppointmentCommand(
                 brandId, slot, customer.CustomerId, customer.BrandCustomerId, AppointmentChannel.Online, context.ClientApp, body.CustomerNote,
-                StaffNote: null, SeriesId: null, CreatedByUserId: null, settings.Policy(), deposit),
+                StaffNote: null, SeriesId: null, CreatedByUserId: null, settings.Policy(), deposit, PackageUses(body)),
             ct);
         if (!written.IsSuccess)
         {
             return await WithAlternativesAsync(written.Error, brandId, slot, customer.CustomerId, ct);
+        }
+
+        var reserved = await ReservePackageSessionsAsync(written.Value.Appointment, ct);
+        if (!reserved.IsSuccess)
+        {
+            return reserved.Error;
         }
 
         await RecordConsentsAsync(context, body, customer.CustomerId, ct);
@@ -135,6 +147,33 @@ internal sealed class PublicAppointmentCreator(
         }
     }
 
+    /// <summary>
+    /// "Fön paketinizden düşülsün": paketten düşülen kalemlerin seansı randevu oluşurken ayrılır (A1). Paket uygun değilse 409
+    /// package_session_unavailable döner ve randevu dahil her şey geri alınır.
+    /// </summary>
+    // Kural: durum-makinesi.md A1 ("paket seansı ayrılır"); sözleşme PublicAppointmentCreate.usePackageItems
+    private async Task<Result> ReservePackageSessionsAsync(Appointment appointment, CancellationToken ct)
+    {
+        var claims = appointment.Items.Where(i => i.CustomerPackageItemId is not null)
+            .OrderBy(i => i.SeqNo)
+            .Select(i => new PackageSessionClaim(i.Id, i.ServiceId, i.CustomerPackageItemId!.Value))
+            .ToList();
+        if (claims.Count == 0)
+        {
+            return Result.Success();
+        }
+
+        var zoneId = await tenants.GetBranchTimeZoneAsync(appointment.BrandId, appointment.BranchId, ct) ?? PlatformDefaults.DefaultTimeZoneId;
+        var zone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(zoneId) ?? DateTimeZoneProviders.Tzdb[PlatformDefaults.DefaultTimeZoneId];
+        return await packageSessions.ReserveAsync(
+            new PackageSessionReservation(
+                appointment.BrandId, appointment.BranchId, appointment.BrandCustomerId, appointment.Id, appointment.StartUtc.InZone(zone).Date, claims),
+            ct);
+    }
+
+    private static List<PackageUse>? PackageUses(PublicAppointmentCreate body) =>
+        body.UsePackageItems is { Count: > 0 } uses ? [.. uses.Select(u => new PackageUse(u.ServiceId!.Value, u.CustomerPackageItemId!.Value))] : null;
+
     private async Task<Error> WithAlternativesAsync(Error error, Guid brandId, SlotRequest slot, Guid customerId, CancellationToken ct)
     {
         if (!string.Equals(error.Code, ErrorCodes.SlotTaken, StringComparison.Ordinal))
@@ -169,8 +208,15 @@ internal sealed class PublicAppointmentCreator(
             errors["customerNote"] = ["too_long"];
         }
 
-        // Paket kullanımı Dilim 5: kullanılabilir paket kalemi yok (publicListMyPackages boş liste).
-        if (body.UsePackageItems is { Count: > 0 })
+        for (var i = 0; i < (body.UsePackageItems?.Count ?? 0); i++)
+        {
+            if (body.UsePackageItems![i] is not { ServiceId: not null, CustomerPackageItemId: not null })
+            {
+                errors[$"usePackageItems[{i}]"] = ["required"];
+            }
+        }
+
+        if (body.UsePackageItems is { Count: > MaxPackageUses })
         {
             errors["usePackageItems"] = ["out_of_range"];
         }

@@ -4,7 +4,9 @@ using NodaTime;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Domain;
+using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.SharedKernel;
@@ -23,6 +25,7 @@ internal sealed partial class ExpireAppointmentHolds(
     SchedulingDbContext db,
     IDbSession session,
     IOutbox outbox,
+    IPackageSessions packageSessions,
     IClock clock,
     ILogger<ExpireAppointmentHolds> logger) : IPeriodicJob
 {
@@ -70,6 +73,7 @@ internal sealed partial class ExpireAppointmentHolds(
         }
 
         await db.SaveChangesAsync(ct);
+        await packageSessions.ReleaseAsync(brandId, expired, ct);
         foreach (var appointment in expired)
         {
             await outbox.EnqueueAsync(ApprovalEvents.Expired(appointment), ct);

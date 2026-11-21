@@ -43,10 +43,10 @@ Backend modüler monolittir. Her modül kendi PostgreSQL şemasına (schema) sah
 |---|---|---|
 | Identity | `identity` | User, Role, Permission, RolePermission, UserMembership, TermsAcceptance, OtpChallenge, RefreshToken, CustomerSession, TrustedDevice |
 | Tenancy | `tenancy` | Brand, BrandSettings, Branch, BranchWorkingHours, WorkingHoursOverride, PublicHoliday, BranchTransferTime, Staff, StaffBranch, StaffWorkingHours, TimeOff, BrandBankAccount, BookingPageSettings |
-| Catalog | `catalog` | Industry, ServiceTemplate, ServiceCategory, Service, ServiceStage, ServiceStaff, BranchServicePrice, ResourceType, Resource, ResourceDowntime, ServiceResourceRule, Package, PackageItem |
+| Catalog | `catalog` | Industry, ServiceTemplate, ServiceCategory, Service, ServiceStage, ServiceStaff, BranchServicePrice, ResourceType, Resource, ResourceDowntime, ServiceResourceRule |
 | Customers | `customers` | Customer, BrandCustomer, Tag, BrandCustomerTag, ConsentRecord, CustomerSavedBrand, DataDeletionRequest, CustomerImport |
 | Scheduling | `scheduling` | Appointment, AppointmentItem, AppointmentItemSegment, AppointmentItemResource, AppointmentSeries, AppointmentAccessCode, WaitlistEntry, WaitlistOffer, WalkInTicket, BranchQueueCounter |
-| Sales | `sales` | Payment, PaymentAllocation, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
+| Sales | `sales` | Payment, PaymentAllocation, Package, PackageItem, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
 | Reviews | `reviews` | Review, ReviewInvitation |
 | Notifications | `notifications` | NotificationOutbox, InAppNotification, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
 | Integrations | `integrations` | CalendarLink, AppointmentCalendarSync |
@@ -308,6 +308,7 @@ Oda ve cihaz ("Oda veya cihaz: Boya odası").
 `Package`: `Name`, `PriceMinor`, `ValidityDays` (geçerlilik), `IsAvailableAllBranches` ("Bütün şubelerde kullanılabilir"), `IsTransferable`, `IsActive`.
 `PackageItem`: `PackageId`, `ServiceId`, `SessionCount`.
 Paket satış primi personelin `SaleCommissionPercent`'inden gelir. "Paket oluştur" ekranındaki "Satış primi %10" pakete özel bir ezme değeridir: `Package.SaleCommissionPercentOverride?`.
+Paket tanımı Sales modülündedir (`sales.packages`, `sales.package_items`): tanım, satış, seans defteri ve üst kartlar tek modülde; hizmet adları Catalog'dan okunur (T-95). `IsTransferable` v1'de yoktur (devir ucu yok; T-86).
 
 ---
 

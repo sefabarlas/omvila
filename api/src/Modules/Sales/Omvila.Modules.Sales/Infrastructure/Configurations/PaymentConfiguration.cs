@@ -12,7 +12,10 @@ internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
         {
             table.HasCheckConstraint("ck_payments_method", EnumCheck.In<PaymentMethod>("method"));
             table.HasCheckConstraint("ck_payments_status", EnumCheck.In<PaymentStatus>("status"));
-            table.HasCheckConstraint("ck_payments_amounts", "amount_minor > 0 AND refunded_amount_minor >= 0 AND refunded_amount_minor <= amount_minor");
+            // Paketten düşülen kalemin kaydı 0 TL'dir (W1); diğer yöntemlerde tutar sıfırdan büyük.
+            table.HasCheckConstraint(
+                "ck_payments_amounts",
+                "(amount_minor > 0 OR (method = 'PackageRedemption' AND amount_minor = 0)) AND refunded_amount_minor >= 0 AND refunded_amount_minor <= amount_minor");
         });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
