@@ -75,3 +75,27 @@ export async function captureBody(
   });
   return () => body;
 }
+
+/**
+ * Kapora: oturuma settings.payment izni eklenir (Prism oturum örneğinde yok) ve isteğe bağlı olarak BrandSettings
+ * yanıtında depositAvailable sabitlenir (IBAN tanımlı / tanımsız desenleri).
+ */
+export async function depositSetup(page: Page, depositAvailable?: boolean) {
+  await sessionAs(page, (session) => ({
+    permissions: [...(session.permissions as string[]), 'settings.payment'],
+  }));
+  if (depositAvailable === undefined) {
+    return;
+  }
+
+  await page.route(`${api}/brand/settings`, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.fallback();
+      return;
+    }
+
+    const response = await route.fetch();
+    const settings = (await response.json()) as Record<string, unknown>;
+    await route.fulfill(json({ ...settings, depositAvailable }));
+  });
+}

@@ -2,24 +2,28 @@ import { Button } from '@omvila/ui-web/panel';
 import { Link } from '@tanstack/react-router';
 import { Check } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useSession } from '@/app/session';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Kapora ve IBAN (D4), roller, abonelik, KVKK (D5–6) ilgili dilim gelince eklenir;
-// yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
-const sections = [
+// Bölüm menüsü. Roller, abonelik, KVKK (D5–6) ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez
+// (acik-sorular.md T-38, T-41). Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment) yalnız o izinle görünür.
+const sections: readonly { to: string; label: string; permission?: string }[] = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
   { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
   { to: '/ayarlar/randevu-kurallari', label: 'Randevu kuralları' },
   { to: '/ayarlar/rezervasyon', label: 'Rezervasyon sayfası' },
   { to: '/ayarlar/bildirimler', label: 'Bildirimler ve SMS' },
-] as const;
+  { to: '/ayarlar/kapora', label: 'Kapora ve IBAN', permission: 'settings.payment' },
+];
 
 export interface SettingsLayoutProps {
   context: string;
   /** Üst bardaki "Değişiklikleri kaydet" bu formu gönderir. */
   formId: string;
   saving: boolean;
+  /** Üst bardaki kaydetme butonu metni (AyarlarOdeme: "Kaydet"). */
+  saveLabel?: string;
   /** Kaydetmenin solunda ikincil eylem ("Şube ekle"). */
   extraAction?: ReactNode;
   children: ReactNode;
@@ -30,9 +34,11 @@ export function SettingsLayout({
   context,
   formId,
   saving,
+  saveLabel = 'Değişiklikleri kaydet',
   extraAction,
   children,
 }: SettingsLayoutProps) {
+  const { can } = useSession();
   return (
     <Page
       title="Ayarlar"
@@ -48,7 +54,7 @@ export function SettingsLayout({
             loading={saving}
             loadingLabel="Kaydediliyor…"
           >
-            Değişiklikleri kaydet
+            {saveLabel}
           </Button>
         </>
       }
@@ -56,13 +62,15 @@ export function SettingsLayout({
       <div className={styles.layout}>
         <nav className={styles.nav} aria-label="Ayar bölümleri">
           <ul className={styles.navList}>
-            {sections.map((section) => (
-              <li key={section.to}>
-                <Link to={section.to} className={styles.navLink}>
-                  {section.label}
-                </Link>
-              </li>
-            ))}
+            {sections
+              .filter((section) => section.permission === undefined || can(section.permission))
+              .map((section) => (
+                <li key={section.to}>
+                  <Link to={section.to} className={styles.navLink}>
+                    {section.label}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </nav>
         <div className={styles.sections}>{children}</div>
