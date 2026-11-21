@@ -91,6 +91,11 @@
   background: var(--zemin-ikincil);
 }
 
+.customerLink {
+  flex: none;
+  margin-left: auto;
+}
+
 .customerText,
 .actionText {
   display: flex;

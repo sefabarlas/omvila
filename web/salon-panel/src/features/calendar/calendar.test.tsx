@@ -131,7 +131,6 @@ describe('randevu yan paneli', () => {
     expect(within(drawer).getByText('0532 760 21 18 · 6 ziyaret')).toBeTruthy();
     expect(within(drawer).getByText('Gelmezse 13:15\'te otomatik "Gelmedi" olur.')).toBeTruthy();
     expect(within(drawer).queryByRole('button', { name: /Tamamla/ })).toBeNull();
-    expect(within(drawer).queryByText('Müşteri kartı')).toBeNull();
     await userEvent.click(within(drawer).getByRole('button', { name: 'Geldi' }));
     await waitFor(() => {
       expect(within(drawer).queryByRole('button', { name: 'Geldi' })).toBeNull();

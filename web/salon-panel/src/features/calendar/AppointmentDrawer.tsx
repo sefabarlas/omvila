@@ -5,6 +5,7 @@ import { Avatar, Button, Drawer, Skeleton, StatusBadge, useToast } from '@omvila
 import { displayStatus } from '@omvila/ui-web/status';
 import { addDays, toBranchDate } from '@omvila/ui-web/time';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { CalendarX2, Clock, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
@@ -42,13 +43,14 @@ function dayLabel(date: string, today: string): string {
 /**
  * Randevu yan paneli (salon-paneli/RandevuOnayli): durum kartı, müşteri, eylemler; altta "Geldi" veya gelmeyen için
  * "Geldiyse geri al". Durum eylemleri If-Match ile; 412'de "Kayıt çakışması" şeridi. "Tamamla ve ödeme al" (D5),
- * "Hizmet ekle", "Müşteriye SMS gönder" ve "Müşteri kartı" bu dilimde yok (acik-sorular.md T-54).
+ * "Hizmet ekle" ve "Müşteriye SMS gönder" bu dilimde yok (acik-sorular.md T-54); "Müşteri kartı" kartı açar (T-57).
  */
 export function AppointmentDrawer({ appointmentId, today, onClose }: AppointmentDrawerProps) {
   const api = useApi();
   const queryClient = useQueryClient();
   const toast = useToast();
   const { can } = useSession();
+  const navigate = useNavigate();
   const query = useQuery(appointmentQuery(api, appointmentId));
   const checkIn = useCheckIn();
   const undo = useUndoNoShow();
@@ -184,6 +186,21 @@ export function AppointmentDrawer({ appointmentId, today, onClose }: Appointment
               <strong>{customer.fullName}</strong>
               <small>{[phone, visits].filter(Boolean).join(' · ')}</small>
             </span>
+            {can('customer.view') ? (
+              <Button
+                size="sm"
+                className={styles.customerLink}
+                onClick={() => {
+                  onClose();
+                  void navigate({
+                    to: '/musteriler/$id',
+                    params: { id: customer.brandCustomerId },
+                  });
+                }}
+              >
+                Müşteri kartı
+              </Button>
+            ) : null}
           </section>
           <ul className={styles.actions}>
             {active && can('appointment.update') ? (

@@ -26,7 +26,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Müşteriler',
     to: '/musteriler',
     permission: 'customer.view',
-    available: false,
+    available: true,
     group: 'isletme',
   },
   {
@@ -99,7 +99,7 @@ export const menuEntries: readonly MenuEntry[] = [
  * Kişisel menü (salon-paneli/PersonelRolu, kabul kriteri 10): raporları göremeyen kullanıcı (personel) işletme
  * menüsü yerine "Benim" grubunu görür. "Takvimim" takvimi açar (sunucu yalnız kendi kolonunu döner); ana sayfa
  * ("/", girişten sonra) kişisel özettir ve menüde Takvimim altında sayılır (acik-sorular.md T-45, T-54). Müşteriler
- * (D2), Kapıda sıra (D3) ve Primim (D6) sayfaları gelince açılır.
+ * D2'de açıldı (T-57); Kapıda sıra (D3) ve Primim (D6) sayfaları gelince açılır.
  */
 export const personalEntries: readonly MenuEntry[] = [
   {
@@ -115,7 +115,7 @@ export const personalEntries: readonly MenuEntry[] = [
     label: 'Müşteriler',
     to: '/musteriler',
     permission: 'customer.view',
-    available: false,
+    available: true,
     group: 'benim',
   },
   {
