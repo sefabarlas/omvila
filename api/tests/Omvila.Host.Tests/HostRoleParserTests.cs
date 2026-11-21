@@ -8,8 +8,13 @@ public sealed class HostRoleParserTests
     [InlineData("all", "All")]
     [InlineData("API", "Api")]
     [InlineData(" worker ", "Worker")]
+    [InlineData("migrate", "Migrate")]
     public void Parse_ReturnsRole(string? value, string expected) =>
         HostRoleParser.Parse(value).ToString().ShouldBe(expected);
+
+    [Fact]
+    public void Migrate_IsNotPartOfAll() =>
+        HostRole.All.HasFlag(HostRole.Migrate).ShouldBeFalse();
 
     [Fact]
     public void Parse_WithUnknownRole_Throws() =>
