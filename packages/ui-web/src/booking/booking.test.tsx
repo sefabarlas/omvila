@@ -7,6 +7,7 @@ import {
   ANY_STAFF,
   AppointmentTicket,
   BookingButton,
+  BookingStatusBadge,
   BookingSteps,
   branchOpenStatus,
   CategoryChips,
@@ -444,6 +445,19 @@ describe('StickyFooter', () => {
     expect(button.getAttribute('aria-busy')).toBe('true');
     await userEvent.click(button);
     expect(onClick).not.toHaveBeenCalled();
+  });
+});
+
+describe('BookingStatusBadge', () => {
+  it('durum adı sabit etiketle yazılır, renk yalnız ek bilgi', () => {
+    const { container } = render(<BookingStatusBadge status="onay" />);
+    expect(screen.getByText('Onay bekliyor')).toBeTruthy();
+    expect(container.querySelector('[aria-hidden="true"]')).toBeTruthy();
+  });
+
+  it('iptal "İptal" yazar', () => {
+    render(<BookingStatusBadge status="iptal" />);
+    expect(screen.getByText('İptal')).toBeTruthy();
   });
 });
 

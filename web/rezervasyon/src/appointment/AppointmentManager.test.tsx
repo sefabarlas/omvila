@@ -8,6 +8,8 @@ import {
   cancelledFixture,
   etag,
   linkAppointmentFixture,
+  pendingFixture,
+  requestCancelledFixture,
   rescheduledFixture,
   rescheduleSlotsFixture,
 } from '@/test/appointment-fixtures';
@@ -158,6 +160,54 @@ describe('Randevum (/r/[code])', () => {
     const call = planCard().getByRole('link', { name: 'Salonu ara' });
     expect(call.getAttribute('href')).toBe('tel:+905321234567');
   });
+});
+
+describe('onay bekleyen talep (Dilim 3)', () => {
+  it('"Onay bekliyor" ve kalan yanıt süresi; saat değiştirme ve iptal açık (kriter 1, 6)', async () => {
+    mockLink({ appointment: pendingFixture });
+    renderPage();
+
+    expect(await screen.findByText('Randevunuz · Onay bekliyor')).toBeTruthy();
+    const card = screen.getByRole('heading', { name: 'Salon onayı bekleniyor' }).closest('section');
+    if (!card) throw new Error('kart yok');
+    expect(
+      within(card).getByText(
+        'Kuaför Elif en geç 1 saat 35 dakika içinde yanıtlar. Onaylandığında SMS ile bildireceğiz; yanıt gelmezse talep iptal olur.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Randevunuz · Onaylandı')).toBeNull();
+    expect(planCard().getByRole('button', { name: 'Saati değiştir' })).toBeTruthy();
+    expect(planCard().getByRole('button', { name: 'Randevuyu iptal et' })).toBeTruthy();
+  });
+
+  it('yanıt süresi dolmuşsa süre yazılmaz', async () => {
+    mockLink({
+      appointment: () => ({ ...pendingFixture(), holdExpiresUtc: '2026-11-24T06:59:00Z' }),
+    });
+    renderPage();
+    expect(await screen.findByText(/Kuaför Elif talebinizi inceleyip yanıtlar\./)).toBeTruthy();
+  });
+
+  it.each([
+    ['DeclinedBySalon', 'Kuaför Elif bu talebi onaylayamadı.'],
+    ['ApprovalExpired', 'Kuaför Elif talebinizi zamanında yanıtlayamadı.'],
+  ] as const)(
+    '%s müşteriye "İptal" olarak gösterilir, "reddedildi" yazılmaz (kriter 3, 4)',
+    async (reason, text) => {
+      mockLink({ appointment: () => requestCancelledFixture(reason) });
+      renderPage();
+
+      expect(await screen.findByText('Randevunuz · İptal')).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Talebiniz iptal edildi' })).toBeTruthy();
+      expect(screen.getByText((content) => content.startsWith(text))).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Yeni randevu al' }).getAttribute('href')).toBe(
+        '/kuafor-elif',
+      );
+      expect(document.body.textContent).not.toMatch(/redd/i);
+      expect(screen.queryByRole('heading', { name: 'Plan değişti mi?' })).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeNull();
+    },
+  );
 });
 
 describe('iptal', () => {

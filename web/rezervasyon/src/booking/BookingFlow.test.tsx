@@ -3,7 +3,14 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { brandFixture, json, problem } from '@/test/api-mock';
-import { catalogFixture, ids, mockBooking, nowUtc, tokenFixture } from '@/test/booking-mock';
+import {
+  appointmentFixture,
+  catalogFixture,
+  ids,
+  mockBooking,
+  nowUtc,
+  tokenFixture,
+} from '@/test/booking-mock';
 import type { Recorded } from '@/test/booking-mock';
 import type { PublicBrand } from '@/lib/brand';
 import { BookingFlow } from './BookingFlow';
@@ -137,6 +144,51 @@ describe('online randevu akışı', () => {
     expect(create?.request.headers.get('Authorization')).toBe('Bearer rezervasyon-jetonu');
     expect(create?.request.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/);
     expect(create?.request.credentials).not.toBe('include');
+  });
+
+  it('onay gerektiren salonda talep ekranı: "Onay bekliyor", kalan yanıt süresi (Dilim 3 kriter 1)', async () => {
+    mockBooking({
+      routes: [
+        (request) =>
+          new URL(request.url).pathname.endsWith('/appointments')
+            ? json(
+                201,
+                appointmentFixture({
+                  status: 'PendingApproval',
+                  displayStatus: 'PendingApproval',
+                  holdExpiresUtc: '2026-11-24T09:00:00Z',
+                }),
+              )
+            : undefined,
+      ],
+    });
+    const user = renderFlow(detailsSearch());
+    await fillDetails(user);
+    await user.type(
+      await screen.findByRole('textbox', { name: 'Doğrulama kodu, hane 1' }),
+      '482193',
+    );
+    await user.click(await screen.findByRole('button', { name: 'Randevuyu oluştur' }));
+
+    expect(await screen.findByRole('heading', { name: 'Talebiniz alındı' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Kuaför Elif en geç 2 saat içinde yanıtlar. Onaylandığında 0532 *** ** 67 numarasına SMS göndereceğiz.',
+      ),
+    ).toBeTruthy();
+    const card = within(screen.getByRole('region', { name: 'Talep özeti' }));
+    expect(card.getByText('Onay bekliyor')).toBeTruthy();
+    expect(card.getByText('Saç kesimi, Fön · Elif Kaya')).toBeTruthy();
+    expect(card.getByText('24 Kas Sal')).toBeTruthy();
+    expect(card.getByText('14:30')).toBeTruthy();
+    expect(card.getByText('1 sa 15 dk')).toBeTruthy();
+    expect(card.getByText('750 ₺')).toBeTruthy();
+    expect(screen.getByText(/Saat sizin için ayrıldı\./)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Salon sayfasına dön' }).getAttribute('href')).toBe(
+      '/kuafor-elif',
+    );
+    expect(screen.queryByRole('heading', { name: 'Randevunuz onaylandı' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/redd/i);
   });
 
   it('“Fark etmez”de atanan personelin adı onayda görünür ve o kişi gönderilir (kriter 6)', async () => {

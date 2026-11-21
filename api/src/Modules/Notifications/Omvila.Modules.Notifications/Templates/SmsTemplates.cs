@@ -30,6 +30,13 @@ internal static partial class SmsTemplates
     // en son salon adı en kısaya kırpılır.
     private static readonly Trim[] SalonOnly = [new("salon", SalonNameLength), new("salon", MinTrimmedLength)];
 
+    private static readonly Trim[] SalonUpTo30 = [new("salon", SalonNameLength)];
+
+    // Talep iptali metinleri uzun: 30 karakterlik salon adı ve ondan türeyen rezervasyon bağlantısıyla 155'i aşarlar. Aşımda
+    // salon adını kırpmak yerine bu kısa metin kullanılır, o da aşarsa salon adı kırpılır (T-65). "Reddedildi" geçmez.
+    private static readonly Template RequestCancelledShort = new(
+        "{salon}, {tarih} {saat} talebiniz iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}", SalonOnly);
+
     private static readonly Dictionary<string, Template> Templates = new(StringComparer.Ordinal)
     {
         [Key(NotificationEvents.OtpCode, null)] = new("OMVILA giriş kodunuz: {kod}. Bu kodu kimseyle paylaşmayın.", []),
@@ -40,6 +47,21 @@ internal static partial class SmsTemplates
         [Key(NotificationEvents.AppointmentConfirmed, WithoutStaffVariant)] = new(
             "{salon}: Randevunuz onaylandı. {tarih} {saat}, {hizmet}. Değişiklik ve iptal: {bağlantı}",
             [new("salon", SalonNameLength), new("hizmet", MinTrimmedLength), new("salon", MinTrimmedLength)]),
+        [Key(NotificationEvents.AppointmentRequested, null)] = new(
+            "{salon}: Talebiniz alındı. {tarih} {saat} için salon onayladığında size haber vereceğiz. {bağlantı}", SalonOnly),
+
+        // Katalogdaki "Görüşmek üzere!" ses tonu kuralıyla (ünlem yok) "Görüşmek üzere." yazılır (T-65).
+        [Key(NotificationEvents.AppointmentApproved, null)] = new(
+            "{salon} talebinizi onayladı: {tarih} {saat}, {hizmet}. Görüşmek üzere. {bağlantı}",
+            [new("salon", SalonNameLength), new("hizmet", MinTrimmedLength), new("salon", MinTrimmedLength)]),
+        [Key(NotificationEvents.AppointmentDeclined, null)] = new(
+            "{salon}, {tarih} {saat} talebinizi onaylayamadı, talep iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}",
+            SalonUpTo30,
+            RequestCancelledShort),
+        [Key(NotificationEvents.AppointmentApprovalExpired, null)] = new(
+            "{salon}, {tarih} {saat} talebinizi zamanında yanıtlayamadı, talep iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}",
+            SalonUpTo30,
+            RequestCancelledShort),
         [Key(NotificationEvents.AppointmentRescheduled, null)] = new(
             "{salon}: Randevunuz {yeni tarih} {saat} olarak güncellendi. Detay: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentCancelledBySalon, null)] = new(
@@ -62,6 +84,14 @@ internal static partial class SmsTemplates
             throw new InvalidOperationException($"SMS şablonu yok: {eventCode} {variant}");
         }
 
+        var body = Render(eventCode, template, values);
+        return template.Fallback is { } fallback && GsmLength.Units(body) is { } units && units > GsmLength.SingleSmsLimit
+            ? Render(eventCode, fallback, values)
+            : body;
+    }
+
+    private static string Render(string eventCode, Template template, IReadOnlyDictionary<string, string> values)
+    {
         var current = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (Match match in Placeholder().Matches(template.Body))
         {
@@ -108,7 +138,8 @@ internal static partial class SmsTemplates
 
     /// <param name="Body">Metin.</param>
     /// <param name="Trims">Aşımda sırayla uygulanan kırpmalar.</param>
-    private sealed record Template(string Body, Trim[] Trims);
+    /// <param name="Fallback">Kırpmalardan sonra da aşarsa kullanılan kısa metin (aynı değişkenlerle).</param>
+    private sealed record Template(string Body, Trim[] Trims, Template? Fallback = null);
 
     /// <param name="Name">Değişken.</param>
     /// <param name="MinLength">Bu adımda inilebilecek en kısa uzunluk.</param>
