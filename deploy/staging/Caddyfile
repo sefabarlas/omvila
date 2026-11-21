@@ -1,0 +1,57 @@
+# Test ortamının kenar sunucusu: otomatik HTTPS (Let's Encrypt), alan adına göre yönlendirme.
+# Alan adları ve portlar ortamdan gelir (varsayılanlar test ortamı); yerel deneme: deploy/staging/compose.local.yml.
+# Basic auth: salon, randevu, sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
+# (credentials: 'include' dahil) Authorization başlığını kendiliğinden göndermez, istekler 401 alırdı.
+{
+	http_port {$CADDY_HTTP_PORT:80}
+	https_port {$CADDY_HTTPS_PORT:443}
+}
+
+(common) {
+	# Test ortamı arama motorlarına kapalı.
+	header X-Robots-Tag "noindex, nofollow"
+	encode zstd gzip
+}
+
+(protected) {
+	# Kullanıcı ve bcrypt özeti .env'den (BASIC_AUTH_USER, BASIC_AUTH_HASH; üretim: caddy hash-password).
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+}
+
+{$SALON_HOST:test.salon.omvila.com.tr} {
+	import common
+	import protected
+	reverse_proxy salon-panel:8080
+}
+
+{$API_HOST:test.api.omvila.com.tr} {
+	import common
+	# SMS günlüğü yalnız kendi korumalı adresinden açılır; herkese açık API adresinden erişilmez (OTP kodları içerir).
+	@smslog path {$SMS_LOG_PATH:/dev/sms} {$SMS_LOG_PATH:/dev/sms}/*
+	respond @smslog 404
+	reverse_proxy api:8080
+}
+
+{$RANDEVU_HOST:test.randevu.omvila.com.tr} {
+	import common
+	import protected
+	reverse_proxy rezervasyon:3000
+}
+
+# SMS günlüğü sayfası API kapsayıcısında sunulur (sahte sağlayıcının infra.dev_sms_log kayıtları).
+# SMS_LOG_PATH: API'deki yol; ayrı PR'da belirlenir, değişirse yalnız .env'deki değer değişir.
+{$SMS_HOST:test.sms.omvila.com.tr} {
+	import common
+	import protected
+	@root path /
+	rewrite @root {$SMS_LOG_PATH:/dev/sms}
+	reverse_proxy api:8080
+}
+
+{$POSTA_HOST:test.posta.omvila.com.tr} {
+	import common
+	import protected
+	reverse_proxy mailpit:8025
+}
