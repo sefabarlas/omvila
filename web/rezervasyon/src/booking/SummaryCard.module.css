@@ -1,0 +1,114 @@
+.card,
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  color: var(--metin);
+}
+
+.aside {
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+}
+
+.head {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: var(--bosluk-3);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.headText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.when {
+  margin: 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line,
+.total,
+.asideTotal {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  margin: 0;
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.total {
+  font-weight: 800;
+}
+
+.amount {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.amountRegular {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.asideTitle {
+  margin: 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-3) 0;
+  border-top: 1px solid var(--cizgi);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.metaLine {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.metaLine strong {
+  color: var(--metin);
+}
+
+.asideTotal {
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
