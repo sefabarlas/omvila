@@ -368,3 +368,36 @@
   outline: 2px solid var(--odak);
   outline-offset: 2px;
 }
+
+/* Onay bekleyen talep (Dilim 3): durum renkleri durum-onay tokenlarından. */
+.pending {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--durum-onay-zemin);
+  color: var(--durum-onay-metin);
+}
+
+.pendingIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  color: var(--durum-onay-nokta);
+}
+
+.pendingBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  min-width: 0;
+}
+
+.pending .muted {
+  color: inherit;
+}

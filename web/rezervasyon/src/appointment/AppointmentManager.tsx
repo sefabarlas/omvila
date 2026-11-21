@@ -222,6 +222,7 @@ export function AppointmentManager({
           appointment={appointment}
           notice={notice}
           inert={shown === 'cancel'}
+          clock={clock}
           onReschedule={() => {
             open('reschedule');
           }}

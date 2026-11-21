@@ -1,0 +1,84 @@
+/* design/tasarim-sistemleri/mobil/components/StatusBadge; renkler durum-* tokenları. */
+.badge {
+  display: inline-flex;
+  flex: none;
+  gap: var(--bosluk-1);
+  align-items: center;
+  align-self: flex-start;
+  padding: var(--bosluk-1) var(--bosluk-2);
+  border-radius: var(--kose-tam);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-aciklama-satir);
+  white-space: nowrap;
+}
+
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--kose-tam);
+}
+
+.onay {
+  background: var(--durum-onay-zemin);
+  color: var(--durum-onay-metin);
+}
+
+.onay .dot {
+  background: var(--durum-onay-nokta);
+}
+
+.kapora {
+  background: var(--durum-kapora-zemin);
+  color: var(--durum-kapora-metin);
+}
+
+.kapora .dot {
+  background: var(--durum-kapora-nokta);
+}
+
+.onaylandi {
+  background: var(--durum-onaylandi-zemin);
+  color: var(--durum-onaylandi-metin);
+}
+
+.onaylandi .dot {
+  background: var(--durum-onaylandi-nokta);
+}
+
+.geldi {
+  background: var(--durum-geldi-zemin);
+  color: var(--durum-geldi-metin);
+}
+
+.geldi .dot {
+  background: var(--durum-geldi-nokta);
+}
+
+.tamamlandi {
+  background: var(--durum-tamamlandi-zemin);
+  color: var(--durum-tamamlandi-metin);
+}
+
+.tamamlandi .dot {
+  background: var(--durum-tamamlandi-nokta);
+}
+
+.gelmedi {
+  background: var(--durum-gelmedi-zemin);
+  color: var(--durum-gelmedi-metin);
+}
+
+.gelmedi .dot {
+  background: var(--durum-gelmedi-nokta);
+}
+
+.iptal {
+  background: var(--durum-iptal-zemin);
+  color: var(--durum-iptal-metin);
+}
+
+.iptal .dot {
+  background: var(--durum-iptal-nokta);
+}

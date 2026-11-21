@@ -1,11 +1,27 @@
 import { AppointmentTicket, BookingButton } from '@omvila/ui-web/booking';
 import { formatMoney } from '@omvila/ui-web/format';
 import { displayStatus } from '@omvila/ui-web/status';
-import { CalendarCheck, CalendarClock, Clock, MapPin, Phone, RefreshCw, X } from 'lucide-react';
+import type { Clock as ClockSource } from '@omvila/ui-web/time';
+import {
+  CalendarCheck,
+  CalendarClock,
+  Clock,
+  Hourglass,
+  MapPin,
+  Phone,
+  RefreshCw,
+  X,
+} from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { LinkButton } from '@/components/LinkButton';
 import { StateBanner } from '@/components/StateBanner';
 import { messageFor } from '@/booking/problem';
+import {
+  cancellationText,
+  isRequestCancellation,
+  responseSentence,
+  responseWindow,
+} from '@/lib/approval';
 import { directionsUrl } from '@/lib/directions';
 import type { PublicAppointment } from './appointment-api';
 import { durationMinutes, isActive, planText, staffNames, whenLabel } from './details';
@@ -24,6 +40,7 @@ interface AppointmentViewProps {
   notice: Notice | null;
   /** İptal sayfası açıkken arka plan etkileşimsiz. */
   inert: boolean;
+  clock: ClockSource;
   onReschedule: () => void;
   onCancel: () => void;
 }
@@ -81,7 +98,9 @@ function NoticeBanner({ notice, appointment }: { notice: Notice; appointment: Pu
 }
 
 /**
- * Randevum (Randevum.png): başlık bloğu, yol tarifi, kalemler ve tutar, "Plan değişti mi?" kartı. Takvime ekle
+ * Randevum (Randevum.png): başlık bloğu, yol tarifi, kalemler ve tutar, "Plan değişti mi?" kartı. Onay bekleyen
+ * talepte "Randevunuz · Onay bekliyor" ve kalan yanıt süresi; salonun onaylayamadığı veya zamanında yanıtlamadığı
+ * talep "İptal" olarak gösterilir ("reddedildi" yazılmaz, kriter 3). Takvime ekle
  * (dosya indirme), kapora satırları (Dilim 4) ve uygulama tanıtımı (Dilim 5) yok. Süre geçmişse butonların yerine
  * "Salonu ara" (durum-makinesi.md § Müşteri sınırları, kriter 10).
  */
@@ -89,11 +108,14 @@ export function AppointmentView({
   appointment,
   notice,
   inert,
+  clock,
   onReschedule,
   onCancel,
 }: AppointmentViewProps) {
   const { branch } = appointment;
   const cancelled = appointment.status === 'Cancelled';
+  // Kapora bekleyen talep (DepositPending) Dilim 4'te kendi kartını alır; burada yalnız onay bekleyen talep.
+  const pending = appointment.displayStatus === 'PendingApproval';
   const active = isActive(appointment);
   const directions = cancelled ? null : directionsUrl(branch);
   const status = displayStatus(appointment.displayStatus) ?? 'onay';
@@ -137,16 +159,36 @@ export function AppointmentView({
             {...(notice?.kind === 'cancelled' ? { role: 'status' } : {})}
           >
             <h2 id="iptal-baslik" className={styles.cardTitle}>
-              Randevunuz iptal edildi
+              {isRequestCancellation(appointment.cancellation)
+                ? 'Talebiniz iptal edildi'
+                : 'Randevunuz iptal edildi'}
             </h2>
             <p className={styles.text}>
-              {appointment.cancellation?.cancelledBy === 'Customer'
-                ? 'İptal salona bildirildi. Yeni randevu için salon sayfasını açabilirsiniz.'
-                : 'Yeni randevu için salon sayfasını açabilir veya salonu arayabilirsiniz.'}
+              {cancellationText(appointment.brand.name, appointment.cancellation)}
             </p>
             <LinkButton href={`/${encodeURIComponent(appointment.brand.slug)}`} block>
               Yeni randevu al
             </LinkButton>
+          </section>
+        ) : null}
+
+        {pending ? (
+          <section className={styles.pending} aria-labelledby="onay-baslik">
+            <span className={styles.pendingIcon} aria-hidden="true">
+              <Hourglass size={20} />
+            </span>
+            <div className={styles.pendingBody}>
+              <h2 id="onay-baslik" className={styles.cardTitle}>
+                Salon onayı bekleniyor
+              </h2>
+              <p className={styles.muted}>
+                {responseSentence(
+                  appointment.brand.name,
+                  responseWindow(appointment.holdExpiresUtc, clock),
+                )}{' '}
+                Onaylandığında SMS ile bildireceğiz; yanıt gelmezse talep iptal olur.
+              </p>
+            </div>
           </section>
         ) : null}
 
