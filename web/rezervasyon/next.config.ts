@@ -4,7 +4,9 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@omvila/api-client-ts', '@omvila/design-tokens'],
+  // Geliştirme rozeti ekran görüntülerine girmesin (e2e/ekranlar.e2e.ts).
+  devIndicators: false,
+  transpilePackages: ['@omvila/api-client-ts', '@omvila/design-tokens', '@omvila/ui-web'],
 };
 
 export default config;

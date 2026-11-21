@@ -1,0 +1,203 @@
+/* Salon sayfası düzeni: mobilde tek kolon (≤ 390 px), masaüstünde solda salon kartı + özet (≤ 380 px), sağda
+   adımlar (≤ 680 px) (design/tasarim-sistemleri/mobil/README.md, rezervasyon-sayfasi/Masaustu). */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.topbar {
+  display: none;
+}
+
+.layout {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--ekran-genislik);
+  margin: 0 auto;
+}
+
+/* Mobilde salon kartı yalnız ilk adımda görünür; sonraki adımlarda ekran okuyucu için sayfa başlığı kalır. */
+.headerCollapsed {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.aside {
+  display: none;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  outline: none;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-4);
+}
+
+.stepBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--dokunma-min);
+}
+
+.back {
+  position: absolute;
+  left: calc(var(--bosluk-2) * -1);
+  display: grid;
+  place-items: center;
+  width: var(--dokunma-min);
+  height: var(--dokunma-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: transparent;
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-buyuk-baslik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-buyuk-baslik-satir);
+  letter-spacing: var(--yazi-buyuk-baslik-harf);
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: var(--yazi-ust-bar-basligi-boyut);
+  font-weight: var(--yazi-ust-bar-basligi-agirlik);
+  line-height: var(--yazi-ust-bar-basligi-satir);
+}
+
+.change {
+  flex: none;
+  min-height: var(--dokunma-min);
+  margin-top: calc(var(--bosluk-3) * -1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--metin-marka);
+  font: inherit;
+  font-size: var(--yazi-ikincil-boyut);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.change:focus-visible {
+  border-radius: var(--kose-xs);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.notice,
+.empty {
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.skeleton {
+  display: block;
+  min-height: calc(var(--bosluk-12) + var(--bosluk-6));
+  border-radius: var(--kose-lg);
+  background: var(--iskelet);
+}
+
+.footerInline {
+  margin-top: var(--bosluk-6);
+}
+
+@media (width >= 960px) {
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--bosluk-4) var(--bosluk-8);
+    border-bottom: 1px solid var(--cizgi);
+    background: var(--zemin-yukseltilmis);
+  }
+
+  .topbarBrand {
+    display: flex;
+    flex-direction: column;
+    font-size: var(--yazi-ikincil-boyut);
+    line-height: var(--yazi-ikincil-satir);
+  }
+
+  .topbarBrand span,
+  .topbarNote {
+    color: var(--metin-ikincil);
+    font-size: var(--yazi-ikincil-boyut);
+  }
+
+  .layout {
+    display: grid;
+    grid-template:
+      'header main' auto
+      'aside main' 1fr / minmax(0, 380px) minmax(0, 680px);
+    gap: var(--bosluk-4) var(--bosluk-8);
+    align-items: start;
+    justify-content: center;
+    max-width: none;
+    padding: var(--bosluk-8) var(--bosluk-6);
+  }
+
+  .headerArea,
+  .headerCollapsed {
+    position: static;
+    grid-area: header;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    clip-path: none;
+    border-radius: var(--kose-xl);
+    box-shadow: var(--golge-sm);
+    white-space: normal;
+  }
+
+  .aside {
+    display: block;
+    grid-area: aside;
+  }
+
+  .main {
+    grid-area: main;
+  }
+
+  .content {
+    padding: 0;
+  }
+}

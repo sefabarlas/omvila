@@ -8,14 +8,16 @@
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
-    "typecheck": "tsc -p tsconfig.json",
-    "lint": "eslint --max-warnings=0 src *.config.ts lighthouserc.cjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p e2e",
+    "lint": "eslint --max-warnings=0 src e2e *.config.ts lighthouserc.cjs",
     "test": "vitest run",
-    "lighthouse": "lhci autorun"
+    "lighthouse": "lhci autorun",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "dependencies": {
     "@omvila/api-client-ts": "workspace:*",
     "@omvila/design-tokens": "workspace:*",
+    "@omvila/ui-web": "workspace:*",
     "lucide-react": "^0.511.0",
     "next": "16.4.5",
     "react": "19.3.1",
@@ -23,7 +25,9 @@
   },
   "devDependencies": {
     "@lhci/cli": "0.16.0",
+    "@playwright/test": "1.65.0",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.10.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
