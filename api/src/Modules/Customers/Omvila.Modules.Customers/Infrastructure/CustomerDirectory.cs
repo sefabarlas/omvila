@@ -36,7 +36,8 @@ internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry 
     public async Task<Result> ApplyCountersAsync(Guid brandId, Guid brandCustomerId, CustomerCounterChange change, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(change);
-        var card = await db.BrandCustomers.SingleOrDefaultAsync(b => b.Id == brandCustomerId && b.BrandId == brandId, ct);
+        // Birleştirmeyle arşivlenen karta gelen geç olay kalan karta uygulanır.
+        var card = await registry.ResolveMergedAsync(await db.BrandCustomers.SingleOrDefaultAsync(b => b.Id == brandCustomerId && b.BrandId == brandId, ct), ct);
         if (card is null)
         {
             return Error.NotFound();
@@ -52,7 +53,7 @@ internal sealed class CustomerDirectory(CustomersDbContext db, CustomerRegistry 
         ArgumentNullException.ThrowIfNull(phone);
         return await (from b in db.BrandCustomers.AsNoTracking()
                       join c in db.Customers.AsNoTracking() on b.CustomerId equals c.Id
-                      where b.BrandId == brandId && c.PhoneE164 == phone.E164
+                      where b.BrandId == brandId && c.PhoneE164 == phone.E164 && b.MergedIntoId == null
                       select b.DisplayName ?? c.FullName).SingleOrDefaultAsync(ct);
     }
 

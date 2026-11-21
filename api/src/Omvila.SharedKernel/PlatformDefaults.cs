@@ -57,4 +57,7 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Kapora: TransferWindowMinutes varsayılanı (havale süresi 120 dk).</summary>
     public const int TransferWindowMinutes = 120;
+
+    /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: DeletionRequestDueDays 30 (silme talepleri 30 gün içinde tamamlanır).</summary>
+    public const int DeletionRequestDueDays = 30;
 }

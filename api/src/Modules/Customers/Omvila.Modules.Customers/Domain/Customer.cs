@@ -12,6 +12,11 @@ internal sealed class Customer
     /// <summary>v1'de arayüz dili yalnız Türkçe (Identity.User ile aynı varsayılan).</summary>
     public const string DefaultLanguageCode = "tr";
 
+    /// <summary>Anonimleştirilmiş kaydın adı (guvenlik-kvkk.md § Anonimleştirme).</summary>
+    public const string AnonymizedName = "Silinmiş müşteri";
+
+    public const string AnonymizedPhonePrefix = "+000";
+
     private Customer()
     {
     }
@@ -46,6 +51,27 @@ internal sealed class Customer
             LanguageCode = DefaultLanguageCode,
             IsVerified = isVerified,
             CreatedUtc = now,
+        };
+    }
+
+    /// <summary>
+    /// KVKK silmesinde markadaki kartın bağlandığı anonim kişi (guvenlik-kvkk.md § Anonimleştirme): ad "Silinmiş müşteri",
+    /// telefon <c>+000</c> + kimlik özetinin 16 onaltılık hanesi (benzersizlik korunur, <see cref="PhoneNumber"/> olarak
+    /// çözülmez, gösterilmez), <see cref="AnonymizedUtc"/> dolu. Gerçek kişinin kaydı ve başka markalardaki kartları değişmez.
+    /// </summary>
+    // Kural: guvenlik-kvkk.md § Anonimleştirme
+    public static Customer CreateAnonymous(Guid id, Instant now)
+    {
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(id.ToByteArray()));
+        return new Customer
+        {
+            Id = id,
+            PhoneE164 = AnonymizedPhonePrefix + hash[..16],
+            FullName = AnonymizedName,
+            LanguageCode = DefaultLanguageCode,
+            IsVerified = false,
+            CreatedUtc = now,
+            AnonymizedUtc = now,
         };
     }
 

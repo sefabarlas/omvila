@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using NodaTime;
 using NodaTime.Testing;
 using Omvila.TestKit;
@@ -12,7 +13,8 @@ namespace Omvila.Api.IntegrationTests;
 /// <summary>
 /// Gerçek uygulama (Program, role=api) + test veritabanı + sabit saat (TestClock). Ayarlar test sınıfına göre ezilebilir.
 /// </summary>
-internal sealed class OmvilaApiFactory(PostgresFixture db, IDictionary<string, string?>? overrides = null) : WebApplicationFactory<Program>
+internal sealed class OmvilaApiFactory(PostgresFixture db, IDictionary<string, string?>? overrides = null, ILoggerProvider? logs = null)
+    : WebApplicationFactory<Program>
 {
     public FakeClock Clock { get; } = TestClock.Create();
 
@@ -31,5 +33,9 @@ internal sealed class OmvilaApiFactory(PostgresFixture db, IDictionary<string, s
         }
 
         builder.ConfigureTestServices(services => services.Replace(ServiceDescriptor.Singleton<IClock>(Clock)));
+        if (logs is not null)
+        {
+            builder.ConfigureLogging(logging => logging.AddProvider(logs));
+        }
     }
 }
