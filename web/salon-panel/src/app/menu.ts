@@ -50,7 +50,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Değerlendirmeler',
     to: '/degerlendirmeler',
     permission: 'review.view',
-    available: false,
+    available: true,
     group: 'isletme',
   },
   {

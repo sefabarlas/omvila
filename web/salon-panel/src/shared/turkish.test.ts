@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dative, dativeCount, locativeTime } from './turkish';
+import { accusativeCount, dative, dativeCount, genitive, locativeTime } from './turkish';
 
 // Kural: dilim-02 kabul kriteri 12 ("Zeynep Aksoy'a taşı"), RandevuOnayli ("Gelmezse 13:15'te otomatik").
 describe('yönelme eki', () => {
@@ -61,5 +61,30 @@ describe('sayının yönelme eki', () => {
     [2_000_000, "2.000.000'a"],
   ])('%s → %s', (n, expected) => {
     expect(dativeCount(n)).toBe(expected);
+  });
+});
+
+// Kural: salon-paneli/MusteriSil ("Selin Öztürk'ün adı…"), Degerlendirmeler ("davet edilenlerin %38'i").
+describe('tamlayan ve belirtme ekleri', () => {
+  it.each([
+    ['Selin Öztürk', "Selin Öztürk'ün"],
+    ['Elif Kaya', "Elif Kaya'nın"],
+    ['Tuna Oral', "Tuna Oral'ın"],
+    ['Mert Demir', "Mert Demir'in"],
+    ['Gül Ufuk', "Gül Ufuk'un"],
+  ])('%s → %s', (name, expected) => {
+    expect(genitive(name)).toBe(expected);
+  });
+
+  it.each([
+    [38, "38'i"],
+    [40, "40'ı"],
+    [6, "6'yı"],
+    [100, "100'ü"],
+    [3, "3'ü"],
+    [10, "10'u"],
+    [0, "0'ı"],
+  ])('%s → %s', (n, expected) => {
+    expect(accusativeCount(n)).toBe(expected);
   });
 });

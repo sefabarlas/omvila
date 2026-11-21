@@ -74,3 +74,33 @@ export function dativeCount(n: number): string {
   const vowel = backVowels.has(lastVowel(word) ?? 'e') ? 'a' : 'e';
   return `${formatCount(n)}'${endsWithVowel(word) ? 'y' : ''}${vowel}`;
 }
+
+function highVowel(vowel: string): string {
+  if ('aı'.includes(vowel)) {
+    return 'ı';
+  }
+
+  if ('eiâî'.includes(vowel)) {
+    return 'i';
+  }
+
+  return 'ouû'.includes(vowel) ? 'u' : 'ü';
+}
+
+/**
+ * Özel adın tamlayan eki (-ın/-in/-un/-ün): "Selin Öztürk" → "Selin Öztürk'ün", "Elif Kaya" → "Elif Kaya'nın".
+ * Ünlüyle biten kelimeye kaynaştırma "n" gelir.
+ */
+export function genitive(name: string): string {
+  const trimmed = name.trim();
+  const last = trimmed.split(/\s+/).at(-1) ?? '';
+  const vowel = highVowel(lastVowel(last) ?? 'e');
+  return `${trimmed}'${endsWithVowel(last) ? 'n' : ''}${vowel}n`;
+}
+
+/** Sayının belirtme hâli, okunuşa göre: 38 → "38'i", 40 → "40'ı", 6 → "6'yı", 100 → "100'ü". */
+export function accusativeCount(n: number): string {
+  const word = spokenLastWord(Math.abs(Math.trunc(n)));
+  const vowel = highVowel(lastVowel(word) ?? 'e');
+  return `${formatCount(n)}'${endsWithVowel(word) ? 'y' : ''}${vowel}`;
+}
