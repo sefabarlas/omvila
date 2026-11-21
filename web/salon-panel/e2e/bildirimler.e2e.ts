@@ -54,5 +54,5 @@ test('"Tümünü okundu say" ve "Kontör al"', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Bildirimler', exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Kontör al' }).click();
-  await expect(page).toHaveURL(/\/ayarlar\//);
+  await expect(page).toHaveURL(/\/ayarlar\/bildirimler$/);
 });

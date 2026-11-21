@@ -125,7 +125,7 @@ describe('kontör az şeridi', () => {
     ).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Kontör al' }));
     await waitFor(() => {
-      expect(router.state.location.pathname).toMatch(/^\/ayarlar/);
+      expect(router.state.location.pathname).toBe('/ayarlar/bildirimler');
     });
   });
 
