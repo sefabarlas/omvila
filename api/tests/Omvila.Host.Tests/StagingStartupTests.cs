@@ -6,7 +6,7 @@ using Omvila.TestKit;
 namespace Omvila.Host.Tests;
 
 // Kural: T-73 — test sunucusu (Staging): sahte SMS/push yalnız Staging:AllowFakeProviders=true iken, Production'da hiçbir
-// ayarla; imza ve OTP anahtarı gizli değerden, eksikse açılış durur; CORS kökenleri https (T-60).
+// ayarla; imza, OTP ve IBAN (T-78) anahtarı gizli değerden, eksikse açılış durur; CORS kökenleri https (T-60).
 // appsettings.Staging.json gerçek dosyadır (Sms/Push Provider=Fake); gizli değerler ortam değişkeni gibi verilir.
 public sealed class StagingStartupTests
 {
@@ -45,6 +45,7 @@ public sealed class StagingStartupTests
     [Theory]
     [InlineData("Auth:Otp:HmacKey", "Auth__Otp__HmacKey")]
     [InlineData("Auth:SigningKeys:0:PrivateKeyPem", "Auth__SigningKeys__0__PrivateKeyPem")]
+    [InlineData("Tenancy:IbanEncryptionKey", "Tenancy__IbanEncryptionKey")]
     public async Task Staging_WithoutSecret_FailsAtStartup(string missingKey, string expectedHint)
     {
         var settings = Secrets(allowFake: "true");
@@ -73,6 +74,7 @@ public sealed class StagingStartupTests
             ["Auth:Otp:HmacKey"] = TestSigningKey.OtpHmacKey,
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
+            ["Tenancy:IbanEncryptionKey"] = TestSigningKey.IbanEncryptionKey,
             ["Cors:Surfaces:Manage:Origins:0"] = "https://salon.test.omvila.com.tr",
             ["Cors:Surfaces:Public:Origins:0"] = "https://randevu.test.omvila.com.tr",
         };

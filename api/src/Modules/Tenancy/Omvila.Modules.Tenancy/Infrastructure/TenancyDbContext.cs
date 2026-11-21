@@ -13,6 +13,8 @@ internal sealed class TenancyDbContext(DbContextOptions<TenancyDbContext> option
 
     public DbSet<BookingPageSettings> BookingPageSettings => Set<BookingPageSettings>();
 
+    public DbSet<BrandBankAccount> BankAccounts => Set<BrandBankAccount>();
+
     public DbSet<BrandSlugHistory> SlugHistory => Set<BrandSlugHistory>();
 
     public DbSet<Branch> Branches => Set<Branch>();

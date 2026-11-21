@@ -51,4 +51,10 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: SmsUsageWindowDays 30 ("bu tempoyla ~18 gün yeter" son 30 günün ortalamasıyla; sözleşme SmsOverview).</summary>
     public const int SmsUsageWindowDays = 30;
+
+    /// <summary>sureler-ve-ayarlar.md § Kapora: TransferCodePrefix varsayılanı ("OMV-7K2X").</summary>
+    public const string TransferCodePrefix = "OMV";
+
+    /// <summary>sureler-ve-ayarlar.md § Kapora: TransferWindowMinutes varsayılanı (havale süresi 120 dk).</summary>
+    public const int TransferWindowMinutes = 120;
 }

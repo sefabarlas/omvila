@@ -17,4 +17,7 @@ public static class TestSigningKey
 
     /// <summary>OTP HMAC anahtarı (base64, 32 bayt); çalışma başına üretilir.</summary>
     public static string OtpHmacKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>IBAN şifreleme anahtarı (AES-256, base64, 32 bayt); çalışma başına üretilir.</summary>
+    public static string IbanEncryptionKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 }

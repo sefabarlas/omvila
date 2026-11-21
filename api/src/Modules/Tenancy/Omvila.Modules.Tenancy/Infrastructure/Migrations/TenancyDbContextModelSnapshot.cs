@@ -322,6 +322,76 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandBankAccount", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<string>("AccountHolderName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("account_holder_name");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("bank_name");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<byte[]>("IbanEncrypted")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("iban_encrypted");
+
+                    b.Property<string>("IbanLast4")
+                        .IsRequired()
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("iban_last4");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("TransferCodePrefix")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("transfer_code_prefix");
+
+                    b.Property<int>("TransferWindowMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("transfer_window_minutes");
+
+                    b.Property<Instant>("UpdatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_utc");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("BrandId")
+                        .HasName("pk_brand_bank_accounts");
+
+                    b.ToTable("brand_bank_accounts", "tenancy", t =>
+                        {
+                            t.HasCheckConstraint("ck_brand_bank_accounts_iban_last4", "iban_last4 ~ '^[0-9]{4}$'");
+
+                            t.HasCheckConstraint("ck_brand_bank_accounts_transfer_code_prefix", "transfer_code_prefix ~ '^[A-Z]{2,5}$'");
+
+                            t.HasCheckConstraint("ck_brand_bank_accounts_transfer_window", "transfer_window_minutes IN (60, 120, 240)");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandOnboarding", b =>
                 {
                     b.Property<Guid>("BrandId")
@@ -786,6 +856,16 @@ namespace Omvila.Modules.Tenancy.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_branch_working_hours_branches_branch_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandBankAccount", b =>
+                {
+                    b.HasOne("Omvila.Modules.Tenancy.Domain.Brand", null)
+                        .WithOne()
+                        .HasForeignKey("Omvila.Modules.Tenancy.Domain.BrandBankAccount", "BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_brand_bank_accounts_brands_brand_id");
                 });
 
             modelBuilder.Entity("Omvila.Modules.Tenancy.Domain.BrandOnboarding", b =>

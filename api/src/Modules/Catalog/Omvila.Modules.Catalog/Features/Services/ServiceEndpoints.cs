@@ -23,9 +23,6 @@ namespace Omvila.Modules.Catalog.Features.Services;
 /// </summary>
 internal static class ServiceEndpoints
 {
-    // S-22: salon IBAN'ı (BrandBankAccount) Dilim 4'te; o zamana kadar "Her zaman iste" kaporası açılamaz.
-    private const bool HasActiveBankAccount = false;
-
     public static void Map(IEndpointRouteBuilder app)
     {
         var group = app.MapApiGroup("/api/v1/manage/services", Audiences.Manage);
@@ -85,7 +82,7 @@ internal static class ServiceEndpoints
 
     private static async Task<IResult> CreateAsync(
         ServiceWriteRequest body, HttpContext http, ITenantContext tenant, CatalogDbContext db, ITenantQueries tenants,
-        IIdGenerator ids, IClock clock, CancellationToken ct)
+        IBrandBankAccounts bankAccounts, IIdGenerator ids, IClock clock, CancellationToken ct)
     {
         if (!BranchScope.From(http.User).All)
         {
@@ -94,7 +91,7 @@ internal static class ServiceEndpoints
 
         var brandId = tenant.RequireBrandId();
         var defaultSort = (await db.Services.Where(s => s.BrandId == brandId).MaxAsync(s => (int?)s.SortOrder, ct) ?? 0) + 1;
-        var validated = await ValidateAsync(body, brandId, exceptId: null, defaultSort, db, tenants, ct);
+        var validated = await ValidateAsync(body, brandId, exceptId: null, defaultSort, db, tenants, bankAccounts, ct);
         if (!validated.IsSuccess)
         {
             return validated.Error.ToProblem();
@@ -111,7 +108,7 @@ internal static class ServiceEndpoints
 
     private static async Task<IResult> UpdateAsync(
         Guid serviceId, ServiceWriteRequest body, HttpContext http, ITenantContext tenant, CatalogDbContext db, ITenantQueries tenants,
-        IIdGenerator ids, CancellationToken ct)
+        IBrandBankAccounts bankAccounts, IIdGenerator ids, CancellationToken ct)
     {
         var brandId = tenant.RequireBrandId();
         var service = await db.Services.SingleOrDefaultAsync(s => s.Id == serviceId && s.BrandId == brandId, ct);
@@ -130,7 +127,7 @@ internal static class ServiceEndpoints
             return Error.PreconditionFailed().ToProblem();
         }
 
-        var validated = await ValidateAsync(body, brandId, serviceId, service.SortOrder, db, tenants, ct);
+        var validated = await ValidateAsync(body, brandId, serviceId, service.SortOrder, db, tenants, bankAccounts, ct);
         if (!validated.IsSuccess)
         {
             return validated.Error.ToProblem();
@@ -144,7 +141,8 @@ internal static class ServiceEndpoints
     }
 
     private static async Task<Result<ServiceDetails>> ValidateAsync(
-        ServiceWriteRequest body, Guid brandId, Guid? exceptId, int defaultSort, CatalogDbContext db, ITenantQueries tenants, CancellationToken ct)
+        ServiceWriteRequest body, Guid brandId, Guid? exceptId, int defaultSort, CatalogDbContext db, ITenantQueries tenants,
+        IBrandBankAccounts bankAccounts, CancellationToken ct)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
         var details = body.ToDetails(defaultSort, errors);
@@ -153,7 +151,8 @@ internal static class ServiceEndpoints
             return Error.Validation(errors);
         }
 
-        var rules = ServiceRules.Validate(details.Draft, HasActiveBankAccount);
+        // Kural: alan-modeli.md § BrandBankAccount — "Her zaman iste" kaporası aktif hesap (IBAN) ister.
+        var rules = ServiceRules.Validate(details.Draft, await bankAccounts.HasActiveAsync(brandId, ct));
         if (!rules.IsSuccess)
         {
             return rules.Error;

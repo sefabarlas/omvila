@@ -47,7 +47,9 @@ internal sealed class PublicBookingQueries(
         await (from s in db.BrandSettings.AsNoTracking()
                join p in db.BookingPageSettings.AsNoTracking() on s.BrandId equals p.BrandId
                where s.BrandId == brandId
-               select new PublicBookingOptions(s.AllowStaffSelection, s.AllowAnyStaffOption, p.ShowPrices)).SingleAsync(ct);
+               select new PublicBookingOptions(
+                   s.AllowStaffSelection, s.AllowAnyStaffOption, p.ShowPrices, s.DepositPolicy,
+                   db.BankAccounts.Any(a => a.BrandId == brandId && a.IsActive))).SingleAsync(ct);
 
     public async Task<IReadOnlyList<PublicStaffCard>> GetBookableStaffAsync(Guid brandId, Guid branchId, CancellationToken ct)
     {

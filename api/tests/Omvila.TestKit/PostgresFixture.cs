@@ -143,6 +143,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Auth:Otp:HmacKey"] = TestSigningKey.OtpHmacKey,
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
+            ["Tenancy:IbanEncryptionKey"] = TestSigningKey.IbanEncryptionKey,
         };
     }
 

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Tenancy.Contracts;
+using Omvila.Modules.Tenancy.Features.BankAccount;
 using Omvila.Modules.Tenancy.Features.Brand;
 using Omvila.Modules.Tenancy.Features.Branches;
 using Omvila.Modules.Tenancy.Features.NotificationSettings;
@@ -12,6 +14,7 @@ using Omvila.Modules.Tenancy.Features.PublicBrand;
 using Omvila.Modules.Tenancy.Features.Staff;
 using Omvila.SharedKernel;
 using Omvila.Modules.Tenancy.Infrastructure;
+using Omvila.Modules.Tenancy.Infrastructure.BankAccounts;
 
 namespace Omvila.Modules.Tenancy;
 
@@ -22,7 +25,12 @@ public static class TenancyModule
     {
         services.AddOptions<TenancyOptions>()
             .Bind(configuration.GetSection(TenancyOptions.Section))
-            .Validate(o => o.IsValid(), "Tenancy ayarları eksik veya geçersiz (appsettings \"Tenancy\").");
+            .Validate(o => o.IsValid(), "Tenancy ayarları eksik veya geçersiz (appsettings \"Tenancy\").")
+            .ValidateOnStart();
+        // IBAN şifreleme anahtarı Staging/Production'da gizli değerden; eksikse açılış durur (T-73 deseni, T-78).
+        services.AddSingleton<IValidateOptions<TenancyOptions>, TenancySecretsValidator>();
+        services.AddSingleton<IbanProtector>();
+        services.AddScoped<IBrandBankAccounts, BrandBankAccounts>();
         services.AddModuleDbContext<TenancyDbContext>(TenancyDbContext.Schema);
         services.AddScoped<SlugRegistry>();
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();
@@ -52,6 +60,7 @@ public static class TenancyModule
     {
         OnboardingEndpoints.Map(app);
         BrandEndpoints.Map(app);
+        BankAccountEndpoints.Map(app);
         NotificationSettingsEndpoints.Map(app);
         BranchEndpoints.Map(app);
         StaffEndpoints.Map(app);
