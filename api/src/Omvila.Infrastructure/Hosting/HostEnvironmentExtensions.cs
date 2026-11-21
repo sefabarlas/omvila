@@ -37,6 +37,16 @@ public static class HostEnvironmentExtensions
     }
 
     /// <summary>
+    /// Demo verisi yapılandırılmış IBAN şifreleme anahtarı ister mi (T-85): Testing dışında evet. Seed ayrı bir süreçtir;
+    /// Development'taki süreç başına geçici anahtarla yazılan IBAN'ı API süreci çözemez. Testing'de seed ve API aynı süreçtedir.
+    /// </summary>
+    public static bool DemoDataRequiresIbanKey(this IHostEnvironment environment)
+    {
+        ArgumentNullException.ThrowIfNull(environment);
+        return !environment.IsEnvironment(Testing);
+    }
+
+    /// <summary>
     /// SMS metni (giriş kodu dahil) günlüğe yazılabilir mi: yalnız Development (kodlama-dotnet.md § Günlük). Test sunucusunda
     /// metin günlüğe değil sahte SMS günlüğü sayfasına (/dev/sms, T-76) bakılarak okunur.
     /// </summary>

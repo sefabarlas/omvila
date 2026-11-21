@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -10,6 +11,8 @@ namespace Omvila.Api.IntegrationTests;
 // Kural: acik-sorular.md T-74 (demo verisi komutu `--role=seed [--reset]`): idempotent, Production'da red, --reset yalnız
 // demo markasını siler ve yeniden kurar, sahip ve personel panele girebilir, kurulum SMS üretmez.
 // Saat: 2026-11-25 09:00Z (Çarşamba 12:00 İstanbul); onay bekleyen talepler Perşembe ve Cuma, Elif ve Zeynep (4 talep).
+// T-85: kapora hesabı ve politikası, aynı günlerin ikinci randevusunda dört kapora durumu (Awaiting, CustomerReported, Received
+// tahsilatla, Waived); --reset Sales tahsilatlarını da siler (RowsAsync brand_id taşıyan bütün tablolar).
 [Trait("Category", "Integration")]
 [Collection(PostgresTests.Name)]
 public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
@@ -53,7 +56,7 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
             (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = '{status}'")).ShouldBeGreaterThan(0, status);
         }
 
-        (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = 'PendingApproval' AND hold_expires_utc > '2026-11-25T09:00:00Z'"))
+        (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = 'PendingApproval' AND deposit_required_minor IS NULL AND hold_expires_utc > '2026-11-25T09:00:00Z'"))
             .ShouldBe(4);
         (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = 'Confirmed' AND start_utc < '2026-11-25T09:00:00Z'"))
             .ShouldBe(0, "geçmişte onaylı randevu kalırsa MarkNoShows işi onları Gelmedi yapar");
@@ -74,6 +77,34 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Seed_AddsDepositAccountAndDepositAppointments()
+    {
+        (await SeedAsync(reset: false)).Code.ShouldBe(0);
+
+        // Aktif hesap, RiskyCustomersOnly + eşik 2, Balyaj %30 ve Keratin 150 ₺; dört kapora durumu, yalnız riskli müşterilerde.
+        (await CountAsync($"SELECT count(*) FROM tenancy.brand_bank_accounts WHERE brand_id = {Brand} AND is_active AND iban_last4 = '8901' AND transfer_window_minutes = 120"))
+            .ShouldBe(1);
+        (await CountAsync($"SELECT count(*) FROM tenancy.brand_settings WHERE brand_id = {Brand} AND deposit_policy = 'RiskyCustomersOnly' AND risky_customer_no_show_threshold = 2"))
+            .ShouldBe(1);
+        (await CountAsync($"SELECT count(*) FROM catalog.services WHERE brand_id = {Brand} AND deposit_mode = 'Inherit' AND (deposit_percent = 30 OR deposit_amount_minor = 15000)"))
+            .ShouldBe(2);
+        const string Deposit = "FROM scheduling.appointments WHERE brand_id = " + Brand + " AND deposit_required_minor > 0 AND channel = 'Online'";
+        (await CountAsync($"SELECT count(*) {Deposit}")).ShouldBe(4);
+        (await CountAsync($"SELECT count(*) {Deposit} AND status = 'PendingApproval' AND deposit_customer_reported_utc IS NULL AND hold_expires_utc = '2026-11-25T11:00:00Z'"))
+            .ShouldBe(1, "Kapora bekleniyor (Awaiting), havale süresi seed anından");
+        (await CountAsync($"SELECT count(*) {Deposit} AND status = 'PendingApproval' AND deposit_customer_reported_utc IS NOT NULL")).ShouldBe(1, "Havale bildirildi");
+        (await CountAsync($"SELECT count(*) {Deposit} AND status = 'Confirmed' AND deposit_received_utc IS NOT NULL AND deposit_payment_id IS NOT NULL")).ShouldBe(1, "Kapora alındı");
+        (await CountAsync($"SELECT count(*) {Deposit} AND status = 'Confirmed' AND deposit_waived_utc IS NOT NULL")).ShouldBe(1, "Kaporasız onay");
+        (await CountAsync($"SELECT count(*) {Deposit} AND brand_customer_id NOT IN (SELECT id FROM customers.brand_customers WHERE no_show_count >= 2)"))
+            .ShouldBe(0, "kapora yalnız riskli müşterilerde");
+        (await CountAsync(
+            "SELECT count(*) FROM sales.payments p JOIN sales.payment_allocations a ON a.payment_id = p.id JOIN scheduling.appointments s ON s.deposit_payment_id = p.id "
+            + $"WHERE p.brand_id = {Brand} AND p.is_deposit AND p.method = 'Transfer' AND p.amount_minor = s.deposit_required_minor AND p.reference = s.deposit_transfer_code"))
+            .ShouldBe(1);
+        (await CountAsync("SELECT count(*) FROM infra.outbox_events")).ShouldBe(0, "kapora geçişleri de olay yazmaz");
+    }
+
+    [Fact]
     public async Task Seed_OwnerAndStaffCanSignIn_AndPanelOpensActive()
     {
         (await SeedAsync(reset: false)).Code.ShouldBe(0);
@@ -86,6 +117,13 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
         session.GetProperty("membership").GetProperty("role").GetString().ShouldBe("Owner");
         session.GetProperty("branches").GetArrayLength().ShouldBe(2);
         session.GetProperty("smsCredits").GetProperty("balance").GetInt32().ShouldBe(1000);
+
+        // Kapora hesabı API sürecinde çözülür (aynı şifreleme anahtarı); tam IBAN dönmez.
+        var account = await _api.GetAsync("/api/v1/manage/brand/bank-account", owner.Body.GetProperty("accessToken").GetString()!);
+        account.Status.ShouldBe(200);
+        account.Body.GetProperty("configured").GetBoolean().ShouldBeTrue();
+        account.Body.GetProperty("ibanMasked").GetString().ShouldBe("TR29 •••• 6789 01");
+        account.Body.GetProperty("accountHolderName").GetString().ShouldBe("Elif Kaya");
 
         var manager = await _api.SignInAsync("+905550000004");
         manager.Status.ShouldBe(200);
@@ -104,6 +142,18 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
         output.ToString().ShouldContain("Production");
         (await CountAsync("SELECT count(*) FROM tenancy.brands")).ShouldBe(0);
         (await CountAsync("SELECT count(*) FROM identity.users")).ShouldBe(0);
+    }
+
+    [Fact]
+    public void IbanKey_RequiredOutsideTesting()
+    {
+        var empty = new ConfigurationBuilder().Build();
+        var keyed = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal) { ["Tenancy:IbanEncryptionKey"] = "anahtar" }).Build();
+
+        DemoSeedCommand.IbanKeyError(new Environment("Development"), empty).ShouldNotBeNull().ShouldContain("Tenancy__IbanEncryptionKey");
+        DemoSeedCommand.IbanKeyError(new Environment("Staging"), empty).ShouldNotBeNull();
+        DemoSeedCommand.IbanKeyError(new Environment("Development"), keyed).ShouldBeNull();
+        DemoSeedCommand.IbanKeyError(new Environment("Testing"), empty).ShouldBeNull("seed ve API aynı süreçte, geçici anahtar paylaşılır");
     }
 
     [Fact]

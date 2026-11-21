@@ -58,6 +58,11 @@ test('kaporalı randevu: Onay kapora kutusu → Havale → bildir → Salon onay
   );
   await page.getByRole('button', { name: 'Kopyala Açıklama kodu' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('OMV-7K2X');
+  // KK3: dört alanın dördü de kopyalanır (alıcı ve tutar da).
+  await page.getByRole('button', { name: 'Kopyala Alıcı' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Elif Kaya');
+  await page.getByRole('button', { name: 'Kopyala Tutar' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('150');
 
   await page.getByRole('button', { name: 'Havaleyi yaptım, salona bildir' }).click();
   await expect(page.getByRole('heading', { name: 'Salon onayı bekleniyor' })).toBeVisible();

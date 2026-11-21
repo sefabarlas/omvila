@@ -60,7 +60,8 @@ public static class SchedulingModule
         // Demo verisi (--role=seed; T-74): randevular AppointmentWriter ile; --reset'te markanın randevuları.
         services.AddScoped(sp => new DemoData.SchedulingDemoData(
             sp.GetRequiredService<SchedulingDbContext>(), sp.GetRequiredService<AppointmentWriter>(),
-            sp.GetRequiredService<Tenancy.Contracts.ITenantQueries>(), sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>()));
+            sp.GetRequiredService<Tenancy.Contracts.ITenantQueries>(), sp.GetRequiredService<Tenancy.Contracts.IBrandBankAccounts>(),
+            sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>(), sp.GetRequiredService<Sales.Contracts.IDepositPayments>()));
         services.AddBrandDataEraser<SchedulingDbContext>();
         return services;
     }

@@ -50,7 +50,7 @@ public static class TenancyModule
         // Demo verisi (--role=seed; T-74): şube, saat, personel, kurulum; --reset'te markanın satırları (marka en son).
         services.AddScoped(sp => new DemoData.TenancyDemoData(
             sp.GetRequiredService<TenancyDbContext>(), sp.GetRequiredService<Identity.Contracts.IStaffMemberships>(),
-            sp.GetRequiredService<OnboardingService>(), sp.GetRequiredService<IIdGenerator>(), sp.GetRequiredService<NodaTime.IClock>()));
+            sp.GetRequiredService<OnboardingService>(), sp.GetRequiredService<IbanProtector>(), sp.GetRequiredService<IIdGenerator>(), sp.GetRequiredService<NodaTime.IClock>()));
         services.AddBrandDataEraser<TenancyDbContext>(typeof(Domain.Brand));
         return services;
     }

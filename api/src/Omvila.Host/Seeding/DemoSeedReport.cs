@@ -38,6 +38,10 @@ internal sealed record DemoSeedReport(
         {
             await output.WriteLineAsync($"Şube {Branches}, hizmet {Services}, müşteri {Customers}, SMS kontörü {SmsCredits}");
             await output.WriteLineAsync("Randevular: " + string.Join(", ", Appointments.Select(a => $"{a.Key} {a.Value}")));
+            var iban = Iban.TryParse(DemoDataSet.BankAccount.Iban, out var parsed) ? parsed.Masked : string.Empty;
+            await output.WriteLineAsync(
+                $"Kapora: {DemoDataSet.DepositPolicy} (eşik {DemoDataSet.RiskyCustomerNoShowThreshold} gelmeme; {DemoDataSet.Customers[0]} ve "
+                + $"{DemoDataSet.Customers[1]}), hesap {DemoDataSet.BankAccount.BankName} {iban}, havale süresi {DemoDataSet.BankAccount.TransferWindowMinutes} dk");
         }
     }
 

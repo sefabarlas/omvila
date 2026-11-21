@@ -95,7 +95,9 @@ internal sealed class DemoSeeder(
     {
         await tenancy.SetUpFirstBranchAsync(tenant.BrandId, tenant.BranchId, DemoDataSet.Kadikoy, ct);
         var nisantasi = await tenancy.AddBranchAsync(tenant.BrandId, DemoDataSet.Nisantasi, ct);
-        await tenancy.SetApprovalTimeoutAsync(tenant.BrandId, DemoDataSet.ApprovalTimeoutMinutes, ct);
+        await tenancy.SetBookingRulesAsync(
+            tenant.BrandId, DemoDataSet.ApprovalTimeoutMinutes, DemoDataSet.DepositPolicy, DemoDataSet.RiskyCustomerNoShowThreshold, ct);
+        await tenancy.AddBankAccountAsync(tenant.BrandId, DemoDataSet.BankAccount, ct);
         await tenancy.SetStaffHoursAsync(tenant.OwnerStaffId, tenant.BranchId, DemoDataSet.OwnerTitle, DemoDataSet.OwnerHours, ct);
 
         var staff = new List<SeededStaff> { new(DemoDataSet.OwnerName, tenant.OwnerStaffId, tenant.BranchId, IsBookableOnline: true, DemoDataSet.OwnerHours) };
@@ -129,9 +131,10 @@ internal sealed class DemoSeeder(
                 brandId,
                 new DemoService(
                     categories[seed.Category], seed.Name, seed.Description, seed.DurationMinutes, new Money(seed.PriceMinor, PlatformDefaults.DefaultCurrency),
-                    seed.StartingFrom, seed.RequiresApproval, IsOnlineBookable: true, staffIds),
+                    seed.StartingFrom, seed.RequiresApproval, IsOnlineBookable: true, staffIds, seed.DepositPercent,
+                    seed.DepositAmountMinor is { } deposit ? new Money(deposit, PlatformDefaults.DefaultCurrency) : null),
                 ct);
-            services.Add(new SeededService(id, seed.DurationMinutes, seed.RequiresApproval == true, staffIds));
+            services.Add(new SeededService(id, seed.DurationMinutes, seed.RequiresApproval == true, seed.HasDeposit, staffIds));
         }
 
         return services;
@@ -141,7 +144,8 @@ internal sealed class DemoSeeder(
     /// Personel × gün başına 2–3 randevu, çalışma aralıkları içinde art arda (çakışma olmaz). Geçmişte biten: Geldi (tamamlama
     /// adisyonla, D6), ilk iki müşterinin ilk iki geçmiş randevusu Gelmedi, bir kısmı salon iptali. Şu an süren: Geldi. Gelecek:
     /// Onaylandı, bir kısmı salon veya müşteri iptali. Online randevu alan personelin yarından sonraki ilk
-    /// <see cref="DemoDataSet.PendingDays"/> çalışma gününde günün ilk randevusu onay gerektiren hizmetle Onay bekliyor.
+    /// <see cref="DemoDataSet.PendingDays"/> çalışma gününde günün ilk randevusu onay gerektiren hizmetle Onay bekliyor, ikinci
+    /// randevusu sırayla <see cref="DemoDataSet.DepositOutcomes"/> (kaporalı hizmet, riskli müşteri; T-85).
     /// </summary>
     private async Task<Dictionary<DemoAppointmentOutcome, int>> AddAppointmentsAsync(
         Guid brandId, List<SeededStaff> staff, List<SeededService> services, List<EnsuredBrandCustomer> cards, CancellationToken ct)
@@ -153,6 +157,7 @@ internal sealed class DemoSeeder(
         var noShows = new int[cards.Count];
         var ordinal = 0;
         var futureWorkdays = new int[staff.Count];
+        var depositsMade = 0;
         for (var offset = -DemoDataSet.DaysBack; offset <= DemoDataSet.DaysAhead; offset++)
         {
             var date = today.PlusDays(offset);
@@ -162,7 +167,6 @@ internal sealed class DemoSeeder(
                 var member = staff[s];
                 var intervals = member.Hours.Where(h => h.Day == date.DayOfWeek).OrderBy(h => h.Start).ToList();
                 var offered = services.Where(x => x.StaffIds.Contains(member.Id)).ToList();
-                var approval = offered.Where(x => x.RequiresApproval).ToList();
                 var count = 2 + (Math.Abs(offset + s) % 2);
                 if (offset >= 1 && intervals.Count > 0)
                 {
@@ -172,8 +176,8 @@ internal sealed class DemoSeeder(
                 var cursor = intervals.Count > 0 ? intervals[0].Start.PlusMinutes(FirstSlotOffsetMinutes) : default;
                 for (var made = 0; made < count && intervals.Count > 0; made++)
                 {
-                    var pending = offset >= 1 && futureWorkdays[s] <= DemoDataSet.PendingDays && made == 0 && member.IsBookableOnline && approval.Count > 0;
-                    var service = pending ? approval[offset % approval.Count] : offered[Math.Abs((offset * 3) + s + made) % offered.Count];
+                    var early = offset >= 1 && futureWorkdays[s] <= DemoDataSet.PendingDays && member.IsBookableOnline;
+                    var (service, forced) = Pick(offered, early, made, offset, s, depositsMade);
                     if (Fit(intervals, cursor, service.DurationMinutes) is not { } local)
                     {
                         break;
@@ -181,12 +185,20 @@ internal sealed class DemoSeeder(
 
                     var start = date.At(local).InZoneLeniently(zone).ToInstant();
                     var end = start + Duration.FromMinutes(service.DurationMinutes);
-                    var customer = ((offset + DemoDataSet.DaysBack) * 5 + dayOrdinal) % cards.Count;
-                    var outcome = pending ? DemoAppointmentOutcome.PendingApproval : Decide(start, end, now, customer, ordinal, noShows);
+                    var deposit = forced is not null and not DemoAppointmentOutcome.PendingApproval;
+                    var customer = deposit ? RiskyCustomer(noShows, depositsMade) : ((offset + DemoDataSet.DaysBack) * 5 + dayOrdinal) % cards.Count;
+                    var outcome = forced ?? Decide(start, end, now, customer, ordinal, noShows);
                     await scheduling.AddAsync(
-                        new DemoAppointment(brandId, member.BranchId, cards[customer].CustomerId, cards[customer].BrandCustomerId, start, service.Id, member.Id, outcome),
+                        new DemoAppointment(
+                            brandId, member.BranchId, cards[customer].CustomerId, cards[customer].BrandCustomerId, start, service.Id, member.Id, outcome,
+                            noShows[customer]),
                         now,
                         ct);
+                    if (deposit)
+                    {
+                        depositsMade++;
+                    }
+
                     outcomes[outcome]++;
                     ordinal++;
                     dayOrdinal++;
@@ -196,6 +208,37 @@ internal sealed class DemoSeeder(
         }
 
         return outcomes;
+    }
+
+    /// <summary>
+    /// Randevunun hizmeti ve (varsa) zorunlu sonucu: erken günlerde günün ilk randevusu onay gerektiren hizmetle Onay bekliyor,
+    /// ikincisi sıradaki kaporalı sonuç; diğerleri <see cref="Decide"/> ile.
+    /// </summary>
+    private static (SeededService Service, DemoAppointmentOutcome? Forced) Pick(
+        List<SeededService> offered, bool early, int made, int offset, int staffIndex, int depositsMade)
+    {
+        var approval = offered.Where(x => x.RequiresApproval).ToList();
+        var withDeposit = offered.Where(x => x.HasDeposit).ToList();
+        if (early && made == 0 && approval.Count > 0)
+        {
+            return (approval[offset % approval.Count], DemoAppointmentOutcome.PendingApproval);
+        }
+
+        if (early && made == 1 && withDeposit.Count > 0 && depositsMade < DemoDataSet.DepositOutcomes.Count)
+        {
+            return (withDeposit[depositsMade % withDeposit.Count], DemoDataSet.DepositOutcomes[depositsMade]);
+        }
+
+        return (offered[Math.Abs((offset * 3) + staffIndex + made) % offered.Count], null);
+    }
+
+    /// <summary>Kapora istenecek (riskli eşiğine ulaşmış) müşterilerden sıradaki; geçmiş Gelmedi'ler gelecekten önce yazılır.</summary>
+    private static int RiskyCustomer(int[] noShows, int turn)
+    {
+        var risky = Enumerable.Range(0, noShows.Length).Where(i => noShows[i] >= DemoDataSet.RiskyCustomerNoShowThreshold).ToList();
+        return risky.Count > 0
+            ? risky[turn % risky.Count]
+            : throw new DomainException("Demo verisinde kapora istenecek riskli müşteri yok.");
     }
 
     private static DemoAppointmentOutcome Decide(Instant start, Instant end, Instant now, int customer, int ordinal, int[] noShows)
@@ -243,5 +286,5 @@ internal sealed class DemoSeeder(
 
     private sealed record SeededStaff(string Name, Guid Id, Guid BranchId, bool IsBookableOnline, IReadOnlyList<DemoHours> Hours);
 
-    private sealed record SeededService(Guid Id, int DurationMinutes, bool RequiresApproval, IReadOnlyList<Guid> StaffIds);
+    private sealed record SeededService(Guid Id, int DurationMinutes, bool RequiresApproval, bool HasDeposit, IReadOnlyList<Guid> StaffIds);
 }

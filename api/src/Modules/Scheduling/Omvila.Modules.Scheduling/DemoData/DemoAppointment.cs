@@ -2,7 +2,10 @@ using NodaTime;
 
 namespace Omvila.Modules.Scheduling.DemoData;
 
-/// <summary>Tek kalemli demo randevusu.</summary>
+/// <summary>
+/// Tek kalemli demo randevusu. <paramref name="CustomerNoShowCount"/>: kapora çözümü için müşterinin o anki gelmeme sayısı
+/// (yalnız kaporalı sonuçlarda kullanılır; RiskyCustomersOnly politikasında eşiğe ulaşmalı).
+/// </summary>
 public sealed record DemoAppointment(
     Guid BrandId,
     Guid BranchId,
@@ -11,4 +14,5 @@ public sealed record DemoAppointment(
     Instant StartUtc,
     Guid ServiceId,
     Guid StaffId,
-    DemoAppointmentOutcome Outcome);
+    DemoAppointmentOutcome Outcome,
+    int CustomerNoShowCount = 0);

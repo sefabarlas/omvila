@@ -100,12 +100,11 @@ export function demoCalendar(url: URL) {
           customerName: customer,
           serviceName: service,
           isRecurring: recurring ?? false,
+          // Onay bekleyenlerin ilki 13:45'te düşer: takvim bentosu Main ve Genel bakışla aynı "ilki 1 sa 35 dk".
           holdExpiresUtc:
-            display === 'PendingApproval'
-              ? utc(date, '23:00')
-              : display === 'DepositPending'
-                ? utc(date, '13:45')
-                : null,
+            display === 'PendingApproval' || display === 'DepositPending'
+              ? utc(date, '13:45')
+              : null,
           segments: gap
             ? [
                 { startUtc: utc(date, start), endUtc: utc(date, gap[0]), staffBusy: true },
