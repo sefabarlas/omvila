@@ -42,7 +42,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Kasa',
     to: '/kasa',
     permission: 'payment.collect',
-    available: false,
+    available: true,
     group: 'isletme',
   },
   {

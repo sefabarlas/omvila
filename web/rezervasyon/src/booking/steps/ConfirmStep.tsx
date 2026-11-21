@@ -1,12 +1,19 @@
-import { BookingButton } from '@omvila/ui-web/booking';
-import { formatMoney, formatTime } from '@omvila/ui-web/format';
-import { CalendarX } from 'lucide-react';
-import { useState } from 'react';
+import { BookingButton, SwitchCard } from '@omvila/ui-web/booking';
+import { formatDate, formatMoney, formatTime } from '@omvila/ui-web/format';
+import { CalendarX, Package } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { StateBanner } from '@/components/StateBanner';
 import { privacyNoticeVersion } from '@/lib/legal';
-import { createAppointment } from '../booking-api';
-import type { ItemRequest, Money, PublicAppointment, Slot } from '../booking-api';
+import { createAppointment, listMyPackages } from '../booking-api';
+import type {
+  ItemRequest,
+  Money,
+  PublicAppointment,
+  Slot,
+  UsablePackageItem,
+} from '../booking-api';
+import { packageOptions, sessionsLeftLabel } from '../packages';
 import { alternatives, messageFor, problemCode } from '../problem';
 import styles from './steps.module.css';
 
@@ -22,13 +29,15 @@ interface ConfirmStepProps {
   fullName: string;
   note: string;
   marketingConsent: boolean;
-  /** Özet kartı. */
-  summary: ReactNode;
+  /** Seçilen hizmetler (paket anahtarının adı: "Fön paketinizden düşülsün"). */
+  services: { id: string; name: string }[];
+  /** Özet kartı; paketten düşülen hizmetler "Paketten" yazar. */
+  summary: (packaged: readonly string[]) => ReactNode;
   /**
-   * Seçilen hizmetlerin kapora ipucu (katalog `depositHint`); yoksa null. Kesin tutar oluşturma yanıtındadır
-   * (müşteriye göre çözülür) ve Havale ekranında gösterilir.
+   * Paketten düşülmeyen hizmetlerin kapora ipucu (katalog `depositHint`); yoksa null. Kesin tutar oluşturma
+   * yanıtındadır (müşteriye göre çözülür) ve Havale ekranında gösterilir.
    */
-  depositHint: Money | null;
+  depositHintFor: (packaged: readonly string[]) => Money | null;
   onCreated: (appointment: PublicAppointment) => void;
   /** Saat doldu: alternatif saate geçiş (aynı gün). */
   onPickTime: (localTime: string) => void;
@@ -45,7 +54,8 @@ function joinTimes(times: string[]): string {
 }
 
 /**
- * Son kontrol (Onay.png): özet, kapora kutusu (hizmette kapora varsa), "Randevuyu oluştur". Paket kutusu Dilim 5'te.
+ * Son kontrol (Onay.png): özet, paket kutusu (müşterinin bu hizmet için kullanılabilir paketi varsa; KK6), kapora
+ * kutusu (paketten düşülmeyen hizmette kapora varsa), "Randevuyu oluştur".
  * Saat dolduysa Durumlar.png "saat az önce doldu" deseni ve alternatif saat çipleri.
  */
 export function ConfirmStep({
@@ -59,8 +69,9 @@ export function ConfirmStep({
   fullName,
   note,
   marketingConsent,
+  services,
   summary,
-  depositHint,
+  depositHintFor,
   onCreated,
   onPickTime,
   onChangeTime,
@@ -69,6 +80,31 @@ export function ConfirmStep({
 }: ConfirmStepProps) {
   const [failure, setFailure] = useState<{ error: unknown; time: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [packages, setPackages] = useState<UsablePackageItem[]>([]);
+  const [packagesVersion, setPackagesVersion] = useState(0);
+  // Hizmet → kapatılan paket anahtarı. Anahtar varsayılan açıktır (Onay.png); müşteri kapatabilir (T-100).
+  const [declined, setDeclined] = useState<readonly string[]>([]);
+
+  // Paket listesi isteğe bağlı bilgidir: hata veya 401'de kutu gösterilmez, randevu paketsiz oluşturulur.
+  useEffect(() => {
+    let live = true;
+    listMyPackages(branchId, bookingToken).then(
+      (items) => {
+        if (live) setPackages(items);
+      },
+      () => {
+        if (live) setPackages([]);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [branchId, bookingToken, packagesVersion]);
+
+  const options = packageOptions(packages, services);
+  const used = options.filter((option) => !declined.includes(option.serviceId));
+  const packaged = used.map((option) => option.serviceId);
+  const depositHint = depositHintFor(packaged);
 
   const submit = async () => {
     if (!slot) return;
@@ -85,13 +121,25 @@ export function ConfirmStep({
           privacyNoticeAcknowledged: true,
           privacyNoticeVersion,
           marketingConsent,
+          ...(used.length > 0
+            ? {
+                usePackageItems: used.map((option) => ({
+                  serviceId: option.serviceId,
+                  customerPackageItemId: option.item.customerPackageItemId,
+                })),
+              }
+            : {}),
         }),
       );
     } catch (error) {
       const code = problemCode(error);
       if (code === 'unauthorized' || code === 'token_expired') onTokenExpired();
       else if (code === 'booking_disabled') onBookingDisabled();
-      else setFailure({ error, time: slot.localTime });
+      else if (code === 'package_session_unavailable') {
+        // Seans bu arada kullanılmış veya süresi geçmiş: liste yenilenir, hata metni gösterilir.
+        setPackagesVersion((value) => value + 1);
+        setFailure({ error, time: slot.localTime });
+      } else setFailure({ error, time: slot.localTime });
     } finally {
       setBusy(false);
     }
@@ -112,7 +160,30 @@ export function ConfirmStep({
         ) : null}
         Randevunuzu onaylamadan önce son bir kez bakın.
       </p>
-      {summary}
+      {summary(packaged)}
+      {options.map((option) => (
+        <SwitchCard
+          key={option.serviceId}
+          icon={<Package size={20} />}
+          label={`${option.serviceName} paketinizden düşülsün`}
+          description={[
+            sessionsLeftLabel(option.item),
+            option.item.expiresOn
+              ? `son kullanım ${formatDate(option.item.expiresOn, 'dayMonth')}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          checked={!declined.includes(option.serviceId)}
+          onCheckedChange={(checked) => {
+            setDeclined((current) =>
+              checked
+                ? current.filter((id) => id !== option.serviceId)
+                : [...current, option.serviceId],
+            );
+          }}
+        />
+      ))}
       {depositHint ? (
         <section className={styles.deposit} aria-labelledby="kapora-kutusu">
           <p className={styles.depositHead}>

@@ -1,5 +1,6 @@
-import { formatDuration } from '@omvila/ui-web/format';
+import { formatDuration, formatMoney } from '@omvila/ui-web/format';
 import { Bento, BentoBlock } from '@omvila/ui-web/panel';
+import type { CashDay } from '@/features/cash/api';
 import type { CalendarView } from './api';
 import { inLabel, summarize } from './calendar-view';
 
@@ -11,6 +12,8 @@ interface CalendarSummaryBlocksProps {
   showPending: boolean;
   /** Kapıda sıra (walkin.manage): verilmezse blok yok; sıra yüklenmediyse "—". */
   walkIns?: WalkInSummary | undefined;
+  /** Günün tahsilatı (kasa, manageGetCashDay); kasayı göremeyen kullanıcıda yok. */
+  revenue?: CashDay['total'] | undefined;
 }
 
 export interface WalkInSummary {
@@ -40,15 +43,17 @@ export function WalkInBlock({ summary }: { summary: WalkInSummary }) {
 }
 
 /**
- * Özet blokları (salon-paneli/Main): sıradaki, onay bekleyen, kapıda sırada, bugün. Ciro ("9.840 ₺") kasa ile gelir; o
- * zamana kadar Bugün bloğu randevu sayısını gösterir (sahte sayı yok). "Onay bekliyor" kapora bekleyenleri saymaz
- * (T-84 (3)).
+ * Özet blokları (salon-paneli/Main): sıradaki, onay bekleyen, kapıda sırada, bugün. Bugün bloğu kasayı görebilen
+ * kullanıcıda günün tahsilatını ("9.840 ₺", manageGetCashDay) ve randevu sayısını, diğerlerinde randevu sayısını
+ * gösterir (sahte sayı yok; acik-sorular.md T-97). "Kapıda sırada" manageListWalkIns'ten (T-98). "Onay bekliyor" kapora
+ * bekleyenleri saymaz (T-84 (3)).
  */
 export function CalendarSummaryBlocks({
   view,
   now,
   showPending,
   walkIns,
+  revenue,
 }: CalendarSummaryBlocksProps) {
   const summary = summarize(view, now);
   const { next, pending, today } = summary;
@@ -73,11 +78,19 @@ export function CalendarSummaryBlocks({
         />
       ) : null}
       {walkIns ? <WalkInBlock summary={walkIns} /> : null}
-      <BentoBlock
-        label="Bugün"
-        value={String(today.appointments)}
-        sub={`randevu · ${String(today.completed)} tamamlandı`}
-      />
+      {revenue ? (
+        <BentoBlock
+          label="Bugün"
+          value={formatMoney(revenue.amount)}
+          sub={`${String(today.appointments)} randevu · ${String(today.completed)} tamamlandı`}
+        />
+      ) : (
+        <BentoBlock
+          label="Bugün"
+          value={String(today.appointments)}
+          sub={`randevu · ${String(today.completed)} tamamlandı`}
+        />
+      )}
     </Bento>
   );
 }

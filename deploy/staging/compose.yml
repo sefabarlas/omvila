@@ -114,6 +114,10 @@ services:
         NEXT_PUBLIC_SITE_URL: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}
         NEXT_PUBLIC_PRIVACY_NOTICE_URL: ${PRIVACY_NOTICE_URL:-}
         NEXT_PUBLIC_PRIVACY_NOTICE_VERSION: ${PRIVACY_NOTICE_VERSION:-}
+    # Derin bağlantı doğrulama dosyaları (/.well-known/…); boşsa 404 (T-100).
+    environment:
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
     restart: unless-stopped
 
   mailpit:

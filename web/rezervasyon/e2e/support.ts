@@ -20,6 +20,18 @@ import {
   rescheduledFixture,
   rescheduleSlotsFixture,
 } from '../src/test/appointment-fixtures';
+import {
+  entryFixture,
+  offerCode,
+  offerFixture,
+  packageFixture,
+  reviewCode,
+  reviewInviteFixture,
+  reviewedFixture,
+  waitlistCode,
+} from '../src/test/d5-fixtures';
+import type { ReviewInvite } from '../src/review/review-api';
+import type { WaitlistOffer } from '../src/waitlist/waitlist-api';
 
 // Uygulamanın API kökü e2e/api-stub.mjs'tir (playwright.config.ts).
 const api = 'http://localhost:4011/api/v1/public';
@@ -50,6 +62,8 @@ export interface BookingOptions {
   requiresApproval?: boolean;
   /** Kaporalı hizmet (Dilim 4): katalogda ipucu, oluşturma DepositPending, "Havaleyi yaptım" CustomerReported. */
   deposit?: boolean;
+  /** Müşterinin Fön paketi var (Dilim 5, Onay.png paket kutusu). */
+  packages?: boolean;
 }
 
 /** Onay bekleyen talep: tutma şimdi + 120 dk (sureler-ve-ayarlar.md ApprovalTimeoutMinutes varsayılanı). */
@@ -64,11 +78,13 @@ export interface BookingCalls {
   create: unknown[];
   /** "Havaleyi yaptım" istekleri (yol). */
   report: string[];
+  /** "Bekleme listesine katıl" gövdeleri. */
+  waitlist: unknown[];
 }
 
 /** Sabit "şimdi" (24 Kasım 2026 Salı 10:00) ve akış uçlarının test yanıtları. Ön uçuş (OPTIONS) Prism'e gider. */
 export async function bookingApi(page: Page, options: BookingOptions = {}): Promise<BookingCalls> {
-  const calls: BookingCalls = { create: [], report: [] };
+  const calls: BookingCalls = { create: [], report: [], waitlist: [] };
   await page.clock.setFixedTime(new Date(nowUtc));
   const catalog = options.deposit ? depositCatalogFixture() : catalogFixture();
   await page.route(`${api}/**`, async (route) => {
@@ -94,6 +110,11 @@ export async function bookingApi(page: Page, options: BookingOptions = {}): Prom
       }
     } else if (path.endsWith('/otp/verify')) {
       await fulfill(route, tokenFixture);
+    } else if (path.endsWith('/my-packages')) {
+      await fulfill(route, { items: options.packages ? [packageFixture()] : [] });
+    } else if (path.endsWith('/waitlist')) {
+      calls.waitlist.push(request.postDataJSON());
+      await fulfill(route, entryFixture(), 201);
     } else if (path.endsWith('/deposit/report')) {
       calls.report.push(path);
       await fulfill(route, depositFixture('CustomerReported'), 200, { ETag: 'W/"2"' });
@@ -176,6 +197,85 @@ export async function appointmentApi(
         { type: 'about:blank', title: 'not_found', status: 404, code: 'not_found' },
         404,
       );
+    }
+  });
+  return calls;
+}
+
+export interface OfferCalls {
+  accept: (string | undefined)[];
+  decline: (string | undefined)[];
+  leave: number;
+}
+
+/**
+ * Bekleme teklifi bağlantısı (/b/{kod}) uçları. Kabul `accepted` randevusunu döner; ret ve "Listeden çık" sonrası GET
+ * yeni hâli döner. `install`: geri sayımın ilerlemesi için sahte saat (fastForward); yoksa sabit saat.
+ */
+export async function offerApi(
+  page: Page,
+  offer: Partial<WaitlistOffer> = {},
+  options: { accepted?: PublicAppointment; install?: boolean } = {},
+): Promise<OfferCalls> {
+  if (options.install) await page.clock.install({ time: new Date(nowUtc) });
+  else await page.clock.setFixedTime(new Date(nowUtc));
+  const calls: OfferCalls = { accept: [], decline: [], leave: 0 };
+  let current = offerFixture(offer);
+  const base = `/api/v1/public/waitlist-offers/${offerCode}`;
+  await page.route(/\/api\/v1\/public\/(waitlist-offers|waitlist)\//, async (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') {
+      await route.fallback();
+      return;
+    }
+    const path = new URL(request.url()).pathname;
+    const ifMatch = (await request.headerValue('If-Match')) ?? undefined;
+    if (path === base) {
+      await fulfill(route, current, 200, { ETag: current.version });
+    } else if (path === `${base}/accept`) {
+      calls.accept.push(ifMatch);
+      await fulfill(route, options.accepted ?? appointmentFixture());
+    } else if (path === `${base}/decline`) {
+      calls.decline.push(ifMatch);
+      current = { ...current, status: 'Declined', version: 'W/"9421"' };
+      await fulfill(route, current, 200, { ETag: current.version });
+    } else if (path === `/api/v1/public/waitlist/${waitlistCode}/leave`) {
+      calls.leave += 1;
+      await fulfill(route, entryFixture({ status: 'Cancelled' }));
+    } else {
+      await problem(route, 404, 'access_code_invalid');
+    }
+  });
+  return calls;
+}
+
+/** Değerlendirme bağlantısı (/d/{kod}); gönderimden sonra GET de değerlendirilmiş hâli döner. */
+export async function reviewApi(
+  page: Page,
+  invite: ReviewInvite = reviewInviteFixture(),
+): Promise<{ posts: { key: string | undefined; body: unknown }[] }> {
+  await page.clock.setFixedTime(new Date(nowUtc));
+  const calls: { posts: { key: string | undefined; body: unknown }[] } = { posts: [] };
+  let current = invite;
+  await page.route(`${api}/reviews/**`, async (route) => {
+    const request = route.request();
+    if (request.method() === 'OPTIONS') {
+      await route.fallback();
+      return;
+    }
+    const path = new URL(request.url()).pathname;
+    if (path !== `/api/v1/public/reviews/${reviewCode}`) {
+      await problem(route, 404, 'access_code_invalid');
+    } else if (request.method() === 'POST') {
+      const body = request.postDataJSON() as { rating: number; comment: string | null };
+      calls.posts.push({ key: (await request.headerValue('Idempotency-Key')) ?? undefined, body });
+      current = {
+        ...reviewedFixture(body.comment),
+        review: { rating: body.rating, comment: body.comment, createdUtc: nowUtc },
+      };
+      await fulfill(route, current, 201);
+    } else {
+      await fulfill(route, current);
     }
   });
   return calls;

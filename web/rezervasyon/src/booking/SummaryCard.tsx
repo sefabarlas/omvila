@@ -16,12 +16,31 @@ interface SummaryCardProps {
   action?: ReactNode;
   /** Onay ekranında kapora (YROnay.png): "Kapora (havale ile) −150 ₺" ve "Salonda ödenecek" = toplam − kapora. */
   deposit?: Money | null;
+  /** Paketten düşülen kalemlerin hizmetleri (Onay.png): fiyat yerine "Paketten", "Salonda ödenecek"e girmez. */
+  packaged?: readonly string[];
 }
 
 /** Telefon ve Onay ekranlarının özet kartı: tarih/saat, hizmet · personel · fiyat, toplam. */
-export function SummaryCard({ summary, when, place, action, deposit = null }: SummaryCardProps) {
+export function SummaryCard({
+  summary,
+  when,
+  place,
+  action,
+  deposit = null,
+  packaged = [],
+}: SummaryCardProps) {
   const total = totalLabel(summary);
-  const due = deposit && summary.total ? formatMoney(minus(summary.total, deposit)) : null;
+  const fromPackage = summary.lines.filter((line) => packaged.includes(line.serviceId));
+  const payable = summary.total
+    ? minus(summary.total, {
+        amountMinor: fromPackage.reduce((sum, line) => sum + (line.price?.amountMinor ?? 0), 0),
+        currency: summary.total.currency,
+      })
+    : null;
+  const due =
+    (deposit || fromPackage.length > 0) && payable
+      ? formatMoney(deposit ? minus(payable, deposit) : payable)
+      : null;
   return (
     <section className={styles.card} aria-label="Randevu özeti">
       <div className={styles.head}>
@@ -35,16 +54,20 @@ export function SummaryCard({ summary, when, place, action, deposit = null }: Su
         {summary.lines.map((line) => (
           <li key={line.serviceId} className={styles.line}>
             <span>{[line.name, line.staffName].filter(Boolean).join(' · ')}</span>
-            {line.price ? (
+            {packaged.includes(line.serviceId) ? (
+              <span className={styles.amountRegular}>Paketten</span>
+            ) : line.price ? (
               <span className={styles.amount}>{formatPrice(line.price, line.priceDisplay)}</span>
             ) : null}
           </li>
         ))}
       </ul>
-      <p className={deposit ? styles.line : styles.total}>
-        <span>Toplam · {formatDuration(summary.durationMinutes)}</span>
-        {total ? <span className={styles.amount}>{total}</span> : null}
-      </p>
+      {fromPackage.length === 0 ? (
+        <p className={deposit ? styles.line : styles.total}>
+          <span>Toplam · {formatDuration(summary.durationMinutes)}</span>
+          {total ? <span className={styles.amount}>{total}</span> : null}
+        </p>
+      ) : null}
       {deposit ? (
         <p className={styles.line}>
           <span>Kapora (havale ile)</span>

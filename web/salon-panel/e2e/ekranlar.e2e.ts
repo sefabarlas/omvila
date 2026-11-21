@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
+import { cashDemo, checkoutDemo } from './cash-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
 import { queuesDemo } from './queues-demo';
@@ -182,6 +183,56 @@ const screens: ScreenCase[] = [
         document.getAnimations().every((animation) => animation.playState !== 'running'),
       );
     },
+  },
+  {
+    path: '/takvim',
+    name: 'OdemeAl',
+    heading: 'Takvim',
+    setup: checkoutDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: /^Selin Öztürk/ }).click();
+      await page.getByRole('button', { name: 'Tamamla ve ödeme al' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Tamamla ve ödeme al' });
+      await dialog.getByText('Kart', { exact: true }).click();
+      await expect(dialog.getByText('Kapora (havale, 11 Kas)')).toBeVisible();
+      await page.waitForFunction(() =>
+        document.getAnimations().every((animation) => animation.playState !== 'running'),
+      );
+    },
+  },
+  {
+    path: '/kasa',
+    name: 'Kasa',
+    heading: 'Kasa',
+    setup: cashDemo,
+    act: async (page) => {
+      await expect(page.getByRole('table', { name: 'Günün tahsilatları' })).toBeVisible();
+      await page.getByLabel('Sayılan nakit').fill('3.400');
+    },
+  },
+  {
+    path: '/kasa',
+    name: 'Kasa1199',
+    heading: 'Kasa',
+    setup: cashDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Günün tahsilatları' })).toBeVisible(),
+    viewport: { width: 1199, height: 900 },
+  },
+  {
+    path: '/kasa',
+    name: 'Kasa899',
+    heading: 'Kasa',
+    setup: cashDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Günün tahsilatları' })).toBeVisible(),
+    viewport: { width: 899, height: 1200 },
+  },
+  {
+    path: '/kasa',
+    name: 'KasaBos',
+    heading: 'Kasa',
+    setup: (page) => cashDemo(page, { empty: true }),
+    act: (page) =>
+      expect(page.getByRole('heading', { name: 'Bugün henüz tahsilat yok' })).toBeVisible(),
   },
   {
     path: '/musteriler',

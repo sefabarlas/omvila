@@ -1,0 +1,216 @@
+/* Değerlendirme bağlantısı (/d/{kod}): musteri-uygulamasi/Degerlendir, rezervasyon sayfasının mobil ölçeğiyle. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  box-sizing: border-box;
+  min-height: 100dvh;
+  max-width: var(--ekran-genislik);
+  margin: 0 auto;
+  padding: var(--bosluk-6) var(--bosluk-4) var(--bosluk-4);
+  outline: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeleton {
+  display: block;
+  min-height: calc(var(--bosluk-12) * 2);
+  border-radius: var(--kose-lg);
+  background: var(--iskelet);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-buyuk-baslik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-buyuk-baslik-satir);
+  letter-spacing: var(--yazi-buyuk-baslik-harf);
+}
+
+.subtitle {
+  margin: var(--bosluk-1) 0 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--bosluk-5) var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.stars,
+.staticStars {
+  display: flex;
+  gap: var(--bosluk-1);
+  justify-content: center;
+}
+
+/* 36 px yıldız, 44 px dokunma alanı; yerel radyo düğmesi klavye ve ekran okuyucu için. */
+.star {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--dokunma-min);
+  height: var(--dokunma-min);
+  border-radius: var(--kose-md);
+  cursor: pointer;
+}
+
+.star input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.star:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.on {
+  color: var(--yildiz);
+  fill: var(--yildiz);
+}
+
+.off {
+  color: var(--metin-ikincil);
+  fill: none;
+}
+
+.ratingLabel {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-govde-guclu-satir);
+}
+
+.comment {
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+  text-align: center;
+}
+
+.staff {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.staffText {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.staffText span {
+  color: var(--metin-ikincil);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.label {
+  color: var(--metin);
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-etiket-satir);
+}
+
+.textarea {
+  box-sizing: border-box;
+  min-height: var(--kontrol-md);
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border: 1px solid var(--cizgi-guclu);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  font: inherit;
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+  resize: vertical;
+}
+
+.textarea::placeholder {
+  color: var(--metin-ikincil);
+}
+
+.textarea:focus {
+  border-color: var(--odak);
+  outline: none;
+  box-shadow: var(--odak-halkasi);
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.hint {
+  color: var(--metin-ikincil);
+}
+
+.error {
+  color: var(--hata);
+}
+
+.submit {
+  margin-top: auto;
+}
+
+.doneIcon {
+  display: grid;
+  place-items: center;
+  width: var(--kontrol-lg);
+  height: var(--kontrol-lg);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-marka-yumusak);
+  color: var(--metin-marka);
+}
+
+.link {
+  align-self: center;
+  min-height: var(--dokunma-min);
+  color: var(--metin-marka);
+  font-weight: 700;
+  line-height: var(--dokunma-min);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

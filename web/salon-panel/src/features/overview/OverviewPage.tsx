@@ -1,4 +1,4 @@
-import { formatDate } from '@omvila/ui-web/format';
+import { formatDate, formatMoney } from '@omvila/ui-web/format';
 import { Bento, BentoBlock, Button } from '@omvila/ui-web/panel';
 import { branchHour, branchToday, daysBetween } from '@omvila/ui-web/time';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import { calendarQuery } from '@/features/calendar/api';
 import { AppointmentDrawer } from '@/features/calendar/AppointmentDrawer';
 import { WalkInBlock } from '@/features/calendar/CalendarSummaryBlocks';
 import { walkInsQuery } from '@/features/walk-ins/api';
+import { useDayRevenue } from '@/features/cash/api';
 import { bookingPageQuery } from '@/shared/booking-link';
 import { Page } from '@/shared/Page';
 import { onboardingQuery } from './api';
@@ -28,7 +29,8 @@ import { ShareLinkCard } from './ShareLinkCard';
 /**
  * Genel bakış: marka kurulumdayken adımlar (KayitKurulum). Sonra bugün randevu veya onay bekleyen talep varsa
  * GenelBakis (bento, "Gün akışı", "Dikkat isteyenler"); hiçbiri yoksa ilk hafta görünümü (GenelBakisBos, bağlantıyı
- * paylaş). Kapıda sıra manageListWalkIns'ten (T-98); ciro kasa ile, doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
+ * paylaş). Bugün bloğu kasayı görebilen kullanıcıda "Bugünkü ciro"dur (manageGetCashDay; T-97); hedef yüzdesi
+ * sözleşmede yok. Kapıda sıra manageListWalkIns'ten (T-98), doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
  */
 export function OverviewPage() {
   const api = useApi();
@@ -57,6 +59,7 @@ export function OverviewPage() {
     ...walkInsQuery(api, activeBranch),
     enabled: !onboardingView && managesWalkIns && activeBranch !== '',
   });
+  const revenue = useDayRevenue(activeBranch, today, !onboardingView);
   const queueQuery = useQuery({
     ...approvalQueueQuery(api, branchId ?? undefined),
     enabled: !onboardingView && canApprove,
@@ -131,12 +134,21 @@ export function OverviewPage() {
     >
       {active || loading ? (
         <Bento label="Özet">
-          <BentoBlock
-            tone="marka"
-            label="Bugün"
-            value={dayQuery.data ? String(rows.length) : '—'}
-            sub={`randevu · ${String(rows.filter((r) => r.status === 'tamamlandi').length)} tamamlandı`}
-          />
+          {revenue ? (
+            <BentoBlock
+              tone="marka"
+              label="Bugünkü ciro"
+              value={formatMoney(revenue.amount)}
+              {...(dayQuery.data ? { sub: `${String(rows.length)} randevu` } : {})}
+            />
+          ) : (
+            <BentoBlock
+              tone="marka"
+              label="Bugün"
+              value={dayQuery.data ? String(rows.length) : '—'}
+              sub={`randevu · ${String(rows.filter((r) => r.status === 'tamamlandi').length)} tamamlandı`}
+            />
+          )}
           {canApprove ? (
             <BentoBlock
               tone="vurgu"

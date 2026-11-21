@@ -64,6 +64,11 @@ describe('formatDate', () => {
     expect(formatDate('2025-11-21', style)).toBe(expected);
   });
 
+  it('dayMonthShort: "11 Kas"', () => {
+    expect(formatDate('2026-11-11', 'dayMonthShort')).toBe('11 Kas');
+    expect(formatDate('2027-01-01', 'dayMonthShort')).toBe('1 Oca');
+  });
+
   it('dayMonth: "31 Aralık"', () => {
     expect(formatDate('2026-12-31', 'dayMonth')).toBe('31 Aralık');
     expect(formatDate('2027-01-01', 'dayMonth')).toBe('1 Ocak');

@@ -3,6 +3,7 @@ import { displayStatus } from '@omvila/ui-web/status';
 import { Check, MapPin, Phone } from 'lucide-react';
 import { LinkButton } from '@/components/LinkButton';
 import { directionsUrl } from '@/lib/directions';
+import { sentTo } from '@/lib/sent-to';
 import type { PublicAppointment } from '../booking-api';
 import styles from './steps.module.css';
 
@@ -39,8 +40,8 @@ export function DoneStep({ appointment, phoneMasked }: DoneStepProps) {
         </h2>
         <p className={styles.note}>
           {confirmed
-            ? `Onay mesajını ${phoneMasked} numarasına gönderdik.`
-            : `Salon onaylayınca ${phoneMasked} numarasına SMS göndeririz.`}
+            ? `Onay mesajını ${sentTo(phoneMasked)} gönderdik.`
+            : `Salon onaylayınca ${sentTo(phoneMasked)} SMS göndeririz.`}
         </p>
       </div>
       <AppointmentTicket
