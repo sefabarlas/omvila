@@ -49,6 +49,12 @@ public interface ICustomerDirectory
     /// <param name="ct">İptal belirteci.</param>
     Task<string?> FindBrandDisplayNameAsync(Guid brandId, PhoneNumber phone, CancellationToken ct);
 
+    /// <summary>Telefonun bu markadaki kartı; kart yoksa null (başka markadaki kayıt sayılmaz).</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="phone">Doğrulanmış telefon.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<Guid?> FindBrandCustomerIdAsync(Guid brandId, PhoneNumber phone, CancellationToken ct);
+
     /// <summary>Rıza satırı ekler (online randevuda aydınlatma metni ve kampanya izni).</summary>
     /// <param name="entry">Rıza.</param>
     /// <param name="ct">İptal belirteci.</param>

@@ -1,0 +1,59 @@
+/* Bekleme listesi ve kapıda sıra (salon-paneli/BeklemeListesi, KapidaSira): üç özet bloğu, tablo, alt not. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.emptyCard {
+  padding: var(--bosluk-8) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.rowAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.numberFirst {
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+@media (width <= 899px) {
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

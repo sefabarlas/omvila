@@ -78,4 +78,7 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: DeletionRequestDueDays 30 (silme talepleri 30 gün içinde tamamlanır).</summary>
     public const int DeletionRequestDueDays = 30;
+
+    /// <summary>sureler-ve-ayarlar.md § Paketler: PackageExpiringSoonDays 30 ("Süresi yaklaşan": 30 gün içinde biten Active paketler).</summary>
+    public const int PackageExpiringSoonDays = 30;
 }

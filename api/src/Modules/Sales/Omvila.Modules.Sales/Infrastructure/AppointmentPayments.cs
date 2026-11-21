@@ -28,14 +28,31 @@ internal sealed class AppointmentPayments(
                 request.CollectedByUserId, now));
         }
 
+        // Paketten düşülen kalemler (W1): 0 TL'lik kayıt; prim tabanı paket fiyatının seans payı (W2).
+        var packaged = request.Items.Where(i => i.CustomerPackageItemId is not null).ToList();
+        var shares = await SessionSharesAsync([.. packaged.Select(i => i.CustomerPackageItemId!.Value)], ct);
+        for (var i = 0; i < packaged.Count; i++)
+        {
+            db.Payments.Add(Payment.RecordPackageRedemption(
+                ids, request.BrandId, request.BranchId, request.BrandCustomerId, request.AppointmentId, request.Currency, request.CollectedByUserId, now));
+        }
+
+        var paid = request.Items.Where(i => i.CustomerPackageItemId is null).ToList();
         var collected = request.Payments.Sum(p => p.Amount.AmountMinor) + request.RetainedDepositMinor;
-        var bases = CommissionBasis.Distribute([.. request.Items.Select(i => i.AmountMinor)], collected);
+        var paidBases = CommissionBasis.Distribute([.. paid.Select(i => i.AmountMinor)], collected);
+        var basisByItem = paid.Zip(paidBases).ToDictionary(x => x.First.AppointmentItemId, x => x.Second);
+        foreach (var item in packaged)
+        {
+            basisByItem[item.AppointmentItemId] = shares.GetValueOrDefault(item.CustomerPackageItemId!.Value);
+        }
+
         var staffIds = request.Items.Where(i => i.StaffId is not null).Select(i => i.StaffId!.Value).Distinct().ToList();
         var staffPercents = await tenants.GetServiceCommissionPercentsAsync(request.BrandId, staffIds, ct);
         var overrides = (await assignments.GetCommissionOverridesAsync(request.BrandId, staffIds, ct))
             .ToDictionary(o => (o.StaffId, o.ServiceId), o => o.Percent);
-        foreach (var (item, basis) in request.Items.Zip(bases))
+        foreach (var item in request.Items)
         {
+            var basis = basisByItem[item.AppointmentItemId];
             if (item.StaffId is not { } staffId)
             {
                 continue;
@@ -74,7 +91,25 @@ internal sealed class AppointmentPayments(
             r.p.Reference))];
     }
 
-    private static PaymentMethod ToDomain(CollectedPaymentMethod method) => method switch
+    /// <summary>Paket kalemlerinin seans payı (ödenen ÷ paketin toplam seansı).</summary>
+    private async Task<Dictionary<Guid, long>> SessionSharesAsync(IReadOnlyCollection<Guid> customerPackageItemIds, CancellationToken ct)
+    {
+        if (customerPackageItemIds.Count == 0)
+        {
+            return [];
+        }
+
+        var packageIds = await db.CustomerPackageItems.AsNoTracking()
+            .Where(i => customerPackageItemIds.Contains(i.Id))
+            .ToDictionaryAsync(i => i.Id, i => i.CustomerPackageId, ct);
+        var distinct = packageIds.Values.Distinct().ToList();
+        var packages = await db.CustomerPackages.AsNoTracking().Include(p => p.Items)
+            .Where(p => distinct.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, ct);
+        return packageIds.ToDictionary(x => x.Key, x => packages[x.Value].SessionShareMinor);
+    }
+
+    internal static PaymentMethod ToDomain(CollectedPaymentMethod method) => method switch
     {
         CollectedPaymentMethod.Cash => PaymentMethod.Cash,
         CollectedPaymentMethod.Card => PaymentMethod.Card,

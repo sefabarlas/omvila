@@ -14,15 +14,21 @@ namespace Omvila.Modules.Scheduling.Features.Completion;
 
 /// <summary>
 /// "Tamamla ve ödeme al" (A11; dilim-05 KK5; sözleşme manageCompleteAppointment). Sıra: yükle → kapsam (404) → If-Match (412)
-/// → biçim (400) → durum (409 invalid_state_transition) → paket (409 package_session_unavailable; paketler henüz yok, T-88) →
-/// toplam (409 payment_total_mismatch) → geçiş → Sales'te tahsilatlar ve hizmet primi (<see cref="IAppointmentPayments"/>) →
+/// → biçim (400) → durum (409 invalid_state_transition) → "Paketten" (kalem 400; seans Sales'te ayrılır, uygun değilse 409
+/// package_session_unavailable) → toplam (409 payment_total_mismatch) → geçiş → Sales'te tahsilatlar, 0 TL'lik paket kayıtları ve
+/// hizmet primi (<see cref="IAppointmentPayments"/>) →
 /// müşteri sayaçları → kaydet → <see cref="AppointmentCompleted"/>. Hepsi aynı bağlantı ve transaction'dadır: randevunun yazımı
 /// düşerse (412) tahsilat ve prim de geri alınır.
 /// </summary>
 internal sealed class AppointmentCompletions(
-    SchedulingDbContext db, IAppointmentPayments payments, ICustomerDirectory customers, ITenantQueries tenants, IOutbox outbox, IClock clock)
+    SchedulingDbContext db,
+    IAppointmentPayments payments,
+    IPackageSessions packageSessions,
+    ICustomerDirectory customers,
+    ITenantQueries tenants,
+    IOutbox outbox,
+    IClock clock)
 {
-    public const string CustomerPackageItemMeta = "customerPackageItemId";
 
     // Kural: durum-makinesi.md A11
     public async Task<Result<Appointment>> CompleteAsync(
@@ -48,6 +54,13 @@ internal sealed class AppointmentCompletions(
             return checkedBody.Error;
         }
 
+        var zone = await ZoneAsync(brandId, appointment.BranchId, ct);
+        var redeemed = await RedeemAsync(brandId, appointment, body, zone, ct);
+        if (!redeemed.IsSuccess)
+        {
+            return redeemed.Error;
+        }
+
         var lines = body.Lines(currency);
         var retainedDeposit = appointment.RetainedDepositMinor;
         var now = clock.GetCurrentInstant();
@@ -57,7 +70,7 @@ internal sealed class AppointmentCompletions(
             return completed.Error;
         }
 
-        var recorded = await RecordAsync(brandId, appointment, currency, lines, retainedDeposit, now, userId, ct);
+        var recorded = await RecordAsync(brandId, appointment, currency, lines, retainedDeposit, zone, now, userId, ct);
         if (!recorded.IsSuccess)
         {
             return recorded.Error;
@@ -78,7 +91,7 @@ internal sealed class AppointmentCompletions(
         return appointment;
     }
 
-    /// <summary>Biçim (400), durum (409) ve paket (409) denetimi; toplam geçişte denetlenir.</summary>
+    /// <summary>Biçim (400) ve durum (409) denetimi; paket ve toplam sonra denetlenir.</summary>
     private static Result Precheck(ManageCompleteRequest body, Appointment appointment, Currency currency)
     {
         var errors = body.Validate(currency);
@@ -87,18 +100,43 @@ internal sealed class AppointmentCompletions(
             return Error.Validation(errors);
         }
 
-        var allowed = appointment.CanComplete();
-        if (!allowed.IsSuccess)
+        return appointment.CanComplete();
+    }
+
+    /// <summary>
+    /// "Paketten" (W1): kalemler randevuda paketten düşülür, seanslar Sales'te ayrılır (aynı transaction; toplam tutmazsa birlikte
+    /// geri alınır). Kalem yoksa, etkin değilse veya zaten paketten düşülüyorsa 400; seans uygun değilse 409
+    /// package_session_unavailable.
+    /// </summary>
+    // Kural: sözleşme manageCompleteAppointment (packageRedemptions); durum-makinesi.md A11
+    private async Task<Result> RedeemAsync(Guid brandId, Appointment appointment, ManageCompleteRequest body, DateTimeZone zone, CancellationToken ct)
+    {
+        var redemptions = body.PackageRedemptions ?? [];
+        var claims = new List<PackageSessionClaim>();
+        for (var i = 0; i < redemptions.Count; i++)
         {
-            return allowed;
+            var (itemId, packageItemId) = (redemptions[i].AppointmentItemId!.Value, redemptions[i].CustomerPackageItemId!.Value);
+            var redeemed = appointment.RedeemFromPackage(itemId, packageItemId, $"packageRedemptions[{i}].appointmentItemId");
+            if (!redeemed.IsSuccess)
+            {
+                return redeemed;
+            }
+
+            claims.Add(new PackageSessionClaim(itemId, appointment.Items.Single(x => x.Id == itemId).ServiceId, packageItemId));
         }
 
-        // Paket seansı (W1) paket PR'ıyla gelir; o zamana kadar düşülecek paket kalemi hiçbir müşteride bulunmaz.
-        return body.PackageRedemptions is [var redemption, ..]
-            ? Error.Conflict(
-                ErrorCodes.PackageSessionUnavailable,
-                new Dictionary<string, object?>(StringComparer.Ordinal) { [CustomerPackageItemMeta] = redemption.CustomerPackageItemId })
-            : Result.Success();
+        return claims.Count == 0
+            ? Result.Success()
+            : await packageSessions.ReserveAsync(
+                new PackageSessionReservation(
+                    brandId, appointment.BranchId, appointment.BrandCustomerId, appointment.Id, appointment.StartUtc.InZone(zone).Date, claims),
+                ct);
+    }
+
+    private async Task<DateTimeZone> ZoneAsync(Guid brandId, Guid branchId, CancellationToken ct)
+    {
+        var zoneId = await tenants.GetBranchTimeZoneAsync(brandId, branchId, ct) ?? PlatformDefaults.DefaultTimeZoneId;
+        return DateTimeZoneProviders.Tzdb.GetZoneOrNull(zoneId) ?? DateTimeZoneProviders.Tzdb[PlatformDefaults.DefaultTimeZoneId];
     }
 
     /// <summary>Sales'te tahsilatlar ve hizmet primi, Customers'ta sayaçlar (aynı transaction).</summary>
@@ -108,12 +146,11 @@ internal sealed class AppointmentCompletions(
         Currency currency,
         IReadOnlyList<CompletionPaymentLine> lines,
         long retainedDeposit,
+        DateTimeZone zone,
         Instant now,
         Guid? userId,
         CancellationToken ct)
     {
-        var zoneId = await tenants.GetBranchTimeZoneAsync(brandId, appointment.BranchId, ct) ?? PlatformDefaults.DefaultTimeZoneId;
-        var zone = DateTimeZoneProviders.Tzdb.GetZoneOrNull(zoneId) ?? DateTimeZoneProviders.Tzdb[PlatformDefaults.DefaultTimeZoneId];
         var items = appointment.Items.Where(i => i.Status == AppointmentItemStatus.Completed).OrderBy(i => i.SeqNo).ToList();
         await payments.RecordCompletionAsync(
             new AppointmentCompletionRequest(
@@ -123,7 +160,7 @@ internal sealed class AppointmentCompletions(
                 appointment.Id,
                 currency,
                 lines,
-                [.. items.Select(i => new CompletedItem(i.Id, i.ServiceId, i.StaffId, i.NetAmountMinor))],
+                [.. items.Select(i => new CompletedItem(i.Id, i.ServiceId, i.StaffId, i.NetAmountMinor, i.CustomerPackageItemId))],
                 retainedDeposit,
                 now.InZone(zone).Date,
                 userId),
@@ -132,7 +169,7 @@ internal sealed class AppointmentCompletions(
         return await customers.ApplyCountersAsync(
             brandId,
             appointment.BrandCustomerId,
-            new CustomerCounterChange(Visits: 1, SpentMinor: appointment.TotalAmountMinor, VisitedOn: appointment.StartUtc.InZone(zone).Date),
+            new CustomerCounterChange(Visits: 1, SpentMinor: appointment.PayableAmountMinor, VisitedOn: appointment.StartUtc.InZone(zone).Date),
             ct);
     }
 }

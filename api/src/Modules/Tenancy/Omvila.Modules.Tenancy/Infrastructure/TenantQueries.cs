@@ -109,6 +109,12 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
             .ToDictionaryAsync(s => s.Id, s => s.ServiceCommissionPercent, ct);
     }
 
+    public async Task<decimal?> GetBranchSellerCommissionPercentAsync(Guid brandId, Guid staffId, Guid branchId, CancellationToken ct) =>
+        await (from s in db.Staff.AsNoTracking()
+               join l in db.StaffBranches.AsNoTracking() on s.Id equals l.StaffId
+               where s.BrandId == brandId && s.Id == staffId && s.IsActive && l.BranchId == branchId && l.IsActive
+               select (decimal?)s.SaleCommissionPercent).FirstOrDefaultAsync(ct);
+
     public async Task<IReadOnlyList<StaffTimeOffDetail>> GetTimeOffsAsync(
         Guid brandId, IReadOnlyCollection<Guid> staffIds, Instant fromUtc, Instant toUtc, CancellationToken ct)
     {
