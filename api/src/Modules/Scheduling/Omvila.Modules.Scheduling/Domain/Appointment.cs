@@ -321,6 +321,22 @@ internal sealed class Appointment
         return Result.Success();
     }
 
+    /// <summary>
+    /// Randevuyu seriye bağlar. Tekrarlayan oluşturmada seri şablonu ilk randevunun planından çıkarıldığı için ilk randevu
+    /// önce yazılır, sonra bağlanır; "bu ve sonrakiler" saat değişikliğinde sonraki tekrarlar bölünen yeni seriye geçer.
+    /// </summary>
+    // Kural: alan-modeli.md § AppointmentSeries ("bu ve sonrakiler" seriyi o tarihten böler)
+    public void AssignSeries(Guid seriesId, Instant now)
+    {
+        if (seriesId == Guid.Empty)
+        {
+            throw new DomainException("Seri kimliği boş olamaz.");
+        }
+
+        SeriesId = seriesId;
+        UpdatedUtc = now;
+    }
+
     private void Cancel(CancelledBy by, CancellationReason reason, string? note, Guid? userId, Instant now)
     {
         Status = AppointmentStatus.Cancelled;

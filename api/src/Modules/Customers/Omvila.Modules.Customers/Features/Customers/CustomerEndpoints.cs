@@ -9,6 +9,7 @@ using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
 using Omvila.Modules.Identity.Contracts;
+using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
 
@@ -17,6 +18,7 @@ namespace Omvila.Modules.Customers.Features.Customers;
 /// <summary>
 /// Müşteri uçları (sözleşme manage-customers; Musteriler, MusteriEkle, MusteriKarti; dilim-02 kabul kriteri 15).
 /// Okuma customer.view, ekleme customer.edit ister. Telefon customer.phone.view yoksa ve marka maskeliyorsa maskeli döner.
+/// Yaklaşan randevu (nextAppointmentUtc) ve randevular sekmesi Scheduling'in IAppointmentQueries sözleşmesinden okunur.
 /// </summary>
 internal static class CustomerEndpoints
 {
@@ -41,13 +43,20 @@ internal static class CustomerEndpoints
         CustomerReader reader,
         ITenantQueries tenants,
         IPermissionResolver permissions,
+        IAppointmentQueries appointments,
         IClock clock,
         CancellationToken ct)
     {
         var brandId = tenant.RequireBrandId();
         var view = await CustomerViewContext.LoadAsync(brandId, user, tenants, permissions, clock, ct);
         var result = await reader.ListAsync(brandId, q, filter, limit, cursor, view, ct);
-        return result.ToHttp(r => TypedResults.Ok(r));
+        if (!result.IsSuccess)
+        {
+            return result.Error.ToProblem();
+        }
+
+        var items = await WithNextAppointmentAsync(brandId, result.Value.Items, appointments, clock, ct);
+        return TypedResults.Ok(result.Value with { Items = items });
     }
 
     private static async Task<IResult> CreateAsync(
@@ -61,6 +70,7 @@ internal static class CustomerEndpoints
         IClock clock,
         CancellationToken ct)
     {
+        // Yeni kartın yaklaşan randevusu olamaz; nextAppointmentUtc yazılmaz.
         var brandId = tenant.RequireBrandId();
         var view = await CustomerViewContext.LoadAsync(brandId, user, tenants, permissions, clock, ct);
         var created = await writer.CreateAsync(brandId, body, view, ct);
@@ -80,6 +90,7 @@ internal static class CustomerEndpoints
         CustomerReader reader,
         ITenantQueries tenants,
         IPermissionResolver permissions,
+        IAppointmentQueries appointments,
         IClock clock,
         CancellationToken ct)
     {
@@ -91,13 +102,21 @@ internal static class CustomerEndpoints
         }
 
         var view = await CustomerViewContext.LoadAsync(brandId, user, tenants, permissions, clock, ct);
-        return TypedResults.Ok(row.ToResponse(view));
+        var items = await WithNextAppointmentAsync(brandId, [row.ToResponse(view)], appointments, clock, ct);
+        return TypedResults.Ok(items[0]);
     }
 
-    // TODO(Scheduling): randevular Scheduling modülüyle gelecek (Dilim 2 sonraki PR). O zamana kadar liste boştur; kart
-    // yine markada aranır (başka marka / bilinmeyen kart 404). Personel rolünde yalnız kendi randevuları dönecek.
+    // Personel rolü (takvimde yalnız kendi kolonu, calendar.view = K) yalnız kendi kalemi olan randevuları görür.
     private static async Task<IResult> ListAppointmentsAsync(
-        Guid brandCustomerId, int? limit, ITenantContext tenant, CustomerReader reader, CancellationToken ct)
+        Guid brandCustomerId,
+        int? limit,
+        string? cursor,
+        ClaimsPrincipal user,
+        ITenantContext tenant,
+        CustomerReader reader,
+        IPermissionResolver permissions,
+        IAppointmentQueries appointments,
+        CancellationToken ct)
     {
         var brandId = tenant.RequireBrandId();
         if (!await reader.ExistsAsync(brandId, brandCustomerId, ct))
@@ -105,11 +124,25 @@ internal static class CustomerEndpoints
             return Error.NotFound().ToProblem();
         }
 
-        if (limit is < 1 or > CustomerReader.MaxLimit)
+        var role = user.FindFirst(OmvilaClaims.Role)?.Value;
+        Guid? onlyStaffId = null;
+        if (role is not null && permissions.Resolve(role, Permissions.Calendar.View) == PermissionScope.Own)
         {
-            return Error.Validation("limit", "out_of_range").ToProblem();
+            onlyStaffId = Guid.TryParse(user.FindFirst(OmvilaClaims.StaffId)?.Value, out var staffId) ? staffId : Guid.Empty;
         }
 
-        return TypedResults.Ok(new CustomerAppointmentList([], null));
+        var page = await appointments.ListForCustomerAsync(brandId, brandCustomerId, onlyStaffId, limit ?? CustomerReader.DefaultLimit, cursor, ct);
+        return page.ToHttp(p => TypedResults.Ok(new CustomerAppointmentList(
+            [.. p.Items.Select(a => new CustomerAppointmentRow(
+                a.AppointmentId, a.BranchId, a.StartUtc, a.Status, a.DisplayStatus, a.ServiceNames, a.StaffNames,
+                new Money(a.TotalAmountMinor, Enum.TryParse<Currency>(a.CurrencyCode, out var c) ? c : PlatformDefaults.DefaultCurrency)))],
+            p.NextCursor)));
+    }
+
+    private static async Task<IReadOnlyList<CustomerSummaryResponse>> WithNextAppointmentAsync(
+        Guid brandId, IReadOnlyList<CustomerSummaryResponse> items, IAppointmentQueries appointments, IClock clock, CancellationToken ct)
+    {
+        var next = await appointments.GetNextAppointmentsAsync(brandId, [.. items.Select(i => i.Id)], clock.GetCurrentInstant(), ct);
+        return [.. items.Select(i => next.TryGetValue(i.Id, out var at) ? i with { NextAppointmentUtc = at } : i)];
     }
 }

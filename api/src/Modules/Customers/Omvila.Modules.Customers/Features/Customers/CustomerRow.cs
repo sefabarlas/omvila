@@ -27,7 +27,7 @@ internal sealed class CustomerRow
 
     public string? Notes { get; init; }
 
-    // Yaklaşan randevu Scheduling modülüyle gelecek (T-46); o zamana kadar nextAppointmentUtc yazılmaz.
+    // Yaklaşan randevu (nextAppointmentUtc) uçta IAppointmentQueries ile doldurulur (T-50).
     public CustomerSummaryResponse ToResponse(CustomerViewContext view)
     {
         var activity = new CustomerActivity(VisitCount, NoShowCount, FirstVisitOn, LastVisitOn);

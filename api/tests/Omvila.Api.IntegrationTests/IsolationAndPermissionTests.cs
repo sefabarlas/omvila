@@ -166,7 +166,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         return (result.Status, result.Body.ValueKind == System.Text.Json.JsonValueKind.Undefined ? string.Empty : result.Body.GetRawText());
     }
 
-    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı.
+    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu.
     // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
@@ -191,10 +191,22 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         var timeOff = await _api.SendAsync(HttpMethod.Post, $"/api/v1/manage/staff/{staffId}/time-off",
             new { type = "Leave", isAllDay = true, fromDate = "2026-12-02" }, token);
         var brandCustomerId = await PostIdAsync(token, "/api/v1/manage/customers", new { fullName = "Selin Öztürk", phone = "+905550004418" });
+        var appointment = await _api.SendAsync(HttpMethod.Post, "/api/v1/manage/appointments", new
+        {
+            branchId,
+            brandCustomerId,
+            channel = "Phone",
+            startUtc = "2026-12-03T10:00:00Z",
+            items = new[] { new { serviceId, staffId = ownerStaffId } },
+            notifyCustomer = false,
+            allowOutsideWorkingHours = true,
+        }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
+        appointment.Status.ShouldBe(201, appointment.Body.ToString());
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
+            ["appointmentId"] = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!,
             ["categoryId"] = categoryId,
             ["serviceId"] = serviceId,
             ["staffId"] = staffId,
