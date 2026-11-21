@@ -31,8 +31,14 @@ export async function unregisteredPhone(page: Page) {
   );
 }
 
-/** Oturum özetini değiştirir (personel rolü); geri kalan alanlar Prism örneğinden. */
-export async function sessionAs(page: Page, patch: Record<string, unknown>) {
+/**
+ * Oturum özetini değiştirir (personel rolü); geri kalan alanlar Prism örneğinden. İç içe alan (ör. brand.status)
+ * için yama, örnek oturumu alan bir işlev olabilir.
+ */
+export async function sessionAs(
+  page: Page,
+  patch: Record<string, unknown> | ((session: Record<string, unknown>) => Record<string, unknown>),
+) {
   await page.route(`${api}/session`, async (route) => {
     if (route.request().method() === 'OPTIONS') {
       await route.fallback();
@@ -41,7 +47,9 @@ export async function sessionAs(page: Page, patch: Record<string, unknown>) {
 
     const response = await route.fetch();
     const session = (await response.json()) as Record<string, unknown>;
-    await route.fulfill(json({ ...session, ...patch }));
+    await route.fulfill(
+      json({ ...session, ...(typeof patch === 'function' ? patch(session) : patch) }),
+    );
   });
 }
 
