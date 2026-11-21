@@ -19,6 +19,7 @@ import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
 import { Route as PanelPersonelRouteImport } from './routes/_panel/personel'
 import { Route as PanelTakvimRouteImport } from './routes/_panel/takvim'
 import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/index'
+import { Route as PanelAyarlarBildirimlerRouteImport } from './routes/_panel/ayarlar/bildirimler'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
 import { Route as PanelAyarlarRezervasyonRouteImport } from './routes/_panel/ayarlar/rezervasyon'
@@ -75,6 +76,11 @@ const PanelAyarlarIndexRoute = PanelAyarlarIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelAyarlarBildirimlerRoute = PanelAyarlarBildirimlerRouteImport.update({
+  id: '/bildirimler',
+  path: '/bildirimler',
+  getParentRoute: () => PanelAyarlarRoute,
+} as any)
 const PanelAyarlarIsletmeRoute = PanelAyarlarIsletmeRouteImport.update({
   id: '/isletme',
   path: '/isletme',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/hizmetler': typeof PanelHizmetlerRoute
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
+  '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/personel': typeof PanelPersonelRoute
   '/takvim': typeof PanelTakvimRoute
   '/': typeof PanelIndexRoute
+  '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/_panel/personel': typeof PanelPersonelRoute
   '/_panel/takvim': typeof PanelTakvimRoute
   '/_panel/': typeof PanelIndexRoute
+  '/_panel/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/_panel/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/hizmetler'
     | '/personel'
     | '/takvim'
+    | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/personel'
     | '/takvim'
     | '/'
+    | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/_panel/personel'
     | '/_panel/takvim'
     | '/_panel/'
+    | '/_panel/ayarlar/bildirimler'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/randevu-kurallari'
     | '/_panel/ayarlar/rezervasyon'
@@ -291,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarIndexRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/ayarlar/bildirimler': {
+      id: '/_panel/ayarlar/bildirimler'
+      path: '/bildirimler'
+      fullPath: '/ayarlar/bildirimler'
+      preLoaderRoute: typeof PanelAyarlarBildirimlerRouteImport
+      parentRoute: typeof PanelAyarlarRoute
+    }
     '/_panel/ayarlar/isletme': {
       id: '/_panel/ayarlar/isletme'
       path: '/isletme'
@@ -337,6 +356,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface PanelAyarlarRouteChildren {
+  PanelAyarlarBildirimlerRoute: typeof PanelAyarlarBildirimlerRoute
   PanelAyarlarIsletmeRoute: typeof PanelAyarlarIsletmeRoute
   PanelAyarlarRandevuKurallariRoute: typeof PanelAyarlarRandevuKurallariRoute
   PanelAyarlarRezervasyonRoute: typeof PanelAyarlarRezervasyonRoute
@@ -345,6 +365,7 @@ interface PanelAyarlarRouteChildren {
 }
 
 const PanelAyarlarRouteChildren: PanelAyarlarRouteChildren = {
+  PanelAyarlarBildirimlerRoute: PanelAyarlarBildirimlerRoute,
   PanelAyarlarIsletmeRoute: PanelAyarlarIsletmeRoute,
   PanelAyarlarRandevuKurallariRoute: PanelAyarlarRandevuKurallariRoute,
   PanelAyarlarRezervasyonRoute: PanelAyarlarRezervasyonRoute,
