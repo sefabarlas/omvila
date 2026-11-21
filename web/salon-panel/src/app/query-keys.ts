@@ -17,8 +17,13 @@ export const queryKeys = {
   calendar: (branchId: string, from: string, to: string, staffId?: string) =>
     ['calendar', branchId, from, to, staffId ?? 'all'] as const,
   appointment: (appointmentId: string) => ['appointment', appointmentId] as const,
+  /** Yeni randevu boş saatleri (hizmetler ve personel). */
+  slots: (branchId: string, date: string, serviceIds: readonly string[], staffId: string) =>
+    ['slots', branchId, date, serviceIds.join(','), staffId] as const,
   /** Müşteri listesi (arama + filtre); önek ['customers'] bütün müşteri sorgularını geçersizler. */
   customers: (q: string, filter: string) => ['customers', 'list', q, filter] as const,
+  /** Yeni randevu müşteri araması (önek ['customers'] ile birlikte geçersizlenir). */
+  customerSearch: (q: string) => ['customers', 'picker', q] as const,
   customer: (brandCustomerId: string) => ['customers', brandCustomerId] as const,
   customerAppointments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'appointments'] as const,

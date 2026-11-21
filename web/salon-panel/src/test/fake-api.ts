@@ -359,6 +359,11 @@ export function fakeFetch({
         (calls[`${request.method} ${path} If-Match`] ??= []).push(ifMatch);
       }
 
+      const key = request.headers.get('Idempotency-Key');
+      if (key !== null) {
+        (calls[`${path} Idempotency-Key`] ??= []).push(key);
+      }
+
       (calls[path] ??= []).push(
         await request
           .clone()

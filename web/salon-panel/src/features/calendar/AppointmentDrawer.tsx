@@ -10,19 +10,12 @@ import { CalendarX2, Clock, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSession } from '@/app/session';
+import { channelLabels } from '@/features/appointments/labels';
 import { ConflictBanner } from '@/shared/ConflictBanner';
 import { locativeTime } from '@/shared/turkish';
 import { appointmentQuery, useCheckIn, useUndoNoShow } from './api';
-import type { AppointmentDetail } from './api';
 import styles from './Calendar.module.css';
 import { CancelAppointmentModal } from './CancelAppointmentModal';
-
-const channelLabels: Record<AppointmentDetail['channel'], string> = {
-  Online: 'Online',
-  Panel: 'Panelden',
-  Phone: 'Telefonla',
-  WalkIn: 'Kapıdan',
-};
 
 interface AppointmentDrawerProps {
   appointmentId: string;
