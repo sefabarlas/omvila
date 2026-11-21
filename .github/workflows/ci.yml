@@ -127,8 +127,8 @@ jobs:
           fi
           pnpm turbo run "$@"
 
-  # Salon paneli uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md). Zorunlu denetimlere
-  # eklenmedi; dal koruması ayrıca karar verilir.
+  # Salon paneli ve rezervasyon sayfası uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md
+  # kritik akışlar 1, 2, 6, 7 ve ekran görüntüleri). Zorunlu denetimlere eklenmedi; dal koruması ayrıca karar verilir.
   e2e:
     needs: changes
     runs-on: ubuntu-latest
@@ -149,10 +149,15 @@ jobs:
       - name: Playwright Chromium
         if: env.RUN == 'true'
         run: pnpm --filter @omvila/salon-panel exec playwright install --with-deps chromium
-      - name: Uçtan uca testler
+      - name: Uçtan uca testler (salon paneli)
         if: env.RUN == 'true'
         run: pnpm --filter @omvila/salon-panel e2e
-      - name: Rapor ve ekran görüntüleri
+      - name: Uçtan uca testler (rezervasyon sayfası)
+        if: env.RUN == 'true' && always()
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm --filter @omvila/rezervasyon e2e
+      - name: Rapor ve ekran görüntüleri (salon paneli)
         if: env.RUN == 'true' && always()
         uses: actions/upload-artifact@v4
         with:
@@ -160,6 +165,15 @@ jobs:
           path: |
             web/salon-panel/e2e-report/
             web/salon-panel/e2e-results/
+          retention-days: 7
+      - name: Rapor ve ekran görüntüleri (rezervasyon sayfası)
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rezervasyon-e2e
+          path: |
+            web/rezervasyon/e2e-report/
+            web/rezervasyon/e2e-results/
           retention-days: 7
 
   # Rezervasyon sayfası performans bütçesi (Lighthouse CI, Prism mock'a karşı `next start`;

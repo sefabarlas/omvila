@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Uçtan uca testler (docs/standartlar/test-stratejisi.md). Salon kartı sunucuda Prism mock'tan okunur; tarayıcıdaki
-// akış uçları (katalog, gün, saat, kod, oluşturma) test verisiyle yanıtlanır (page.route, src/test/booking-fixtures.ts).
+// Uçtan uca testler (docs/standartlar/test-stratejisi.md). Uygulama API olarak e2e/api-stub.mjs'i (:4011) kullanır:
+// salon kartları (sunucuda okunur) test verisidir, diğer istekler Prism mock'a (:4010) gider. Tarayıcıdaki akış uçları
+// (katalog, gün, saat, kod, oluşturma) test verisiyle yanıtlanır (page.route, src/test/booking-fixtures.ts).
 // Yerelde kurulu Chrome kullanılır (tarayıcı indirmeden); CI'da Playwright Chromium kurulur.
 const ci = Boolean(process.env.CI);
 const port = 3100;
@@ -31,11 +32,18 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
+      command: 'node e2e/api-stub.mjs',
+      cwd: '..',
+      port: 4011,
+      reuseExistingServer: !ci,
+      timeout: 10_000,
+    },
+    {
       command: `pnpm exec next dev --port ${String(port)}`,
       cwd: '..',
       port,
       reuseExistingServer: !ci,
-      env: { NEXT_PUBLIC_API_URL: 'http://localhost:4010' },
+      env: { NEXT_PUBLIC_API_URL: 'http://localhost:4011' },
       timeout: 120_000,
     },
   ],

@@ -13,7 +13,7 @@ const corsJson = (body: unknown) => ({
   body: JSON.stringify(body),
 });
 
-const demoStaff = [
+export const demoStaff = [
   {
     staffId: '0193a8f0-0000-7000-8000-0000000000c1',
     fullName: 'Elif Kaya',
@@ -63,7 +63,8 @@ export const demoNow = '2026-11-25T12:10:00+03:00';
 const demoToday = '2026-11-25';
 const istanbulToday = () => demoToday;
 
-function demoCalendar(url: URL) {
+/** Tasarımdaki takvim (manageGetCalendar yanıtı); adresin from, to ve staffIds parametrelerine göre. */
+export function demoCalendar(url: URL) {
   const from = url.searchParams.get('from') ?? istanbulToday();
   const to = url.searchParams.get('to') ?? from;
   const only = url.searchParams.get('staffIds')?.split(',') ?? [];
@@ -132,7 +133,8 @@ function demoCalendar(url: URL) {
   };
 }
 
-function demoAppointment(example: Record<string, unknown>) {
+/** Derya Şahin'in randevu ayrıntısı (manageGetAppointment yanıtı); kimlik ve diğer alanlar örnekten. */
+export function demoAppointment(example: Record<string, unknown>) {
   const today = istanbulToday();
   return {
     ...example,

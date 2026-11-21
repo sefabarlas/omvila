@@ -262,6 +262,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           </Button>
           <IconButton
             size="sm"
+            variant="secondary"
             label={mode === 'hafta' ? 'Önceki hafta' : 'Önceki gün'}
             icon={<ChevronLeft size={16} />}
             onClick={() => {
@@ -270,6 +271,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           />
           <IconButton
             size="sm"
+            variant="secondary"
             label={mode === 'hafta' ? 'Sonraki hafta' : 'Sonraki gün'}
             icon={<ChevronRight size={16} />}
             onClick={() => {

@@ -54,7 +54,7 @@ Müşteri, salonun bağlantısından üyeliksiz randevu alır (onaysız salon ak
 17. **Salt okunur:** Abonelik `ReadOnly` → rezervasyon sayfası "Online randevu kapalı · Salonu ara"; panelde yeni randevu butonu pasif, kırmızı şerit.
 18. **Saat dilimi:** Test şubesi `Europe/Berlin` ile kurulduğunda (yaz saati geçiş günü) panel ve rezervasyon saatleri yerel olarak doğru gösterilir (M20).
 19. **Performans:** 12 personelli şubede 7 günlük gün listesi p95 < 300 ms, tek gün saat ızgarası p95 < 200 ms (entegrasyon performans testi, seed verisiyle).
-20. **Tasarım:** Listelenen ekranlar açık/koyu, masaüstü/mobil, tablet kırılımlarında tasarımla karşılaştırılır; rezervasyon sayfası Lighthouse bütçesini geçer.
+20. **Tasarım:** Listelenen ekranlar açık/koyu, masaüstü/mobil, tablet kırılımlarında tasarımla karşılaştırılır; rezervasyon sayfası Lighthouse bütçesini geçer. Kayıt: [dilim-02-tasarim-karsilastirma.md](dilim-02-tasarim-karsilastirma.md).
 
 ## Testler
 - Alan: `musaitlik.md` M1–M20; durum geçişleri A1, A6–A10, A14; fiyat/süre çözümü; tekrar üretimi.
