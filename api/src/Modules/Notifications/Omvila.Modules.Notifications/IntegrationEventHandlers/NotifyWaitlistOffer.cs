@@ -30,7 +30,7 @@ internal sealed class NotifyWaitlistOffer(
         await session.SetTenantAsync(TenantScope.ForBrand(brandId), ct);
         var branch = await booking.GetBranchCardAsync(brandId, integrationEvent.BranchId, ct);
         var customer = (await customers.GetDisplayInfoAsync(brandId, [integrationEvent.BrandCustomerId], ct)).GetValueOrDefault(integrationEvent.BrandCustomerId);
-        if (branch is null || customer is not { PhoneMasked: not null } || !PhoneNumber.TryParse(customer.PhoneE164, out _))
+        if (branch is null || customer is not { PhoneMasked: not null, PhoneE164: { } phone } || !PhoneNumber.TryParse(phone, out _))
         {
             return;
         }
@@ -48,7 +48,7 @@ internal sealed class NotifyWaitlistOffer(
         await outbox.EnqueueSmsAsync(
             new SmsNotification(
                 NotificationEvents.WaitlistOffer,
-                customer.PhoneE164,
+                phone,
                 values,
                 brandId,
                 NotificationReference.ForWaitlistOffer(integrationEvent.OfferId),

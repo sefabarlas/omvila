@@ -85,6 +85,8 @@ internal sealed class AppointmentItem
         Place(plan, newId);
     }
 
+    internal void Complete() => Status = AppointmentItemStatus.Completed;
+
     internal void Cancel()
     {
         Status = AppointmentItemStatus.Cancelled;

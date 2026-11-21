@@ -170,7 +170,8 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         return (result.Status, result.Body.ValueKind == System.Text.Json.JsonValueKind.Undefined ? string.Empty : result.Body.GetRawText());
     }
 
-    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu.
+    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu,
+    // kapıda sıra bileti.
     // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
@@ -206,25 +207,40 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             allowOutsideWorkingHours = true,
         }, token, new Dictionary<string, string>(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" });
         appointment.Status.ShouldBe(201, appointment.Body.ToString());
-        var entryId = await PostIdAsync(token, "/api/v1/manage/waitlist", new
-        {
-            branchId,
-            brandCustomerId,
-            preferences = new { serviceIds = new[] { serviceId }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
-        });
+        var appointmentId = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!;
+
+        // Değerlendirme: tamamla ucu (T-88) ve /d/ gönderimi bu testin konusu değil; satır doğrudan yazılır.
+        var brandId = session.GetProperty("brand").GetProperty("id").GetString()!;
+        var reviewId = await _api.ScalarAsync<string>($"""
+            INSERT INTO reviews.reviews (id, brand_id, branch_id, appointment_id, brand_customer_id, rating, service_names, is_published, created_utc)
+            VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
+            RETURNING id::text
+            """);
+        var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
+        var entryId = await WaitlistEntryAsync(token, branchId, brandCustomerId, serviceId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["entryId"] = entryId,
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
-            ["appointmentId"] = appointment.Body.GetProperty("appointment").GetProperty("id").GetString()!,
+            ["appointmentId"] = appointmentId,
+            ["reviewId"] = reviewId,
             ["categoryId"] = categoryId,
             ["serviceId"] = serviceId,
             ["staffId"] = staffId,
             ["overrideId"] = overrideId,
             ["timeOffId"] = timeOff.Body.GetProperty("timeOff").GetProperty("id").GetString()!,
+            ["ticketId"] = ticketId,
         };
     }
+
+    private Task<string> WaitlistEntryAsync(string token, string branchId, string brandCustomerId, string serviceId) =>
+        PostIdAsync(token, "/api/v1/manage/waitlist", new
+        {
+            branchId,
+            brandCustomerId,
+            preferences = new { serviceIds = new[] { serviceId }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
+        });
 
     private async Task<string> PostIdAsync(string token, string path, object body)
     {

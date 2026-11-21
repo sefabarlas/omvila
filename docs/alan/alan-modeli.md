@@ -47,7 +47,7 @@ Backend modüler monolittir. Her modül kendi PostgreSQL şemasına (schema) sah
 | Customers | `customers` | Customer, BrandCustomer, Tag, BrandCustomerTag, ConsentRecord, CustomerSavedBrand, DataDeletionRequest, CustomerImport |
 | Scheduling | `scheduling` | Appointment, AppointmentItem, AppointmentItemSegment, AppointmentItemResource, AppointmentSeries, AppointmentAccessCode, WaitlistEntry, WaitlistOffer, WalkInTicket, BranchQueueCounter |
 | Sales | `sales` | Payment, PaymentAllocation, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
-| Reviews | `reviews` | Review |
+| Reviews | `reviews` | Review, ReviewInvitation |
 | Notifications | `notifications` | NotificationOutbox, InAppNotification, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
 | Integrations | `integrations` | CalendarLink, AppointmentCalendarSync |
 | Platform | `platform` | Plan, CreditPackage, Subscription, SubscriptionInvoice, PaymentNotice, PlatformBankTransaction, AuditLog |
@@ -491,7 +491,7 @@ SMS'teki `omvila.com/r/{code}` bağlantısı. Bağlantıyı açan kişi o randev
 Kural: bir saat boşalınca uygun bekleyenler öncelik ve kayıt sırasına göre sıralanır, yalnız ilk kişiye teklif gider. Teklif süresince saat başka online müşteriye gösterilmez (geçici tutma). Teklif reddedilir veya süresi dolarsa sıradakine geçer. Kişi listede kalır ("Listede kalmaya devam ediyorsunuz").
 
 ### WalkInTicket (Kapıda sıra)
-`BranchId`, `QueueDate` (yerel), `QueueNumber` (şube + gün bazında 1'den), `CustomerId?`, `CustomerName?`, `PhoneE164?` (isteğe bağlı; sıra gelince SMS için), `ServiceId?`, `PreferredStaffId?`, `Status` (`Waiting`, `Called`, `Served`, `Left`), `JoinedUtc`, `CalledUtc?`, `AppointmentId?`.
+`BranchId`, `QueueDate` (yerel), `QueueNumber` (şube + gün bazında 1'den), `BrandCustomerId?` (var olan müşteri seçildiyse veya Başlat'ta), `CustomerName`, `PhoneE164?` (isteğe bağlı; sıra yaklaşınca SMS için), `ServiceId?`, `ServiceName?` ve `ServiceMinutes?` (katılımda kopya; tahmini bekleme), `PreferredStaffId?`, `Status` (`Waiting`, `Called`, `Served`, `Left`), `JoinedUtc`, `CalledUtc?`, `ClosedUtc?`, `AppointmentId?`, `AlmostTurnNotifiedUtc?` (`walkin.almost_turn` bir kez). Ayrıntı: `docs/acik-sorular.md` T-91.
 "Başlat / Randevuya çevir" → `Channel = WalkIn` ve `Status = CheckedIn` olan bir randevu oluşturur. Bilet `Served` olur. Müşteri kaydı bilet oluşurken değil, "Başlat"ta açılır: telefon varsa numarayla bulunur veya açılır; telefonsuz bilette adla, telefonsuz bir müşteri kaydı açılır (`Customer.PhoneE164` yalnız bu durumda boş olabilir; benzersizlik dolu değerler içindir). Ayrıntı: `docs/acik-sorular.md` T-86.
 `BranchQueueCounter` (`BranchId`, `Date`, `LastNumber`) numarayı atomik olarak verir (`UPDATE … RETURNING`).
 
@@ -542,7 +542,8 @@ Kurallar: hizmet primi randevu `Completed` olunca kalem başına doğar. Taban, 
 ## Reviews
 
 ### Review
-`AppointmentId` (UNIQUE: bir randevu bir kez değerlendirilir), `BranchId`, `CustomerId`, `StaffId?`, `Rating` (1–5), `Comment?` (1000), `IsPublished`, `ReplyText?`, `RepliedUtc?`, `RepliedByUserId?`.
+`AppointmentId` (UNIQUE: bir randevu bir kez değerlendirilir), `BranchId`, `CustomerId`, `StaffId?`, `Rating` (1–5), `Comment?` (1000), `IsPublished`, `ReplyText?`, `RepliedUtc?`, `RepliedByUserId?`. Uygulamada ayrıca `ServiceNames` (randevudan kopya), `RepliedByName?` (yanıt anındaki personel adı) ve `CreatedUtc` tutulur; `CustomerId` markadaki müşteri kartıdır (`BrandCustomerId`). Çok kalemli randevuda `StaffId` = personeli olan ilk kalemin personeli (T-89).
+`ReviewInvitation`: `AppointmentId` (UNIQUE), `BranchId`, `SendAtUtc` (tamamlanma + `ReviewInviteDelayMinutes`), `CreatedUtc`. Davet oranı ("davet edilenlerin %38'i") bu kayıtlardan hesaplanır; gönderimin kendisi `NotificationOutbox`'tadır.
 Kural: yalnız `Completed` randevu değerlendirilebilir. Etiket ("Neler iyiydi?") yoktur. Rezervasyon sayfasında puan, yalnız yayınlanmış değerlendirme sayısı eşiği geçince gösterilir (bkz. ayarlar). Yorumda müşterinin yalnız adı ve soyadının baş harfi görünür.
 
 ---

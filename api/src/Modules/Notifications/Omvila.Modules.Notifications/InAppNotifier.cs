@@ -21,6 +21,9 @@ internal sealed class InAppNotifier(NotificationsDbContext db, IClock clock, IId
     /// <summary>"Kapora geldi mi?" (staff.deposit_reported; id randevu).</summary>
     public const string DepositTarget = "Deposit";
 
+    /// <summary>Değerlendirmeler (staff.review_received; id değerlendirme).</summary>
+    public const string ReviewsTarget = "Reviews";
+
     public async Task AddAsync(InAppEntry entry, IReadOnlyCollection<Guid> userIds, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entry);

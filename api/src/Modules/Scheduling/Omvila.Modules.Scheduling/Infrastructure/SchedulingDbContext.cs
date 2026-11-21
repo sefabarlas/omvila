@@ -18,6 +18,10 @@ internal sealed class SchedulingDbContext(DbContextOptions<SchedulingDbContext> 
 
     public DbSet<AppointmentAccessCode> AppointmentAccessCodes => Set<AppointmentAccessCode>();
 
+    public DbSet<WalkInTicket> WalkInTickets => Set<WalkInTicket>();
+
+    public DbSet<BranchQueueCounter> BranchQueueCounters => Set<BranchQueueCounter>();
+
     public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
 
     public DbSet<WaitlistOffer> WaitlistOffers => Set<WaitlistOffer>();
