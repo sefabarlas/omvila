@@ -39,6 +39,7 @@ export type DateStyle =
   | 'short'
   | 'numeric'
   | 'dayMonth'
+  | 'dayMonthShort'
   | 'compact'
   | 'weekdayDayMonth'
   | 'monthYear'
@@ -70,7 +71,7 @@ function parseLocalDate(localDate: string): Parts {
 
 /**
  * long "21 Kasım Cuma", panel "Salı, 25 Kasım", short "21 Kas Cum", numeric "21.11.2026", dayMonth "31 Aralık"
- * (salon-paneli/AyarlarSube özel günler). Rezervasyon sayfası: compact "Cum 28 Kas" (Randevum, Ertele alt çubuğu),
+ * (salon-paneli/AyarlarSube özel günler), dayMonthShort "11 Kas" (salon-paneli/OdemeAl kapora satırı). Rezervasyon sayfası: compact "Cum 28 Kas" (Randevum, Ertele alt çubuğu),
  * weekdayDayMonth "Cuma 28 Kasım", monthYear "Kasım 2026" (gün şeridi başlığı), weekday "Cuma", weekdayShort "Cum",
  * day "28". weekdayShort ayrıca salon-paneli/HaftaTakvim kolon başlığında kullanılır.
  * @param localDate Takvim günü, yyyy-aa-gg.
@@ -88,6 +89,8 @@ export function formatDate(localDate: string, style: DateStyle = 'long'): string
       return `${String(p.day)} ${shortMonths[p.month - 1] ?? ''} ${shortWeekdays[p.weekday] ?? ''}`;
     case 'dayMonth':
       return `${String(p.day)} ${month}`;
+    case 'dayMonthShort':
+      return `${String(p.day)} ${shortMonths[p.month - 1] ?? ''}`;
     case 'numeric':
       return `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}.${String(p.year)}`;
     case 'compact':
