@@ -16,6 +16,7 @@ it('durum adları sabit', () => {
 
 it('API durumu eşlenir, Draft gösterilmez', () => {
   expect(displayStatus('AwaitingDeposit')).toBe('kapora');
+  expect(displayStatus('DepositPending')).toBe('kapora');
   expect(displayStatus('Cancelled')).toBe('iptal');
   expect(displayStatus('Draft')).toBeNull();
 });

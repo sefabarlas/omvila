@@ -24,6 +24,8 @@ export const statusLabels: Record<StatusKey, string> = {
 
 const byApiStatus: Record<string, StatusKey> = {
   PendingApproval: 'onay',
+  // Sözleşmedeki DisplayStatus adı DepositPending; AwaitingDeposit eski ad olarak kalır.
+  DepositPending: 'kapora',
   AwaitingDeposit: 'kapora',
   Confirmed: 'onaylandi',
   CheckedIn: 'geldi',

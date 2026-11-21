@@ -82,3 +82,47 @@ export function localDateTimeToUtc(localDate: string, localTime: string, timeZon
   guess = wall - offsetMinutes(new Date(guess), timeZone) * 60_000;
   return new Date(guess).toISOString();
 }
+
+/**
+ * Anlık zamanın şubenin saat dilimindeki duvar saati, gece yarısından dakika: ("2026-11-25T07:30:00Z",
+ * "Europe/Istanbul") → 630 (10:30). Takvim ızgarası duvar saatiyle çizildiği için yaz saati geçiş gününde de
+ * 10:00 her zaman 600'dür (geçen süre değil).
+ */
+export function localMinutesOfDay(instant: Date | string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(typeof instant === 'string' ? new Date(instant) : instant);
+  const value = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? '0');
+  return value('hour') * 60 + value('minute');
+}
+
+/** "09:30" → 570. */
+export function parseClock(localTime: string): number {
+  const match = /^(\d{2}):(\d{2})$/.exec(localTime);
+  const hours = Number(match?.[1]);
+  const minutes = Number(match?.[2]);
+  if (!match || hours > 24 || minutes > 59 || (hours === 24 && minutes > 0)) {
+    throw new RangeError(`Saat ss:dd olmalı: ${localTime}`);
+  }
+
+  return hours * 60 + minutes;
+}
+
+/** 570 → "09:30". */
+export function formatClock(minutesOfDay: number): string {
+  if (!Number.isInteger(minutesOfDay) || minutesOfDay < 0 || minutesOfDay > 24 * 60) {
+    throw new RangeError('Dakika 0–1440 arası tamsayı olmalı.');
+  }
+
+  const hours = Math.floor(minutesOfDay / 60);
+  return `${String(hours).padStart(2, '0')}:${String(minutesOfDay % 60).padStart(2, '0')}`;
+}
+
+/** Takvim gününe gün ekler: ("2026-11-30", 1) → "2026-12-01". Saat diliminden bağımsızdır. */
+export function addDays(localDate: string, days: number): string {
+  const [y, m, d] = localDate.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
