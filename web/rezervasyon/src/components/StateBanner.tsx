@@ -2,8 +2,11 @@ import type { ReactNode } from 'react';
 import styles from './StateBanner.module.css';
 
 interface StateBannerProps {
-  /** `hata`: saat doldu, kod deneme sınırı. `uyari`: kapora gelmedi, online randevu kapalı. */
-  tone: 'hata' | 'uyari';
+  /**
+   * `hata`: saat doldu, kod deneme sınırı. `uyari`: kapora gelmedi, online randevu kapalı. `basari`: işlem
+   * sonucu (saat değiştirildi).
+   */
+  tone: 'hata' | 'uyari' | 'basari';
   /** Dekoratif ikon (lucide, 20 px). */
   icon: ReactNode;
   title: string;
@@ -19,7 +22,7 @@ interface StateBannerProps {
 export function StateBanner({ tone, icon, title, description, children }: StateBannerProps) {
   return (
     <div
-      className={[styles.banner, tone === 'hata' ? styles.hata : styles.uyari].join(' ')}
+      className={[styles.banner, styles[tone]].join(' ')}
       role={tone === 'hata' ? 'alert' : 'status'}
     >
       <span className={styles.icon} aria-hidden="true">

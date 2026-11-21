@@ -1,0 +1,370 @@
+/* SMS bağlantısı (rezervasyon-sayfasi/Randevum, Ertele, Iptal). Mobil ölçek; masaüstünde ortada tek kolon. */
+.root {
+  outline: none;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  max-width: var(--ekran-genislik);
+  margin: 0 auto;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-4);
+}
+
+/* Bloğun altındaki eylemler (Yol tarifi) kenar boşluğuyla. */
+.ticket > :nth-child(2) {
+  padding: 0 var(--bosluk-4);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeletonHeader {
+  min-height: calc(var(--bosluk-12) * 4);
+  border-radius: 0 0 var(--kose-xl) var(--kose-xl);
+  background: var(--iskelet);
+}
+
+.skeleton {
+  display: block;
+  min-height: calc(var(--bosluk-12) * 2);
+  border-radius: var(--kose-lg);
+  background: var(--iskelet);
+}
+
+/* Kartlar */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  color: var(--metin);
+  outline: none;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.text {
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+  line-height: var(--yazi-govde-satir);
+}
+
+.muted {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.error {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.row:first-child {
+  padding-top: 0;
+}
+
+.row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.rowLabel {
+  color: var(--metin-ikincil);
+}
+
+.rowValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.planActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.footnote {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+  text-align: center;
+}
+
+/* Ertele */
+.reschedule {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-4);
+}
+
+.topbar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--dokunma-min);
+}
+
+.back {
+  position: absolute;
+  left: calc(var(--bosluk-2) * -1);
+  display: grid;
+  place-items: center;
+  width: var(--dokunma-min);
+  height: var(--dokunma-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: transparent;
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.brand {
+  display: inline-flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  font-weight: 800;
+}
+
+.brand .brandLogo {
+  border-radius: var(--kose-sm);
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+  outline: none;
+}
+
+.currentPill {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  margin: 0;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.currentWhen {
+  font-weight: 700;
+}
+
+.dayTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-govde-guclu-satir);
+}
+
+/* İptal alt sayfası */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--ust-katman);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--ekran-genislik);
+  max-height: 100dvh;
+  overflow-y: auto;
+  padding: var(--bosluk-3) var(--bosluk-5) calc(var(--bosluk-6) + env(safe-area-inset-bottom, 0));
+  border-radius: var(--kose-xl) var(--kose-xl) 0 0;
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-lg);
+  color: var(--metin);
+}
+
+.handle {
+  align-self: center;
+  width: var(--bosluk-8);
+  height: var(--bosluk-1);
+  border-radius: var(--kose-tam);
+  background: var(--tutamak);
+}
+
+.sheetIcon {
+  display: grid;
+  place-items: center;
+  width: var(--kontrol-lg);
+  height: var(--kontrol-lg);
+  border-radius: var(--kose-md);
+  background: var(--hata-zemin);
+  color: var(--hata);
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reasons legend {
+  margin-bottom: var(--bosluk-2);
+  padding: 0;
+}
+
+.required {
+  color: var(--hata);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  min-height: var(--dokunma-min);
+  box-sizing: border-box;
+  padding: 0 var(--bosluk-4);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: inset 0 0 0 1px var(--cizgi-guclu);
+  color: var(--metin);
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-etiket-kucuk-satir);
+  cursor: pointer;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chip:has(input:checked) {
+  padding-inline-start: var(--bosluk-3);
+  background: var(--blok-marka);
+  box-shadow: none;
+  color: var(--metin-ters);
+}
+
+.textareaControl {
+  align-items: stretch;
+}
+
+.textarea {
+  padding: var(--bosluk-3) var(--bosluk-4);
+  resize: vertical;
+}
+
+.suggestion {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  min-height: var(--dokunma-min);
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-secili);
+  color: var(--metin-marka);
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+
+.suggestion span {
+  flex: 1;
+}
+
+.sheetActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+/* "İptal et": dolu kırmızı (Iptal.png; koyuda açık zemin + koyu metin, IptalKoyu.png). Randevum'daki
+   "Randevuyu iptal et" metin butonudur. */
+.sheetActions .dangerSolid,
+.sheetActions .dangerSolid:hover {
+  background: var(--hata);
+  color: var(--zemin-yukseltilmis);
+}
+
+.back:focus-visible,
+.suggestion:focus-visible,
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}

@@ -25,3 +25,10 @@
 .icon {
   display: flex;
 }
+
+.block {
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+}

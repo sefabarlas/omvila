@@ -2,6 +2,7 @@ import { AppointmentTicket } from '@omvila/ui-web/booking';
 import { displayStatus } from '@omvila/ui-web/status';
 import { Check, MapPin, Phone } from 'lucide-react';
 import { LinkButton } from '@/components/LinkButton';
+import { directionsUrl } from '@/lib/directions';
 import type { PublicAppointment } from '../booking-api';
 import styles from './steps.module.css';
 
@@ -24,10 +25,7 @@ export function DoneStep({ appointment, phoneMasked }: DoneStepProps) {
   );
   const staff = [...new Set(appointment.items.map((item) => item.staffName).filter(Boolean))];
   const { branch } = appointment;
-  const directions =
-    branch.latitude != null && branch.longitude != null
-      ? `https://www.google.com/maps/dir/?api=1&destination=${String(branch.latitude)},${String(branch.longitude)}`
-      : null;
+  const directions = directionsUrl(branch);
 
   return (
     <div className={styles.stack}>

@@ -1,33 +1,29 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { loadAppointment } from '@/lib/appointment';
+import { actionParam, parseAction } from '@/appointment/action';
+import { isAccessCode } from '@/appointment/appointment-api';
+import { AppointmentManager } from '@/appointment/AppointmentManager';
 import { privateRobots } from '@/lib/metadata';
-import styles from './page.module.css';
 
 interface AppointmentPageProps {
   params: Promise<{ code: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-// 404 belgesi istemcide çizilir ve sayfanın metadatasını kullanır; başlık not-found.tsx ile aynı olmalı.
-export async function generateMetadata({ params }: AppointmentPageProps): Promise<Metadata> {
-  const appointment = await loadAppointment((await params).code);
-  return {
-    title: appointment ? appointment.brand.name : 'Bu randevu bulunamadı',
-    robots: privateRobots,
-  };
-}
+export const metadata: Metadata = { title: 'Randevunuz', robots: privateRobots };
 
 /**
- * SMS bağlantısı (omvila.com/r/{kod}). Geçici iskelet: yalnız kodu doğrular. Randevum, saat değiştir ve
- * iptal ekranları sonraki PR'da gelir.
+ * SMS bağlantısı (omvila.com/r/{kod}). İstemcide çizilir (web/rezervasyon/AGENTS.md § Rotalar): randevu ve ETag
+ * tarayıcıdan okunur. Biçimi bozuk kod API'ye gitmeden 404; bilinmeyen kod istemcide "Bu randevu bulunamadı".
  */
-export default async function AppointmentPage({ params }: AppointmentPageProps) {
-  const appointment = await loadAppointment((await params).code);
-  if (!appointment) notFound();
-
+export default async function AppointmentPage({ params, searchParams }: AppointmentPageProps) {
+  const { code } = await params;
+  if (!isAccessCode(code)) notFound();
+  const value = (await searchParams)?.[actionParam];
   return (
-    <main className={styles.page}>
-      <h1 className={styles.title}>{appointment.brand.name}</h1>
-    </main>
+    <AppointmentManager
+      code={code}
+      initialAction={parseAction(typeof value === 'string' ? value : null)}
+    />
   );
 }

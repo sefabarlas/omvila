@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { json, mockApi, problem } from '@/test/api-mock';
+import { mockApi, problem } from '@/test/api-mock';
 import ErrorPage from './error';
 import NotFound from './not-found';
 import HomePage from './page';
@@ -51,22 +51,21 @@ describe('durum sayfaları', () => {
 });
 
 describe('SMS bağlantısı (/r/[code])', () => {
-  const props = (code: string) => ({ params: Promise.resolve({ code }) });
-
-  it('404 bulunamadı sayfasına çıkar', async () => {
-    mockApi(() => problem(404, 'not_found'));
-    await expect(AppointmentPage(props('7Kx2Pq9a'))).rejects.toThrow('notFound');
+  const props = (code: string, islem?: string) => ({
+    params: Promise.resolve({ code }),
+    searchParams: Promise.resolve(islem ? { islem } : {}),
   });
 
-  it('biçimi bozuk kodu API’ye sormaz', async () => {
+  it('biçimi bozuk kodu API’ye sormadan 404 verir', async () => {
     const calls = mockApi(() => problem(404, 'not_found'));
     await expect(AppointmentPage(props('kisa'))).rejects.toThrow('notFound');
     expect(calls).toHaveLength(0);
   });
 
-  it('geçerli kodda salon adını gösterir', async () => {
-    mockApi(() => json(200, { brand: { name: 'Kuaför Elif', slug: 'kuafor-elif' } }));
-    render(await AppointmentPage(props('7Kx2Pq9a')));
-    expect(screen.getByRole('heading', { level: 1, name: 'Kuaför Elif' })).toBeTruthy();
+  it('geçerli biçimde istemci bileşenine kodu ve alt ekranı verir (istemcide okunur)', async () => {
+    const calls = mockApi(() => problem(404, 'not_found'));
+    const element = await AppointmentPage(props('7Kx2Pq9a', 'iptal'));
+    expect(element.props).toEqual({ code: '7Kx2Pq9a', initialAction: 'cancel' });
+    expect(calls).toHaveLength(0);
   });
 });
