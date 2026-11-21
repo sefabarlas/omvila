@@ -89,6 +89,9 @@ internal static partial class SmsTemplates
         [Key(NotificationEvents.DepositNotReceived, null)] = new(
             "{salon}: {tutar} TL kapora {süre} içinde gelmediği için {tarih} {saat} randevunuz iptal edildi. Havale yaptıysanız salonu arayın.",
             SalonOnly),
+        // Katalogdaki "15 dk" WaitlistOfferHoldMinutes'tan gelir (sabit yazılmaz).
+        [Key(NotificationEvents.WaitlistOffer, null)] = new(
+            "{salon}: Beklediğiniz {tarih} {saat} boşaldı. {dakika} dk içinde onaylarsanız sizin: {b bağlantısı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(

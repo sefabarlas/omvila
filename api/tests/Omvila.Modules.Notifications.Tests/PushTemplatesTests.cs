@@ -17,6 +17,7 @@ public sealed class PushTemplatesTests
         [(NotificationEvents.AppointmentConfirmed, SmsTemplates.WithoutStaffVariant)] = Values(("salon", Salon30), ("tarih", "Çar 30 Ağu"), ("saat", "23:45")),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", "23:45")),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", "23:45")),
+        [(NotificationEvents.WaitlistOffer, null)] = Values(("salon", Salon30), ("tarih", "Çar 30 Ağu"), ("saat", "23:45"), ("dakika", "15")),
         [(NotificationEvents.StaffApprovalNeeded, null)] = Values(("kalan süre", "1 sa 58 dk"), ("müşteri", Customer), ("tarih saat", "Çar 30 Ağu 23:45"), ("hizmet", "Saç kesimi")),
         [(NotificationEvents.StaffAppointmentCreated, null)] = Values(("müşteri", Customer), ("saat", "23:45"), ("hizmet", "Saç kesimi ve fön +2")),
         [(NotificationEvents.StaffAppointmentChanged, PushTemplates.CancelledVariant)] = Values(("müşteri", Customer), ("saat", "23:45"), ("neden", "Başka saat istiyorum")),

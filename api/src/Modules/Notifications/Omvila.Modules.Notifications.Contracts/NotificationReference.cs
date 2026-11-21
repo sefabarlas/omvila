@@ -14,4 +14,11 @@ public sealed record NotificationReference(string Type, Guid Id)
     /// <summary>Randevuya bağlı bildirim.</summary>
     /// <param name="appointmentId">Randevu.</param>
     public static NotificationReference ForAppointment(Guid appointmentId) => new(Appointment, appointmentId);
+
+    /// <summary>Bekleme teklifi bildirimlerinin kayıt türü.</summary>
+    public const string WaitlistOffer = "WaitlistOffer";
+
+    /// <summary>Bekleme teklifine bağlı bildirim (waitlist.offer).</summary>
+    /// <param name="offerId">Teklif.</param>
+    public static NotificationReference ForWaitlistOffer(Guid offerId) => new(WaitlistOffer, offerId);
 }

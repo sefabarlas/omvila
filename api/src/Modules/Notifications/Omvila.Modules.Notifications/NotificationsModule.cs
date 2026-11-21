@@ -58,6 +58,7 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentDepositReceived, ResolveApprovalNotifications>();
         services.AddIntegrationEventHandler<AppointmentDepositReported, NotifyDepositReported>();
         services.AddIntegrationEventHandler<AppointmentDepositReminded, NotifyDepositReminded>();
+        services.AddIntegrationEventHandler<WaitlistOfferCreated, NotifyWaitlistOffer>();
         return services;
     }
 
