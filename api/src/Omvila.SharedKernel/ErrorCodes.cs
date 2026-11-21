@@ -44,6 +44,12 @@ public static class ErrorCodes
 
     public const string DepositReminderAlreadySent = "deposit_reminder_already_sent";
 
+    public const string PaymentTotalMismatch = "payment_total_mismatch";
+
+    public const string PackageSessionUnavailable = "package_session_unavailable";
+
+    public const string CashDayAlreadyClosed = "cash_day_already_closed";
+
     public const string OutsideWorkingHours = "outside_working_hours";
 
     public const string StaffOnTimeOff = "staff_on_time_off";
@@ -90,6 +96,9 @@ public static class ErrorCodes
         DepositUnavailableNoIban,
         DepositRequired,
         DepositReminderAlreadySent,
+        PaymentTotalMismatch,
+        PackageSessionUnavailable,
+        CashDayAlreadyClosed,
         OutsideWorkingHours,
         StaffOnTimeOff,
         InsufficientCredits,

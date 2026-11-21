@@ -34,6 +34,7 @@ const eventNames: Record<EventCode, string> = {
   'appointment.rescheduled': 'Saat değişti',
   'appointment.cancelled_by_salon': 'Salon iptal etti',
   'waitlist.offer': 'Bekleme listesi teklifi',
+  'walkin.almost_turn': 'Sırası yaklaştı',
   'review.invite': 'Değerlendirme daveti',
 };
 

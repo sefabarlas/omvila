@@ -225,6 +225,7 @@ const _$CustomerNotificationEventEnumMap = {
   CustomerNotificationEvent.appointmentPeriodCancelledBySalon:
       'appointment.cancelled_by_salon',
   CustomerNotificationEvent.waitlistPeriodOffer: 'waitlist.offer',
+  CustomerNotificationEvent.walkinPeriodAlmostTurn: 'walkin.almost_turn',
   CustomerNotificationEvent.reviewPeriodInvite: 'review.invite',
   CustomerNotificationEvent.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

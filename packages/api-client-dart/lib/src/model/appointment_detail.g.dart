@@ -49,6 +49,10 @@ abstract class _$AppointmentDetailCWProxy {
 
   AppointmentDetail cancellation(AppointmentDetailCancellation? cancellation);
 
+  AppointmentDetail completedUtc(DateTime? completedUtc);
+
+  AppointmentDetail payments(List<PaymentView>? payments);
+
   AppointmentDetail history(List<AppointmentHistoryEntry> history);
 
   AppointmentDetail version(String version);
@@ -81,6 +85,8 @@ abstract class _$AppointmentDetailCWProxy {
     String? seriesId,
     DateTime? noShowAtUtc,
     AppointmentDetailCancellation? cancellation,
+    DateTime? completedUtc,
+    List<PaymentView>? payments,
     List<AppointmentHistoryEntry> history,
     String version,
   });
@@ -165,6 +171,14 @@ class _$AppointmentDetailCWProxyImpl implements _$AppointmentDetailCWProxy {
       this(cancellation: cancellation);
 
   @override
+  AppointmentDetail completedUtc(DateTime? completedUtc) =>
+      this(completedUtc: completedUtc);
+
+  @override
+  AppointmentDetail payments(List<PaymentView>? payments) =>
+      this(payments: payments);
+
+  @override
   AppointmentDetail history(List<AppointmentHistoryEntry> history) =>
       this(history: history);
 
@@ -200,6 +214,8 @@ class _$AppointmentDetailCWProxyImpl implements _$AppointmentDetailCWProxy {
     Object? seriesId = const $CopyWithPlaceholder(),
     Object? noShowAtUtc = const $CopyWithPlaceholder(),
     Object? cancellation = const $CopyWithPlaceholder(),
+    Object? completedUtc = const $CopyWithPlaceholder(),
+    Object? payments = const $CopyWithPlaceholder(),
     Object? history = const $CopyWithPlaceholder(),
     Object? version = const $CopyWithPlaceholder(),
   }) {
@@ -288,6 +304,14 @@ class _$AppointmentDetailCWProxyImpl implements _$AppointmentDetailCWProxy {
           ? _value.cancellation
           // ignore: cast_nullable_to_non_nullable
           : cancellation as AppointmentDetailCancellation?,
+      completedUtc: completedUtc == const $CopyWithPlaceholder()
+          ? _value.completedUtc
+          // ignore: cast_nullable_to_non_nullable
+          : completedUtc as DateTime?,
+      payments: payments == const $CopyWithPlaceholder()
+          ? _value.payments
+          // ignore: cast_nullable_to_non_nullable
+          : payments as List<PaymentView>?,
       history: history == const $CopyWithPlaceholder()
           ? _value.history
           // ignore: cast_nullable_to_non_nullable
@@ -405,6 +429,16 @@ AppointmentDetail _$AppointmentDetailFromJson(
           ? null
           : AppointmentDetailCancellation.fromJson(v as Map<String, dynamic>),
     ),
+    completedUtc: $checkedConvert(
+      'completedUtc',
+      (v) => v == null ? null : DateTime.parse(v as String),
+    ),
+    payments: $checkedConvert(
+      'payments',
+      (v) => (v as List<dynamic>?)
+          ?.map((e) => PaymentView.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    ),
     history: $checkedConvert(
       'history',
       (v) => (v as List<dynamic>)
@@ -441,6 +475,8 @@ Map<String, dynamic> _$AppointmentDetailToJson(AppointmentDetail instance) =>
       'seriesId': ?instance.seriesId,
       'noShowAtUtc': ?instance.noShowAtUtc?.toIso8601String(),
       'cancellation': ?instance.cancellation?.toJson(),
+      'completedUtc': ?instance.completedUtc?.toIso8601String(),
+      'payments': ?instance.payments?.map((e) => e.toJson()).toList(),
       'history': instance.history.map((e) => e.toJson()).toList(),
       'version': instance.version,
     };

@@ -102,7 +102,7 @@ class PublicAppointmentCreate {
 
 
 
-      /// Paketten düşülecek kalemler
+      /// Paketten düşülecek kalemler (\"Fön paketinizden düşülsün\"; seçenekler publicListMyPackages'tan). Seans randevu oluşurken ayrılır, randevu iptal olursa geri döner, gelmedi olursa dönmez. Paketten düşülen kalem kapora ve \"Salonda ödenecek\" tutarına girmez. Paket kalemi bu müşterinin değilse, Active değilse, süresi geçmişse, kalan seansı yoksa, hizmet uyuşmuyorsa veya şubede kullanılamıyorsa 409 package_session_unavailable 
   @JsonKey(
     
     name: r'usePackageItems',
