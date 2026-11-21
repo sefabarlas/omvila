@@ -74,6 +74,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddPeriodicJob<PurgeIdempotencyKeys>();
 
         services.AddSurfaceCors(configuration);
+        services.AddTrustedForwardedHeaders(configuration);
 
         services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database", tags: ["ready"]);
         return services;
@@ -88,6 +89,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<PushOptions>, FakeProviderOptionsValidator>();
         services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section)).ValidateOnStart();
         services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
+        services.AddOptions<DevSmsLogOptions>()
+            .Bind(configuration.GetSection(DevSmsLogOptions.Section))
+            .Validate(o => o.IsValid(), "Sahte SMS günlüğü ayarları geçersiz (appsettings \"Sms:DevLog\": Limit 1–1000, RefreshSeconds 0–3600).");
         services.AddOptions<PushOptions>().Bind(configuration.GetSection(PushOptions.Section)).ValidateOnStart();
         services.AddHttpClient(FcmPushSender.HttpClientName);
         services.AddScoped<IPushSender>(sp => CreatePushSender(sp));
