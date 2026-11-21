@@ -104,6 +104,18 @@ internal sealed class AppointmentSeries
         }
     }
 
+    /// <summary>KVKK silmesi: seri biter, yeni randevu üretilmez (durum-makinesi.md § 10: → Ended).</summary>
+    public void End(Instant now)
+    {
+        if (Status == SeriesStatus.Ended)
+        {
+            return;
+        }
+
+        Status = SeriesStatus.Ended;
+        UpdatedUtc = now;
+    }
+
     /// <summary>
     /// "Bu ve sonraki randevular" iptali: seri <paramref name="date"/>'ten önceki günde biter. İlk tarihten itibaren
     /// kesilirse seri tümüyle biter (<see cref="SeriesStatus.Ended"/>).

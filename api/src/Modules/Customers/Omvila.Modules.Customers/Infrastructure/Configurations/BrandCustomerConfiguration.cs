@@ -29,6 +29,7 @@ internal sealed class BrandCustomerConfiguration : IEntityTypeConfiguration<Bran
         builder.HasIndex(x => new { x.BrandId, x.CustomerId }).IsUnique().HasDatabaseName(BrandCustomerIndex);
         builder.HasIndex(x => new { x.BrandId, x.LastVisitOn });
         builder.HasIndex(x => x.CustomerId);
+        builder.Ignore(x => x.IsActive);
         builder.HasOne<Customer>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
     }
 }

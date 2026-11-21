@@ -9,6 +9,8 @@ internal sealed class CustomerRow
 {
     public Guid Id { get; init; }
 
+    public bool IsAnonymized { get; init; }
+
     public string FullName { get; init; } = string.Empty;
 
     public string? PhoneE164 { get; init; }
@@ -26,6 +28,9 @@ internal sealed class CustomerRow
     public long TotalSpentMinor { get; init; }
 
     public string? Notes { get; init; }
+
+    /// <summary>"İlk kanal" (dışa aktarma).</summary>
+    public BrandCustomerSource Source { get; init; }
 
     // Yaklaşan randevu (nextAppointmentUtc) uçta IAppointmentQueries ile doldurulur (T-50).
     public CustomerSummaryResponse ToResponse(CustomerViewContext view)

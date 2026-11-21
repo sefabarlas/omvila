@@ -14,8 +14,23 @@ internal sealed class CustomerRegistry(CustomersDbContext db, IIdGenerator ids, 
     public Task<Customer?> FindByPhoneAsync(PhoneNumber phone, CancellationToken ct) =>
         db.Customers.SingleOrDefaultAsync(c => c.PhoneE164 == phone.E164, ct);
 
-    public Task<BrandCustomer?> FindCardAsync(Guid brandId, Guid customerId, CancellationToken ct) =>
-        db.BrandCustomers.SingleOrDefaultAsync(b => b.BrandId == brandId && b.CustomerId == customerId, ct);
+    /// <summary>
+    /// Kişinin markadaki kartı. Kart birleştirmeyle arşivlendiyse kalan kart döner (alan-modeli.md § Birleştirme: markadaki
+    /// görünüm birleşir; aynı numarayla yeni randevu kalan karta yazılır).
+    /// </summary>
+    public async Task<BrandCustomer?> FindCardAsync(Guid brandId, Guid customerId, CancellationToken ct) =>
+        await ResolveMergedAsync(await db.BrandCustomers.SingleOrDefaultAsync(b => b.BrandId == brandId && b.CustomerId == customerId, ct), ct);
+
+    /// <summary>Arşiv kartından kalan karta gider (zincirleme birleştirmede sona kadar).</summary>
+    public async Task<BrandCustomer?> ResolveMergedAsync(BrandCustomer? card, CancellationToken ct)
+    {
+        while (card?.MergedIntoId is { } targetId)
+        {
+            card = await db.BrandCustomers.SingleOrDefaultAsync(b => b.Id == targetId, ct);
+        }
+
+        return card;
+    }
 
     /// <summary>
     /// Telefonla kişiyi bulur, yoksa verilen adla oluşturur. Mevcut kişinin adı değişmez (başka markanın veya müşterinin
@@ -61,7 +76,7 @@ internal sealed class CustomerRegistry(CustomersDbContext db, IIdGenerator ids, 
             VALUES ({card.Id}, {card.BrandId}, {card.CustomerId}, {card.DisplayName}, {sourceText}, 0, 0, 0, 0, false, {card.AppointmentSmsEnabled}, {card.CreatedUtc})
             ON CONFLICT (brand_id, customer_id) DO NOTHING
             """, ct);
-        var saved = await db.BrandCustomers.SingleAsync(b => b.BrandId == brandId && b.CustomerId == customerId, ct);
-        return (saved, saved.Id == card.Id);
+        var saved = await ResolveMergedAsync(await db.BrandCustomers.SingleAsync(b => b.BrandId == brandId && b.CustomerId == customerId, ct), ct);
+        return (saved!, saved!.Id == card.Id);
     }
 }
