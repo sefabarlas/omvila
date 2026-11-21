@@ -31,7 +31,18 @@ internal sealed class AppointmentAccessCode
     public Instant CreatedUtc { get; private set; }
 
     /// <summary>Randevu yönetim bağlantısı (/r/). Kod verilmezse üretilir (testte sabit kod verilebilir).</summary>
-    public static AppointmentAccessCode IssueForManage(Guid id, Guid brandId, Guid appointmentId, Instant appointmentEndUtc, Instant now, string? code = null)
+    public static AppointmentAccessCode IssueForManage(Guid id, Guid brandId, Guid appointmentId, Instant appointmentEndUtc, Instant now, string? code = null) =>
+        Issue(AccessCodePurpose.Manage, id, brandId, appointmentId, appointmentEndUtc, now, code);
+
+    /// <summary>
+    /// Değerlendirme bağlantısı (/d/; bildirimler.md review.invite). Davet tamamlandıktan sonra gittiğinden geçerlilik bitiş geçmişse
+    /// şimdiden sayılır (docs/acik-sorular.md T-89).
+    /// </summary>
+    public static AppointmentAccessCode IssueForReview(Guid id, Guid brandId, Guid appointmentId, Instant appointmentEndUtc, Instant now, string? code = null) =>
+        Issue(AccessCodePurpose.Review, id, brandId, appointmentId, Instant.Max(appointmentEndUtc, now), now, code);
+
+    private static AppointmentAccessCode Issue(
+        AccessCodePurpose purpose, Guid id, Guid brandId, Guid appointmentId, Instant validFromUtc, Instant now, string? code)
     {
         code ??= AccessCodeGenerator.New();
         if (!AccessCodeGenerator.IsWellFormed(code))
@@ -45,8 +56,8 @@ internal sealed class AppointmentAccessCode
             BrandId = brandId,
             AppointmentId = appointmentId,
             Code = code,
-            Purpose = AccessCodePurpose.Manage,
-            ExpiresUtc = ExpiryFor(appointmentEndUtc),
+            Purpose = purpose,
+            ExpiresUtc = ExpiryFor(validFromUtc),
             CreatedUtc = now,
         };
     }

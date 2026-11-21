@@ -13,6 +13,6 @@ internal sealed class CancelRemindersOnCustomerCancel(AppointmentSms sms) : IInt
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
         await sms.EnterBrandAsync(integrationEvent.BrandId, ct);
-        await sms.CancelRemindersAsync(integrationEvent.AppointmentId, ct);
+        await sms.CancelPendingOnCancellationAsync(integrationEvent.AppointmentId, ct);
     }
 }

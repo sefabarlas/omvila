@@ -52,7 +52,13 @@ public sealed class SmsTemplatesTests
         [(NotificationEvents.WalkInAlmostTurn, null)] = Values(("salon", Salon30)),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
+        [(NotificationEvents.ReviewInvite, null)] = Values(("salon", Salon30), ("bağlantı", "omvila.com/d/AbCdEfGh12")),
     };
+
+    [Fact]
+    public void ReviewInvite_MatchesCatalogText_WithLocativeSuffix() =>
+        SmsTemplates.Render(NotificationEvents.ReviewInvite, Values(("salon", "Kuaför Elif"), ("bağlantı", "omvila.com/d/AbCdEfGh12")))
+            .ShouldBe("Kuaför Elif'teki randevunuz nasıldı? 10 saniyenizi alır: omvila.com/d/AbCdEfGh12");
 
     [Fact]
     public void EveryTemplate_HasLongestValues_AndFitsSingleSms_WithoutTrimming()

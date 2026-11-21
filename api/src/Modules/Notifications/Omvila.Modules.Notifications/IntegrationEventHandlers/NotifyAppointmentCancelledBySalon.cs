@@ -15,7 +15,7 @@ internal sealed class NotifyAppointmentCancelledBySalon(AppointmentSms sms) : II
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
         var context = await sms.LoadAsync(integrationEvent.BrandId, integrationEvent.AppointmentId, ct);
-        await sms.CancelRemindersAsync(integrationEvent.AppointmentId, ct);
+        await sms.CancelPendingOnCancellationAsync(integrationEvent.AppointmentId, ct);
         if (context is null || !integrationEvent.NotifyCustomer || !AppointmentSms.CanText(context))
         {
             return;

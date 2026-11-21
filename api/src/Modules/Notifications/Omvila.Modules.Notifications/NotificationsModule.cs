@@ -13,6 +13,7 @@ using Omvila.Modules.Notifications.Features.SmsDeliveryReports;
 using Omvila.Modules.Notifications.Infrastructure;
 using Omvila.Modules.Notifications.IntegrationEventHandlers;
 using Omvila.Modules.Notifications.Jobs;
+using Omvila.Modules.Reviews.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 
 namespace Omvila.Modules.Notifications;
@@ -58,6 +59,8 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentDepositReceived, ResolveApprovalNotifications>();
         services.AddIntegrationEventHandler<AppointmentDepositReported, NotifyDepositReported>();
         services.AddIntegrationEventHandler<AppointmentDepositReminded, NotifyDepositReminded>();
+        services.AddIntegrationEventHandler<ReviewInviteScheduled, NotifyReviewInvite>();
+        services.AddIntegrationEventHandler<ReviewReceived, NotifyReviewReceived>();
         return services;
     }
 
