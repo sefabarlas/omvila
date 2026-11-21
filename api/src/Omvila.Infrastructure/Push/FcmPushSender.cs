@@ -48,7 +48,7 @@ internal sealed partial class FcmPushSender(
             var text = await response.Content.ReadAsStringAsync(ct);
             if (response.IsSuccessStatusCode)
             {
-                return new PushSendResult(PushSendStatus.Sent, JsonDocument.Parse(text).RootElement.GetProperty("name").GetString());
+                return new PushSendResult(PushSendStatus.Sent, JsonElement.Parse(text).GetProperty("name").GetString());
             }
 
             var invalid = response.StatusCode == HttpStatusCode.NotFound
