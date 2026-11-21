@@ -1,0 +1,48 @@
+/* design/tasarim-sistemleri/mobil/components/BookingSteps (om-steps). */
+.steps {
+  display: flex;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  min-width: 0;
+}
+
+.bar {
+  height: 4px;
+  border-radius: var(--kose-tam);
+  background: var(--cizgi);
+  transition: background-color 0.15s;
+}
+
+.done .bar,
+.current .bar {
+  background: var(--marka);
+}
+
+.label {
+  overflow: hidden;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-aciklama-satir);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current .label {
+  color: var(--metin);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}

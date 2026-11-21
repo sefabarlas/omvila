@@ -1,0 +1,94 @@
+/* rezervasyon-sayfasi/Randevum başlık bloğu; components/AppointmentTicket. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-6) var(--bosluk-5) var(--bosluk-6);
+  border-radius: 0 0 var(--kose-xl) var(--kose-xl);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.salon {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  margin-bottom: var(--bosluk-5);
+}
+
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  width: var(--kontrol-md);
+  height: var(--kontrol-md);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin-marka);
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.salonText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.salonName {
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.address,
+.details {
+  margin: 0;
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+  opacity: 0.85;
+}
+
+.status {
+  margin: 0;
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-aciklama-satir);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.when {
+  margin: 0;
+  font-size: var(--yazi-metrik-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-metrik-satir);
+  letter-spacing: var(--yazi-metrik-harf);
+  font-variant-numeric: tabular-nums;
+}
+
+.cancelled .when {
+  text-decoration: line-through;
+}
+
+.actions {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--bosluk-2);
+  padding: 0 var(--bosluk-4);
+}

@@ -1,0 +1,70 @@
+/* design/tasarim-sistemleri/mobil/components/StickyFooter (om-footer); rezervasyon-sayfasi/Main, Saat, Havale. */
+.footer {
+  box-sizing: border-box;
+  color: var(--metin);
+}
+
+.sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: var(--bosluk-4) var(--bosluk-4) calc(var(--bosluk-4) + env(safe-area-inset-bottom, 0));
+  border-radius: 28px 28px 0 0;
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-lg);
+}
+
+.inline {
+  padding: var(--bosluk-5) 0 0;
+  border-top: 1px solid var(--cizgi);
+}
+
+.row {
+  display: flex;
+  gap: var(--bosluk-4);
+  align-items: center;
+}
+
+.inline .row {
+  justify-content: flex-end;
+}
+
+.summary {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.total {
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-ust-bar-basligi-satir);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
+
+.action {
+  flex: none;
+}
+
+.actionBlock {
+  flex: 1;
+}
+
+.actionBlock > * {
+  width: 100%;
+}
+
+.note {
+  margin: var(--bosluk-2) 0 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  text-align: center;
+}

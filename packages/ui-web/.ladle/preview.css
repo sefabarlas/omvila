@@ -11,3 +11,9 @@ body {
 .omvila-preview {
   padding: var(--bosluk-6);
 }
+
+/* Rezervasyon hikâyeleri: genişlik (390) ve kenar boşluğu hikâyenin kendi çerçevesinde. */
+/* stylelint-disable-next-line selector-class-pattern -- Ladle kökü, CSS Modules değil */
+.omvila-preview-mobil {
+  padding: 0;
+}

@@ -1,0 +1,42 @@
+/* rezervasyon-sayfasi/Havale: alıcı, IBAN, açıklama kodu, tutar. */
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--bosluk-4);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.field {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-4) 0;
+  color: var(--metin);
+}
+
+.list > .field + .field {
+  border-top: 1px solid var(--cizgi);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.value {
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-govde-guclu-satir);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}

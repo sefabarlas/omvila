@@ -1,0 +1,27 @@
+/* design/tasarim-sistemleri/mobil/components/StaffPicker; musteri-uygulamasi/YRPersonel (liste düzeni). */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+}
+
+.anyIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-md);
+  height: var(--kontrol-md);
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+  color: var(--metin-ikincil);
+}
+
+.note {
+  font-size: var(--yazi-etiket-kucuk-boyut);
+}

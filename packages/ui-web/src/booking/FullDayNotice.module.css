@@ -1,0 +1,39 @@
+/* rezervasyon-sayfasi/DoluGun: dolu gün kartı. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  align-items: center;
+  padding: var(--bosluk-6) var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  color: var(--metin);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--bosluk-2);
+  border-radius: var(--kose-md);
+  background: var(--zemin-secili);
+  color: var(--metin-marka);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: 800;
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.description {
+  margin: 0 0 var(--bosluk-3);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ikincil-boyut);
+  line-height: var(--yazi-ikincil-satir);
+}
