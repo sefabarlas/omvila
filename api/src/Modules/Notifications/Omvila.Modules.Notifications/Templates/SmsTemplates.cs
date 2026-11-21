@@ -72,6 +72,8 @@ internal static partial class SmsTemplates
             "{salon}, {tarih} {saat} randevunuzu iptal etti. {rezervasyon bağlantısı}", SalonOnly),
         [Key(NotificationEvents.DepositAwaiting, null)] = new(
             "{salon}: {tarih} {saat} için {tutar} TL kaporayı {süre} içinde gönderin. IBAN {iban}, {alıcı}, açıklama {kod}", DepositTrims),
+        [Key(NotificationEvents.DepositReceived, null)] = new(
+            "{salon}: {tutar} TL kaporanız alındı, {tarih} {saat} randevunuz kesinleşti. {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(

@@ -21,6 +21,11 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
             table.HasCheckConstraint("ck_appointments_time", "end_utc > start_utc");
             table.HasCheckConstraint("ck_appointments_amounts", "total_amount_minor >= 0 AND (deposit_required_minor IS NULL OR deposit_required_minor >= 0)");
             table.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
+            // Kapora ya alınır (A3, tahsilat kaydıyla) ya kaporasız onaylanır (A2); ikisi birden olmaz.
+            table.HasCheckConstraint(
+                "ck_appointments_deposit_outcome",
+                "(deposit_received_utc IS NULL OR (deposit_required_minor IS NOT NULL AND deposit_payment_id IS NOT NULL AND deposit_waived_utc IS NULL))"
+                + " AND (deposit_waived_utc IS NULL OR deposit_required_minor IS NOT NULL)");
             // Değişmez: HoldExpiresUtc yalnız PendingApproval'da doludur (durum-makinesi.md § Değişmezler).
             table.HasCheckConstraint("ck_appointments_hold", "hold_expires_utc IS NULL OR status = 'PendingApproval'");
             table.HasCheckConstraint("ck_appointments_cancellation", "status <> 'Cancelled' OR (cancelled_utc IS NOT NULL AND cancelled_by IS NOT NULL AND cancellation_reason IS NOT NULL)");

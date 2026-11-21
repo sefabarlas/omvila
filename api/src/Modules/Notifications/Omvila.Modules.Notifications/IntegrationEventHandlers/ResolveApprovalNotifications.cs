@@ -5,12 +5,13 @@ using Omvila.Modules.Scheduling.Contracts;
 namespace Omvila.Modules.Notifications.IntegrationEventHandlers;
 
 /// <summary>
-/// Talep yanıtlandı (A2 onay, A4 red, A5 süre dolumu): randevunun henüz gönderilmemiş <c>staff.approval_needed</c> push'u
+/// Talep yanıtlandı (A2 onay, A3 "Kapora geldi", A4 red, A5 süre dolumu): randevunun henüz gönderilmemiş <c>staff.approval_needed</c> push'u
 /// düşer (sessiz saatte sabaha ertelenmiş satır yanıtlanmış talebi hatırlatmasın; T-66 (8)) ve panel kayıtlarının kalan süresi
 /// boşalır (sözleşme NotificationTarget.holdExpiresUtc: "Talep yanıtlandıysa null"). Panel kaydı silinmez.
 /// </summary>
 internal sealed class ResolveApprovalNotifications(AppointmentSms sms, InAppNotifier inApp, INotificationOutbox outbox)
-    : IIntegrationEventHandler<AppointmentApproved>, IIntegrationEventHandler<AppointmentDeclined>, IIntegrationEventHandler<AppointmentApprovalExpired>
+    : IIntegrationEventHandler<AppointmentApproved>, IIntegrationEventHandler<AppointmentDeclined>, IIntegrationEventHandler<AppointmentApprovalExpired>,
+      IIntegrationEventHandler<AppointmentDepositReceived>
 {
     public Task HandleAsync(AppointmentApproved integrationEvent, CancellationToken ct)
     {
@@ -25,6 +26,12 @@ internal sealed class ResolveApprovalNotifications(AppointmentSms sms, InAppNoti
     }
 
     public Task HandleAsync(AppointmentApprovalExpired integrationEvent, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(integrationEvent);
+        return ResolveAsync(integrationEvent.BrandId, integrationEvent.AppointmentId, ct);
+    }
+
+    public Task HandleAsync(AppointmentDepositReceived integrationEvent, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(integrationEvent);
         return ResolveAsync(integrationEvent.BrandId, integrationEvent.AppointmentId, ct);

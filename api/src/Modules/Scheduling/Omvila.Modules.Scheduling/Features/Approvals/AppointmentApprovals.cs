@@ -11,14 +11,16 @@ namespace Omvila.Modules.Scheduling.Features.Approvals;
 /// <summary>
 /// "Onayla" (A2) ve "Reddet" (A4) (dilim-03 kabul kriterleri 2, 3, 5; sözleşme manageApproveAppointment,
 /// manageDeclineAppointment). Kapsam dışı randevu 404, If-Match uymazsa 412, durum PendingApproval değilse 409
-/// <c>invalid_state_transition</c>, tutma süresi geçmişse (iş henüz çalışmamış olsa da) 409 <c>hold_expired</c>. Dilim
+/// <c>invalid_state_transition</c>, tutma süresi geçmişse (iş henüz çalışmamış olsa da) 409 <c>hold_expired</c>, kapora
+/// bekleniyor ve <c>waiveDeposit</c> yoksa 409 <c>deposit_required</c> (Dilim 4, A2). Dilim
 /// yazılmadığı için kilit alınmaz; otomatik iptalle yarışta xmin denetimi ve işin <c>FOR UPDATE SKIP LOCKED</c> seçimi tam
 /// olarak birinin kazanmasını sağlar (kaybeden onay 412 alır; T-63).
 /// </summary>
 internal sealed class AppointmentApprovals(SchedulingDbContext db, IOutbox outbox, IClock clock)
 {
     // Kural: durum-makinesi.md A2
-    public async Task<Result<Appointment>> ApproveAsync(Guid appointmentId, ManageAccess access, Guid? userId, uint expectedVersion, CancellationToken ct)
+    public async Task<Result<Appointment>> ApproveAsync(
+        Guid appointmentId, ManageAccess access, Guid? userId, uint expectedVersion, bool waiveDeposit, CancellationToken ct)
     {
         var appointment = await LoadAsync(appointmentId, access, expectedVersion, ct);
         if (!appointment.IsSuccess)
@@ -26,7 +28,7 @@ internal sealed class AppointmentApprovals(SchedulingDbContext db, IOutbox outbo
             return appointment;
         }
 
-        var approved = appointment.Value.Approve(clock.GetCurrentInstant(), userId);
+        var approved = appointment.Value.Approve(clock.GetCurrentInstant(), userId, waiveDeposit);
         if (!approved.IsSuccess)
         {
             return approved.Error;

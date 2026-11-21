@@ -41,6 +41,8 @@ public sealed class SmsTemplatesTests
         [(NotificationEvents.DepositAwaiting, null)] = Values(
             ("salon", "Kuaför Elif"), ("tarih", LongDate), ("saat", LongTime), ("tutar", "1.250"), ("süre", "4 saat"),
             ("iban", Iban), ("alıcı", "Elif Kaya"), ("kod", "OMVKE-7K2X")),
+        [(NotificationEvents.DepositReceived, null)] = Values(
+            ("salon", Salon30), ("tutar", "12.500"), ("tarih", LongDate), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
     };
@@ -163,6 +165,13 @@ public sealed class SmsTemplatesTests
 
         body.ShouldContain(", " + holder[..4], Case.Sensitive, "alıcı adının başı kalır");
     }
+
+    // V3: deposit.received yalnız SMS; metin bildirimler.md ile birebir.
+    [Fact]
+    public void DepositReceived_RendersDocumentText() =>
+        SmsTemplates.Render(NotificationEvents.DepositReceived, Values(
+            ("salon", "Kuaför Elif"), ("tutar", "840"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("bağlantı", ManageLink)))
+            .ShouldBe("Kuaför Elif: 840 TL kaporanız alındı, Cum 27 Kas 14:30 randevunuz kesinleşti. omvila.com/r/AbCdEfGh12");
 
     [Fact]
     public void Requested_RendersDocumentText() =>

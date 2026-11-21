@@ -53,6 +53,8 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentApproved, ResolveApprovalNotifications>();
         services.AddIntegrationEventHandler<AppointmentDeclined, ResolveApprovalNotifications>();
         services.AddIntegrationEventHandler<AppointmentApprovalExpired, ResolveApprovalNotifications>();
+        services.AddIntegrationEventHandler<AppointmentDepositReceived, NotifyDepositReceived>();
+        services.AddIntegrationEventHandler<AppointmentDepositReceived, ResolveApprovalNotifications>();
         return services;
     }
 

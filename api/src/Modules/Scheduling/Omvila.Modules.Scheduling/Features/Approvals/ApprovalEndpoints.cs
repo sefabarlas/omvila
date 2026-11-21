@@ -42,11 +42,9 @@ internal static class ApprovalEndpoints
         AppointmentDetailReader reader,
         CancellationToken ct)
     {
-        // waiveDeposit Dilim 4'te anlam kazanır (kapora); şimdilik yok sayılır (T-62 (1)).
-        _ = body?.WaiveDeposit;
         var brandId = tenant.RequireBrandId();
         var access = ManageAccess.For(http.User, permissions, Permissions.Appointment.Approve);
-        var result = await approvals.ApproveAsync(appointmentId, access, UserId(http.User), http.GetIfMatchVersion(), ct);
+        var result = await approvals.ApproveAsync(appointmentId, access, UserId(http.User), http.GetIfMatchVersion(), body?.WaiveDeposit ?? false, ct);
         return await RespondAsync(result, brandId, access, http, reader, ct);
     }
 
