@@ -42,6 +42,12 @@ public static class NotificationEvents
     /// </summary>
     public const string DepositReceived = "deposit.received";
 
+    /// <summary>
+    /// Kapora süresinde gelmedi, randevu sistemce iptal edildi (A5, kapora vardı): "{salon}: {tutar} TL kapora {süre} içinde
+    /// gelmediği için {tarih} {saat} randevunuz iptal edildi. Havale yaptıysanız salonu arayın." Yalnız SMS.
+    /// </summary>
+    public const string DepositNotReceived = "deposit.not_received";
+
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 

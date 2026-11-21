@@ -6,7 +6,7 @@ namespace Omvila.Modules.Scheduling.Features;
 
 /// <summary>
 /// Sözleşme DepositView (randevu yan paneli AppointmentDetail.deposit) ve rezervasyon tarafında DepositView +
-/// <see cref="Instructions"/> (PublicAppointment.deposit). remindedUtc ve iade alanları onları yazan akışlarla gelir.
+/// <see cref="Instructions"/> (PublicAppointment.deposit). İade notu burada yoktur; yalnız panel geçmişinde döner.
 /// </summary>
 internal sealed record DepositView(
     Money Required,
@@ -14,6 +14,9 @@ internal sealed record DepositView(
     string? TransferCode,
     Instant? CustomerReportedUtc,
     Instant? ReceivedUtc,
+    Instant? RemindedUtc = null,
+    Instant? RefundedUtc = null,
+    Money? RefundedAmount = null,
     DepositInstructionsView? Instructions = null)
 {
     /// <summary>Kapora istenmemişse null.</summary>
@@ -27,6 +30,9 @@ internal sealed record DepositView(
                 appointment.DepositTransferCode,
                 appointment.DepositCustomerReportedUtc,
                 appointment.DepositReceivedUtc,
+                appointment.DepositRemindedUtc,
+                appointment.DepositRefundedUtc,
+                appointment.DepositRefundedAmountMinor is { } refunded ? new Money(refunded, currency) : null,
                 instructions)
             : null;
     }

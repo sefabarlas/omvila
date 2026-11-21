@@ -32,6 +32,6 @@ internal static class ApprovalEvents
     {
         ArgumentNullException.ThrowIfNull(a);
         var reason = a.CancellationReason ?? throw new DomainException("Süresi dolan talebin iptal nedeni yok.");
-        return new AppointmentApprovalExpired(a.BrandId, a.Id, a.BranchId, a.BrandCustomerId, a.StartUtc, reason.ToString());
+        return new AppointmentApprovalExpired(a.BrandId, a.Id, a.BranchId, a.BrandCustomerId, a.StartUtc, reason.ToString(), a.DepositRequiredMinor);
     }
 }

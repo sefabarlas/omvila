@@ -43,6 +43,12 @@ public sealed class SmsTemplatesTests
             ("iban", Iban), ("alıcı", "Elif Kaya"), ("kod", "OMVKE-7K2X")),
         [(NotificationEvents.DepositReceived, null)] = Values(
             ("salon", Salon30), ("tutar", "12.500"), ("tarih", LongDate), ("saat", LongTime), ("bağlantı", ManageLink)),
+        // Katalog metinleri uzun: 30 karakterlik salon adıyla 155'i aşar ve salon adı kırpılır (aşağıdaki *_WithLongSalonName_*
+        // testleri). Burada kırpmasız sığan gerçekçi değerler.
+        [(NotificationEvents.DepositNotReceived, null)] = Values(
+            ("salon", "Kuaför Elif Moda"), ("tutar", "1.250"), ("süre", "1 sa 30 dk"), ("tarih", LongDate), ("saat", LongTime)),
+        [(NotificationEvents.AppointmentCancelledBySalon, SmsTemplates.DepositReceivedVariant)] = Values(
+            ("salon", "Kuaför Elif Moda"), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif-moda")),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
     };
@@ -91,7 +97,11 @@ public sealed class SmsTemplatesTests
 
             var body = SmsTemplates.Render(eventCode, values, variant);
             GsmLength.Units(body)!.Value.ShouldBeLessThanOrEqualTo(GsmLength.SingleSmsLimit, $"{eventCode} {variant}");
-            body.ShouldContain(values.GetValueOrDefault("bağlantı") ?? values.GetValueOrDefault("rezervasyon bağlantısı") ?? values["kod"]);
+            // Kapora metinlerinde bağlantı yoksa tutar, salon iptalinin kapora ekinde (T-83) kapora cümlesi korunur.
+            var anchor = (eventCode, variant) == (NotificationEvents.AppointmentCancelledBySalon, SmsTemplates.DepositReceivedVariant)
+                ? "Kapora iadesi için salon sizinle iletişime geçecek."
+                : values.GetValueOrDefault("bağlantı") ?? values.GetValueOrDefault("rezervasyon bağlantısı") ?? values.GetValueOrDefault("kod") ?? values["tutar"];
+            body.ShouldContain(anchor);
         }
     }
 
@@ -190,6 +200,54 @@ public sealed class SmsTemplatesTests
         SmsTemplates.Render(NotificationEvents.AppointmentDeclined, Values(
             ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif")))
             .ShouldBe("Kuaför Elif, Cum 27 Kas 14:30 talebinizi onaylayamadı, talep iptal edildi. Başka bir saat seçin: omvila.com/kuafor-elif");
+
+    // Kural: bildirimler.md deposit.not_received (A5, kapora vardı; yalnız SMS)
+    [Fact]
+    public void DepositNotReceived_RendersDocumentText() =>
+        SmsTemplates.Render(NotificationEvents.DepositNotReceived, Values(
+            ("salon", "Kuaför Elif"), ("tutar", "840"), ("süre", "2 saat"), ("tarih", "Cum 27 Kas"), ("saat", "14:30")))
+            .ShouldBe("Kuaför Elif: 840 TL kapora 2 saat içinde gelmediği için Cum 27 Kas 14:30 randevunuz iptal edildi. Havale yaptıysanız salonu arayın.");
+
+    [Fact]
+    public void DepositNotReceived_WithLongSalonName_TrimsOnlySalon_FitsSingleSms()
+    {
+        var body = SmsTemplates.Render(NotificationEvents.DepositNotReceived, Values(
+            ("salon", Salon30), ("tutar", "12.500"), ("süre", "1 sa 30 dk"), ("tarih", LongDate), ("saat", LongTime)));
+
+        GsmLength.Units(body)!.Value.ShouldBeLessThanOrEqualTo(GsmLength.SingleSmsLimit);
+        body.ShouldEndWith(": 12.500 TL kapora 1 sa 30 dk içinde gelmediği için Çar 30 Ağu 23:45 randevunuz iptal edildi. Havale yaptıysanız salonu arayın.");
+        Salon30.ShouldStartWith(body[..body.IndexOf(':', StringComparison.Ordinal)]);
+    }
+
+    // T-83: en kısa salon adıyla da 155'i aşan rezervasyon bağlantısında (slug 60) kapora cümlesi korunur, bağlantı düşer.
+    [Fact]
+    public void CancelledBySalon_DepositReceived_WithOverlongLink_DropsLinkKeepsSentence()
+    {
+        var body = SmsTemplates.Render(NotificationEvents.AppointmentCancelledBySalon, Values(
+            ("salon", "Kuaför Elif"), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", "omvila.com/" + new string('a', 60))),
+            SmsTemplates.DepositReceivedVariant);
+
+        body.ShouldBe($"Kuaför Elif, {LongDate} {LongTime} randevunuzu iptal etti. Kapora iadesi için salon sizinle iletişime geçecek.");
+    }
+
+    // Kural: bildirimler.md appointment.cancelled_by_salon (kapora alınmışsa ek cümle)
+    [Fact]
+    public void CancelledBySalon_DepositReceived_AddsRefundSentence() =>
+        SmsTemplates.Render(NotificationEvents.AppointmentCancelledBySalon, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Sal 25 Kas"), ("saat", "14:30"), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif")),
+            SmsTemplates.DepositReceivedVariant)
+            .ShouldBe("Kuaför Elif, Sal 25 Kas 14:30 randevunuzu iptal etti. Kapora iadesi için salon sizinle iletişime geçecek. omvila.com/kuafor-elif");
+
+    [Fact]
+    public void CancelledBySalon_DepositReceived_WithLongSalonName_KeepsSentenceAndLink_FitsSingleSms()
+    {
+        var body = SmsTemplates.Render(NotificationEvents.AppointmentCancelledBySalon, Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)),
+            SmsTemplates.DepositReceivedVariant);
+
+        GsmLength.Units(body)!.Value.ShouldBeLessThanOrEqualTo(GsmLength.SingleSmsLimit);
+        body.ShouldEndWith($", {LongDate} {LongTime} randevunuzu iptal etti. Kapora iadesi için salon sizinle iletişime geçecek. {BookingLink}");
+    }
 
     [Fact]
     public void ApprovalExpired_RendersDocumentText() =>

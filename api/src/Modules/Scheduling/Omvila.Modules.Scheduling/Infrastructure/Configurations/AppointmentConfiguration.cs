@@ -10,26 +10,39 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
 
     public void Configure(EntityTypeBuilder<Appointment> builder)
     {
-        builder.ToTable("appointments", table =>
-        {
-            table.HasCheckConstraint("ck_appointments_status", EnumCheck.In<AppointmentStatus>("status"));
-            table.HasCheckConstraint("ck_appointments_channel", EnumCheck.In<AppointmentChannel>("channel"));
-            table.HasCheckConstraint("ck_appointments_client_app", EnumCheck.NullOrIn<ClientApp>("client_app"));
-            table.HasCheckConstraint("ck_appointments_hold_reason", EnumCheck.NullOrIn<HoldReason>("hold_reason"));
-            table.HasCheckConstraint("ck_appointments_cancelled_by", EnumCheck.NullOrIn<CancelledBy>("cancelled_by"));
-            table.HasCheckConstraint("ck_appointments_cancellation_reason", EnumCheck.NullOrIn<CancellationReason>("cancellation_reason"));
-            table.HasCheckConstraint("ck_appointments_time", "end_utc > start_utc");
-            table.HasCheckConstraint("ck_appointments_amounts", "total_amount_minor >= 0 AND (deposit_required_minor IS NULL OR deposit_required_minor >= 0)");
-            table.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
-            // Kapora ya alınır (A3, tahsilat kaydıyla) ya kaporasız onaylanır (A2); ikisi birden olmaz.
-            table.HasCheckConstraint(
-                "ck_appointments_deposit_outcome",
-                "(deposit_received_utc IS NULL OR (deposit_required_minor IS NOT NULL AND deposit_payment_id IS NOT NULL AND deposit_waived_utc IS NULL))"
-                + " AND (deposit_waived_utc IS NULL OR deposit_required_minor IS NOT NULL)");
-            // Değişmez: HoldExpiresUtc yalnız PendingApproval'da doludur (durum-makinesi.md § Değişmezler).
-            table.HasCheckConstraint("ck_appointments_hold", "hold_expires_utc IS NULL OR status = 'PendingApproval'");
-            table.HasCheckConstraint("ck_appointments_cancellation", "status <> 'Cancelled' OR (cancelled_utc IS NOT NULL AND cancelled_by IS NOT NULL AND cancellation_reason IS NOT NULL)");
-        });
+        builder.ToTable("appointments", AddChecks);
+        ConfigureColumns(builder);
+    }
+
+    private static void AddChecks(TableBuilder<Appointment> table)
+    {
+        table.HasCheckConstraint("ck_appointments_status", EnumCheck.In<AppointmentStatus>("status"));
+        table.HasCheckConstraint("ck_appointments_channel", EnumCheck.In<AppointmentChannel>("channel"));
+        table.HasCheckConstraint("ck_appointments_client_app", EnumCheck.NullOrIn<ClientApp>("client_app"));
+        table.HasCheckConstraint("ck_appointments_hold_reason", EnumCheck.NullOrIn<HoldReason>("hold_reason"));
+        table.HasCheckConstraint("ck_appointments_cancelled_by", EnumCheck.NullOrIn<CancelledBy>("cancelled_by"));
+        table.HasCheckConstraint("ck_appointments_cancellation_reason", EnumCheck.NullOrIn<CancellationReason>("cancellation_reason"));
+        table.HasCheckConstraint("ck_appointments_time", "end_utc > start_utc");
+        table.HasCheckConstraint("ck_appointments_amounts", "total_amount_minor >= 0 AND (deposit_required_minor IS NULL OR deposit_required_minor >= 0)");
+        table.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
+        // Kapora ya alınır (A3, tahsilat kaydıyla) ya kaporasız onaylanır (A2); ikisi birden olmaz.
+        table.HasCheckConstraint(
+            "ck_appointments_deposit_outcome",
+            "(deposit_received_utc IS NULL OR (deposit_required_minor IS NOT NULL AND deposit_payment_id IS NOT NULL AND deposit_waived_utc IS NULL))"
+            + " AND (deposit_waived_utc IS NULL OR deposit_required_minor IS NOT NULL)");
+        // İade işareti yalnız alınmış kaporada ve alınan tutarı aşmadan (V7).
+        table.HasCheckConstraint(
+            "ck_appointments_deposit_refund",
+            "(deposit_refunded_utc IS NULL) = (deposit_refunded_amount_minor IS NULL)"
+            + " AND (deposit_refunded_utc IS NULL OR (deposit_received_utc IS NOT NULL AND deposit_refunded_amount_minor > 0"
+            + " AND deposit_refunded_amount_minor <= deposit_required_minor))");
+        // Değişmez: HoldExpiresUtc yalnız PendingApproval'da doludur (durum-makinesi.md § Değişmezler).
+        table.HasCheckConstraint("ck_appointments_hold", "hold_expires_utc IS NULL OR status = 'PendingApproval'");
+        table.HasCheckConstraint("ck_appointments_cancellation", "status <> 'Cancelled' OR (cancelled_utc IS NOT NULL AND cancelled_by IS NOT NULL AND cancellation_reason IS NOT NULL)");
+    }
+
+    private static void ConfigureColumns(EntityTypeBuilder<Appointment> builder)
+    {
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
@@ -42,6 +55,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.Property(x => x.CustomerNote).HasMaxLength(500);
         builder.Property(x => x.StaffNote).HasMaxLength(1000);
         builder.Property(x => x.CancellationNote).HasMaxLength(300);
+        builder.Property(x => x.DepositRefundNote).HasMaxLength(Appointment.DepositRefundNoteMaxLength);
         builder.Property(x => x.Version).IsRowVersion();
         builder.Ignore(x => x.DisplayStatus);
         builder.Ignore(x => x.DepositCustomerReported);

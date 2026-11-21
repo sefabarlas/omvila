@@ -18,6 +18,9 @@ internal static partial class SmsTemplates
     /// <summary>Kalemlerde personel yoksa onay metni personel parantezi olmadan.</summary>
     public const string WithoutStaffVariant = "without_staff";
 
+    /// <summary>Salon iptalinde kapora alınmışsa " Kapora iadesi için salon sizinle iletişime geçecek." eki (bildirimler.md).</summary>
+    public const string DepositReceivedVariant = "deposit_received";
+
     // Kırpılan değişken en az bu kadar karakter kalır (okunabilirlik).
     private const int MinTrimmedLength = 4;
 
@@ -36,6 +39,11 @@ internal static partial class SmsTemplates
     // salon adını kırpmak yerine bu kısa metin kullanılır, o da aşarsa salon adı kırpılır (T-65). "Reddedildi" geçmez.
     private static readonly Template RequestCancelledShort = new(
         "{salon}, {tarih} {saat} talebiniz iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}", SalonOnly);
+
+    // Salon iptalinde kapora cümlesi bağlantıdan önemlidir: salon adı en kısaya kırpıldığı hâlde uzun rezervasyon bağlantısıyla
+    // (slug 60 karaktere kadar) 155'i aşarsa bağlantısız metin gider (T-83).
+    private static readonly Template CancelledWithDepositShort = new(
+        "{salon}, {tarih} {saat} randevunuzu iptal etti. Kapora iadesi için salon sizinle iletişime geçecek.", SalonOnly);
 
     // Kapora metni (V2): IBAN boşluksuz yazılır; aşımda salon adı 30 karaktere, sonra alıcı adı, en son salon adı kırpılır.
     // IBAN, tutar, süre ve açıklama kodu kırpılmaz (dilim-04 kabul kriteri 3).
@@ -70,10 +78,17 @@ internal static partial class SmsTemplates
             "{salon}: Randevunuz {yeni tarih} {saat} olarak güncellendi. Detay: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentCancelledBySalon, null)] = new(
             "{salon}, {tarih} {saat} randevunuzu iptal etti. {rezervasyon bağlantısı}", SalonOnly),
+        [Key(NotificationEvents.AppointmentCancelledBySalon, DepositReceivedVariant)] = new(
+            "{salon}, {tarih} {saat} randevunuzu iptal etti. Kapora iadesi için salon sizinle iletişime geçecek. {rezervasyon bağlantısı}",
+            SalonOnly,
+            CancelledWithDepositShort),
         [Key(NotificationEvents.DepositAwaiting, null)] = new(
             "{salon}: {tarih} {saat} için {tutar} TL kaporayı {süre} içinde gönderin. IBAN {iban}, {alıcı}, açıklama {kod}", DepositTrims),
         [Key(NotificationEvents.DepositReceived, null)] = new(
             "{salon}: {tutar} TL kaporanız alındı, {tarih} {saat} randevunuz kesinleşti. {bağlantı}", SalonOnly),
+        [Key(NotificationEvents.DepositNotReceived, null)] = new(
+            "{salon}: {tutar} TL kapora {süre} içinde gelmediği için {tarih} {saat} randevunuz iptal edildi. Havale yaptıysanız salonu arayın.",
+            SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(

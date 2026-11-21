@@ -174,7 +174,10 @@ internal sealed class ManageAppointmentChanges(
         {
             // "Bu ve sonrakiler" iptalinde müşteriye tek SMS gider (seçilen randevu); hepsinin hatırlatmaları düşer (T-53).
             var notifyThis = notify && ReferenceEquals(a, appointment);
-            await outbox.EnqueueAsync(new AppointmentCancelledBySalon(a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notifyThis), ct);
+            await outbox.EnqueueAsync(
+                new AppointmentCancelledBySalon(
+                    a.BrandId, a.Id, a.BrandCustomerId, a.StartUtc, reason.ToString(), notifyThis, DepositReceived: a.DepositStatus == DepositStatus.Received),
+                ct);
         }
 
         return appointment;

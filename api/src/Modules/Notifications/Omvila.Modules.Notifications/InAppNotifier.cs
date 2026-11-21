@@ -18,6 +18,9 @@ internal sealed class InAppNotifier(NotificationsDbContext db, IClock clock, IId
 
     public const string SmsCreditsTarget = "SmsCredits";
 
+    /// <summary>"Kapora geldi mi?" (staff.deposit_reported; id randevu).</summary>
+    public const string DepositTarget = "Deposit";
+
     public async Task AddAsync(InAppEntry entry, IReadOnlyCollection<Guid> userIds, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entry);

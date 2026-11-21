@@ -37,6 +37,9 @@ internal static class StaffText
         };
     }
 
+    /// <summary>Kapora tutarı ₺ ile: 84000 → "840 ₺", 125050 → "1.250,50 ₺" (urun-kurallari.md § Biçimler).</summary>
+    public static string Amount(long amountMinor) => $"{SmsFormat.Amount(amountMinor)} ₺";
+
     /// <summary>1240 → "1.240".</summary>
     public static string Count(int value) => value.ToString("N0", Turkish);
 }

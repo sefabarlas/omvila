@@ -94,7 +94,8 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
     /// Zaman damgalarından geçmiş: oluşturma, havale bildirimi, onay (talep oluşturulduktan sonra onaylandıysa; A13 sonrası
     /// yeniden onayda yalnız son onay görünür), "Kapora geldi" (onay yerine), "Kaporasız onayla", her saat değişikliği (eski
     /// dilimlerin işaretlendiği an), gelmedi, geldi (gelmedi sonrasındaysa "Geldiyse geri al"), tamamlama, iptal (salon reddi
-    /// Declined, süresi dolan tutma HoldExpired). Yapan kişinin adı tutulmadığından actorName yazılmaz.
+    /// Declined, süresi dolan tutma HoldExpired), kapora hatırlatması ve "Salon iade etti" (not detail'de; geçmiş yalnız
+    /// panelde döner). Yapan kişinin adı tutulmadığından actorName yazılmaz.
     /// </summary>
     internal static IReadOnlyList<AppointmentHistoryEntry> History(Appointment a)
     {
@@ -102,6 +103,11 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
         if (a.DepositCustomerReportedUtc is { } reported)
         {
             entries.Add((reported, 1, "DepositReported"));
+        }
+
+        if (a.DepositRemindedUtc is { } reminded)
+        {
+            entries.Add((reminded, 1, "DepositReminded"));
         }
 
         // "Kapora geldi" onay sayılır (A3): aynı anda ayrıca Approved yazılmaz. Kaporasız onayda Approved + DepositWaived.
@@ -142,7 +148,13 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
             entries.Add((cancelled, 5, CancelKind(a)));
         }
 
-        return [.. entries.OrderBy(e => e.At).ThenBy(e => e.Order).Select(e => new AppointmentHistoryEntry(e.At, e.Kind, null, null))];
+        if (a.DepositRefundedUtc is { } refunded)
+        {
+            entries.Add((refunded, 6, "DepositRefunded"));
+        }
+
+        return [.. entries.OrderBy(e => e.At).ThenBy(e => e.Order)
+            .Select(e => new AppointmentHistoryEntry(e.At, e.Kind, null, string.Equals(e.Kind, "DepositRefunded", StringComparison.Ordinal) ? a.DepositRefundNote : null))];
     }
 
     /// <summary>Sözleşme AppointmentHistoryEntry.kind: A4 Declined, A5 HoldExpired, diğer iptaller Cancelled.</summary>

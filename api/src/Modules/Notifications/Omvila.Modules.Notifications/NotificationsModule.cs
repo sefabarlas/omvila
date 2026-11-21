@@ -35,6 +35,7 @@ public static class NotificationsModule
         services.AddPeriodicJob<DispatchNotifications, NotificationsOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
         services.AddScoped<SmsDeliveryReportHandler>();
         services.AddScoped<AppointmentSms>();
+        services.AddScoped<DepositSms>();
         services.AddScoped<InAppNotifier>();
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
@@ -55,6 +56,8 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentApprovalExpired, ResolveApprovalNotifications>();
         services.AddIntegrationEventHandler<AppointmentDepositReceived, NotifyDepositReceived>();
         services.AddIntegrationEventHandler<AppointmentDepositReceived, ResolveApprovalNotifications>();
+        services.AddIntegrationEventHandler<AppointmentDepositReported, NotifyDepositReported>();
+        services.AddIntegrationEventHandler<AppointmentDepositReminded, NotifyDepositReminded>();
         return services;
     }
 

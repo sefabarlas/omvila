@@ -1,8 +1,6 @@
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Notifications.Contracts;
-using Omvila.Modules.Notifications.Templates;
 using Omvila.Modules.Scheduling.Contracts;
-using Omvila.Modules.Tenancy.Contracts;
 
 namespace Omvila.Modules.Notifications.IntegrationEventHandlers;
 
@@ -14,7 +12,7 @@ namespace Omvila.Modules.Notifications.IntegrationEventHandlers;
 /// kapsar, müşteri iki SMS almaz. Kapora mesajı her zaman SMS'tir (push denenmez); IBAN ve alıcı güncel aktif hesaptan,
 /// hesap pasifleştiyse kapora SMS'i yazılmaz.
 /// </summary>
-internal sealed class NotifyAppointmentRequested(AppointmentSms sms, IBrandBankAccounts bankAccounts, NodaTime.IClock clock)
+internal sealed class NotifyAppointmentRequested(AppointmentSms sms, DepositSms depositSms)
     : IIntegrationEventHandler<AppointmentRequested>
 {
     public async Task HandleAsync(AppointmentRequested integrationEvent, CancellationToken ct)
@@ -35,7 +33,7 @@ internal sealed class NotifyAppointmentRequested(AppointmentSms sms, IBrandBankA
         var start = context.Appointment.StartUtc;
         if (context.Appointment.Deposit is { } deposit)
         {
-            await NotifyDepositAwaitingAsync(context, deposit, ct);
+            await depositSms.EnqueueAwaitingAsync(context, deposit, ct);
             return;
         }
 
@@ -47,28 +45,5 @@ internal sealed class NotifyAppointmentRequested(AppointmentSms sms, IBrandBankA
             ["bağlantı"] = link,
         };
         await sms.EnqueueAsync(context, NotificationEvents.AppointmentRequested, values, ct);
-    }
-
-    // Kural: bildirimler.md deposit.awaiting; V2 (aşımda alıcı adı kırpılır, IBAN boşluksuz)
-    private async Task NotifyDepositAwaitingAsync(AppointmentSmsContext context, AwaitedDepositInfo deposit, CancellationToken ct)
-    {
-        if (await bankAccounts.GetActiveAsync(context.BrandId, ct) is not { } account)
-        {
-            return;
-        }
-
-        var start = context.Appointment.StartUtc;
-        var values = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["salon"] = context.Branch.BrandName,
-            ["tarih"] = AppointmentSms.Date(context, start),
-            ["saat"] = AppointmentSms.Time(context, start),
-            ["tutar"] = SmsFormat.Amount(deposit.Amount.AmountMinor),
-            ["süre"] = SmsFormat.Duration(deposit.DueUtc - clock.GetCurrentInstant()),
-            ["iban"] = account.Iban.Value,
-            ["alıcı"] = account.AccountHolderName,
-            ["kod"] = deposit.TransferCode,
-        };
-        await sms.EnqueueAsync(context, NotificationEvents.DepositAwaiting, values, ct);
     }
 }
