@@ -37,6 +37,10 @@ internal static partial class SmsTemplates
     private static readonly Template RequestCancelledShort = new(
         "{salon}, {tarih} {saat} talebiniz iptal edildi. Başka bir saat seçin: {rezervasyon bağlantısı}", SalonOnly);
 
+    // Kapora metni (V2): IBAN boşluksuz yazılır; aşımda salon adı 30 karaktere, sonra alıcı adı, en son salon adı kırpılır.
+    // IBAN, tutar, süre ve açıklama kodu kırpılmaz (dilim-04 kabul kriteri 3).
+    private static readonly Trim[] DepositTrims = [new("salon", SalonNameLength), new("alıcı", MinTrimmedLength), new("salon", MinTrimmedLength)];
+
     private static readonly Dictionary<string, Template> Templates = new(StringComparer.Ordinal)
     {
         [Key(NotificationEvents.OtpCode, null)] = new("OMVILA giriş kodunuz: {kod}. Bu kodu kimseyle paylaşmayın.", []),
@@ -66,6 +70,8 @@ internal static partial class SmsTemplates
             "{salon}: Randevunuz {yeni tarih} {saat} olarak güncellendi. Detay: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentCancelledBySalon, null)] = new(
             "{salon}, {tarih} {saat} randevunuzu iptal etti. {rezervasyon bağlantısı}", SalonOnly),
+        [Key(NotificationEvents.DepositAwaiting, null)] = new(
+            "{salon}: {tarih} {saat} için {tutar} TL kaporayı {süre} içinde gönderin. IBAN {iban}, {alıcı}, açıklama {kod}", DepositTrims),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(

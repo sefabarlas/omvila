@@ -30,6 +30,12 @@ public static class NotificationEvents
     /// <summary>Salon iptal etti (A7): "{salon}, {tarih} {saat} randevunuzu iptal etti…".</summary>
     public const string AppointmentCancelledBySalon = "appointment.cancelled_by_salon";
 
+    /// <summary>
+    /// Kaporalı online randevu oluştu (Kapora bekleniyor): "{salon}: {tarih} {saat} için {tutar} TL kaporayı {süre} içinde
+    /// gönderin. IBAN …". Her zaman SMS (push denenmez), sessiz saatte kaydırılmaz.
+    /// </summary>
+    public const string DepositAwaiting = "deposit.awaiting";
+
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 
