@@ -41,6 +41,14 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section));
         services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
 
+        // Teslim raporu adaptörleri sağlayıcı koduyla kaydedilir (webhook yolu /webhooks/sms/{provider}); kayıtsız kod 404.
+        // Sahte sağlayıcının raporu yalnız sahte sağlayıcı seçiliyken (Development ve Testing) açılır.
+        services.AddOptions<FakeSmsProviderOptions>().Bind(configuration.GetSection(FakeSmsProviderOptions.Section));
+        if (string.Equals(configuration[$"{SmsOptions.Section}:{nameof(SmsOptions.Provider)}"], SmsOptions.FakeProvider, StringComparison.Ordinal))
+        {
+            services.AddKeyedSingleton<ISmsDeliveryReportVerifier, FakeSmsDeliveryReportVerifier>(FakeSmsDeliveryReportVerifier.ProviderCode);
+        }
+
         // Veri kaynağı ilk kullanımda kurulur: OpenAPI belge üretimi gibi veritabanısız çalıştırmalar etkilenmez.
         // Bağlantılar bu veri kaynağından açılır ve DbContext'lere verilir: NodaTime eşlemesi burada da açık olmalı.
         services.AddSingleton(_ => new NpgsqlDataSourceBuilder(

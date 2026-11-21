@@ -24,6 +24,53 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Omvila.Modules.Notifications.Domain.BrandSmsSender", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<string>("ApprovedName")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("approved_name");
+
+                    b.Property<Instant?>("DecidedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_utc");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Instant>("SubmittedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_utc");
+
+                    b.HasKey("BrandId")
+                        .HasName("pk_brand_sms_senders");
+
+                    b.ToTable("brand_sms_senders", "notifications", t =>
+                        {
+                            t.HasCheckConstraint("ck_brand_sms_senders_name", "name ~ '^[A-Z0-9]{3,11}$'");
+
+                            t.HasCheckConstraint("ck_brand_sms_senders_status", "status IN ('Pending', 'Approved', 'Rejected')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Notifications.Domain.CreditTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -117,6 +164,10 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("credits_consumed");
 
+                    b.Property<Instant?>("DeliveredUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("delivered_utc");
+
                     b.Property<string>("EventCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -179,6 +230,10 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_notification_outbox");
+
+                    b.HasIndex("ProviderMessageId")
+                        .HasDatabaseName("ix_notification_outbox_provider_message_id")
+                        .HasFilter("provider_message_id IS NOT NULL");
 
                     b.HasIndex("ScheduledUtc")
                         .HasDatabaseName("ix_notification_outbox_scheduled_utc")
