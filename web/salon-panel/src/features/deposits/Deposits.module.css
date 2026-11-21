@@ -1,0 +1,19 @@
+/* Kapora bölümü (yan panel) ve iade penceresi. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.hint {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}

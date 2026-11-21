@@ -109,6 +109,16 @@
   font-weight: 600;
 }
 
+/* Durumun yanındaki küçük işaret ("Havale bildirildi"): çerçeveli, durum renginde. */
+.note {
+  flex: none;
+  padding: 0 var(--bosluk-1);
+  border: 1px solid var(--durum-nokta);
+  border-radius: var(--kose-tam);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .dot {
   flex: none;
   width: var(--bosluk-1-5);

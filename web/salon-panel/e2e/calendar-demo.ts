@@ -93,10 +93,19 @@ export function demoCalendar(url: URL) {
           endUtc: utc(date, end),
           status: display === 'DepositPending' ? 'PendingApproval' : display,
           displayStatus: display,
+          // Kapora bekleyen (GenelBakis, Main: Gizem Arslan 150 ₺; havale süresi 13:45'te).
+          ...(display === 'DepositPending'
+            ? { depositStatus: 'Awaiting', depositAmount: { amountMinor: 15000, currency: 'TRY' } }
+            : {}),
           customerName: customer,
           serviceName: service,
           isRecurring: recurring ?? false,
-          holdExpiresUtc: display === 'PendingApproval' ? utc(date, '23:00') : null,
+          holdExpiresUtc:
+            display === 'PendingApproval'
+              ? utc(date, '23:00')
+              : display === 'DepositPending'
+                ? utc(date, '13:45')
+                : null,
           segments: gap
             ? [
                 { startUtc: utc(date, start), endUtc: utc(date, gap[0]), staffBusy: true },
@@ -188,6 +197,7 @@ export const ownerPermissions = [
   'appointment.cancel',
   'appointment.approve',
   'appointment.checkin',
+  'appointment.deposit.mark',
   'customer.view',
   'customer.phone.view',
   'customer.edit',
@@ -219,8 +229,32 @@ export async function calendarDemo(page: Page) {
 }
 
 /**
+ * GenelBakis'teki kapora bekleyen talep (kuyruk satırı; demoCalendar'ın ilk gününde 8. satır): Gizem Arslan 14:30,
+ * 150 ₺, Prism kuyruğunun generatedUtc'sinden (12:25) 1 sa 20 dk sonra düşer.
+ */
+export const demoDepositQueueItem = {
+  appointmentId: '0193a8f0-0000-7000-8000-000000000007',
+  reference: 'A-20512',
+  branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+  branchName: 'Kadıköy',
+  timeZone: 'Europe/Istanbul',
+  customerName: 'Gizem Arslan',
+  isNewCustomer: false,
+  serviceSummary: 'Fön',
+  staffName: 'Mert Demir',
+  startUtc: '2026-11-25T11:30:00Z',
+  endUtc: '2026-11-25T12:00:00Z',
+  holdExpiresUtc: '2026-11-25T10:45:00Z',
+  createdUtc: '2026-11-25T08:40:00Z',
+  channel: 'Online',
+  depositStatus: 'Awaiting',
+  depositAmount: { amountMinor: 15000, currency: 'TRY' },
+};
+
+/**
  * Genel bakış (GenelBakis): takvim demosu + kurulumu bitmiş salon. Prism'in oturum örneği Onboarding döner; genel
- * bakış o hâlde kurulum adımlarını (KayitKurulum) gösterir. Onay kuyruğu Prism örneğinden (Pınar Yalçın, Deniz Acar).
+ * bakış o hâlde kurulum adımlarını (KayitKurulum) gösterir. Onay kuyruğu Prism örneğinden (Pınar Yalçın, Deniz Acar)
+ * ve tasarımdaki kapora bekleyen talep (Gizem Arslan) eklenir.
  */
 export async function overviewDemo(page: Page) {
   await calendarDemo(page);
@@ -229,6 +263,23 @@ export async function overviewDemo(page: Page) {
     membership: ownerMembership,
     brand: { ...(session.brand as Record<string, unknown>), status: 'Active' },
   }));
+  await page.route(/\/api\/v1\/manage\/approval-queue/, async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fallback();
+      return;
+    }
+
+    const response = await route.fetch();
+    const queue = (await response.json()) as { totalCount: number; items: unknown[] };
+    await route.fulfill(
+      corsJson({
+        ...queue,
+        totalCount: queue.totalCount + 1,
+        // Kuyruk holdExpiresUtc'ye göre artan sıralı; kapora talebi en acili.
+        items: [demoDepositQueueItem, ...queue.items],
+      }),
+    );
+  });
 }
 
 /** Örnek haftanın kapalı pazarı. */

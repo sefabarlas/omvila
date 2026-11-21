@@ -16,6 +16,7 @@ import {
   parseClock,
   toBranchDate,
 } from '@omvila/ui-web/time';
+import { transferReportedNote } from '@/features/deposits/deposit-view';
 import type { CalendarAppointment, CalendarDay, CalendarView } from './api';
 
 /** Taşınabilen durumlar: bekleyen ve onaylı (geldi, tamamlandı, gelmedi taşınmaz). */
@@ -41,6 +42,9 @@ export function toBlocks(view: CalendarView, canMove: boolean): CalendarBlock[] 
         serviceName: item.serviceName,
         isRecurring: item.isRecurring,
         segments: item.segments,
+        ...(status === 'kapora' && item.depositStatus === 'CustomerReported'
+          ? { note: transferReportedNote }
+          : {}),
         draggable: canMove && movable.has(status),
       },
     ];
@@ -242,7 +246,9 @@ export function summarize(view: CalendarView | undefined, now: Date): CalendarSu
       return status !== null && upcoming.has(status) && Date.parse(a.startUtc) > nowMs;
     })
     .sort((a, b) => a.startUtc.localeCompare(b.startUtc))[0];
-  const pending = appointments.filter((a) => a.status === 'PendingApproval');
+  // "Onay bekliyor" gösterim durumuyla sayılır: kapora bekleyen (DepositPending) da PendingApproval'dır ama salonun
+  // onayını değil havaleyi bekler; bentoda sayılmaz (Main, RandevuPanel; acik-sorular.md T-72 (3)).
+  const pending = appointments.filter((a) => displayStatus(a.displayStatus) === 'onay');
   const expiries = pending
     .map((a) => (a.holdExpiresUtc ? Date.parse(a.holdExpiresUtc) - nowMs : null))
     .filter((ms): ms is number => ms !== null && ms > 0);

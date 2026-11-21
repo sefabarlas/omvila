@@ -9,12 +9,15 @@ import type { InAppNotification } from './api';
  */
 export const smsCreditsRoute = '/ayarlar/bildirimler';
 
-export type NotificationRoute = '/' | '/takvim' | '/ayarlar' | '/ayarlar/bildirimler';
+export type NotificationRoute =
+  | { to: '/' | '/ayarlar' | '/ayarlar/bildirimler' }
+  | { to: '/takvim'; search?: { randevu: string } };
 
 /**
- * Bildirime dokununca açılacak sayfa (NotificationTarget). Randevu yan panelini adresten açan rota henüz yok; randevu
- * ve takvim hedefleri takvimi açar. Henüz yapılmamış sayfalar (kapora, değerlendirmeler, kapıda sıra) ana sayfayı
- * açar (T-69). İzni olmayan sayfaya yönlenilmez.
+ * Bildirime dokununca açılacak sayfa (NotificationTarget). Randevu ve takvim hedefleri takvimi açar. "Havale
+ * bildirildi" (Deposit, staff.deposit_reported) takvimde o randevunun yan panelini kapora bölümüyle açar
+ * (`?randevu=`; T-84). Henüz yapılmamış sayfalar (değerlendirmeler, kapıda sıra) ana sayfayı açar (T-69). İzni
+ * olmayan sayfaya yönlenilmez.
  */
 export function notificationRoute(
   target: InAppNotification['target'],
@@ -23,12 +26,18 @@ export function notificationRoute(
   switch (target.type) {
     case 'Appointment':
     case 'Calendar':
-      return can('calendar.view') ? '/takvim' : '/';
+      return { to: can('calendar.view') ? '/takvim' : '/' };
+    case 'Deposit':
+      if (!can('calendar.view')) {
+        return { to: '/' };
+      }
+
+      return target.id ? { to: '/takvim', search: { randevu: target.id } } : { to: '/takvim' };
     case 'SmsCredits':
     case 'Subscription':
-      return can('settings.manage') ? smsCreditsRoute : '/';
+      return { to: can('settings.manage') ? smsCreditsRoute : '/' };
     default:
-      return '/';
+      return { to: '/' };
   }
 }
 

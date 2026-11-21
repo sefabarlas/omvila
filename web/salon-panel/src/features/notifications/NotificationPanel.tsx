@@ -118,7 +118,7 @@ export function NotificationPanel({ id, onClose }: NotificationPanelProps) {
     }
 
     onClose(false);
-    void navigate({ to: notificationRoute(item.target, can) });
+    void navigate(notificationRoute(item.target, can));
   };
 
   const unread = query.data?.unreadCount ?? 0;

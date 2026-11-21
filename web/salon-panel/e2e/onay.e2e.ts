@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { demoCalendar, demoNow, demoStaff, overviewDemo } from './calendar-demo';
+import {
+  demoCalendar,
+  demoDepositQueueItem,
+  demoNow,
+  demoStaff,
+  overviewDemo,
+} from './calendar-demo';
 import { sessionAs } from './support';
 
 // Kritik akış 3, panel tarafı (test-stratejisi.md; dilim-03 kriter 2–5): onaylı salonda online talep "Dikkat
@@ -342,4 +348,282 @@ for (const theme of ['light', 'dark'] as const) {
     });
     expect(errors).toEqual([]);
   });
+}
+
+// ───────── Kapora (dilim-04 KK4, KK5, KK7) ─────────
+// Gizem Arslan 14:30 Fön · Mert Demir, kapora 150 ₺ (OMV-7K2X), havale süresi 13:45'te doluyor. "Kapora geldi"
+// (manageMarkDepositReceived) ve "Kaporasız onayla" (manageApproveAppointment, waiveDeposit) sonraki okumalara yansır.
+const depositId = demoDepositQueueItem.appointmentId;
+const depositHold = demoDepositQueueItem.holdExpiresUtc;
+
+type DepositState = 'Awaiting' | 'CustomerReported' | 'Received' | 'Waived';
+
+interface DepositCall {
+  action: string;
+  ifMatch: string | undefined;
+  idempotencyKey: string | undefined;
+  body: unknown;
+}
+
+function depositDetail(state: DepositState) {
+  const pending = state === 'Awaiting' || state === 'CustomerReported';
+  const reported = state !== 'Awaiting' && state !== 'Waived';
+  return {
+    id: depositId,
+    reference: 'A-20512',
+    branchId: '0193a8f0-0000-7000-8000-0000000000b1',
+    status: pending ? 'PendingApproval' : 'Confirmed',
+    displayStatus: pending ? 'DepositPending' : 'Confirmed',
+    channel: 'Online',
+    startUtc: demoDepositQueueItem.startUtc,
+    endUtc: demoDepositQueueItem.endUtc,
+    timeZone: 'Europe/Istanbul',
+    holdExpiresUtc: pending ? depositHold : null,
+    customer: {
+      brandCustomerId: '0193a8f0-0000-7000-8000-0000000000da',
+      fullName: 'Gizem Arslan',
+      phone: '+905550000148',
+      visitCount: 3,
+      isNew: false,
+    },
+    items: [
+      {
+        id: '0193a8f0-0000-7000-8000-0000000000ea',
+        serviceId: '0193a8f0-0000-7000-8000-0000000000fa',
+        serviceName: 'Fön',
+        staffId: demoStaff[1]?.staffId ?? '',
+        staffName: 'Mert Demir',
+        startUtc: demoDepositQueueItem.startUtc,
+        endUtc: demoDepositQueueItem.endUtc,
+        price: { amountMinor: 45000, currency: 'TRY' },
+        status: 'Active',
+        segments: [],
+      },
+    ],
+    deposit: {
+      required: { amountMinor: 15000, currency: 'TRY' },
+      status: state,
+      transferCode: 'OMV-7K2X',
+      customerReportedUtc: reported ? '2026-11-25T08:52:00Z' : null,
+      receivedUtc: state === 'Received' ? nowUtc : null,
+      remindedUtc: null,
+      refundedUtc: null,
+    },
+    total: { amountMinor: 45000, currency: 'TRY' },
+    amountDue: { amountMinor: state === 'Received' ? 30000 : 45000, currency: 'TRY' },
+    customerNote: null,
+    isRecurring: false,
+    noShowAtUtc: null,
+    cancellation: null,
+    history: [
+      {
+        kind: 'Created',
+        occurredUtc: '2026-11-25T08:40:00Z',
+        actorName: null,
+        detail: 'Online talep oluşturuldu, SMS ile doğrulandı',
+      },
+      ...(reported
+        ? [
+            {
+              kind: 'DepositReported',
+              occurredUtc: '2026-11-25T08:52:00Z',
+              actorName: 'Gizem Arslan',
+              detail: null,
+            },
+          ]
+        : []),
+      ...(state === 'Received'
+        ? [{ kind: 'DepositReceived', occurredUtc: nowUtc, actorName: 'Elif Kaya', detail: null }]
+        : []),
+      ...(state === 'Waived'
+        ? [{ kind: 'DepositWaived', occurredUtc: nowUtc, actorName: 'Elif Kaya', detail: null }]
+        : []),
+    ],
+    version: pending ? '4' : '5',
+  };
+}
+
+/** Genel bakış ve takvim demosu + kaporalı randevunun ayrıntısı, kuyruğu ve kapora uçları. */
+async function depositDemo(page: Page, initial: DepositState = 'Awaiting'): Promise<DepositCall[]> {
+  await overviewDemo(page);
+  const calls: DepositCall[] = [];
+  let state: DepositState = initial;
+  const pending = () => state === 'Awaiting' || state === 'CustomerReported';
+  await page.route(/\/api\/v1\/manage\/calendar\?/, async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fallback();
+      return;
+    }
+
+    const view = demoCalendar(new URL(route.request().url()));
+    view.appointments = view.appointments.map((item) =>
+      item.appointmentId !== depositId
+        ? item
+        : pending()
+          ? { ...item, depositStatus: state, holdExpiresUtc: depositHold }
+          : {
+              ...item,
+              status: 'Confirmed',
+              displayStatus: 'Confirmed',
+              depositStatus: state,
+              holdExpiresUtc: null,
+            },
+    );
+    await route.fulfill(json(view));
+  });
+  await page.route(/\/api\/v1\/manage\/approval-queue/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill(
+          json({
+            generatedUtc: nowUtc,
+            totalCount: pending() ? 1 : 0,
+            earliestHoldExpiresUtc: pending() ? depositHold : null,
+            items: pending() ? [{ ...demoDepositQueueItem, depositStatus: state }] : [],
+          }),
+        ),
+  );
+  await page.route(`**/api/v1/manage/appointments/${depositId}`, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill(json(depositDetail(state))),
+  );
+  await page.route(
+    new RegExp(`/api/v1/manage/appointments/${depositId}/(approve|deposit/mark-received)$`),
+    async (route) => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        await route.fallback();
+        return;
+      }
+
+      const action = request.url().endsWith('/approve') ? 'approve' : 'mark-received';
+      const body = request.postData() ? (request.postDataJSON() as unknown) : null;
+      calls.push({
+        action,
+        ifMatch: (await request.headerValue('If-Match')) ?? undefined,
+        idempotencyKey: (await request.headerValue('Idempotency-Key')) ?? undefined,
+        body,
+      });
+      state = action === 'approve' ? 'Waived' : 'Received';
+      await route.fulfill(json(depositDetail(state)));
+    },
+  );
+  return calls;
+}
+
+async function openDeposit(page: Page) {
+  await page.goto('/takvim');
+  await page
+    .getByRole('region', { name: 'Günlük takvim' })
+    .getByRole('button', { name: /^Gizem Arslan, Fön, 14:30–15:00, Kapora bekleniyor/ })
+    .click();
+  const drawer = page.getByRole('dialog', { name: 'Randevu · #A-20512 · Online' });
+  await expect(drawer.getByRole('region', { name: 'Kapora' })).toBeVisible();
+  return drawer;
+}
+
+test.describe('Kapora: panelde kapora bekleyen randevu', () => {
+  test('Kapora geldi: randevu onaylanır, If-Match ve Idempotency-Key gider (KK5)', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    const calls = await depositDemo(page);
+    const drawer = await openDeposit(page);
+    await expect(drawer.getByText('OMV-7K2X')).toBeVisible();
+    await expect(drawer.getByRole('button', { name: 'Onayla', exact: true })).toHaveCount(0);
+
+    await drawer.getByRole('button', { name: 'Kapora geldi' }).click();
+    await expect(page.getByText('Kapora geldi olarak işaretlendi')).toBeVisible();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ action: 'mark-received', ifMatch: '4', body: null });
+    expect(calls[0]?.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+    await expect(drawer.getByRole('region', { name: 'Randevu durumu' })).toContainText('Onaylandı');
+    await expect(drawer.getByText('Kapora 150 ₺ · havale ile alındı')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(
+      page
+        .getByRole('region', { name: 'Günlük takvim' })
+        .getByRole('button', { name: /^Gizem Arslan, Fön, 14:30–15:00, Onaylandı/ }),
+    ).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('Kaporasız onayla: waiveDeposit = true gider (KK7)', async ({ page }) => {
+    const calls = await depositDemo(page);
+    const drawer = await openDeposit(page);
+    await drawer.getByRole('button', { name: 'Kaporasız onayla' }).click();
+    await expect(page.getByText('Randevu kaporasız onaylandı')).toBeVisible();
+    expect(calls.map(({ action, ifMatch, body }) => ({ action, ifMatch, body }))).toEqual([
+      { action: 'approve', ifMatch: '4', body: { waiveDeposit: true } },
+    ]);
+    await expect(drawer.getByRole('region', { name: 'Randevu durumu' })).toContainText('Onaylandı');
+    await expect(drawer.getByText('Kaporasız onaylandı').first()).toBeVisible();
+  });
+
+  test('Genel bakış: havale bildirilen satırdan "Kapora geldi" (KK4, KK5)', async ({ page }) => {
+    const calls = await depositDemo(page, 'CustomerReported');
+    await page.goto('/');
+    const attention = page.getByRole('region', { name: 'Dikkat isteyenler' });
+    await expect(attention.getByText('Gizem Arslan kapora bekliyor')).toBeVisible();
+    await expect(
+      attention.getByText('14:30 · Havale bildirildi · kontrol edin · 1 sa 35 dk kaldı'),
+    ).toBeVisible();
+    await attention.getByRole('button', { name: 'Kapora geldi: Gizem Arslan' }).click();
+    await expect(page.getByText('Kapora geldi olarak işaretlendi')).toBeVisible();
+    expect(calls.map((call) => [call.action, call.ifMatch])).toEqual([['mark-received', '4']]);
+    await expect(page.getByText('Dikkat isteyen bir şey yok')).toBeVisible();
+  });
+});
+
+const depositScreens: { name: string; state: DepositState; ready: string }[] = [
+  {
+    name: 'RandevuPanelKapora',
+    state: 'Awaiting',
+    ready: 'Banka uygulamanızda açıklama kodunu arayın.',
+  },
+  {
+    name: 'RandevuPanelHavale',
+    state: 'CustomerReported',
+    ready: 'Havale bildirildi · kontrol edin',
+  },
+  {
+    name: 'RandevuPanelKaporaAlindi',
+    state: 'Received',
+    ready: 'Kapora 150 ₺ · havale ile alındı',
+  },
+];
+
+for (const screen of depositScreens) {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`${screen.name} (${theme === 'light' ? 'açık' : 'koyu'})`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.emulateMedia({ colorScheme: theme });
+      await page.addInitScript((value) => {
+        try {
+          localStorage.setItem('omvila.tema', value);
+        } catch {
+          // Depolama kapalıysa sistem teması kullanılır.
+        }
+      }, theme);
+      await depositDemo(page, screen.state);
+      await page.goto('/takvim');
+      await page
+        .getByRole('region', { name: 'Günlük takvim' })
+        .getByRole('button', { name: /^Gizem Arslan/ })
+        .click();
+      const drawer = page.getByRole('dialog', { name: 'Randevu · #A-20512 · Online' });
+      await expect(drawer.getByText(screen.ready, { exact: false })).toBeVisible();
+      await page.waitForFunction(() =>
+        document.getAnimations().every((animation) => animation.playState !== 'running'),
+      );
+      await page.screenshot({
+        path: `e2e-results/ekranlar/${screen.name}${theme === 'dark' ? 'Koyu' : ''}.png`,
+        fullPage: false,
+      });
+      expect(errors).toEqual([]);
+    });
+  }
 }

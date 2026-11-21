@@ -428,6 +428,24 @@ a.step:focus-visible {
   color: var(--bilgi);
 }
 
+.attention li + li {
+  border-top: 1px solid var(--cizgi);
+}
+
+/* Kapora satırı (GenelBakis "Gizem Arslan kapora bekliyor"): ikon kapora durum renginde (.attentionIcon ile). */
+.attentionIcon.kapora {
+  background: var(--durum-kapora-zemin);
+  color: var(--durum-kapora-metin);
+}
+
+.attentionActions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  justify-content: flex-end;
+}
+
 .attentionText {
   display: flex;
   flex: 1;

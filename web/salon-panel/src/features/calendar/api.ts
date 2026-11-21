@@ -12,6 +12,7 @@ export type CalendarDay = CalendarView['days'][number];
 export type AppointmentDetail = components['schemas']['AppointmentDetail'];
 export type CancelRequest = components['schemas']['ManageCancelRequest'];
 export type RescheduleRequest = components['schemas']['ManageRescheduleRequest'];
+export type ApproveRequest = components['schemas']['ManageApproveRequest'];
 
 export interface CalendarRange {
   branchId: string;
@@ -52,7 +53,7 @@ function invalidateCalendar(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: ['calendar'] });
 }
 
-function useAppointmentAction<TInput>(
+export function useAppointmentAction<TInput>(
   send: (api: Api, detail: AppointmentDetail, input: TInput) => Promise<AppointmentDetail>,
 ) {
   const api = useApi();
@@ -72,7 +73,7 @@ function useAppointmentAction<TInput>(
   });
 }
 
-const appointmentPath = (detail: AppointmentDetail) => ({
+export const appointmentPath = (detail: AppointmentDetail) => ({
   path: { appointmentId: detail.id },
   header: ifMatch(detail.version),
 });
@@ -111,12 +112,16 @@ export function useCancelAppointment() {
   );
 }
 
-/** "Onayla" (manageApproveAppointment, A2): gövdesiz; waiveDeposit Dilim 4'te. */
+/**
+ * "Onayla" (manageApproveAppointment, A2). Kapora bekleyen randevuda "Kaporasız onayla" waiveDeposit = true gönderir;
+ * düz onay gövdesizdir (kapora bekleniyorken sunucu 409 deposit_required döner).
+ */
 export function useApproveAppointment() {
-  return useAppointmentAction<undefined>((api, detail) =>
+  return useAppointmentAction<ApproveRequest | undefined>((api, detail, body) =>
     unwrap(
       api.POST('/api/v1/manage/appointments/{appointmentId}/approve', {
         params: appointmentPath(detail),
+        ...(body ? { body } : {}),
       }),
     ),
   );
