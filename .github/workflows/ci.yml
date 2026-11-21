@@ -252,6 +252,10 @@ jobs:
         run: |
           mkdir -p .fvm && ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
           dart pub get
+          # Melos betiklerindeki `exec:` kısayolu `melos exec`'i kabuktan çağırır; melos PATH'te olmalı.
+          # Sürüm kökteki pubspec.lock'tan (yerelle aynı).
+          dart pub global activate melos "$(grep -A8 '^  melos:' pubspec.lock | sed -n 's/^ *version: "\(.*\)"/\1/p')"
+          echo "${PUB_CACHE:-$HOME/.pub-cache}/bin" >> "$GITHUB_PATH"
       - name: Biçim
         if: steps.guard.outputs.go == 'true'
         run: dart run melos run format:check --no-select
@@ -266,6 +270,19 @@ jobs:
           else
             echo "Test klasörü olan paket yok; atlandı."
           fi
+      # Golden testleri (alchemist) CI goldenleriyle karşılaştırılır: metin blok çizilir, gölge yok; yazı tipi ve
+      # işletim sisteminden bağımsız (packages/omvila_ui/test/flutter_test_config.dart). Fark olursa beklenen,
+      # üretilen ve fark görüntüleri indirilebilir.
+      - name: Golden farkları
+        if: steps.guard.outputs.go == 'true' && failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-golden-farklari
+          path: |
+            packages/**/test/**/failures/
+            mobile/**/test/**/failures/
+          if-no-files-found: ignore
+          retention-days: 7
 
   # Ürün kuralı 1 (OMVILA ödeme almaz; Dilim 4 kabul kriteri 10): bağımlılıklarda ödeme SDK'sı, kaynakta kart
   # formu izi varsa düşer. Ucuz olduğu için her PR'da bütün depoyu tarar. Zorunlu denetimlere eklenmedi.
