@@ -51,6 +51,7 @@ public static class SchedulingModule
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
         services.AddScoped<DepositReceipts>();
+        services.AddScoped<DepositFollowUps>();
         services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
             o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
         services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
