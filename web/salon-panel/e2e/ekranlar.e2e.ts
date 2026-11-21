@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { calendarDemo, demoSunday } from './calendar-demo';
+import { customersDemo, demoCustomerId } from './customers-demo';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
 // yazılır; tasarım görüntüleriyle (design/ekranlar/salon-paneli) yan yana insan gözüyle karşılaştırılır. Otomatik piksel
 // karşılaştırması yok (Prism örnek verisi tasarımdaki verilerden farklı). Takvim ekranları tasarımdaki veriyle
-// (calendar-demo.ts) açılır.
+// (calendar-demo.ts), müşteri ekranları customers-demo.ts ile açılır.
 interface ScreenCase {
   path: string;
   name: string;
@@ -62,6 +63,53 @@ const screens: ScreenCase[] = [
         document.getAnimations().every((animation) => animation.playState !== 'running'),
       );
     },
+  },
+  {
+    path: '/musteriler',
+    name: 'Musteriler',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible(),
+  },
+  {
+    path: '/musteriler',
+    name: 'MusterilerBos',
+    heading: 'Müşteriler',
+    setup: (page) => customersDemo(page, { empty: true }),
+    act: (page) =>
+      expect(page.getByRole('heading', { name: 'Henüz müşteriniz yok' })).toBeVisible(),
+  },
+  {
+    path: '/musteriler?q=Kaan%20Y%C4%B1l&filtre=duzenli',
+    name: 'MusterilerAramaYok',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: (page) => expect(page.getByRole('heading', { name: /için sonuç yok$/ })).toBeVisible(),
+  },
+  {
+    path: '/musteriler',
+    name: 'MusteriEkle',
+    heading: 'Müşteriler',
+    setup: customersDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Müşteri ekle' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Müşteri ekle' });
+      await dialog.getByLabel('Ad soyad').fill('Gizem Arslan');
+      await dialog.getByLabel('Cep telefonu').fill('0535 881 40 09');
+      await dialog.getByRole('button', { name: 'Müşteriyi ekle' }).click();
+      await expect(dialog.getByRole('button', { name: 'Mevcut kartı aç' })).toBeVisible();
+      await expect(dialog.getByText(/Gizem Arslan, 3 ziyaret/)).toBeVisible();
+      await page.waitForFunction(() =>
+        document.getAnimations().every((animation) => animation.playState !== 'running'),
+      );
+    },
+  },
+  {
+    path: `/musteriler/${demoCustomerId}`,
+    name: 'MusteriKarti',
+    heading: 'Selin Öztürk',
+    setup: customersDemo,
+    act: (page) => expect(page.getByRole('table', { name: 'Randevular' })).toBeVisible(),
   },
 ];
 

@@ -1,0 +1,248 @@
+/* Müşteriler (salon-paneli/Musteriler, MusterilerBos, MusterilerAramaYok, MusteriEkle, MusteriKarti). */
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--metin-ikincil);
+}
+
+/* Liste üstü: filtre çipleri solda, arama sağda. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search {
+  width: 320px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-4);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--golge-sm);
+}
+
+.chip:hover {
+  background: var(--zemin-hover);
+}
+
+.chip:has(input:checked) {
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.chip:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.chipInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-1);
+}
+
+.footer {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Boş durumlar */
+.emptyCard {
+  padding: var(--bosluk-8) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.tips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+  max-width: 880px;
+  margin: var(--bosluk-6) auto 0;
+}
+
+.tip {
+  display: flex;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.tipIcon {
+  flex: none;
+  color: var(--metin-marka);
+}
+
+.tipTitle {
+  margin: 0 0 var(--bosluk-1);
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.tipText {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+/* Müşteri ekle */
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bosluk-4);
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.formNote {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+/* Müşteri kartı */
+.cardLayout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.side,
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  min-width: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.identity {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.identityName {
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+}
+
+.rows {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  padding: var(--bosluk-3) 0;
+  border-top: 1px solid var(--cizgi);
+  font-size: var(--yazi-govde-boyut);
+}
+
+.row dt {
+  color: var(--metin-ikincil);
+}
+
+.row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.notes {
+  margin: 0;
+  white-space: pre-line;
+}
+
+@media (width <= 1199px) {
+  .cardLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (width <= 899px) {
+  .search {
+    width: 100%;
+  }
+
+  .form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tips {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -21,7 +21,14 @@ describe('oturum', () => {
     const labels = within(nav)
       .getAllByRole('link')
       .map((a) => a.textContent);
-    expect(labels).toEqual(['Genel bakış', 'Takvim', 'Hizmetler', 'Personel', 'Ayarlar']);
+    expect(labels).toEqual([
+      'Genel bakış',
+      'Takvim',
+      'Müşteriler',
+      'Hizmetler',
+      'Personel',
+      'Ayarlar',
+    ]);
     expect(
       within(nav).getByRole('link', { name: 'Genel bakış' }).getAttribute('aria-current'),
     ).toBe('page');
@@ -42,7 +49,7 @@ describe('oturum', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Takvimim']);
+    ).toEqual(['Takvimim', 'Müşteriler']);
     expect(within(nav).getByText('Benim')).toBeTruthy();
     expect(within(nav).queryByText('Yönetim')).toBeNull();
     expect(within(nav).getByText('Personel')).toBeTruthy();
@@ -90,11 +97,12 @@ describe('menü', () => {
     expect(visibleMenu(() => true).map((e) => e.key)).toEqual([
       'genel',
       'takvim',
+      'musteriler',
       'hizmetler',
       'personel',
       'ayarlar',
     ]);
-    // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; bugün yalnız Takvimim açık (calendar.view).
+    // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; izne göre Takvimim (calendar.view), Müşteriler.
     expect(visibleMenu((p) => p === 'calendar.view').map((e) => e.key)).toEqual(['takvimim']);
     expect(visibleMenu(() => false)).toEqual([]);
   });
@@ -115,6 +123,8 @@ describe('menü', () => {
     expect(activeMenuKey('/takvim', true)).toBe('takvimim');
     expect(activeMenuKey('/takvim')).toBe('takvim');
     expect(activeMenuKey('/ayarlar/isletme')).toBe('ayarlar');
+    expect(activeMenuKey('/musteriler/0193a8f0-0000-7000-8000-00000000c002')).toBe('musteriler');
+    expect(activeMenuKey('/musteriler', true)).toBe('musteriler');
     expect(activeMenuKey('/hizmetlerim')).toBe('');
   });
 });
