@@ -262,6 +262,15 @@ jobs:
             echo "Test klasörü olan paket yok; atlandı."
           fi
 
+  # Ürün kuralı 1 (OMVILA ödeme almaz; Dilim 4 kabul kriteri 10): bağımlılıklarda ödeme SDK'sı, kaynakta kart
+  # formu izi varsa düşer. Ucuz olduğu için her PR'da bütün depoyu tarar. Zorunlu denetimlere eklenmedi.
+  odeme-taramasi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Ödeme SDK'sı ve kart formu taraması
+        run: python3 scripts/check_no_payments.py
+
   gitleaks:
     runs-on: ubuntu-latest
     steps:
