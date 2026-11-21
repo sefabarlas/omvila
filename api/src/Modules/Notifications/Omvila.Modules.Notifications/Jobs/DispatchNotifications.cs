@@ -39,7 +39,7 @@ internal sealed partial class DispatchNotifications(
         foreach (var message in due)
         {
             var values = JsonSerializer.Deserialize<Dictionary<string, string>>(message.Payload) ?? [];
-            var body = SmsTemplates.Render(message.EventCode, values);
+            var body = SmsTemplates.Render(message.EventCode, values, message.TemplateVariant);
             var result = await sms.SendAsync(new SmsMessage(message.RecipientPhone!, smsOptions.Value.DefaultSender, body), ct);
             if (result.Succeeded)
             {

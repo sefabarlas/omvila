@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Features.AppointmentLink;
@@ -10,12 +11,13 @@ using Omvila.Modules.Scheduling.Features.Slots;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
 using Omvila.Modules.Scheduling.Infrastructure.ConflictGuard;
+using Omvila.Modules.Scheduling.Jobs;
 
 namespace Omvila.Modules.Scheduling;
 
 /// <summary>
 /// Scheduling modülü girişi (D2: randevu alanı ve kalıcılığı, müsaitlik motoru ve anlık görüntü yükleyicisi, çakışma
-/// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; rezervasyon sayfası ve SMS bağlantısı (/r/) uçları; IAppointmentQueries).
+/// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; rezervasyon sayfası ve SMS bağlantısı (/r/) uçları; IAppointmentQueries; MarkNoShows ve ExtendRecurringSeries işleri).
 /// Yükleyici Tenancy (IBranchScheduleQueries) ve Catalog (IServiceOffers), randevu uçları Customers (ICustomerDirectory)
 /// ve Platform (ISubscriptionQueries) sözleşmelerine dayanır.
 /// </summary>
@@ -35,6 +37,8 @@ public static class SchedulingModule
         services.AddScoped<PublicAppointmentLinkChanges>();
         services.AddScoped<CalendarReader>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        services.AddPeriodicJob<MarkNoShows>();
+        services.AddPeriodicJob<ExtendRecurringSeries>();
         return services;
     }
 

@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using Omvila.Infrastructure.Jobs;
 using Omvila.TestKit;
 
 namespace Omvila.Api.IntegrationTests;
@@ -124,6 +126,23 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone(),
             response.Headers.ETag?.ToString(),
             response.Headers.ToDictionary(h => h.Key, h => string.Join(',', h.Value), StringComparer.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Entegrasyon olaylarını işleyicilere iletir (DispatchIntegrationEvents).</summary>
+    public const string OutboxDispatcherJob = "Omvila.Infrastructure.Messaging.OutboxDispatcher, Omvila.Infrastructure";
+
+    public const string MarkNoShowsJob = "Omvila.Modules.Scheduling.Jobs.MarkNoShows, Omvila.Modules.Scheduling";
+
+    public const string ExtendRecurringSeriesJob = "Omvila.Modules.Scheduling.Jobs.ExtendRecurringSeries, Omvila.Modules.Scheduling";
+
+    /// <summary>
+    /// Periyodik işi bir kez çalıştırır (api/AGENTS.md: testte JobRunner.RunOnceAsync, saat FakeClock). İş sınıfları modül içi
+    /// (internal) olduğundan türe adıyla erişilir.
+    /// </summary>
+    public async Task RunJobAsync(string jobTypeName)
+    {
+        var type = Type.GetType(jobTypeName, throwOnError: true)!;
+        (await factory.Services.GetRequiredService<JobRunner>().RunOnceAsync(type, Ct)).ShouldBe(JobOutcome.Succeeded, jobTypeName);
     }
 
     public async Task<T> ScalarAsync<T>(string sql)

@@ -44,19 +44,41 @@ internal sealed class NotificationMessage
 
     public string? FailureReason { get; private set; }
 
+    /// <summary>Ait olduğu kayıt türü (ör. Appointment); bekleyen hatırlatmalar bununla düşürülür.</summary>
+    public string? ReferenceType { get; private set; }
+
+    public Guid? ReferenceId { get; private set; }
+
+    /// <summary>Aynı olay kodunun şablon çeşidi (ör. aynı gün hatırlatması); boşsa temel metin (alan modeline ek, T-53).</summary>
+    public string? TemplateVariant { get; private set; }
+
     public Instant CreatedUtc { get; private set; }
 
-    public static NotificationMessage ForPhone(Guid id, Guid? brandId, string eventCode, string phoneE164, string payload, Instant now) => new()
-    {
-        Id = id,
-        BrandId = brandId,
-        EventCode = eventCode,
-        RecipientPhone = phoneE164,
-        Payload = payload,
-        ScheduledUtc = now,
-        CreatedUtc = now,
-        Status = NotificationStatus.Pending,
-    };
+    /// <summary>Telefona SMS satırı; zamanlanmış gönderim verilmezse hemen.</summary>
+    public static NotificationMessage ForPhone(
+        Guid id,
+        Guid? brandId,
+        string eventCode,
+        string phoneE164,
+        string payload,
+        Instant now,
+        Instant? scheduledUtc = null,
+        string? referenceType = null,
+        Guid? referenceId = null,
+        string? templateVariant = null) => new()
+        {
+            Id = id,
+            BrandId = brandId,
+            EventCode = eventCode,
+            RecipientPhone = phoneE164,
+            Payload = payload,
+            ScheduledUtc = scheduledUtc ?? now,
+            CreatedUtc = now,
+            Status = NotificationStatus.Pending,
+            ReferenceType = referenceType,
+            ReferenceId = referenceId,
+            TemplateVariant = templateVariant,
+        };
 
     public void MarkSent(string body, string? providerMessageId)
     {

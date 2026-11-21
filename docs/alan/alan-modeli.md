@@ -567,6 +567,7 @@ Gönderilecek her mesaj bir satırdır. Randevu işlemiyle **aynı transaction'd
 | CreditsConsumed | int | SMS kontörü |
 | ProviderMessageId | string? | |
 | ReferenceType, ReferenceId | string, uuid | Örn. `Appointment` |
+| TemplateVariant | string(30)? | Aynı olay kodunun ikinci metni (ör. `same_day` hatırlatma); boşsa temel metin (T-53) |
 | FailureReason | string? | |
 
 Bir randevu iptal olunca onun için bekleyen hatırlatmalar `Cancelled` yapılır.

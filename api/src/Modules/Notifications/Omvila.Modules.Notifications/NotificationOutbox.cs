@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Domain;
@@ -19,7 +20,7 @@ internal sealed class NotificationOutbox(NotificationsDbContext db, IClock clock
         }
 
         // Şablon ve değişkenler kuyruğa yazarken denetlenir: eksik değişken gönderimde değil burada patlar.
-        _ = SmsTemplates.Render(notification.EventCode, notification.Values);
+        _ = SmsTemplates.Render(notification.EventCode, notification.Values, notification.Variant);
 
         db.Outbox.Add(NotificationMessage.ForPhone(
             ids.New(),
@@ -27,7 +28,21 @@ internal sealed class NotificationOutbox(NotificationsDbContext db, IClock clock
             notification.EventCode,
             phone.E164,
             JsonSerializer.Serialize(notification.Values),
-            clock.GetCurrentInstant()));
+            clock.GetCurrentInstant(),
+            notification.ScheduledUtc,
+            notification.Reference?.Type,
+            notification.Reference?.Id,
+            notification.Variant));
         await db.SaveChangesAsync(ct);
+    }
+
+    public Task<int> CancelPendingAsync(string eventCode, NotificationReference reference, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventCode);
+        ArgumentNullException.ThrowIfNull(reference);
+        return db.Outbox
+            .Where(m => m.Status == NotificationStatus.Pending && m.EventCode == eventCode
+                && m.ReferenceType == reference.Type && m.ReferenceId == reference.Id)
+            .ExecuteUpdateAsync(set => set.SetProperty(m => m.Status, NotificationStatus.Cancelled), ct);
     }
 }

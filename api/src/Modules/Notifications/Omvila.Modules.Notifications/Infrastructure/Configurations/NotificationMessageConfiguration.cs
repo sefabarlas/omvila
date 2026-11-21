@@ -25,8 +25,12 @@ internal sealed class NotificationMessageConfiguration : IEntityTypeConfiguratio
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.ProviderMessageId).HasMaxLength(100);
         builder.Property(x => x.FailureReason).HasMaxLength(200);
+        builder.Property(x => x.ReferenceType).HasMaxLength(40);
+        builder.Property(x => x.TemplateVariant).HasMaxLength(30);
         // RLS performansı: brand_id ilk sütun; dağıtıcının taradığı küme bekleyenler.
         builder.HasIndex(x => new { x.BrandId, x.CreatedUtc });
         builder.HasIndex(x => x.ScheduledUtc).HasFilter("status = 'Pending'");
+        // Bekleyen hatırlatmaları kayda göre düşürme (randevu iptali / saat değişikliği).
+        builder.HasIndex(x => new { x.BrandId, x.ReferenceId }).HasFilter("status = 'Pending' AND reference_id IS NOT NULL");
     }
 }
