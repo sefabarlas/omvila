@@ -59,6 +59,22 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
                 s.RequiresApproval, s.ApprovalTimeoutMinutes))
             .SingleOrDefaultAsync(ct);
 
+    public async Task<BrandNotificationSettings?> GetNotificationSettingsAsync(Guid brandId, CancellationToken ct)
+    {
+        var row = await db.BrandSettings.AsNoTracking()
+            .Where(s => s.BrandId == brandId)
+            .Select(s => new { s.ReminderOffsetsMinutes, s.ReviewInviteEnabled })
+            .SingleOrDefaultAsync(ct);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var timeZoneId = await db.Branches.AsNoTracking().Where(b => b.BrandId == brandId && b.IsActive)
+            .OrderBy(b => b.CreatedUtc).Select(b => b.TimeZoneId).FirstOrDefaultAsync(ct);
+        return new BrandNotificationSettings(row.ReminderOffsetsMinutes, row.ReviewInviteEnabled, timeZoneId ?? PlatformDefaults.DefaultTimeZoneId);
+    }
+
     public async Task<IReadOnlyDictionary<Guid, StaffCard>> GetStaffCardsAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)
     {
         if (staffIds.Count == 0)

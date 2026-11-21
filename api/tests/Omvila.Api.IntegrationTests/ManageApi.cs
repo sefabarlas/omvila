@@ -24,7 +24,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         await using var connection = await db.OpenMigratorConnectionAsync(Ct);
         await using var command = new NpgsqlCommand("""
             TRUNCATE identity.otp_challenges, identity.trusted_devices, identity.refresh_tokens, identity.terms_acceptances, identity.user_memberships, identity.users CASCADE;
-            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.brand_sms_senders, notifications.devices;
+            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.brand_sms_senders, notifications.devices, notifications.in_app_notifications;
             TRUNCATE platform.subscriptions;
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;

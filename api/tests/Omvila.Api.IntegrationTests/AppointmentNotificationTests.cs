@@ -74,6 +74,25 @@ public sealed class AppointmentNotificationTests(PostgresFixture db) : IAsyncLif
     }
 
     [Fact]
+    public async Task Reminders_FollowTheBrandsNotificationSettings()
+    {
+        // Kural: sureler-ve-ayarlar.md ReminderOffsetsMinutes (Brand); kanonik düzenleyici notification-settings (T-62 (4)).
+        var settings = await _api.GetAsync("/api/v1/manage/brand/notification-settings", _token);
+        (await _api.WriteAsync(HttpMethod.Put, "/api/v1/manage/brand/notification-settings",
+            new { reminderOffsetsMinutes = Of(180), reviewInviteEnabled = true }, _token, settings.ETag)).Status.ShouldBe(200);
+        await CreateAsync("2026-12-02T11:30:00Z", notify: false);
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+        var off = await _api.GetAsync("/api/v1/manage/brand/notification-settings", _token);
+        (await _api.WriteAsync(HttpMethod.Put, "/api/v1/manage/brand/notification-settings",
+            new { reminderOffsetsMinutes = Array.Empty<int>(), reviewInviteEnabled = true }, _token, off.ETag)).Status.ShouldBe(200);
+        await CreateAsync("2026-12-03T11:30:00Z", notify: false);
+
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        (await RemindersAsync("Pending")).ShouldBe("12-02 08:30|same_day", "yalnız 3 saat öncesi; boş liste hatırlatma yazmaz");
+    }
+
+    [Fact]
     public async Task CustomerWithAppointmentSmsDisabled_GetsNoConfirmationOrReminders()
     {
         await _api.ScalarAsync<int>($"UPDATE customers.brand_customers SET appointment_sms_enabled = false WHERE id = '{_selin}' RETURNING 1");
@@ -361,6 +380,8 @@ public sealed class AppointmentNotificationTests(PostgresFixture db) : IAsyncLif
     {
         days = Enumerable.Range(1, 7).Select(d => new { dayOfWeek = d, intervals = new[] { new { start = "09:00", end = "19:00" } } }).ToArray(),
     };
+
+    private static int[] Of(params int[] values) => values;
 
     private Dictionary<string, string> Key() =>
         new(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" };

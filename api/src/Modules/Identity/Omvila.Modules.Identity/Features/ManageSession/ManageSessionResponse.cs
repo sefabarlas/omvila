@@ -7,4 +7,5 @@ internal sealed record ManageSessionResponse(
     SessionMembership Membership,
     IReadOnlyList<string> Permissions,
     IReadOnlyList<SessionBranch> Branches,
-    SessionSubscription Subscription);
+    SessionSubscription Subscription,
+    SessionSmsCredits? SmsCredits);

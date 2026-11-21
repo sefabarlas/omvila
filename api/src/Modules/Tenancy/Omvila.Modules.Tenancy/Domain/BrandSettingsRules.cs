@@ -5,6 +5,11 @@ namespace Omvila.Modules.Tenancy.Domain;
 /// </summary>
 internal static class BrandSettingsRules
 {
+    // Sözleşme reminderOffsetsMinutes: en çok 3 değer, 30–4320 dakika.
+    private const int MaxReminderOffsets = 3;
+    private const int MinReminderOffsetMinutes = 30;
+    private const int MaxReminderOffsetMinutes = 4320;
+
     private static readonly int[] ApprovalTimeouts = [30, 60, 120, 240];
     private static readonly int[] SlotIntervals = [5, 10, 15];
     private static readonly string[] DepositPolicies = ["None", "RiskyCustomersOnly", "Always"];
@@ -43,15 +48,31 @@ internal static class BrandSettingsRules
         }
 
         Range("riskyCustomerNoShowThreshold", v.RiskyCustomerNoShowThreshold, 1, 10);
-        if (v.ReminderOffsetsMinutes.Count > 3)
+        if (ReminderOffsetsError(v.ReminderOffsetsMinutes) is { } code)
         {
-            errors["reminderOffsetsMinutes"] = ["too_long"];
-        }
-        else if (v.ReminderOffsetsMinutes.Any(m => m is < 30 or > 4320))
-        {
-            errors["reminderOffsetsMinutes"] = ["out_of_range"];
+            errors["reminderOffsetsMinutes"] = [code];
         }
 
         return errors;
+    }
+
+    /// <summary>
+    /// Bildirim ayarları (sözleşme NotificationSettingsUpdate): BrandSettings'teki kurallara ek olarak tekrar
+    /// <c>invalid_format</c>'tır (manageUpdateNotificationSettings; BrandSettings PUT'u tekrarı sessizce birleştirir).
+    /// </summary>
+    public static string? ValidateNotificationOffsets(IReadOnlyCollection<int> offsets)
+    {
+        ArgumentNullException.ThrowIfNull(offsets);
+        return ReminderOffsetsError(offsets) ?? (offsets.Distinct().Count() != offsets.Count ? "invalid_format" : null);
+    }
+
+    private static string? ReminderOffsetsError(IReadOnlyCollection<int> offsets)
+    {
+        if (offsets.Count > MaxReminderOffsets)
+        {
+            return "too_long";
+        }
+
+        return offsets.Any(m => m is < MinReminderOffsetMinutes or > MaxReminderOffsetMinutes) ? "out_of_range" : null;
     }
 }

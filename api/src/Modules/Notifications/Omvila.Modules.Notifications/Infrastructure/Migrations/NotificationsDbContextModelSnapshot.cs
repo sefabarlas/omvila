@@ -208,6 +208,85 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Notifications.Domain.InAppNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid?>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("EventCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("event_code");
+
+                    b.Property<Instant?>("HoldExpiresUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hold_expires_utc");
+
+                    b.Property<Instant?>("ReadUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_utc");
+
+                    b.Property<Guid?>("TargetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_id");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_type");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("title");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_in_app_notifications");
+
+                    b.HasIndex("BrandId", "TargetId")
+                        .HasDatabaseName("ix_in_app_notifications_holds")
+                        .HasFilter("hold_expires_utc IS NOT NULL");
+
+                    b.HasIndex("BrandId", "UserId")
+                        .HasDatabaseName("ix_in_app_notifications_unread")
+                        .HasFilter("read_utc IS NULL");
+
+                    b.HasIndex("BrandId", "UserId", "CreatedUtc", "Id")
+                        .IsDescending(false, false, true, true)
+                        .HasDatabaseName("ix_in_app_notifications_brand_id_user_id_created_utc_id");
+
+                    b.ToTable("in_app_notifications", "notifications", t =>
+                        {
+                            t.HasCheckConstraint("ck_in_app_notifications_target_type", "target_type IN ('Appointment', 'Calendar', 'Today', 'Deposit', 'Reviews', 'WalkInQueue', 'SmsCredits', 'Subscription')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Notifications.Domain.NotificationMessage", b =>
                 {
                     b.Property<Guid>("Id")

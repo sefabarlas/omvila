@@ -48,4 +48,24 @@ public sealed class BrandSettingsTests
 
         settings.ReminderOffsetsMinutes.ShouldBe([1440, 120]);
     }
+
+    [Theory]
+    [InlineData(new[] { 120, 120 }, "invalid_format")]
+    [InlineData(new[] { 1440, 120, 60, 30 }, "too_long")]
+    [InlineData(new[] { 20 }, "out_of_range")]
+    [InlineData(new int[0], null)]
+    public void NotificationOffsets_RejectDuplicates_OnTopOfTheRanges(int[] offsets, string? code) =>
+        BrandSettingsRules.ValidateNotificationOffsets(offsets).ShouldBe(code);
+
+    [Fact]
+    public void ApplyNotificationSettings_ChangesOnlyRemindersAndReviewInvite()
+    {
+        var settings = BrandSettings.CreateDefault(Guid.Empty);
+
+        settings.ApplyNotificationSettings([120, 2880], reviewInviteEnabled: false);
+
+        settings.ReminderOffsetsMinutes.ShouldBe([2880, 120]);
+        settings.ReviewInviteEnabled.ShouldBeFalse();
+        settings.CancellationCutoffHours.ShouldBe(24);
+    }
 }

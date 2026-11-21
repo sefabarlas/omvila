@@ -16,6 +16,9 @@ internal sealed class CreditLedger(NotificationsDbContext db, IClock clock, IIdG
         await db.SaveChangesAsync(ct);
     }
 
+    public Task<int> GetBalanceAsync(Guid brandId, CancellationToken ct) =>
+        db.CreditTransactions.AsNoTracking().Where(t => t.BrandId == brandId).SumAsync(t => t.Amount, ct);
+
     /// <summary>
     /// Markanın defterini transaction sonuna kadar kilitler ve bakiyeyi döner: aynı anda iki yazım (gönderim işinin iki
     /// örneği, teslim raporu, satın alma) aynı bakiyeden hesaplanmaz. Bakiye satırların toplamıdır: aynı anda yazılan

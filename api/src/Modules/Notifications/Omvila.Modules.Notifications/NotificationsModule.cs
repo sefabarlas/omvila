@@ -6,6 +6,8 @@ using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Features.Devices;
+using Omvila.Modules.Notifications.Features.InAppNotifications;
+using Omvila.Modules.Notifications.Features.Sms;
 using Omvila.Modules.Notifications.Features.SmsDeliveryReports;
 using Omvila.Modules.Notifications.Infrastructure;
 using Omvila.Modules.Notifications.IntegrationEventHandlers;
@@ -32,6 +34,10 @@ public static class NotificationsModule
         services.AddPeriodicJob<DispatchNotifications>();
         services.AddScoped<SmsDeliveryReportHandler>();
         services.AddScoped<AppointmentSms>();
+        services.AddScoped<InAppNotifier>();
+        services.AddScoped<SmsUsage>();
+        services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
+        services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();
         services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
         services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();
@@ -43,11 +49,13 @@ public static class NotificationsModule
         return services;
     }
 
-    /// <summary>Notifications uçları: SMS teslim raporu webhook'u, cihaz kaydı.</summary>
+    /// <summary>Notifications uçları: SMS teslim raporu webhook'u, cihaz kaydı, bildirim paneli, SMS özeti ve gönderen adı.</summary>
     public static IEndpointRouteBuilder MapNotificationsEndpoints(this IEndpointRouteBuilder app)
     {
         SmsDeliveryReportEndpoints.Map(app);
         DeviceEndpoints.Map(app);
+        InAppNotificationEndpoints.Map(app);
+        SmsEndpoints.Map(app);
         return app;
     }
 }

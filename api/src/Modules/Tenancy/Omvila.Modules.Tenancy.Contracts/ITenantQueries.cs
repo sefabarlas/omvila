@@ -36,6 +36,11 @@ public interface ITenantQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<BrandAppointmentSettings?> GetAppointmentSettingsAsync(Guid brandId, CancellationToken ct);
 
+    /// <summary>Bildirim ayarları (hatırlatma zamanları, değerlendirme daveti, ana şube saat dilimi); marka yoksa null.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<BrandNotificationSettings?> GetNotificationSettingsAsync(Guid brandId, CancellationToken ct);
+
     /// <summary>Markanın personel kartları (etkin olmasa da; geçmiş randevularda ad görünür). Bulunmayan kimlikler yer almaz.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="staffIds">Personel kimlikleri.</param>

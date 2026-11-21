@@ -10,6 +10,7 @@ using Omvila.Modules.Identity.Contracts;
 using Omvila.Modules.Identity.Domain;
 using Omvila.Modules.Identity.Infrastructure;
 using Omvila.Modules.Identity.Security;
+using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Platform.Contracts;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
@@ -29,7 +30,7 @@ internal static class ManageSessionEndpoints
             .RequireAuthenticated(Audiences.Manage);
 
     private static async Task<IResult> GetAsync(
-        ClaimsPrincipal principal, IdentityDbContext db, ITenantQueries tenants, ISubscriptionQueries subscriptions, CancellationToken ct)
+        ClaimsPrincipal principal, IdentityDbContext db, ITenantQueries tenants, ISubscriptionQueries subscriptions, ICreditLedger credits, CancellationToken ct)
     {
         if (!Guid.TryParse(principal.FindFirst(OmvilaClaims.Subject)?.Value, out var userId)
             || !Guid.TryParse(principal.FindFirst(OmvilaClaims.MembershipId)?.Value, out var membershipId))
@@ -57,6 +58,14 @@ internal static class ManageSessionEndpoints
         var permissions = RolePermissions.ByRole.TryGetValue(membership.Role, out var granted)
             ? granted.Keys.Order(StringComparer.Ordinal).ToArray()
             : [];
+        // Kural: sözleşme ManageSession.smsCredits — yalnız settings.manage izni olana; eşik LowCreditThreshold.
+        SessionSmsCredits? smsCredits = null;
+        if (permissions.Contains(Permissions.Settings.Manage, StringComparer.Ordinal))
+        {
+            var balance = Math.Max(0, await credits.GetBalanceAsync(membership.BrandId, ct));
+            smsCredits = new SessionSmsCredits(balance, balance < PlatformDefaults.LowCreditThreshold);
+        }
+
         var phone = PhoneNumber.TryParse(user.PhoneE164, out var parsed) ? parsed.Masked : string.Empty;
 
         return TypedResults.Ok(new ManageSessionResponse(
@@ -65,6 +74,7 @@ internal static class ManageSessionEndpoints
             new SessionMembership(membership.Role, allBranches ? [] : membership.BranchIds, membership.StaffId),
             permissions,
             [.. tenant.Branches.Select(b => new SessionBranch(b.Id, b.Name))],
-            new SessionSubscription(subscription.Status, subscription.TrialEndsOn, subscription.PastDueSince, subscription.ReadOnlyOn)));
+            new SessionSubscription(subscription.Status, subscription.TrialEndsOn, subscription.PastDueSince, subscription.ReadOnlyOn),
+            smsCredits));
     }
 }
