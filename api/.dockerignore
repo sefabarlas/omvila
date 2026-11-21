@@ -1,0 +1,13 @@
+# api/Dockerfile bağlamı: yalnız src ve kök ayar dosyaları gerekir.
+**/bin/
+**/obj/
+tests/
+artifacts/
+TestResults/
+db/
+scripts/
+**/*.user
+# Geliştirme yapılandırması (yerel bağlantı dizeleri, seed planları) imaja girmez.
+**/appsettings.Development.json
+Dockerfile
+.dockerignore

@@ -1,0 +1,158 @@
+# Test ortamı (tek sunucu). Kullanım ve ortam değişkenleri: deploy/staging/env.example
+#   cp deploy/staging/env.example deploy/staging/.env   # değerleri doldurun (depoya girmez)
+#   docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env up -d            # GHCR imajları
+#   docker compose -f deploy/staging/compose.yml --env-file deploy/staging/.env up -d --build    # yerelde derle
+# Yalnız Caddy dışarı açılır (80/443); postgres, api, mailpit vb. yalnız iç ağda.
+name: omvila-staging
+
+x-api-image: &api-image
+  image: ghcr.io/sefabarlas/omvila-api:${TAG:-latest}
+  build:
+    context: ../../api
+    dockerfile: Dockerfile
+
+# api, worker, migrate ve seed aynı imaj ve yapılandırmayla çalışır; yalnız rol değişir.
+x-api-env: &api-env
+  ASPNETCORE_ENVIRONMENT: Staging
+  # Ayrı PR: Staging'de sahte SMS/push sağlayıcısına izin (Fake yalnız Development/Testing'de açılıyor).
+  Staging__AllowFakeProviders: 'true'
+  Sms__Provider: Fake
+  Push__Provider: Fake
+  Sms__Providers__fake__WebhookSecret: ${SMS_FAKE_WEBHOOK_SECRET:?SMS_FAKE_WEBHOOK_SECRET}
+  ConnectionStrings__Default: Host=postgres;Database=omvila;Username=omvila_app;Password=${OMVILA_APP_DB_PASSWORD:?OMVILA_APP_DB_PASSWORD}
+  ConnectionStrings__Migrator: Host=postgres;Database=omvila;Username=omvila_migrator;Password=${OMVILA_MIGRATOR_DB_PASSWORD:?OMVILA_MIGRATOR_DB_PASSWORD}
+  Auth__SigningKeys__0__Kid: ${AUTH_SIGNING_KEY_ID:?AUTH_SIGNING_KEY_ID}
+  Auth__SigningKeys__0__PrivateKeyPem: ${AUTH_SIGNING_KEY_PEM:?AUTH_SIGNING_KEY_PEM}
+  Auth__Otp__HmacKey: ${AUTH_OTP_HMAC_KEY:?AUTH_OTP_HMAC_KEY}
+  Auth__PanelSignInUrl: ${SALON_URL:-https://test.salon.omvila.com.tr}/giris
+  Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}/
+  Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://test.salon.omvila.com.tr}
+  Cors__Surfaces__Public__Origins__0: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}
+  # İstemci IP'si Caddy'nin X-Forwarded-For başlığından (OTP IP sınırı, T-07). API yalnız iç ağdan erişilebilir.
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: 'true'
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: omvila
+      POSTGRES_USER: omvila_migrator
+      POSTGRES_PASSWORD: ${OMVILA_MIGRATOR_DB_PASSWORD:?OMVILA_MIGRATOR_DB_PASSWORD}
+      OMVILA_APP_DB_PASSWORD: ${OMVILA_APP_DB_PASSWORD:?OMVILA_APP_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Roller ve btree_gist (yerel geliştirmeyle aynı betik), ardından omvila_app parolası ortamdan.
+      - ../../api/db/init/01-roles.sql:/docker-entrypoint-initdb.d/01-roles.sql:ro
+      - ./db/02-app-password.sh:/docker-entrypoint-initdb.d/02-app-password.sh:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U omvila_migrator -d omvila']
+      interval: 5s
+      retries: 10
+
+  # Tek seferlik: migration'ları omvila_migrator ile uygular ve çıkar. api ve worker bunu bekler.
+  migrate:
+    <<: *api-image
+    command: ['--role=migrate']
+    environment: *api-env
+    restart: 'no'
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Elle çalıştırılır: docker compose -f deploy/staging/compose.yml --profile seed run --rm seed
+  seed:
+    <<: *api-image
+    command: ['--role=seed']
+    environment: *api-env
+    restart: 'no'
+    profiles: [seed]
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *api-image
+    command: ['--role=api']
+    environment: *api-env
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *api-image
+    command: ['--role=worker']
+    environment: *api-env
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  salon-panel:
+    image: ghcr.io/sefabarlas/omvila-salon-panel:${TAG:-latest}
+    build:
+      context: ../..
+      dockerfile: web/salon-panel/Dockerfile
+      args:
+        VITE_API_URL: ${API_URL:-https://test.api.omvila.com.tr}
+    restart: unless-stopped
+
+  rezervasyon:
+    image: ghcr.io/sefabarlas/omvila-rezervasyon:${TAG:-latest}
+    build:
+      context: ../..
+      dockerfile: web/rezervasyon/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-https://test.api.omvila.com.tr}
+        NEXT_PUBLIC_SITE_URL: ${RANDEVU_URL:-https://test.randevu.omvila.com.tr}
+        NEXT_PUBLIC_PRIVACY_NOTICE_URL: ${PRIVACY_NOTICE_URL:-}
+        NEXT_PUBLIC_PRIVACY_NOTICE_VERSION: ${PRIVACY_NOTICE_VERSION:-}
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:v1.27.4
+    restart: unless-stopped
+    # SMTP 1025 yalnız iç ağda (e-posta adaptörü gelince API buraya gönderir); arayüz 8025 Caddy arkasında.
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '${CADDY_HTTP_PUBLISH:-80}:${CADDY_HTTP_PORT:-80}'
+      - '${CADDY_HTTPS_PUBLISH:-443}:${CADDY_HTTPS_PORT:-443}'
+      - '${CADDY_HTTPS_PUBLISH:-443}:${CADDY_HTTPS_PORT:-443}/udp'
+    environment:
+      CADDY_HTTP_PORT: ${CADDY_HTTP_PORT:-80}
+      CADDY_HTTPS_PORT: ${CADDY_HTTPS_PORT:-443}
+      SALON_HOST: ${SALON_HOST:-test.salon.omvila.com.tr}
+      API_HOST: ${API_HOST:-test.api.omvila.com.tr}
+      RANDEVU_HOST: ${RANDEVU_HOST:-test.randevu.omvila.com.tr}
+      SMS_HOST: ${SMS_HOST:-test.sms.omvila.com.tr}
+      POSTA_HOST: ${POSTA_HOST:-test.posta.omvila.com.tr}
+      SMS_LOG_PATH: ${SMS_LOG_PATH:-/dev/sms}
+      BASIC_AUTH_USER: ${BASIC_AUTH_USER:?BASIC_AUTH_USER}
+      BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:?BASIC_AUTH_HASH}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      default:
+        # Rezervasyon sunucusunun (SSR) API çağrısı kamu adresine gider; iç ağda doğrudan Caddy'ye çözülür.
+        aliases:
+          - ${API_HOST:-test.api.omvila.com.tr}
+    depends_on:
+      - api
+      - salon-panel
+      - rezervasyon
+      - mailpit
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
