@@ -82,7 +82,7 @@ class ManageCancelRequest {
 
 
 
-      /// Boşalan saat bekleme listesine teklif edilsin (Dilim 5)
+      /// Boşalan saat bekleme listesindeki sıradaki uygun kişiye teklif edilsin (waitlist.offer, 15 dk tutma); false ise teklif motoru bu saat için çalışmaz
   @JsonKey(
     defaultValue: true,
     name: r'offerToWaitlist',

@@ -25,6 +25,8 @@ enum CustomerNotificationEvent {
   appointmentPeriodCancelledBySalon(r'appointment.cancelled_by_salon'),
   @JsonValue(r'waitlist.offer')
   waitlistPeriodOffer(r'waitlist.offer'),
+  @JsonValue(r'walkin.almost_turn')
+  walkinPeriodAlmostTurn(r'walkin.almost_turn'),
   @JsonValue(r'review.invite')
   reviewPeriodInvite(r'review.invite'),
   @JsonValue(r'unknown_default_open_api')

@@ -45,6 +45,12 @@ enum ErrorCode {
   depositRequired(r'deposit_required'),
   @JsonValue(r'deposit_reminder_already_sent')
   depositReminderAlreadySent(r'deposit_reminder_already_sent'),
+  @JsonValue(r'payment_total_mismatch')
+  paymentTotalMismatch(r'payment_total_mismatch'),
+  @JsonValue(r'package_session_unavailable')
+  packageSessionUnavailable(r'package_session_unavailable'),
+  @JsonValue(r'cash_day_already_closed')
+  cashDayAlreadyClosed(r'cash_day_already_closed'),
   @JsonValue(r'outside_working_hours')
   outsideWorkingHours(r'outside_working_hours'),
   @JsonValue(r'staff_on_time_off')

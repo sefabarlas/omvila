@@ -16,6 +16,7 @@ import 'package:omvila_api/src/model/deposit_refund_request.dart';
 import 'package:omvila_api/src/model/manage_appointment_create.dart';
 import 'package:omvila_api/src/model/manage_approve_request.dart';
 import 'package:omvila_api/src/model/manage_cancel_request.dart';
+import 'package:omvila_api/src/model/manage_complete_request.dart';
 import 'package:omvila_api/src/model/manage_reschedule_request.dart';
 import 'package:omvila_api/src/model/pending_approval_list.dart';
 import 'package:omvila_api/src/model/problem.dart';
@@ -279,6 +280,111 @@ _responseData = rawData == null ? null : deserialize<AppointmentDetail, Appointm
 
     final _response = await _dio.request<Object>(
       _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    AppointmentDetail? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<AppointmentDetail, AppointmentDetail>(rawData, 'AppointmentDetail', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<AppointmentDetail>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Tamamla ve ödeme al (\&quot;Tamamla ve kaydet\&quot;)
+  /// \&quot;Tamamla ve ödeme al\&quot; penceresi (OdemeAl). Geçiş A11: CheckedIn → Completed. OMVILA para almaz; ödeme satırları salonun kendi tahsilatının kaydıdır (\&quot;Kart\&quot; salonun POS&#39;udur). Tutar kuralı: alınacak &#x3D; amountDue (kalemler − alınmış kapora − randevu oluşurken paketten düşülen kalemler) − packageRedemptions ile şimdi paketten düşülen kalemlerin fiyatı. payments toplamı alınacak tutara eşit değilse 409 payment_total_mismatch (meta.expectedAmountMinor); alınacak tutar 0 ise payments boş gönderilir. En fazla iki satır önerilir (\&quot;İkinci ödeme ekle\&quot;), üç satıra kadar kabul edilir. packageRedemptions: kalemin hizmeti paket kalemindeki hizmetle aynı olmalı, paket bu müşterinin, Active, süresi geçmemiş, kalan seansı olan ve şubede kullanılabilir olmalı; değilse 409 package_session_unavailable (meta.customerPackageItemId). Yan etkiler: kalemler Completed; her ödeme satırı için Payment + randevu tahsisi; paketten düşülen her kalem için seans kullanımı ve 0 TL&#39;lik PackageRedemption kaydı (docs/acik-sorular.md T-86); kalem başına CommissionEntry(Service, Accrued) (taban: kapora ve paket payı dağıtılmış tahsilat); BrandCustomer sayaçları (VisitCount, LastVisitOn, TotalSpentMinor); geçmişe Completed; ReviewInviteEnabled açıksa ReviewInviteDelayMinutes sonra review.invite planlanır. Yanıttaki payments listesi kapora dahil bütün tahsilatlardır. Durum CheckedIn değilse 409 invalid_state_transition. Para kaydettiği için If-Match ile birlikte Idempotency-Key ister. İzin: appointment.complete (Owner, BranchManager kendi şubesinde); personel 403, kapsam dışı randevu 404. 
+  ///
+  /// Parameters:
+  /// * [ifMatch] - GET yanıtındaki ETag değeri
+  /// * [idempotencyKey] - İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)
+  /// * [appointmentId] 
+  /// * [manageCompleteRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [AppointmentDetail] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<AppointmentDetail>> manageCompleteAppointment({ 
+    required String ifMatch,
+    required String idempotencyKey,
+    required String appointmentId,
+    required ManageCompleteRequest manageCompleteRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/appointments/{appointmentId}/complete'.replaceAll('{' r'appointmentId' '}', appointmentId.toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        r'If-Match': ifMatch,
+        r'Idempotency-Key': idempotencyKey,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      _bodyData = jsonEncode(manageCompleteRequest);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
       options: _options,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
