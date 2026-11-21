@@ -134,6 +134,13 @@ public sealed class CorsTests(WebApplicationFactory<Program> factory) : IClassFi
         endpoints.ShouldNotBeEmpty();
         foreach (var endpoint in endpoints)
         {
+            // Sağlayıcı geri çağrısı sunucudan sunucuya: tarayıcıya açılmaz, CORS politikası yoktur (T-64).
+            if (endpoint.RoutePattern.RawText!.StartsWith("/api/v1/webhooks/", StringComparison.Ordinal))
+            {
+                endpoint.Metadata.GetMetadata<IEnableCorsAttribute>().ShouldBeNull(endpoint.RoutePattern.RawText);
+                continue;
+            }
+
             var expected = endpoint.RoutePattern.RawText!.StartsWith("/api/v1/manage", StringComparison.Ordinal) ? "cors:manage" : "cors:public";
             var cors = endpoint.Metadata.GetMetadata<IEnableCorsAttribute>();
             cors.ShouldNotBeNull(endpoint.RoutePattern.RawText);

@@ -568,7 +568,8 @@ Gönderilecek her mesaj bir satırdır. Randevu işlemiyle **aynı transaction'd
 | ProviderMessageId | string? | |
 | ReferenceType, ReferenceId | string, uuid | Örn. `Appointment` |
 | TemplateVariant | string(30)? | Aynı olay kodunun ikinci metni (ör. `same_day` hatırlatma); boşsa temel metin (T-53) |
-| FailureReason | string? | |
+| FailureReason | string? | Örn. `insufficient_credits` (Skipped) |
+| DeliveredUtc | Instant? | Teslim raporu "teslim edildi" anı (T-64) |
 
 Bir randevu iptal olunca onun için bekleyen hatırlatmalar `Cancelled` yapılır.
 
@@ -576,7 +577,7 @@ Bir randevu iptal olunca onun için bekleyen hatırlatmalar `Cancelled` yapılı
 `BrandId?` (`null` = sistem şablonu), `EventCode`, `Channel`, `LanguageCode`, `Subject?`, `Body`, `IsActive`. Salon yalnız izin verilen şablonları ezebilir ("Salon metniniz" / "Sistem şablonu").
 
 ### BrandSmsSender (Gönderen adı)
-`SenderTitle` (≤11 karakter, ör. `KUAFORELIF`), `Status` (`Pending`, `Approved`, `Rejected`), `SubmittedUtc`, `ApprovedUtc?`, `RejectionReason?`. Onaylanana kadar mesajlar `OMVILA` adıyla gider.
+Marka başına tek satır. `Name` (son başvuru, 3–11 büyük harf/rakam, ör. `KUAFORELIF`), `Status` (`Pending`, `Approved`, `Rejected`; satır yoksa `None`), `ApprovedName?` (şu an kullanılan onaylı ad; yeni başvuru beklerken veya reddedilince sürer), `SubmittedUtc`, `DecidedUtc?`, `RejectionReason?`. Onaylı ad yoksa mesajlar `OMVILA` adıyla gider (T-64).
 
 ### CreditTransaction (SMS kontör defteri)
 `Type` (`Purchase`, `Consume`, `Refund`, `Grant`, `Expire`), `Amount` (+/−), `BalanceAfter`, `ReferenceType?`, `ReferenceId?`, `UnitPriceMinor?`.

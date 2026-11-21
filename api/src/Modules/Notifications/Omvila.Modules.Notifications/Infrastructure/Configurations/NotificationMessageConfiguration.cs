@@ -32,5 +32,7 @@ internal sealed class NotificationMessageConfiguration : IEntityTypeConfiguratio
         builder.HasIndex(x => x.ScheduledUtc).HasFilter("status = 'Pending'");
         // Bekleyen hatırlatmaları kayda göre düşürme (randevu iptali / saat değişikliği).
         builder.HasIndex(x => new { x.BrandId, x.ReferenceId }).HasFilter("status = 'Pending' AND reference_id IS NOT NULL");
+        // Teslim raporu satırı sağlayıcı kimliğiyle bulur (platform bağlamında, marka bilinmeden).
+        builder.HasIndex(x => x.ProviderMessageId).HasFilter("provider_message_id IS NOT NULL");
     }
 }

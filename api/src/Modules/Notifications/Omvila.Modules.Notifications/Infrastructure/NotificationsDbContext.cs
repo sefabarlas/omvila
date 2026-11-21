@@ -11,6 +11,8 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<CreditTransaction> CreditTransactions => Set<CreditTransaction>();
 
+    public DbSet<BrandSmsSender> SmsSenders => Set<BrandSmsSender>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

@@ -5,6 +5,7 @@ using NodaTime;
 using Npgsql;
 using Omvila.Infrastructure;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Catalog;
 using Omvila.Modules.Customers;
 using Omvila.Modules.Identity;
@@ -105,10 +106,12 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Cors:PreflightMaxAgeSeconds"] = "600",
             ["Notifications:DispatchIntervalSeconds"] = "1",
             ["Notifications:BatchSize"] = "50",
-            ["Notifications:MaxAttempts"] = "3",
-            ["Notifications:RetryDelaySeconds"] = "60",
+            ["Notifications:MaxAttempts"] = "5",
+            ["Notifications:RetryBaseDelaySeconds"] = "30",
+            ["Notifications:RetryMaxDelaySeconds"] = "3600",
             ["Sms:Provider"] = "Fake",
             ["Sms:DefaultSender"] = "OMVILA",
+            [$"{FakeSmsProviderOptions.Section}:{nameof(FakeSmsProviderOptions.WebhookSecret)}"] = TestSmsWebhook.Secret,
             ["Auth:Issuer"] = "omvila",
             ["Auth:AccessTokenMinutes"] = "15",
             ["Auth:RefreshTokenDaysRemembered"] = "30",
