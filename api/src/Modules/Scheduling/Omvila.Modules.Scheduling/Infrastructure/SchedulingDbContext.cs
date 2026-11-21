@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Omvila.Modules.Scheduling.Domain;
+using Omvila.Modules.Scheduling.Domain.Waitlist;
 
 namespace Omvila.Modules.Scheduling.Infrastructure;
 
@@ -16,6 +17,10 @@ internal sealed class SchedulingDbContext(DbContextOptions<SchedulingDbContext> 
     public DbSet<AppointmentSeries> AppointmentSeries => Set<AppointmentSeries>();
 
     public DbSet<AppointmentAccessCode> AppointmentAccessCodes => Set<AppointmentAccessCode>();
+
+    public DbSet<WaitlistEntry> WaitlistEntries => Set<WaitlistEntry>();
+
+    public DbSet<WaitlistOffer> WaitlistOffers => Set<WaitlistOffer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

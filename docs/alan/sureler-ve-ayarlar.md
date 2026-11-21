@@ -60,6 +60,8 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | Anahtar | Varsayılan | Kapsam | Not | Onay |
 |---|---|---|---|---|
 | `WaitlistOfferHoldMinutes` | 15 | Platform | Boşalan saat 15 dk tutulur | |
+| `WaitlistMorningEndHour` | 12 | Platform | "Sabah" 12:00'den önce başlayan saat (şube yerel) | T-90 |
+| `WaitlistAfternoonEndHour` | 17 | Platform | "Öğleden sonra" 12:00–17:00, "Akşam" 17:00 ve sonrası | T-90 |
 | `WalkInAverageServiceMinutes` | hizmet süresinden | — | "Tahmini bekleme ~35 dk" = öndekilerin kalan süreleri / müsait personel | |
 
 ## Bildirim ve iletişim ("Ayarlar → Bildirimler ve SMS")

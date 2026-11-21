@@ -581,6 +581,234 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Waitlist.WaitlistEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AcceptOtherStaff")
+                        .HasColumnType("boolean")
+                        .HasColumnName("accept_other_staff");
+
+                    b.Property<string>("AccessCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("access_code");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_customer_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("ClosedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_utc");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.PrimitiveCollection<List<LocalDate>>("Dates")
+                        .IsRequired()
+                        .HasColumnType("date[]")
+                        .HasColumnName("dates");
+
+                    b.Property<Instant>("JoinedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("joined_utc");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("PreferredStaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preferred_staff_id");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer")
+                        .HasColumnName("priority");
+
+                    b.PrimitiveCollection<List<Guid>>("ServiceIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("service_ids");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.PrimitiveCollection<string[]>("TimeWindows")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("time_windows");
+
+                    b.Property<Instant>("UpdatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_utc");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_waitlist_entries");
+
+                    b.HasIndex("AccessCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_waitlist_entries_access_code");
+
+                    b.HasIndex("BrandId", "BrandCustomerId")
+                        .HasDatabaseName("ix_waitlist_entries_brand_id_brand_customer_id");
+
+                    b.HasIndex("BrandId", "BranchId", "Status", "JoinedUtc")
+                        .HasDatabaseName("ix_waitlist_entries_brand_id_branch_id_status_joined_utc");
+
+                    b.ToTable("waitlist_entries", "scheduling", t =>
+                        {
+                            t.HasCheckConstraint("ck_waitlist_entries_access_code", "access_code ~ '^[0-9A-Za-z]{10}$'");
+
+                            t.HasCheckConstraint("ck_waitlist_entries_closed", "(status = 'Waiting') = (closed_utc IS NULL)");
+
+                            t.HasCheckConstraint("ck_waitlist_entries_services", "cardinality(service_ids) BETWEEN 1 AND 5");
+
+                            t.HasCheckConstraint("ck_waitlist_entries_source", "source IN ('Online', 'Panel')");
+
+                            t.HasCheckConstraint("ck_waitlist_entries_status", "status IN ('Waiting', 'Converted', 'Cancelled', 'Expired')");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Waitlist.WaitlistOffer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccessCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("access_code");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<Instant>("HoldExpiresUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hold_expires_utc");
+
+                    b.Property<Guid?>("OfferedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("offered_by_user_id");
+
+                    b.Property<Instant>("OfferedEndUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offered_end_utc");
+
+                    b.Property<Guid>("OfferedStaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("offered_staff_id");
+
+                    b.Property<Instant>("OfferedStartUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offered_start_utc");
+
+                    b.Property<Instant>("OfferedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("offered_utc");
+
+                    b.Property<Instant?>("RespondedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("responded_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<Guid>("WaitlistEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("waitlist_entry_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_waitlist_offers");
+
+                    b.HasIndex("AccessCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_waitlist_offers_access_code");
+
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("ix_waitlist_offers_appointment_id");
+
+                    b.HasIndex("HoldExpiresUtc")
+                        .HasDatabaseName("ix_waitlist_offers_hold_candidates")
+                        .HasFilter("status = 'Pending'");
+
+                    b.HasIndex("WaitlistEntryId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_waitlist_offers_one_pending")
+                        .HasFilter("status = 'Pending'");
+
+                    b.HasIndex("BrandId", "OfferedStaffId", "OfferedStartUtc")
+                        .HasDatabaseName("ix_waitlist_offers_pending_staff")
+                        .HasFilter("status = 'Pending'");
+
+                    b.ToTable("waitlist_offers", "scheduling", t =>
+                        {
+                            t.HasCheckConstraint("ck_waitlist_offers_access_code", "access_code ~ '^[0-9A-Za-z]{10}$'");
+
+                            t.HasCheckConstraint("ck_waitlist_offers_appointment", "(status = 'Accepted') = (appointment_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_waitlist_offers_status", "status IN ('Pending', 'Accepted', 'Declined', 'Expired', 'Withdrawn')");
+
+                            t.HasCheckConstraint("ck_waitlist_offers_time", "offered_end_utc > offered_start_utc AND hold_expires_utc > offered_utc");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Appointment", b =>
                 {
                     b.HasOne("Omvila.Modules.Scheduling.Domain.AppointmentSeries", null)
@@ -620,6 +848,22 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasConstraintName("fk_appointment_item_segments_appointment_items_appointment_ite");
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Waitlist.WaitlistOffer", b =>
+                {
+                    b.HasOne("Omvila.Modules.Scheduling.Domain.Appointment", null)
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_waitlist_offers_appointments_appointment_id");
+
+                    b.HasOne("Omvila.Modules.Scheduling.Domain.Waitlist.WaitlistEntry", null)
+                        .WithMany("Offers")
+                        .HasForeignKey("WaitlistEntryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_waitlist_offers_waitlist_entries_waitlist_entry_id");
+                });
+
             modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Appointment", b =>
                 {
                     b.Navigation("Items");
@@ -628,6 +872,11 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
             modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.AppointmentItem", b =>
                 {
                     b.Navigation("Segments");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Waitlist.WaitlistEntry", b =>
+                {
+                    b.Navigation("Offers");
                 });
 #pragma warning restore 612, 618
         }
