@@ -5,6 +5,7 @@ export const queryKeys = {
   bookingPage: () => ['booking-page'] as const,
   brand: () => ['brand'] as const,
   brandSettings: () => ['brand-settings'] as const,
+  bankAccount: () => ['bank-account'] as const,
   notificationSettings: () => ['notification-settings'] as const,
   smsOverview: () => ['sms-overview'] as const,
   branch: (branchId: string) => ['branch', branchId] as const,

@@ -374,3 +374,69 @@
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }
+
+/* salon-paneli/AyarlarOdeme: solda hesap formu, sağda "Müşteri ne görür?" önizlemesi. */
+.paymentLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 368px;
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.previewRow {
+  display: flex;
+  gap: var(--bosluk-3);
+  justify-content: space-between;
+  font-size: var(--yazi-govde-boyut);
+}
+
+.previewRow dt {
+  color: var(--metin-ikincil);
+}
+
+.previewRow dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.inlineLink {
+  color: var(--metin-marka);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+}
+
+.inlineLink:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.staticControl {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: flex-end;
+}
+
+@media (width <= 1199px) {
+  .paymentLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (width <= 899px) {
+  .staticControl {
+    justify-content: flex-start;
+  }
+}

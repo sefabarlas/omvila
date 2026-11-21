@@ -1,7 +1,7 @@
 export { formatCount } from './count';
 export { formatDate, formatDuration, formatTime } from './date';
 export type { DateStyle } from './date';
-export { formatIban, normalizeIban } from './iban';
+export { formatIban, isValidIban, normalizeIban } from './iban';
 export { formatMoney, formatPrice, moneyInputValue, parseMoneyInput } from './money';
 export type { MoneyValue, PriceDisplay } from './money';
 export { formatPhone, maskPhone, parseMobilePhone } from './phone';
