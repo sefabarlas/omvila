@@ -57,6 +57,12 @@ public static class NotificationEvents
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 
+    /// <summary>
+    /// Değerlendirme daveti (A11; tamamlandıktan ReviewInviteDelayMinutes sonra): "{salon}'teki randevunuz nasıldı? 10 saniyenizi
+    /// alır: {d bağlantısı}". Push → SMS; randevu iptal olunca bekleyen satır düşer.
+    /// </summary>
+    public const string ReviewInvite = "review.invite";
+
     /// <summary>İşletme push'u (Owner, BranchManager): "Onay bekliyor · {kalan süre}". Tercih: newOnlineAppointment.</summary>
     public const string StaffApprovalNeeded = "staff.approval_needed";
 

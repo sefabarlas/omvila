@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Diğer modüllere açılan sözleşme: değerlendirme daveti (IReviewInvitations), rezervasyon sayfası puanı (IReviewRatings) ve olaylar. Public tipler XML belgesi taşır. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn.Replace('CS1591', ''))</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Omvila.SharedKernel\Omvila.SharedKernel.csproj" />
+  </ItemGroup>
+</Project>

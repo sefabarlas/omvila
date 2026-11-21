@@ -50,6 +50,7 @@ public static class SchedulingModule
         services.AddScoped<PublicAppointmentLinkChanges>();
         services.AddScoped<CalendarReader>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
         services.AddScoped<DepositReceipts>();

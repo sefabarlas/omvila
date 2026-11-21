@@ -1,6 +1,6 @@
 namespace Omvila.Modules.Tenancy.Features.PublicBrand;
 
-/// <summary>Sözleşme PublicBrand. <see cref="Rating"/> değerlendirmeler (Reviews) gelene kadar yazılmaz.</summary>
+/// <summary>Sözleşme PublicBrand. <see cref="Rating"/> yalnız eşik geçilmiş ve salon gösteriyorsa (showReviews) yazılır.</summary>
 internal sealed record PublicBrandResponse(
     Guid Id,
     string Name,

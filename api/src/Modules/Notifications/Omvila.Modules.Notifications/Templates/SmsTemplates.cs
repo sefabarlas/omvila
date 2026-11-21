@@ -95,6 +95,9 @@ internal static partial class SmsTemplates
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(
             "Bugün {saat|bulunma} {salon|bulunma} görüşmek üzere. Yol tarifi: {bağlantı}", SalonOnly),
+
+        // "{salon}'teki" = bulunma eki + "ki" (bildirimler.md § ek uyumu: sabit "'te" yazılmaz).
+        [Key(NotificationEvents.ReviewInvite, null)] = new("{salon|bulunma}ki randevunuz nasıldı? 10 saniyenizi alır: {bağlantı}", SalonOnly),
     };
 
     /// <summary>Tanımlı (olay kodu, çeşit) çiftleri.</summary>
