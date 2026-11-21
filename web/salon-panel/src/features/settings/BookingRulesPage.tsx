@@ -5,7 +5,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { useApi } from '@/app/api-context';
 import { brandSettingsBody, brandSettingsQuery, useUpdateBrandSettings } from './api';
 import type { BrandSettings } from './api';
-import { ConflictBanner } from './ConflictBanner';
+import { ConflictBanner } from '@/shared/ConflictBanner';
 import { describeSaveError } from './save-error';
 import styles from './Settings.module.css';
 import { SettingRow, SettingRows, SettingsCard, SettingsLayout } from './SettingsLayout';

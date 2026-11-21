@@ -9,7 +9,7 @@ import { useApi } from '@/app/api-context';
 import { bookingPageQuery, displayUrl, useCopyBookingLink } from '@/shared/booking-link';
 import { useUpdateBookingPage } from './api';
 import type { BookingPageSettings, CoverColor } from './api';
-import { ConflictBanner } from './ConflictBanner';
+import { ConflictBanner } from '@/shared/ConflictBanner';
 import { describeSaveError } from './save-error';
 import styles from './Settings.module.css';
 import { SettingRow, SettingRows, SettingsCard, SettingsLayout } from './SettingsLayout';
