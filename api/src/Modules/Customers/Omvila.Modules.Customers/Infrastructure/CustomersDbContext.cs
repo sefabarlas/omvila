@@ -14,6 +14,10 @@ internal sealed class CustomersDbContext(DbContextOptions<CustomersDbContext> op
 
     public DbSet<ConsentRecord> ConsentRecords => Set<ConsentRecord>();
 
+    public DbSet<DataDeletionRequest> DataDeletionRequests => Set<DataDeletionRequest>();
+
+    public DbSet<CustomerImport> CustomerImports => Set<CustomerImport>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

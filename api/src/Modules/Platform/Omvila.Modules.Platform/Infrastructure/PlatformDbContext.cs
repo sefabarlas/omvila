@@ -11,6 +11,8 @@ internal sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> opti
 
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
+    public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
