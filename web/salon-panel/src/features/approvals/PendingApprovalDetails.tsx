@@ -22,6 +22,9 @@ const historyLabels: Record<HistoryKind, string> = {
   DepositReported: 'Müşteri kaporayı gönderdiğini bildirdi',
   DepositReceived: 'Kapora geldi',
   NotificationSent: 'Bildirim gönderildi',
+  DepositWaived: 'Kaporasız onaylandı',
+  DepositReminded: 'Kapora hatırlatması gönderildi',
+  DepositRefunded: 'Salon kaporayı iade etti',
 };
 
 interface HoldNoticeProps {
