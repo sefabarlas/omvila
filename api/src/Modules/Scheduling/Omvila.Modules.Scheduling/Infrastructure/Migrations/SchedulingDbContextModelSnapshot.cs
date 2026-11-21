@@ -125,6 +125,11 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("deposit_required_minor");
 
+                    b.Property<string>("DepositTransferCode")
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("deposit_transfer_code");
+
                     b.Property<Instant>("EndUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_utc");
@@ -193,6 +198,11 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasDatabaseName("ix_appointments_no_show_candidates")
                         .HasFilter("status = 'Confirmed' AND checked_in_utc IS NULL");
 
+                    b.HasIndex("BrandId", "DepositTransferCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_appointments_brand_id_deposit_transfer_code")
+                        .HasFilter("deposit_transfer_code IS NOT NULL");
+
                     b.HasIndex("BrandId", "SeriesId")
                         .HasDatabaseName("ix_appointments_brand_id_series_id");
 
@@ -215,6 +225,8 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_appointments_channel", "channel IN ('Online', 'Panel', 'Phone', 'WalkIn')");
 
                             t.HasCheckConstraint("ck_appointments_client_app", "client_app IS NULL OR client_app IN ('BookingPage', 'CustomerApp', 'BusinessApp', 'Panel')");
+
+                            t.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
 
                             t.HasCheckConstraint("ck_appointments_hold", "hold_expires_utc IS NULL OR status = 'PendingApproval'");
 

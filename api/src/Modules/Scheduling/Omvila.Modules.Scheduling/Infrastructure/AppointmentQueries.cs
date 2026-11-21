@@ -122,8 +122,15 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
             appointment.StartUtc,
             [.. ordered.Select(i => i.ServiceNameSnapshot)],
             [.. staffIds.Where(staff.ContainsKey).Select(id => staff[id].DisplayName ?? staff[id].FullName).Distinct(StringComparer.Ordinal)],
-            code);
+            code,
+            AwaitedDeposit(appointment));
     }
+
+    private static AwaitedDepositInfo? AwaitedDeposit(Appointment a) =>
+        a is { DisplayStatus: DisplayStatus.DepositPending, DepositRequiredMinor: { } amount, DepositTransferCode: { } code, HoldExpiresUtc: { } due }
+            ? new AwaitedDepositInfo(
+                new Money(amount, Enum.TryParse<Currency>(a.CurrencyCode, out var currency) ? currency : PlatformDefaults.DefaultCurrency), code, due)
+            : null;
 
     private static string Encode(Instant start, Guid id) =>
         Base64Url.EncodeToString(Encoding.UTF8.GetBytes(

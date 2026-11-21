@@ -9,6 +9,8 @@ namespace Omvila.Modules.Notifications.Templates;
 /// </summary>
 internal static class SmsFormat
 {
+    private static readonly CultureInfo TurkishNumbers = CultureInfo.GetCultureInfo("tr-TR");
+
     private static readonly string[] Months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
     // IsoDayOfWeek: 1 = Pazartesi.
@@ -28,6 +30,29 @@ internal static class SmsFormat
         ArgumentNullException.ThrowIfNull(url);
         var text = url.AbsoluteUri;
         return text.StartsWith("https://", StringComparison.Ordinal) ? text["https://".Length..] : text;
+    }
+
+    /// <summary>Tutar ₺ işaretsiz, binlik ayraçlı ("150", "1.250"; kuruş varsa "1.250,50"); şablon "TL" ekler.</summary>
+    public static string Amount(long amountMinor)
+    {
+        var lira = amountMinor / 100m;
+        return lira.ToString(amountMinor % 100 == 0 ? "#,0" : "#,0.00", TurkishNumbers);
+    }
+
+    /// <summary>
+    /// Süre "2 saat", "1 sa 30 dk", "45 dk"; dakikaya yukarı yuvarlanır (gönderim birkaç saniye gecikse de havale süresi
+    /// "2 saat" yazılır).
+    /// </summary>
+    public static string Duration(NodaTime.Duration duration)
+    {
+        var minutes = (long)Math.Ceiling(Math.Max(0, duration.TotalMinutes));
+        var (hours, rest) = (minutes / 60, minutes % 60);
+        return (hours, rest) switch
+        {
+            (0, _) => $"{rest.ToString(CultureInfo.InvariantCulture)} dk",
+            (_, 0) => $"{hours.ToString(CultureInfo.InvariantCulture)} saat",
+            _ => $"{hours.ToString(CultureInfo.InvariantCulture)} sa {rest.ToString(CultureInfo.InvariantCulture)} dk",
+        };
     }
 
     /// <summary>Birden çok kalemde ilk ad ve kalan sayı: "Saç kesimi +1".</summary>

@@ -5,7 +5,8 @@ namespace Omvila.Modules.Scheduling.Domain;
 /// <summary>
 /// A1 girdisi. <see cref="ApprovalTimeout"/> doluysa online randevu onay ister ve <c>PendingApproval</c> başlar
 /// (şimdi + ApprovalTimeoutMinutes); değeri <see cref="ApprovalPolicy.HoldFor"/> çözer. Panel, telefon ve kapıda sıra için
-/// yok sayılır (T-47 (3)). Kapora Dilim 4'tedir.
+/// yok sayılır (T-47 (3)). <see cref="Deposit"/> doluysa (yalnız online) randevu kapora bekler: <c>PendingApproval</c>, tutma
+/// şimdi + havale süresi (onay da gerekiyorsa tek süre budur; durum-makinesi.md § Oluşturma kuralı).
 /// </summary>
 internal sealed record NewAppointment(
     Guid BrandId,
@@ -18,4 +19,5 @@ internal sealed record NewAppointment(
     string? StaffNote,
     Guid? SeriesId,
     Guid? CreatedByUserId,
-    Duration? ApprovalTimeout = null);
+    Duration? ApprovalTimeout = null,
+    DepositHold? Deposit = null);

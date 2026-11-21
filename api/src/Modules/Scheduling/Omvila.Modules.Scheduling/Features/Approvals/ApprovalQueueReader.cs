@@ -75,10 +75,17 @@ internal sealed class ApprovalQueueReader(SchedulingDbContext db, ITenantQueries
                 a.EndUtc,
                 a.HoldExpiresUtc!.Value,
                 a.CreatedUtc,
-                a.Channel.ToString());
+                a.Channel.ToString(),
+                a.DepositStatus?.ToString(),
+                DepositAmount(a));
         }).ToList();
         return new PendingApprovalList(now, items.Count, items[0].HoldExpiresUtc, items);
     }
+
+    private static Money? DepositAmount(Appointment a) =>
+        a.DepositRequiredMinor is { } deposit
+            ? new Money(deposit, Enum.TryParse<Currency>(a.CurrencyCode, out var c) ? c : PlatformDefaults.DefaultCurrency)
+            : null;
 
     private static IEnumerable<AppointmentItem> Active(Appointment a) =>
         a.Items.Where(i => i.Status != AppointmentItemStatus.Cancelled).OrderBy(i => i.SeqNo);

@@ -44,9 +44,10 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
             appointment.HoldExpiresUtc,
             Customer(appointment, info, access.HasPhoneView || !settings.MaskCustomerPhoneFromStaff, today),
             [.. appointment.Items.OrderBy(i => i.SeqNo).Select(i => Item(i, staff, currency))],
+            DepositView.For(appointment, currency),
             new Money(appointment.TotalAmountMinor, currency),
-            // Kapora ve tahsilat Dilim 4–5'te; "Salonda ödenecek" şimdilik toplamın kendisidir.
-            new Money(appointment.TotalAmountMinor, currency),
+            // "Salonda ödenecek" = toplam − alınmış kapora (tahsilat Dilim 5'te).
+            new Money(appointment.AmountDueMinor, currency),
             appointment.CustomerNote,
             appointment.StaffNote,
             appointment.SeriesId is not null,

@@ -1,8 +1,9 @@
 using NodaTime;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Features.Approvals;
 
-/// <summary>Sözleşme PendingApprovalItem. <c>reference</c> Dilim 4'e kadar yazılmaz (T-50 (8)).</summary>
+/// <summary>Sözleşme PendingApprovalItem. <c>reference</c> yazılmaz (T-50 (8)); kapora alanları yalnız kapora istenmiş talepte.</summary>
 internal sealed record PendingApprovalItem(
     Guid AppointmentId,
     Guid BranchId,
@@ -16,4 +17,6 @@ internal sealed record PendingApprovalItem(
     Instant EndUtc,
     Instant HoldExpiresUtc,
     Instant CreatedUtc,
-    string Channel);
+    string Channel,
+    string? DepositStatus,
+    Money? DepositAmount);

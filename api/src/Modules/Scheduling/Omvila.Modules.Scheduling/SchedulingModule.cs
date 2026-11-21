@@ -5,6 +5,7 @@ using NodaTime;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
+using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Features.AppointmentLink;
 using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Approvals;
@@ -36,6 +37,7 @@ public static class SchedulingModule
         services.AddScoped<AvailabilitySnapshotLoader>();
         services.AddScoped<AppointmentLocks>();
         services.AddScoped<AppointmentWriter>();
+        services.AddSingleton<TransferCodeGenerator>();
         services.AddScoped<AppointmentDetailReader>();
         services.AddScoped<ManageAppointmentCreator>();
         services.AddScoped<PublicAppointmentCreator>();

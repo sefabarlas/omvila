@@ -20,6 +20,7 @@ internal sealed class AppointmentLinkResolver(
     IDbSession session,
     IPublicBookingQueries booking,
     ITenantQueries tenants,
+    IBrandBankAccounts bankAccounts,
     IClock clock)
 {
     /// <summary>Randevuyu (kalemler ve dilimlerle, izlenen) yükler; oturum randevunun markasına geçer.</summary>
@@ -68,6 +69,8 @@ internal sealed class AppointmentLinkResolver(
 
         var staffIds = appointment.Items.Where(i => i.StaffId is not null).Select(i => i.StaffId!.Value).Distinct().ToList();
         var staff = await PublicAvailabilityEndpoints.PublicNamesAsync(tenants, appointment.BrandId, staffIds, ct);
-        return PublicAppointmentMapper.Map(appointment, code, booking.AppointmentPageUrl(code), card, settings, staff, clock.GetCurrentInstant());
+        // V10: havale talimatı güncel aktif hesaptan; yalnız kapora bekleniyorsa okunur.
+        var account = appointment.DisplayStatus == DisplayStatus.DepositPending ? await bankAccounts.GetActiveAsync(appointment.BrandId, ct) : null;
+        return PublicAppointmentMapper.Map(appointment, code, booking.AppointmentPageUrl(code), card, settings, staff, account, clock.GetCurrentInstant());
     }
 }

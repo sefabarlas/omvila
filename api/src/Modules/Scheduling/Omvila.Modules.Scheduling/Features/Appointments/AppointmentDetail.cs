@@ -3,7 +3,7 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Features.Appointments;
 
-/// <summary>Sözleşme AppointmentDetail (randevu yan paneli). Kapora (deposit) Dilim 4'te; şimdilik yazılmaz.</summary>
+/// <summary>Sözleşme AppointmentDetail (randevu yan paneli). <c>deposit</c> kapora istenmemişse yazılmaz; havale talimatı panelde yoktur.</summary>
 internal sealed record AppointmentDetail(
     Guid Id,
     Guid BranchId,
@@ -16,6 +16,7 @@ internal sealed record AppointmentDetail(
     Instant? HoldExpiresUtc,
     AppointmentCustomerView Customer,
     IReadOnlyList<AppointmentItemView> Items,
+    DepositView? Deposit,
     Money Total,
     Money AmountDue,
     string? CustomerNote,

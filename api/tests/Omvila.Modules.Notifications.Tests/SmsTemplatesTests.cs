@@ -11,6 +11,7 @@ public sealed class SmsTemplatesTests
     private const string ManageLink = "omvila.com/r/AbCdEfGh12";
     private const string LongDate = "Çar 30 Ağu";
     private const string LongTime = "23:45";
+    private const string Iban = "TR290006400000112345678901";
 
     // Rezervasyon sayfası bağlantısı: 30 karakterlik salon adından türeyen bağlantı adı (T-65).
     private const string BookingLink = "omvila.com/guzellik-ve-bakim-sisli-cagdas";
@@ -35,6 +36,11 @@ public sealed class SmsTemplatesTests
             ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)),
         [(NotificationEvents.AppointmentApprovalExpired, null)] = Values(
             ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)),
+        // Kapora metni sabit uzun alanlar taşır (IBAN 26, kod 10); 30 karakterlik salon adıyla belge metni 155'i aşar ve V2 gereği
+        // kırpılır (aşağıdaki DepositAwaiting_* testleri). Burada kırpmasız sığan gerçekçi değerler.
+        [(NotificationEvents.DepositAwaiting, null)] = Values(
+            ("salon", "Kuaför Elif"), ("tarih", LongDate), ("saat", LongTime), ("tutar", "1.250"), ("süre", "4 saat"),
+            ("iban", Iban), ("alıcı", "Elif Kaya"), ("kod", "OMVKE-7K2X")),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
     };
@@ -64,10 +70,11 @@ public sealed class SmsTemplatesTests
         var salon = new string('Ş', 160);
         var service = new string('ğ', 120);
         var staff = new string('ı', 120);
+        var holder = new string('ş', 120);
         foreach (var ((eventCode, variant), longest) in LongestValues)
         {
             var values = new Dictionary<string, string>(longest, StringComparer.Ordinal);
-            foreach (var (key, value) in new[] { ("salon", salon), ("hizmet", service), ("personel", staff) })
+            foreach (var (key, value) in new[] { ("salon", salon), ("hizmet", service), ("personel", staff), ("alıcı", holder) })
             {
                 if (values.ContainsKey(key))
                 {
@@ -126,6 +133,35 @@ public sealed class SmsTemplatesTests
             .ShouldBe("Bugün 14:30'da Kuaför Elif'te görüşmek üzere. Yol tarifi: omvila.com/r/AbCdEfGh12");
         SmsTemplates.Render(NotificationEvents.AppointmentReminder, Values(("saat", "10:00"), ("salon", "Berber Ali"), ("bağlantı", ManageLink)))
             .ShouldStartWith("Hatırlatma: Yarın 10:00'da Berber Ali'de randevunuz var.");
+    }
+
+    [Fact]
+    public void DepositAwaiting_RendersDocumentText_IbanWithoutSpaces() =>
+        SmsTemplates.Render(NotificationEvents.DepositAwaiting, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("tutar", "840"), ("süre", "2 saat"),
+            ("iban", Iban), ("alıcı", "Elif Kaya"), ("kod", "OMV-7K2X")))
+            .ShouldBe("Kuaför Elif: Cum 27 Kas 14:30 için 840 TL kaporayı 2 saat içinde gönderin. IBAN TR290006400000112345678901, Elif Kaya, açıklama OMV-7K2X");
+
+    // V2: en uzun değerlerle (salon 30, alıcı 120 karakter, 5 harfli önek, en uzun tarih/tutar/süre) 155 birimi aşarsa alıcı adı
+    // kırpılır; IBAN, tutar, süre ve açıklama kodu (kabul kriteri 3) hiçbir zaman kırpılmaz.
+    [Theory]
+    [InlineData("Elif Kaya Güzellik Hizmetleri Ticaret Limited Şirketi Kadıköy Moda Caddesi Şubesi ve Ortakları Kozmetik Sanayi Anonim A")]
+    [InlineData("Şükrü Çağlar Öğüt")]
+    public void DepositAwaiting_WithLongestValues_FitsSingleSms_KeepsTransferFields(string holder)
+    {
+        var values = Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("tutar", "12.500"), ("süre", "3 sa 59 dk"),
+            ("iban", Iban), ("alıcı", holder), ("kod", "OMVKE-7K2X"));
+
+        var body = SmsTemplates.Render(NotificationEvents.DepositAwaiting, values);
+
+        GsmLength.Units(body)!.Value.ShouldBeLessThanOrEqualTo(GsmLength.SingleSmsLimit, body);
+        foreach (var field in new[] { "12.500 TL", "3 sa 59 dk", $"IBAN {Iban},", "açıklama OMVKE-7K2X", LongDate + " " + LongTime })
+        {
+            body.ShouldContain(field, Case.Sensitive);
+        }
+
+        body.ShouldContain(", " + holder[..4], Case.Sensitive, "alıcı adının başı kalır");
     }
 
     [Fact]

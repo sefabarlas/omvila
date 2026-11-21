@@ -9,7 +9,8 @@ namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 /// <summary>
 /// Randevu → sözleşme PublicAppointment (oluşturma yanıtı; SMS bağlantısı uçları da kullanır). İptal ve saat değişikliği
 /// son süresi yalnız onaylı randevuda uygulanır; onay bekleyen talepte sınır yoktur (durum-makinesi.md A6, A14; sınır tam
-/// eşitlikte serbest). Personel adı rezervasyon sayfasındaki görünen addır.
+/// eşitlikte serbest). Personel adı rezervasyon sayfasındaki görünen addır. Kapora bekleniyorsa havale talimatı güncel aktif
+/// hesaptan (V10) eklenir; "Salonda ödenecek" toplam − alınmış kapora.
 /// </summary>
 internal static class PublicAppointmentMapper
 {
@@ -20,6 +21,7 @@ internal static class PublicAppointmentMapper
         PublicBranchCard card,
         BrandAppointmentSettings settings,
         IReadOnlyDictionary<Guid, StaffCard> staff,
+        ActiveBankAccount? account,
         Instant now)
     {
         ArgumentNullException.ThrowIfNull(appointment);
@@ -55,9 +57,9 @@ internal static class PublicAppointmentMapper
                     new Money(i.PriceMinor, currency),
                     i.CustomerPackageItemId is not null))],
             total,
-            // Kapora ve paket Dilim 4–5: ödenecek tutar toplamdır.
-            total,
-            Deposit: null,
+            // Paket Dilim 5'te: ödenecek tutar toplam − alınmış kapora.
+            new Money(appointment.AmountDueMinor, currency),
+            DepositView.For(appointment, currency, DepositInstructionsView.For(appointment, currency, account)),
             active && (cancelDeadline is null || now <= cancelDeadline),
             cancelDeadline,
             active && (rescheduleDeadline is null || now <= rescheduleDeadline),
