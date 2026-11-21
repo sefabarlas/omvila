@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Salon paneli: Vite derlemesi + statik sunucu. Derleme bağlamı depo köküdür (pnpm çalışma alanı):
-#   docker build -f web/salon-panel/Dockerfile --build-arg VITE_API_URL=https://test.api.omvila.com.tr .
+#   docker build -f web/salon-panel/Dockerfile --build-arg VITE_API_URL=https://api.test.omvila.com.tr .
 # Statik sunucu Caddy: kenardaki ters vekille aynı yapılandırma dili, tek ikili, SPA geri düşüşü için
 # try_files yeterli; nginx'e göre ek modül veya betik gerekmez.
 

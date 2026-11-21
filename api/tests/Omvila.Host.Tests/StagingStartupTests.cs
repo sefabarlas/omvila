@@ -59,7 +59,7 @@ public sealed class StagingStartupTests
     public async Task Staging_WithHttpCorsOrigin_FailsAtStartup()
     {
         var settings = Secrets(allowFake: "true");
-        settings["Cors:Surfaces:Manage:Origins:0"] = "http://test.salon.omvila.com.tr";
+        settings["Cors:Surfaces:Manage:Origins:0"] = "http://salon.test.omvila.com.tr";
 
         var error = await StartupErrorAsync("Staging", settings);
 
@@ -73,8 +73,8 @@ public sealed class StagingStartupTests
             ["Auth:Otp:HmacKey"] = TestSigningKey.OtpHmacKey,
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
-            ["Cors:Surfaces:Manage:Origins:0"] = "https://test.salon.omvila.com.tr",
-            ["Cors:Surfaces:Public:Origins:0"] = "https://test.randevu.omvila.com.tr",
+            ["Cors:Surfaces:Manage:Origins:0"] = "https://salon.test.omvila.com.tr",
+            ["Cors:Surfaces:Public:Origins:0"] = "https://randevu.test.omvila.com.tr",
         };
         if (allowFake is not null)
         {

@@ -24,7 +24,7 @@ namespace Omvila.Infrastructure.Sms;
 /// <para>
 /// Yalnız sahte SMS sağlayıcısı etkinken eşlenir (Development, Testing, Staging + Staging:AllowFakeProviders); Production'da
 /// yol hiç yoktur (404). <b>Kimlik doğrulaması yoktur:</b> test sunucusunda koruma ters vekildedir (Caddy basic auth,
-/// https://test.sms.omvila.com.tr). Mesajlar giriş kodu içerir; bu yol vekilsiz dışarı açılmamalıdır.
+/// https://sms.test.omvila.com.tr). Mesajlar giriş kodu içerir; bu yol vekilsiz dışarı açılmamalıdır.
 /// </para>
 /// </summary>
 public static class DevSmsLogPage

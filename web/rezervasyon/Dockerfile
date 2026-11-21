@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 # Rezervasyon sayfası: Next.js standalone çıktısı. Derleme bağlamı depo köküdür (pnpm çalışma alanı):
 #   docker build -f web/rezervasyon/Dockerfile \
-#     --build-arg NEXT_PUBLIC_API_URL=https://test.api.omvila.com.tr \
-#     --build-arg NEXT_PUBLIC_SITE_URL=https://test.randevu.omvila.com.tr .
+#     --build-arg NEXT_PUBLIC_API_URL=https://api.test.omvila.com.tr \
+#     --build-arg NEXT_PUBLIC_SITE_URL=https://randevu.test.omvila.com.tr .
 # NEXT_PUBLIC_* değerleri istemci paketine derlemede gömülür; ortam başına ayrı imaj etiketi gerekir.
 
 FROM node:22-alpine AS build
