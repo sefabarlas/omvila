@@ -96,3 +96,9 @@
   gap: var(--bosluk-2);
   width: 100%;
 }
+
+/* Tek karar butonu (ör. yalnız "Kapora geldi" izni): tam genişlik. */
+.single {
+  display: grid;
+  width: 100%;
+}
