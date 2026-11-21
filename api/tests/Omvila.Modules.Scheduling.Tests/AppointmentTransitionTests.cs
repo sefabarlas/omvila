@@ -4,7 +4,7 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Scheduling.Tests;
 
-// Kural: durum-makinesi.md § 1 geçiş tablosu (Dilim 2: A1, A6, A7, A8, A9, A10, A14) ve § Değişmezler; her geçiş için
+// Kural: durum-makinesi.md § 1 geçiş tablosu (Dilim 2: A1, A5, A6, A7, A8, A9, A10, A14) ve § Değişmezler; her geçiş için
 // mutlu yol ve koruma testi. Ayarlar sureler-ve-ayarlar.md varsayılanlarıyla: CancellationCutoffHours 24,
 // RescheduleCutoffHours 12, NoShowAfterMinutes 15, ApprovalTimeoutMinutes 120.
 public sealed class AppointmentTransitionTests
@@ -64,6 +64,41 @@ public sealed class AppointmentTransitionTests
         appointment.Status.ShouldBe(AppointmentStatus.CheckedIn);
         appointment.CheckedInUtc.ShouldBe(Start);
     }
+
+    // ───────── A5 ─────────
+
+    [Fact]
+    public void A5_ExpiredApprovalHold_IsCancelledBySystem_ApprovalExpired_SegmentsInactive()
+    {
+        var created = Start - Duration.FromDays(1);
+        var appointment = Create(AppointmentChannel.Online, created, approvalTimeout: Duration.FromMinutes(120));
+        var now = created + Duration.FromMinutes(120);
+
+        appointment.ExpireHold(now).IsSuccess.ShouldBeTrue();
+
+        appointment.Status.ShouldBe(AppointmentStatus.Cancelled);
+        appointment.CancelledBy.ShouldBe(CancelledBy.System);
+        appointment.CancellationReason.ShouldBe(CancellationReason.ApprovalExpired);
+        appointment.CancelledUtc.ShouldBe(now);
+        appointment.HoldExpiresUtc.ShouldBeNull();
+        appointment.HoldReason.ShouldBeNull();
+        AllSegments(appointment).ShouldAllBe(s => !s.IsActive);
+    }
+
+    [Fact]
+    public void A5_HoldNotYetExpired_IsRejected()
+    {
+        var created = Start - Duration.FromDays(1);
+        var appointment = Create(AppointmentChannel.Online, created, approvalTimeout: Duration.FromMinutes(120));
+
+        appointment.ExpireHold(created + Duration.FromMinutes(119)).Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
+        appointment.Status.ShouldBe(AppointmentStatus.PendingApproval);
+    }
+
+    [Fact]
+    public void A5_ConfirmedAppointment_HasNoHoldToExpire() =>
+        Create(AppointmentChannel.Phone, Start - Duration.FromDays(1)).ExpireHold(Start)
+            .Error!.Code.ShouldBe(ErrorCodes.InvalidStateTransition);
 
     // ───────── A6 ─────────
 

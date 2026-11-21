@@ -207,6 +207,26 @@ internal sealed class Appointment
         return Result.Success();
     }
 
+    /// <summary>
+    /// A5: süresi dolan tutma sistemce iptal edilir. Kapora istenmişse neden <c>DepositNotReceived</c>, değilse
+    /// <c>ApprovalExpired</c>. Yazma yolu, çakışma denetiminden önce aynı personelin süresi dolmuş tutmalarını bununla
+    /// satır içinde iptal eder (durum-makinesi.md § Sistem işleri); bildirim ve bekleme listesi yan etkileri Dilim 3–4'tedir.
+    /// </summary>
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A5)
+    public Result ExpireHold(Instant now)
+    {
+        if (Status != AppointmentStatus.PendingApproval || HoldExpiresUtc is not { } expires || expires > now)
+        {
+            return InvalidTransition();
+        }
+
+        var reason = HoldReason is Domain.HoldReason.Deposit or Domain.HoldReason.ApprovalAndDeposit
+            ? Domain.CancellationReason.DepositNotReceived
+            : Domain.CancellationReason.ApprovalExpired;
+        Cancel(Domain.CancelledBy.System, reason, note: null, userId: null, now);
+        return Result.Success();
+    }
+
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A8)
     public Result MarkNoShow(Instant now, Duration noShowAfter)
     {

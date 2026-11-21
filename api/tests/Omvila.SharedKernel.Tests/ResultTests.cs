@@ -35,6 +35,15 @@ public sealed class ResultTests
     }
 
     [Fact]
+    public void Unavailable_IsTryAgain()
+    {
+        var error = Error.Unavailable();
+
+        error.Code.ShouldBe(ErrorCodes.TryAgain);
+        error.Kind.ShouldBe(ErrorKind.Unavailable);
+    }
+
+    [Fact]
     public void Error_WithCodeOutsideContract_ThrowsDomainException() =>
         Should.Throw<DomainException>(() => Error.Conflict("made_up_code"));
 }

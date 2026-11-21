@@ -7,11 +7,12 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Configurations;
 internal sealed class AppointmentItemSegmentConfiguration : IEntityTypeConfiguration<AppointmentItemSegment>
 {
     /// <summary>
-    /// Personelin aktif meşguliyeti (GiST, btree_gist). Müsaitlik motorunun meşguliyet sorgusu içindir; exclusion
-    /// constraint (ex_segment_staff_overlap, musaitlik.md § Katman 1) çakışma engeli parçasında eklenir. Kısıt gibi
-    /// şubeyle ve markayla filtrelenmez; bu yüzden brand_id ile başlamaz.
+    /// Çakışma engelinin son garantisi (musaitlik.md § Katman 1, ADR-0004): aynı personelin aktif, personel-meşgul iki
+    /// dilimi örtüşemez. Kısıt şubeyle ve markayla filtrelenmez. EF exclusion constraint modellemediği için migration'da
+    /// SQL ile kurulur (ConflictGuard). Kısıtın GiST indeksi müsaitlik motorunun meşguliyet sorgusuna da hizmet eder;
+    /// aynı koşullu eski indeks (ix_appointment_item_segments_staff_during) bu yüzden kaldırıldı.
     /// </summary>
-    public const string StaffDuringIndex = "ix_appointment_item_segments_staff_during";
+    public const string StaffOverlapConstraint = "ex_segment_staff_overlap";
 
     public void Configure(EntityTypeBuilder<AppointmentItemSegment> builder)
     {
@@ -31,9 +32,5 @@ internal sealed class AppointmentItemSegmentConfiguration : IEntityTypeConfigura
 
         // Saat değişikliğinde yeni dilimler aynı sıra numaralarını alır; tekillik yalnız güncel dilimlerde.
         builder.HasIndex(x => new { x.BrandId, x.AppointmentItemId, x.SeqNo }).IsUnique().HasFilter("superseded_utc IS NULL").HasDatabaseName("ix_appointment_item_segments_brand_id_item_id_seq_no");
-        builder.HasIndex(x => new { x.StaffId, x.During })
-            .HasDatabaseName(StaffDuringIndex)
-            .HasMethod("gist")
-            .HasFilter("staff_busy AND is_active AND staff_id IS NOT NULL");
     }
 }

@@ -65,6 +65,7 @@ public sealed class HttpPipelineTests(PostgresFixture db) : IAsyncLifetime
     [InlineData("precondition", 412, "concurrency_conflict")]
     [InlineData("unprocessable", 422, "otp_invalid")]
     [InlineData("too-many", 429, "otp_resend_too_soon")]
+    [InlineData("unavailable", 503, "try_again")]
     public async Task ErrorResult_MapsToStatusAndContractCode(string kind, int status, string code)
     {
         var (actualStatus, body) = await SendAsync(HttpMethod.Get, $"/api/test/errors/{kind}");
@@ -161,6 +162,7 @@ public sealed class HttpPipelineTests(PostgresFixture db) : IAsyncLifetime
             "conflict" => Error.Conflict(ErrorCodes.SlotTaken, Meta("alternatives", Alternatives)),
             "precondition" => Error.PreconditionFailed(),
             "unprocessable" => Error.Unprocessable(ErrorCodes.OtpInvalid, Meta("attemptsLeft", 3)),
+            "unavailable" => Error.Unavailable(),
             _ => Error.TooManyRequests(ErrorCodes.OtpResendTooSoon, Meta("retryAfterSeconds", 42)),
         }).ToProblem());
 

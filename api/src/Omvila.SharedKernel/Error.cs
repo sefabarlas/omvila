@@ -58,6 +58,10 @@ public sealed record Error
     public static Error TooManyRequests(string code, IReadOnlyDictionary<string, object?>? meta = null) =>
         new(code, ErrorKind.TooManyRequests, null, meta);
 
+    /// <summary>Geçici yoğunluk: 503, istemci bir kez otomatik tekrar dener (sözleşme TryAgain yanıtı).</summary>
+    public static Error Unavailable(string code = ErrorCodes.TryAgain) =>
+        new(code, ErrorKind.Unavailable, null, null);
+
     public static Error Unauthorized(string code = ErrorCodes.Unauthorized) =>
         new(code, ErrorKind.Unauthorized, null, null);
 
