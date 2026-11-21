@@ -34,7 +34,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Bekleme listesi',
     to: '/bekleme',
     permission: 'waitlist.manage',
-    available: false,
+    available: true,
     group: 'isletme',
   },
   {
@@ -99,7 +99,7 @@ export const menuEntries: readonly MenuEntry[] = [
  * Kişisel menü (salon-paneli/PersonelRolu, kabul kriteri 10): raporları göremeyen kullanıcı (personel) işletme
  * menüsü yerine "Benim" grubunu görür. "Takvimim" takvimi açar (sunucu yalnız kendi kolonunu döner); ana sayfa
  * ("/", girişten sonra) kişisel özettir ve menüde Takvimim altında sayılır (acik-sorular.md T-45, T-54). Müşteriler
- * D2'de açıldı (T-57); Kapıda sıra (D3) ve Primim (D6) sayfaları gelince açılır.
+ * D2'de açıldı (T-57); Kapıda sıra D5'te açıldı (Takvim altında alt rota, T-98); Primim sayfası gelince açılır.
  */
 export const personalEntries: readonly MenuEntry[] = [
   {
@@ -121,9 +121,9 @@ export const personalEntries: readonly MenuEntry[] = [
   {
     key: 'kapida',
     label: 'Kapıda sıra',
-    to: '/kapida-sira',
+    to: '/takvim/kapida-sira',
     permission: 'walkin.manage',
-    available: false,
+    available: true,
     group: 'benim',
   },
   {
@@ -154,9 +154,14 @@ export function visibleMenu(
   );
 }
 
-/** Yoldan etkin öğe ("/" yalnız tam eşleşmede; kişisel menüde "Takvimim"). */
+/**
+ * Yoldan etkin öğe ("/" yalnız tam eşleşmede; kişisel menüde "Takvimim"). En uzun eşleşme kazanır: personelde
+ * /takvim/kapida-sira "Kapıda sıra"dır, sahipte (ayrı öğe yok) "Takvim".
+ */
 export function activeMenuKey(pathname: string, personal = false): string {
-  const source = personal ? personalEntries : menuEntries;
+  const source = [...(personal ? personalEntries : menuEntries)].sort(
+    (a, b) => b.to.length - a.to.length,
+  );
   const match = source.find(
     (entry) => entry.to !== '/' && (pathname === entry.to || pathname.startsWith(`${entry.to}/`)),
   );

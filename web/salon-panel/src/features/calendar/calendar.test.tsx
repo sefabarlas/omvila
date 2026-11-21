@@ -48,9 +48,12 @@ describe('takvim gün görünümü', () => {
     // Bugün bloğu kasayı görebilen sahipte günün tahsilatıdır (manageGetCashDay, T-97).
     expect(await within(summary).findByText('3.340 ₺')).toBeTruthy();
     expect(within(summary).getByText('7 randevu · 1 tamamlandı')).toBeTruthy();
-    // Kapıda sıra ayrı PR'da.
+    // Kapıda sırada (T-98): manageListWalkIns.waitingCount ve yeni gelen için tahmin.
+    expect(await within(summary).findByText('~35 dk bekleme')).toBeTruthy();
+    expect(within(summary).getByText('Kapıda sırada')).toBeTruthy();
+    expect(within(summary).getByText('3')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Randevu ekle' })).toBeTruthy();
-    expect(screen.queryByText(/Kapıda sırada/i)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Kapıda sıra' })).toBeTruthy();
   });
 
   it('sonraki gün ve Bugün; adres tarihi taşır', async () => {
@@ -181,13 +184,22 @@ describe('randevu yan paneli', () => {
     );
     await userEvent.click(within(dialog).getByLabelText(/Bu ve sonraki randevular/));
     await userEvent.click(within(dialog).getByLabelText(/Müşteriye bildir/));
+    // Boşalan saat bekleme listesine teklif edilmesin (offerToWaitlist, varsayılan açık; T-98).
+    await userEvent.click(within(dialog).getByLabelText(/bekleme listesine teklif edilsin/));
     await userEvent.click(within(dialog).getByRole('button', { name: 'Randevuyu iptal et' }));
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /^Derya Şahin/ })).toBeNull();
     });
     expect(
       calls['/api/v1/manage/appointments/0193a8f0-0000-7000-8000-00000000a003/cancel'],
-    ).toEqual([{ reason: 'CustomerRequested', notifyCustomer: false, scope: 'ThisAndFollowing' }]);
+    ).toEqual([
+      {
+        reason: 'CustomerRequested',
+        notifyCustomer: false,
+        scope: 'ThisAndFollowing',
+        offerToWaitlist: false,
+      },
+    ]);
   });
 
   it('tekrarsız iptalde kapsam yok', async () => {
@@ -207,7 +219,7 @@ describe('randevu yan paneli', () => {
     await waitFor(() => {
       expect(
         calls['/api/v1/manage/appointments/0193a8f0-0000-7000-8000-00000000a007/cancel'],
-      ).toEqual([{ reason: 'StaffUnavailable', notifyCustomer: true }]);
+      ).toEqual([{ reason: 'StaffUnavailable', notifyCustomer: true, offerToWaitlist: true }]);
     });
   });
 });
