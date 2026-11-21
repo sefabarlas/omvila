@@ -20,4 +20,16 @@ public enum DemoAppointmentOutcome
 
     /// <summary>Müşteri iptali (A6, "Planım değişti"); iptal sınırı dışında olmalı. İptal sayacı artar.</summary>
     CancelledByCustomer,
+
+    /// <summary>Rezervasyon sayfasından, kaporalı (Kapora bekleniyor, Awaiting); tutma süresi havale süresi, seed anından.</summary>
+    DepositAwaiting,
+
+    /// <summary>Kapora bekleniyor ve müşteri "Havaleyi yaptım" dedi (CustomerReported; panelde "Havale bildirildi").</summary>
+    DepositReported,
+
+    /// <summary>Salon "Kapora geldi" dedi (A3): Onaylandı, Sales'te tahsilat kaydı (Received).</summary>
+    DepositReceived,
+
+    /// <summary>Salon "Kaporasız onayla" dedi (A2, waiveDeposit): Onaylandı, kapora istenmiyor (Waived).</summary>
+    DepositWaived,
 }

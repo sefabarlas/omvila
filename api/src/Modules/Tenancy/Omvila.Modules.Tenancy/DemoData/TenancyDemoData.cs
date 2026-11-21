@@ -4,14 +4,16 @@ using Omvila.Modules.Identity.Contracts;
 using Omvila.Modules.Tenancy.Domain;
 using Omvila.Modules.Tenancy.Features.Onboarding;
 using Omvila.Modules.Tenancy.Infrastructure;
+using Omvila.Modules.Tenancy.Infrastructure.BankAccounts;
 using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Tenancy.DemoData;
 
 /// <summary>
 /// Demo verisi (<c>--role=seed</c>; acik-sorular.md T-74) için Tenancy yazma yolu: şube, çalışma saatleri, personel (Identity
-/// üyeliği <see cref="IStaffMemberships"/> ile, davet SMS'i gönderilmeden), onay süresi ve kurulumun tamamlanması
-/// (<see cref="OnboardingService"/>). Değerler uçlardaki alan kurallarından geçer (WeeklyHours, BrandSettingsRules).
+/// üyeliği <see cref="IStaffMemberships"/> ile, davet SMS'i gönderilmeden), onay süresi ve kapora politikası, kapora hesabı
+/// (IBAN <see cref="IbanProtector"/> ile şifreli) ve kurulumun tamamlanması (<see cref="OnboardingService"/>). Değerler
+/// uçlardaki alan kurallarından geçer (WeeklyHours, BrandSettingsRules, BankAccountRules).
 /// Çağıranın transaction'ında ve markanın kiracı bağlamında çalışır.
 /// </summary>
 public sealed class TenancyDemoData
@@ -19,14 +21,17 @@ public sealed class TenancyDemoData
     private readonly TenancyDbContext _db;
     private readonly IStaffMemberships _memberships;
     private readonly OnboardingService _onboarding;
+    private readonly IbanProtector _protector;
     private readonly IIdGenerator _ids;
     private readonly IClock _clock;
 
-    internal TenancyDemoData(TenancyDbContext db, IStaffMemberships memberships, OnboardingService onboarding, IIdGenerator ids, IClock clock)
+    internal TenancyDemoData(
+        TenancyDbContext db, IStaffMemberships memberships, OnboardingService onboarding, IbanProtector protector, IIdGenerator ids, IClock clock)
     {
         _db = db;
         _memberships = memberships;
         _onboarding = onboarding;
+        _protector = protector;
         _ids = ids;
         _clock = clock;
     }
@@ -54,14 +59,18 @@ public sealed class TenancyDemoData
         return branch.Id;
     }
 
-    /// <summary>Onay yanıt süresi (ApprovalTimeoutMinutes; izinli değerlerden biri olmalı). Diğer ayarlar korunur.</summary>
-    public async Task SetApprovalTimeoutAsync(Guid brandId, int minutes, CancellationToken ct)
+    /// <summary>
+    /// Onay yanıt süresi (ApprovalTimeoutMinutes; izinli değerlerden biri olmalı), kapora politikası ve riskli müşteri eşiği.
+    /// Diğer ayarlar korunur.
+    /// </summary>
+    public async Task SetBookingRulesAsync(
+        Guid brandId, int approvalTimeoutMinutes, string depositPolicy, int riskyCustomerNoShowThreshold, CancellationToken ct)
     {
         var settings = await _db.BrandSettings.SingleAsync(s => s.BrandId == brandId, ct);
         var values = new BrandSettingsValues(
-            settings.RequiresApproval, minutes, settings.AllowStaffSelection, settings.AllowAnyStaffOption, settings.CancellationCutoffHours,
+            settings.RequiresApproval, approvalTimeoutMinutes, settings.AllowStaffSelection, settings.AllowAnyStaffOption, settings.CancellationCutoffHours,
             settings.RescheduleCutoffHours, settings.NoShowAfterMinutes, settings.MinNoticeMinutes, settings.MaxAdvanceDays,
-            settings.SlotIntervalMinutes, settings.DefaultBranchTransferMinutes, settings.DepositPolicy, settings.RiskyCustomerNoShowThreshold,
+            settings.SlotIntervalMinutes, settings.DefaultBranchTransferMinutes, depositPolicy, riskyCustomerNoShowThreshold,
             settings.MaskCustomerPhoneFromStaff, settings.ReminderOffsetsMinutes, settings.ReviewInviteEnabled);
         var errors = BrandSettingsRules.Validate(values);
         if (errors.Count > 0)
@@ -70,6 +79,22 @@ public sealed class TenancyDemoData
         }
 
         settings.Apply(values);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Aktif kapora hesabı (manageUpdateBankAccount ilk kaydı gibi, BankAccountRules); IBAN şifreli saklanır.</summary>
+    public async Task AddBankAccountAsync(Guid brandId, DemoBankAccount input, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var errors = BankAccountRules.Validate(
+            input.AccountHolderName, input.BankName, input.TransferCodePrefix, input.TransferWindowMinutes, input.Iban, isFirstSave: true, out var iban);
+        if (errors.Count > 0 || iban is null)
+        {
+            throw new DomainException($"Geçersiz demo kapora hesabı: {string.Join(", ", errors.Keys)}");
+        }
+
+        var values = new BankAccountValues(input.AccountHolderName, input.BankName, input.TransferCodePrefix, input.TransferWindowMinutes);
+        _db.BankAccounts.Add(BrandBankAccount.Create(brandId, values, _protector.Protect(brandId, iban), _clock.GetCurrentInstant()));
         await _db.SaveChangesAsync(ct);
     }
 

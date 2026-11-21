@@ -1,4 +1,5 @@
 using NodaTime;
+using Omvila.Modules.Scheduling.DemoData;
 using Omvila.Modules.Tenancy.DemoData;
 using Omvila.SharedKernel;
 
@@ -35,6 +36,26 @@ internal static class DemoDataSet
     public const int PendingDays = 2;
 
     public static readonly PhoneNumber OwnerPhone = PhoneNumber.Parse("+905550000001");
+
+    /// <summary>
+    /// Kapora hesabı (AyarlarOdeme). IBAN sözleşme örneğindeki uydurma, mod-97 geçerli test IBAN'ıdır; banka adı tasarımdaki
+    /// örnek. Havale süresi varsayılan 120 dk: kapora bekleyen demo talepleri seed'den 2 saat sonra otomatik iptal olur (A5).
+    /// </summary>
+    public static readonly DemoBankAccount BankAccount = new(OwnerName, "Ziraat Bankası", "TR290006400000112345678901", "OMV", 120);
+
+    /// <summary>Kapora politikası (sureler-ve-ayarlar.md § Kapora varsayılanı) ve riskli müşteri eşiği: 2 kez gelmeyen.</summary>
+    public const string DepositPolicy = "RiskyCustomersOnly";
+    public const int RiskyCustomerNoShowThreshold = 2;
+
+    /// <summary>
+    /// Kaporalı demo randevuları, sırasıyla: online randevu alan personelin yarından sonraki ilk <see cref="PendingDays"/> çalışma
+    /// gününde günün ikinci randevusu, kaporalı hizmetle ve riskli (2 kez gelmemiş) müşteriyle.
+    /// </summary>
+    public static readonly IReadOnlyList<DemoAppointmentOutcome> DepositOutcomes =
+    [
+        DemoAppointmentOutcome.DepositAwaiting, DemoAppointmentOutcome.DepositReported,
+        DemoAppointmentOutcome.DepositReceived, DemoAppointmentOutcome.DepositWaived,
+    ];
 
     public static readonly DemoBranch Kadikoy = new(
         "Kadıköy", "Caferağa Mah. Moda Cad. No: 12", "Kadıköy", "İstanbul", Week(IsoDayOfWeek.Monday, IsoDayOfWeek.Saturday, 9, 20));
@@ -73,9 +94,9 @@ internal static class DemoDataSet
         new("Saç", "Sakal ve kesim", null, 60, 55000, StartingFrom: false, RequiresApproval: null, ["Mert Demir"]),
         new("Renk", "Boya", null, 90, 120000, StartingFrom: false, RequiresApproval: null, ["Elif Kaya", "Zeynep Aksoy", "Can Yücel"]),
         new("Renk", "Dip boya", null, 60, 90000, StartingFrom: false, RequiresApproval: null, ["Elif Kaya", "Zeynep Aksoy"]),
-        new("Renk", "Balyaj", "Uzunluğa göre", 150, 250000, StartingFrom: true, RequiresApproval: true, ["Elif Kaya", "Zeynep Aksoy"]),
+        new("Renk", "Balyaj", "Uzunluğa göre", 150, 250000, StartingFrom: true, RequiresApproval: true, ["Elif Kaya", "Zeynep Aksoy"], DepositPercent: 30),
         new("Bakım", "Saç bakımı", "Keratin maske", 45, 60000, StartingFrom: false, RequiresApproval: null, ["Elif Kaya", "Zeynep Aksoy"]),
-        new("Bakım", "Keratin", "Uzunluğa göre", 90, 180000, StartingFrom: true, RequiresApproval: true, ["Elif Kaya", "Zeynep Aksoy"]),
+        new("Bakım", "Keratin", "Uzunluğa göre", 90, 180000, StartingFrom: true, RequiresApproval: true, ["Elif Kaya", "Zeynep Aksoy"], DepositAmountMinor: 15000),
         new("Tırnak", "Manikür", null, 45, 40000, StartingFrom: false, RequiresApproval: null, ["Zeynep Aksoy", "Can Yücel"]),
         new("Tırnak", "Kaş ve kirpik", null, 30, 35000, StartingFrom: false, RequiresApproval: null, ["Zeynep Aksoy"]),
     ];
@@ -103,5 +124,9 @@ internal static class DemoDataSet
         string FullName, string Title, string Role, string Phone, string CalendarColor, bool IsBookableOnline, Branch Branch, IReadOnlyList<DemoHours> Hours);
 
     internal sealed record ServiceSeed(
-        string Category, string Name, string? Description, int DurationMinutes, long PriceMinor, bool StartingFrom, bool? RequiresApproval, IReadOnlyList<string> Staff);
+        string Category, string Name, string? Description, int DurationMinutes, long PriceMinor, bool StartingFrom, bool? RequiresApproval, IReadOnlyList<string> Staff,
+        decimal? DepositPercent = null, long? DepositAmountMinor = null)
+    {
+        public bool HasDeposit => DepositPercent is not null || DepositAmountMinor is not null;
+    }
 }

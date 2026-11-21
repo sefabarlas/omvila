@@ -7,7 +7,7 @@ namespace Omvila.Modules.Catalog.DemoData;
 
 /// <summary>
 /// Demo verisi (<c>--role=seed</c>; acik-sorular.md T-74) için Catalog yazma yolu: kategori ve hizmet (hizmet ekleme ucundaki
-/// alan kuralı <see cref="ServiceRules"/> ile). Kapora kuralı markadan (Inherit), aşama yok. Çağıranın transaction'ında ve
+/// alan kuralı <see cref="ServiceRules"/> ile). Kapora kuralı markadan (Inherit; tutar veya yüzde verilebilir), aşama yok. Çağıranın transaction'ında ve
 /// markanın kiracı bağlamında çalışır.
 /// </summary>
 public sealed class CatalogDemoData
@@ -37,7 +37,8 @@ public sealed class CatalogDemoData
     {
         ArgumentNullException.ThrowIfNull(input);
         var draft = new ServiceDraft(
-            input.Name, input.DurationMinutes, input.Price, input.StartingFrom ? PriceDisplay.StartingFrom : PriceDisplay.Fixed, 0, 0, DepositRule.Inherit, []);
+            input.Name, input.DurationMinutes, input.Price, input.StartingFrom ? PriceDisplay.StartingFrom : PriceDisplay.Fixed, 0, 0,
+            new DepositRule(DepositMode.Inherit, input.DepositAmount, input.DepositPercent), []);
         var valid = ServiceRules.Validate(draft, hasActiveBankAccount: false);
         if (!valid.IsSuccess)
         {
