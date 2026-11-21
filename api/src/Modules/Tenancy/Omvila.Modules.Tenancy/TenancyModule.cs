@@ -6,6 +6,7 @@ using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.Modules.Tenancy.Features.Brand;
 using Omvila.Modules.Tenancy.Features.Branches;
+using Omvila.Modules.Tenancy.Features.NotificationSettings;
 using Omvila.Modules.Tenancy.Features.Onboarding;
 using Omvila.Modules.Tenancy.Features.PublicBrand;
 using Omvila.Modules.Tenancy.Features.Staff;
@@ -46,6 +47,7 @@ public static class TenancyModule
     {
         OnboardingEndpoints.Map(app);
         BrandEndpoints.Map(app);
+        NotificationSettingsEndpoints.Map(app);
         BranchEndpoints.Map(app);
         StaffEndpoints.Map(app);
         PublicBrandEndpoints.Map(app);

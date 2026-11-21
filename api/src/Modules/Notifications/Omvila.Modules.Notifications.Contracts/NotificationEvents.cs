@@ -56,4 +56,7 @@ public static class NotificationEvents
 
     /// <summary>İşletme push'u: "Gün sonu özeti".</summary>
     public const string StaffDailySummary = "staff.daily_summary";
+
+    /// <summary>İşletme push'u ve bildirim paneli (Owner): "SMS kontörü azaldı" (eşik altına iniş veya yetersiz kontör).</summary>
+    public const string OwnerCreditsLow = "owner.credits_low";
 }

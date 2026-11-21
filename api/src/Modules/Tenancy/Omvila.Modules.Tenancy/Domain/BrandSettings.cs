@@ -66,6 +66,17 @@ internal sealed class BrandSettings
         ReviewInviteEnabled = v.ReviewInviteEnabled;
     }
 
+    /// <summary>
+    /// Bildirim ayarları (sözleşme manageUpdateNotificationSettings; T-62 (4)): kanonik düzenleyici. Değerler bu satırda
+    /// saklanır, BrandSettings yanıtındaki aynı alanlar aynı değeri yansıtır ve iki kaynağın sürümü (xmin) birlikte değişir.
+    /// </summary>
+    public void ApplyNotificationSettings(IReadOnlyCollection<int> reminderOffsetsMinutes, bool reviewInviteEnabled)
+    {
+        ArgumentNullException.ThrowIfNull(reminderOffsetsMinutes);
+        ReminderOffsetsMinutes = [.. reminderOffsetsMinutes.Distinct().OrderDescending()];
+        ReviewInviteEnabled = reviewInviteEnabled;
+    }
+
     /// <summary>Kayıtta oluşan ayarlar: sureler-ve-ayarlar.md varsayılanları birebir.</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }

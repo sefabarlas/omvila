@@ -10,4 +10,9 @@ public interface ICreditLedger
     /// <param name="referenceId">Kaynak kimliği.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task GrantAsync(Guid brandId, int credits, string referenceType, Guid? referenceId, CancellationToken ct);
+
+    /// <summary>Güncel bakiye (satırların toplamı; kilit almaz, okuma içindir).</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<int> GetBalanceAsync(Guid brandId, CancellationToken ct);
 }

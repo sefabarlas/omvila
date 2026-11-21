@@ -26,6 +26,8 @@ public sealed class PushTemplatesTests
         [(NotificationEvents.StaffReviewReceived, null)] = Values(("puan", "5"), ("müşteri", Customer)),
         [(NotificationEvents.StaffWalkInQueue, null)] = Values(("n", "12"), ("dk", "120")),
         [(NotificationEvents.StaffDailySummary, null)] = Values(("n", "120"), ("tutar", "45.000 TL")),
+        [(NotificationEvents.OwnerCreditsLow, null)] = Values(("kalan", "199"), ("gün", "1.000")),
+        [(NotificationEvents.OwnerCreditsLow, PushTemplates.WithoutEstimateVariant)] = Values(("kalan", "199")),
     };
 
     [Fact]
@@ -63,6 +65,15 @@ public sealed class PushTemplatesTests
 
         title.ShouldBe("Onay bekliyor · 1 sa 58 dk");
         body.ShouldBe("Abdurrahman Ş. · Çar 30 Ağu 23:45 Saç kesimi. Yanıtlanmazsa otomatik iptal olur.");
+    }
+
+    [Fact]
+    public void CreditsLow_MatchesCatalogText()
+    {
+        PushTemplates.TryRender(NotificationEvents.OwnerCreditsLow, Values(("kalan", "180"), ("gün", "3")), null, out var title, out var body);
+
+        title.ShouldBe("SMS kontörü azaldı");
+        body.ShouldBe("180 SMS kaldı, tahmini 3 gün yeter.");
     }
 
     [Fact]

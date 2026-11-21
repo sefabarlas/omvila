@@ -48,7 +48,7 @@ Backend modüler monolittir. Her modül kendi PostgreSQL şemasına (schema) sah
 | Scheduling | `scheduling` | Appointment, AppointmentItem, AppointmentItemSegment, AppointmentItemResource, AppointmentSeries, AppointmentAccessCode, WaitlistEntry, WaitlistOffer, WalkInTicket, BranchQueueCounter |
 | Sales | `sales` | Payment, PaymentAllocation, CustomerPackage, CustomerPackageItem, PackageSessionUsage, CommissionEntry, CashDayClose |
 | Reviews | `reviews` | Review |
-| Notifications | `notifications` | NotificationOutbox, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
+| Notifications | `notifications` | NotificationOutbox, InAppNotification, NotificationTemplate, BrandSmsSender, CreditTransaction, NotificationPreference, Device |
 | Integrations | `integrations` | CalendarLink, AppointmentCalendarSync |
 | Platform | `platform` | Plan, CreditPackage, Subscription, SubscriptionInvoice, PaymentNotice, PlatformBankTransaction, AuditLog |
 
@@ -572,6 +572,9 @@ Gönderilecek her mesaj bir satırdır. Randevu işlemiyle **aynı transaction'd
 | DeliveredUtc | Instant? | Teslim raporu "teslim edildi" anı (T-64) |
 
 Bir randevu iptal olunca onun için bekleyen hatırlatmalar `Cancelled` yapılır.
+
+### InAppNotification (bildirim paneli)
+Paneldeki zil ve BildirimPaneli satırı (T-71). İşletme kullanıcısı başına bir satır: `BrandId`, `UserId`, `EventCode` (işletme olay kodu, ör. `staff.approval_needed`, `owner.credits_low`), `Title` (≤ 80), `Body` (≤ 200; olay anındaki push metni, müşteri adı "Ad Soyad"), `BranchId?` (marka düzeyindeki olayda boş), `TargetType` (sözleşme `NotificationTarget.type`), `TargetId?`, `HoldExpiresUtc?` (yalnız onay talebinde; talep yanıtlanınca boşalır), `CreatedUtc`, `ReadUtc?`. Push tercihlerinden bağımsız yazılır; alıcıyı olay işleyicisi rol ve şube kapsamına göre seçer.
 
 ### NotificationTemplate
 `BrandId?` (`null` = sistem şablonu), `EventCode`, `Channel`, `LanguageCode`, `Subject?`, `Body`, `IsActive`. Salon yalnız izin verilen şablonları ezebilir ("Salon metniniz" / "Sistem şablonu").

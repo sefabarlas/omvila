@@ -424,6 +424,78 @@ public sealed class ApprovalTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code LIKE 'appointment.%'")).ShouldBe(0);
     }
 
+    // bildirimler.md staff.approval_needed (Owner, BranchManager; push "Ad S.", panel "Ad Soyad"); sözleşme NotificationTarget
+    // (holdExpiresUtc, talep yanıtlanınca null); T-66 (8): yanıtlanan talebin bekleyen push'u düşer.
+    [Fact]
+    public async Task Requested_ApproversGetPanelEntryAndPush_StaffDoesNot_ApprovalClearsHoldAndPendingPush()
+    {
+        var staff = await _api.AddMemberAndSignInAsync(_token, "+905382741905", "Staff", _merkez);
+        var hold = HoldFromNow;
+        var id = (await CreateAsync(FridayAt1430)).Body.GetProperty("id").GetString()!;
+
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        var page = (await _api.GetAsync("/api/v1/manage/notifications", _token)).Body;
+        page.GetProperty("unreadCount").GetInt32().ShouldBe(1);
+        var item = page.GetProperty("items")[0];
+        item.GetProperty("event").GetString().ShouldBe("staff.approval_needed");
+        item.GetProperty("title").GetString().ShouldBe("Onay bekliyor · 2 sa");
+        item.GetProperty("body").GetString().ShouldBe("Ayşe Yılmaz · Cum 27 Kas 14:30 Saç kesimi. Yanıtlanmazsa otomatik iptal olur.");
+        item.GetProperty("branchId").GetString().ShouldBe(_merkez);
+        item.GetProperty("target").GetProperty("type").GetString().ShouldBe("Appointment");
+        item.GetProperty("target").GetProperty("id").GetString().ShouldBe(id);
+        item.GetProperty("target").GetProperty("holdExpiresUtc").GetString().ShouldBe(hold);
+        (await _api.ScalarAsync<string>(
+            "SELECT status || '|' || (payload->>'müşteri') || '|' || reference_id FROM notifications.notification_outbox WHERE event_code = 'staff.approval_needed'"))
+            .ShouldBe($"Pending|Ayşe Y.|{id}");
+        (await _api.GetAsync("/api/v1/manage/notifications", staff)).Body.GetProperty("unreadCount").GetInt32().ShouldBe(0, "personelin onay izni yok");
+
+        (await ApproveAsync(id, (await DetailAsync(id)).ETag)).Status.ShouldBe(200);
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        var resolved = (await _api.GetAsync("/api/v1/manage/notifications", _token)).Body.GetProperty("items")[0].GetProperty("target");
+        resolved.GetProperty("holdExpiresUtc").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Null);
+        (await _api.ScalarAsync<string>("SELECT status FROM notifications.notification_outbox WHERE event_code = 'staff.approval_needed'")).ShouldBe("Cancelled");
+    }
+
+    // T-66 (8): 22:30'da gelen talebin tutması (00:30) sabah 08:00'den önce dolar: push yazılmaz, panel kaydı kalır.
+    [Fact]
+    public async Task RequestedInQuietHours_HoldEndsBeforeMorning_PanelOnly_NoPush()
+    {
+        _factory.Clock.Advance(Instant.FromUtc(2026, 11, 25, 19, 30) - _factory.Clock.GetCurrentInstant());
+        _token = (await _api.SignInAsync("+905324187705")).Body.GetProperty("accessToken").GetString()!;
+        _bookingToken = await VerifyAsync();
+        (await CreateAsync(FridayAt1430)).Status.ShouldBe(201);
+
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.in_app_notifications WHERE event_code = 'staff.approval_needed'")).ShouldBe(1);
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'staff.approval_needed'")).ShouldBe(0);
+    }
+
+    // A13: müşteri saati değiştirince talep yeniden onaya düşer; önceki bekleyen push düşer, yalnız son kaydın kalan süresi kalır.
+    [Fact]
+    public async Task RequestedAgain_AfterCustomerReschedule_ReplacesPendingPush()
+    {
+        var created = await CreateAsync(FridayAt1430);
+        var id = created.Body.GetProperty("id").GetString()!;
+        var code = created.Body.GetProperty("accessCode").GetString()!;
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+        _factory.Clock.Advance(Duration.FromMinutes(30));
+
+        var shown = await _api.SendAsync(HttpMethod.Get, $"/api/v1/public/appointments/{code}", null);
+        var moved = await _api.SendAsync(
+            HttpMethod.Post, $"/api/v1/public/appointments/{code}/reschedule", new { startUtc = "2026-11-27T12:30:00Z" }, headers: IfMatch(shown.ETag));
+        moved.Status.ShouldBe(200, moved.Body.ToString());
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        (await _api.ScalarAsync<string>(
+            "SELECT string_agg(status::text, ',' ORDER BY created_utc) FROM notifications.notification_outbox WHERE event_code = 'staff.approval_needed'"))
+            .ShouldBe("Cancelled,Pending");
+        (await _api.ScalarAsync<long>(
+            $"SELECT count(*) FROM notifications.in_app_notifications WHERE target_id = '{id}' AND hold_expires_utc IS NOT NULL")).ShouldBe(1, "yalnız son talebin kalan süresi");
+    }
+
     /// <summary>Olayları işler ve bekleyen SMS'leri gönderir (sahte sağlayıcı; deneme kontörüyle).</summary>
     private async Task DispatchAsync()
     {

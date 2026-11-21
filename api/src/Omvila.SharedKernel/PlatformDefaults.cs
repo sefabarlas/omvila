@@ -34,9 +34,6 @@ public static class PlatformDefaults
     /// <summary>musaitlik.md § Katman 2: randevu yazma kilidinin zaman aşımı (lock_timeout = 5s); aşılırsa 503 try_again.</summary>
     public const int AppointmentLockTimeoutSeconds = 5;
 
-    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: ReminderOffsetsMinutes [1440, 120] (marka ayarı ekranı D3'te; o zamana dek herkes için bu değer).</summary>
-    public static readonly IReadOnlyList<int> ReminderOffsetsMinutes = [1440, 120];
-
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: QuietHoursLocal başlangıcı (22:00, şube yerel).</summary>
     public const int QuietHoursStartHour = 22;
 
@@ -51,4 +48,7 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: LowCreditThreshold 200 (bakiye bunun altına inince "Kontör azaldı").</summary>
     public const int LowCreditThreshold = 200;
+
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: SmsUsageWindowDays 30 ("bu tempoyla ~18 gün yeter" son 30 günün ortalamasıyla; sözleşme SmsOverview).</summary>
+    public const int SmsUsageWindowDays = 30;
 }

@@ -46,6 +46,7 @@ public static class IdentityModule
             .Validate(o => o.IsValid(), "Legal ayarları eksik (appsettings \"Legal\").");
         services.AddScoped<ManageSignupService>();
         services.AddScoped<IStaffMemberships, StaffMemberships>();
+        services.AddScoped<IBrandUserDirectory, BrandUserDirectory>();
         // v1 kullanıcı başına tek üyelik: başka markadaki üyelik RLS nedeniyle görünmez, tek dizin yakalar.
         services.AddUniqueConstraintError("ix_user_memberships_user_id", ErrorCodes.PhoneAlreadyExists);
         services.AddOtpRateLimiting();

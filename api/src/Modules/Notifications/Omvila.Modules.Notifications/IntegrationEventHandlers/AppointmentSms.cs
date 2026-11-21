@@ -19,6 +19,7 @@ internal sealed class AppointmentSms(
     IAppointmentQueries appointments,
     IPublicBookingQueries booking,
     ICustomerDirectory customers,
+    ITenantQueries tenants,
     INotificationOutbox outbox,
     IClock clock)
 {
@@ -92,8 +93,10 @@ internal sealed class AppointmentSms(
             return;
         }
 
+        // Kural: sureler-ve-ayarlar.md ReminderOffsetsMinutes — markanın bildirim ayarı (kanonik uç notification-settings, T-62 (4)).
+        var offsets = (await tenants.GetNotificationSettingsAsync(context.BrandId, ct))?.ReminderOffsetsMinutes ?? [];
         var start = context.Appointment.StartUtc;
-        foreach (var reminder in ReminderPlanner.Plan(start, clock.GetCurrentInstant(), context.Zone, PlatformDefaults.ReminderOffsetsMinutes))
+        foreach (var reminder in ReminderPlanner.Plan(start, clock.GetCurrentInstant(), context.Zone, offsets))
         {
             var values = new Dictionary<string, string>(StringComparer.Ordinal)
             {

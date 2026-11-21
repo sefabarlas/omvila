@@ -71,6 +71,7 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | `ReviewInviteDelayMinutes` | 120 | Platform | Randevu tamamlandıktan 2 saat sonra | ✔ |
 | `QuietHoursLocal` | 22:00–08:00 | Platform (işletme kullanıcısı kendi tercihini değiştirebilir) | İşletme push'ları sessiz saatte gönderilmez. Müşteri hatırlatması sessiz saate denk gelirse 08:00'e kaydırılır. Doğrulama kodu ve kapora mesajı kaydırılmaz | ✔ |
 | `LowCreditThreshold` | 200 | Platform | "Bakiye 200'ün altına düşünce" bildirimi | |
+| `SmsUsageWindowDays` | 30 | Platform | "Bu tempoyla ~18 gün yeter": son 30 günün net kontör tüketimi (düşüm − iade) ortalamasıyla; tüketim yoksa tahmin yok (T-71) | |
 | `SmsMaxCharsSingleCredit` | 155 | Platform | Türkçe karakterle 1 kontör sınırı. Şablon testleri bunu doğrular | |
 | `PushTitleMaxChars` / `PushBodyMaxChars` | 40 / 90 | Platform | | |
 | `NotificationMaxAttempts` | 5 | Platform | Üstel geri çekilme: 30 sn, 2 dk, 10 dk, 30 dk, 2 sa | |

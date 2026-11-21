@@ -15,6 +15,8 @@ internal sealed class NotificationsDbContext(DbContextOptions<NotificationsDbCon
 
     public DbSet<Device> Devices => Set<Device>();
 
+    public DbSet<InAppNotification> InAppNotifications => Set<InAppNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

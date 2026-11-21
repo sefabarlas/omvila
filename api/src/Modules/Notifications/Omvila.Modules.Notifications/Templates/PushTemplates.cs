@@ -18,6 +18,9 @@ internal static partial class PushTemplates
     /// <summary>staff.appointment_changed: saat değişikliği metni.</summary>
     public const string RescheduledVariant = "rescheduled";
 
+    /// <summary>owner.credits_low: tüketim geçmişi yokken tahmini gün yazılmaz.</summary>
+    public const string WithoutEstimateVariant = "without_estimate";
+
     private const int RegexTimeoutMilliseconds = 1000;
 
     private static readonly Dictionary<string, (string Title, string Body)> Templates = new(StringComparer.Ordinal)
@@ -35,6 +38,10 @@ internal static partial class PushTemplates
         [Key(NotificationEvents.StaffReviewReceived, null)] = ("Yeni değerlendirme", "{puan} yıldız · {müşteri}"),
         [Key(NotificationEvents.StaffWalkInQueue, null)] = ("Sırada {n} kişi", "Kapıda sıra · tahmini bekleme {dk} dk."),
         [Key(NotificationEvents.StaffDailySummary, null)] = ("Gün sonu özeti", "{n} randevu tamamlandı, {tutar} tahsilat."),
+        [Key(NotificationEvents.OwnerCreditsLow, null)] = ("SMS kontörü azaldı", "{kalan} SMS kaldı, tahmini {gün} gün yeter."),
+
+        // Katalog metninin tahminsiz hâli (son 30 günde tüketim yok; T-71).
+        [Key(NotificationEvents.OwnerCreditsLow, WithoutEstimateVariant)] = ("SMS kontörü azaldı", "{kalan} SMS kaldı."),
     };
 
     /// <summary>Tanımlı (olay kodu, çeşit) çiftleri.</summary>

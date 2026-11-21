@@ -11,12 +11,15 @@ public sealed class ReminderPlannerTests
     private static readonly DateTimeZone Istanbul = DateTimeZoneProviders.Tzdb["Europe/Istanbul"];
     private static readonly Instant Now = Instant.FromUtc(2026, 11, 25, 9, 0); // Çarşamba 12:00
 
+    // Marka varsayılanı (BrandSettings.CreateDefault; sureler-ve-ayarlar.md ReminderOffsetsMinutes).
+    private static readonly int[] DefaultOffsets = [1440, 120];
+
     [Fact]
     public void Afternoon_Appointment_DayBeforeAndTwoHoursBefore()
     {
         var start = Local(2026, 11, 27, 14, 30);
 
-        var plan = ReminderPlanner.Plan(start, Now, Istanbul, PlatformDefaults.ReminderOffsetsMinutes);
+        var plan = ReminderPlanner.Plan(start, Now, Istanbul, DefaultOffsets);
 
         plan.ShouldBe([new PlannedReminder(Local(2026, 11, 26, 14, 30), null), new PlannedReminder(Local(2026, 11, 27, 12, 30), SmsTemplates.SameDayVariant)]);
     }
@@ -24,15 +27,15 @@ public sealed class ReminderPlannerTests
     [Fact]
     public void OffsetsAlreadyInThePast_AreSkipped()
     {
-        ReminderPlanner.Plan(Local(2026, 11, 25, 13, 0), Now, Istanbul, PlatformDefaults.ReminderOffsetsMinutes).ShouldBeEmpty("12:00'de 13:00'e");
-        ReminderPlanner.Plan(Local(2026, 11, 26, 11, 0), Now, Istanbul, PlatformDefaults.ReminderOffsetsMinutes)
+        ReminderPlanner.Plan(Local(2026, 11, 25, 13, 0), Now, Istanbul, DefaultOffsets).ShouldBeEmpty("12:00'de 13:00'e");
+        ReminderPlanner.Plan(Local(2026, 11, 26, 11, 0), Now, Istanbul, DefaultOffsets)
             .ShouldBe([new PlannedReminder(Local(2026, 11, 26, 9, 0), SmsTemplates.SameDayVariant)]);
     }
 
     [Fact]
     public void QuietHours_MorningReminderMovesTo0800()
     {
-        var plan = ReminderPlanner.Plan(Local(2026, 11, 27, 9, 0), Now, Istanbul, PlatformDefaults.ReminderOffsetsMinutes);
+        var plan = ReminderPlanner.Plan(Local(2026, 11, 27, 9, 0), Now, Istanbul, DefaultOffsets);
 
         plan.ShouldBe([new PlannedReminder(Local(2026, 11, 26, 9, 0), null), new PlannedReminder(Local(2026, 11, 27, 8, 0), SmsTemplates.SameDayVariant)]);
     }
@@ -40,7 +43,7 @@ public sealed class ReminderPlannerTests
     [Fact]
     public void QuietHours_LateAppointment_DayBeforeShiftsIntoSameDay_OnlyOneSameDayReminderKept()
     {
-        var plan = ReminderPlanner.Plan(Local(2026, 11, 27, 23, 30), Now, Istanbul, PlatformDefaults.ReminderOffsetsMinutes);
+        var plan = ReminderPlanner.Plan(Local(2026, 11, 27, 23, 30), Now, Istanbul, DefaultOffsets);
 
         plan.ShouldBe([new PlannedReminder(Local(2026, 11, 27, 21, 30), SmsTemplates.SameDayVariant)]);
     }
