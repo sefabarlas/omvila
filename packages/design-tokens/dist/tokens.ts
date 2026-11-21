@@ -7,6 +7,7 @@ export const markaTokens = {
   bosluk: ['bosluk-1', 'bosluk-2', 'bosluk-3', 'bosluk-4', 'bosluk-5', 'bosluk-6', 'bosluk-8', 'bosluk-10', 'bosluk-12', 'bosluk-16', 'bosluk-20'],
   kose: ['kose-xs', 'kose-sm', 'kose-md', 'kose-lg', 'kose-xl', 'kose-tam'],
   boyut: [],
+  hareket: [],
   yazi: ['display', 'baslik-1', 'baslik-2', 'baslik-3', 'baslik-4', 'govde-buyuk', 'govde', 'govde-kucuk', 'etiket', 'aciklama', 'ust-etiket', 'rakam'],
 } as const;
 
@@ -18,6 +19,7 @@ export const panelTokens = {
   bosluk: ['bosluk-0-5', 'bosluk-1', 'bosluk-1-5', 'bosluk-2', 'bosluk-3', 'bosluk-4', 'bosluk-5', 'bosluk-6', 'bosluk-8', 'bosluk-12'],
   kose: ['kose-xs', 'kose-sm', 'kose-md', 'kose-lg', 'kose-xl', 'kose-tam'],
   boyut: ['kontrol-sm', 'kontrol-md', 'kontrol-lg', 'sidebar-genislik', 'ustbar-yukseklik', 'tablo-satir', 'takvim-saat', 'icerik-genislik'],
+  hareket: [],
   yazi: ['sayfa-basligi', 'bolum-basligi', 'kart-basligi', 'metrik', 'govde', 'govde-guclu', 'kucuk', 'etiket', 'aciklama', 'ust-etiket', 'rakam'],
 } as const;
 
@@ -29,6 +31,7 @@ export const mobilTokens = {
   bosluk: ['bosluk-1', 'bosluk-2', 'bosluk-3', 'bosluk-4', 'bosluk-5', 'bosluk-6', 'bosluk-8', 'bosluk-12'],
   kose: ['kose-xs', 'kose-sm', 'kose-md', 'kose-lg', 'kose-xl', 'kose-tam'],
   boyut: ['dokunma-min', 'kontrol-sm', 'kontrol-md', 'kontrol-lg', 'ust-bar', 'tabbar', 'saat-dilimi', 'ekran-genislik'],
+  hareket: ['sure-anlik', 'sure-hizli', 'sure-cikis', 'sure-orta', 'sure-yavas', 'sure-azaltilmis', 'egri-standart', 'egri-giris', 'egri-cikis'],
   yazi: ['buyuk-baslik', 'baslik-1', 'baslik-2', 'baslik-3', 'ust-bar-basligi', 'metrik', 'govde', 'govde-guclu', 'ikincil', 'etiket', 'etiket-kucuk', 'aciklama', 'sekme', 'rakam'],
 } as const;
 

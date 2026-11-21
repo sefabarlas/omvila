@@ -49,7 +49,7 @@ jobs:
           }
           common='^(contracts/|\.github/workflows/ci\.yml$)'
           match "$common|^api/|^global\.json$" api
-          match "$common|^web/|^packages/(api-client-ts|design-tokens|ui-web)/|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig\.base\.json|eslint\.config\.mjs|stylelint\.config\.mjs|prettier\.config\.mjs|\.prettierignore|\.nvmrc)$" web
+          match "$common|^web/|^packages/(api-client-ts|design-tokens|ui-web)/|^packages/omvila_ui/lib/theme/|^(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|tsconfig\.base\.json|eslint\.config\.mjs|stylelint\.config\.mjs|prettier\.config\.mjs|\.prettierignore|\.nvmrc)$" web
           match "$common|^mobile/|^packages/(api-client-dart|omvila_ui|design-tokens)/|^(pubspec\.yaml|pubspec\.lock|analysis_options\.yaml|\.fvmrc)$" flutter
           cat "$GITHUB_OUTPUT"
 
@@ -126,6 +126,11 @@ jobs:
             set -- "$@" "--filter=...[$BASE]"
           fi
           pnpm turbo run "$@"
+      # Token çıktıları (dist/*.css, dist/tokens.ts ve omvila_ui'deki üretilmiş Dart teması) kaynakla aynı mı.
+      # Dart teması pnpm paketinin dışında olduğundan turbo'nun değişiklik süzgecine güvenilmez; her seferinde çalışır.
+      - name: Token çıktıları güncel
+        if: env.RUN == 'true'
+        run: pnpm --filter @omvila/design-tokens test
 
   # Salon paneli ve rezervasyon sayfası uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md
   # kritik akışlar 1, 2, 6, 7 ve ekran görüntüleri). Zorunlu denetimlere eklenmedi; dal koruması ayrıca karar verilir.
