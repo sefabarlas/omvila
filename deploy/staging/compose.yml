@@ -19,8 +19,8 @@ x-api-env: &api-env
   Sms__Provider: Fake
   Push__Provider: Fake
   Sms__Providers__fake__WebhookSecret: ${SMS_FAKE_WEBHOOK_SECRET:?SMS_FAKE_WEBHOOK_SECRET}
-  ConnectionStrings__Default: Host=postgres;Database=omvila;Username=omvila_app;Password=${OMVILA_APP_DB_PASSWORD:?OMVILA_APP_DB_PASSWORD}
-  ConnectionStrings__Migrator: Host=postgres;Database=omvila;Username=omvila_migrator;Password=${OMVILA_MIGRATOR_DB_PASSWORD:?OMVILA_MIGRATOR_DB_PASSWORD}
+  ConnectionStrings__Default: Host=postgres;Database=omvila;Username=omvila_app;Password=${OMVILA_APP_DB_PASSWORD:?OMVILA_APP_DB_PASSWORD};Gss Encryption Mode=Disable
+  ConnectionStrings__Migrator: Host=postgres;Database=omvila;Username=omvila_migrator;Password=${OMVILA_MIGRATOR_DB_PASSWORD:?OMVILA_MIGRATOR_DB_PASSWORD};Gss Encryption Mode=Disable
   Auth__SigningKeys__0__Kid: ${AUTH_SIGNING_KEY_ID:?AUTH_SIGNING_KEY_ID}
   Auth__SigningKeys__0__PrivateKeyPem: ${AUTH_SIGNING_KEY_PEM:?AUTH_SIGNING_KEY_PEM}
   Auth__Otp__HmacKey: ${AUTH_OTP_HMAC_KEY:?AUTH_OTP_HMAC_KEY}
