@@ -126,6 +126,88 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Notifications.Domain.Device", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("App")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("app");
+
+                    b.Property<string>("AppVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("app_version");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Instant>("LastSeenUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_utc");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("OwnerType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("owner_type");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("platform");
+
+                    b.Property<string>("PushToken")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)")
+                        .HasColumnName("push_token");
+
+                    b.HasKey("Id")
+                        .HasName("pk_devices");
+
+                    b.HasIndex("PushToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_devices_push_token")
+                        .HasFilter("is_active");
+
+                    b.HasIndex("BrandId", "PushToken")
+                        .IsUnique()
+                        .HasDatabaseName("ix_devices_brand_id_push_token");
+
+                    b.HasIndex("BrandId", "OwnerType", "OwnerId")
+                        .HasDatabaseName("ix_devices_brand_id_owner_type_owner_id")
+                        .HasFilter("is_active");
+
+                    b.ToTable("devices", "notifications", t =>
+                        {
+                            t.HasCheckConstraint("ck_devices_app", "app IN ('Business', 'Customer')");
+
+                            t.HasCheckConstraint("ck_devices_owner_type", "owner_type IN ('User', 'Customer')");
+
+                            t.HasCheckConstraint("ck_devices_platform", "platform IN ('iOS', 'Android')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Notifications.Domain.NotificationMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -188,6 +270,10 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("provider_message_id");
+
+                    b.Property<Guid?>("RecipientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recipient_id");
 
                     b.Property<string>("RecipientPhone")
                         .HasMaxLength(16)

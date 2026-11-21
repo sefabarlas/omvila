@@ -110,6 +110,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             ["Notifications:RetryBaseDelaySeconds"] = "30",
             ["Notifications:RetryMaxDelaySeconds"] = "3600",
             ["Sms:Provider"] = "Fake",
+            ["Push:Provider"] = "Fake",
             ["Sms:DefaultSender"] = "OMVILA",
             [$"{FakeSmsProviderOptions.Section}:{nameof(FakeSmsProviderOptions.WebhookSecret)}"] = TestSmsWebhook.Secret,
             ["Auth:Issuer"] = "omvila",
