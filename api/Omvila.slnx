@@ -25,6 +25,10 @@
     <Project Path="src/Modules/Platform/Omvila.Modules.Platform.Contracts/Omvila.Modules.Platform.Contracts.csproj" />
     <Project Path="src/Modules/Platform/Omvila.Modules.Platform/Omvila.Modules.Platform.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Sales/">
+    <Project Path="src/Modules/Sales/Omvila.Modules.Sales.Contracts/Omvila.Modules.Sales.Contracts.csproj" />
+    <Project Path="src/Modules/Sales/Omvila.Modules.Sales/Omvila.Modules.Sales.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Scheduling/">
     <Project Path="src/Modules/Scheduling/Omvila.Modules.Scheduling.Contracts/Omvila.Modules.Scheduling.Contracts.csproj" />
     <Project Path="src/Modules/Scheduling/Omvila.Modules.Scheduling/Omvila.Modules.Scheduling.csproj" />
@@ -47,6 +51,7 @@
     <Project Path="tests/Omvila.Modules.Identity.Tests/Omvila.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.IntegrationTests/Omvila.Modules.Notifications.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.Tests/Omvila.Modules.Notifications.Tests.csproj" />
+    <Project Path="tests/Omvila.Modules.Sales.Tests/Omvila.Modules.Sales.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Scheduling.IntegrationTests/Omvila.Modules.Scheduling.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Scheduling.Tests/Omvila.Modules.Scheduling.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Tenancy.IntegrationTests/Omvila.Modules.Tenancy.IntegrationTests.csproj" />

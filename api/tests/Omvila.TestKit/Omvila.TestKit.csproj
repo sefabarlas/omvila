@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Modules\Platform\Omvila.Modules.Platform\Omvila.Modules.Platform.csproj" />
     <ProjectReference Include="..\..\src\Modules\Catalog\Omvila.Modules.Catalog\Omvila.Modules.Catalog.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customers\Omvila.Modules.Customers\Omvila.Modules.Customers.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Sales\Omvila.Modules.Sales\Omvila.Modules.Sales.csproj" />
     <ProjectReference Include="..\..\src\Modules\Scheduling\Omvila.Modules.Scheduling\Omvila.Modules.Scheduling.csproj" />
   </ItemGroup>
 </Project>
