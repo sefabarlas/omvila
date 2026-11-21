@@ -117,6 +117,14 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deposit_customer_reported_utc");
 
+                    b.Property<Guid?>("DepositPaymentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deposit_payment_id");
+
+                    b.Property<Guid?>("DepositReceivedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deposit_received_by_user_id");
+
                     b.Property<Instant?>("DepositReceivedUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deposit_received_utc");
@@ -129,6 +137,14 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)")
                         .HasColumnName("deposit_transfer_code");
+
+                    b.Property<Guid?>("DepositWaivedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("deposit_waived_by_user_id");
+
+                    b.Property<Instant?>("DepositWaivedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deposit_waived_utc");
 
                     b.Property<Instant>("EndUtc")
                         .HasColumnType("timestamp with time zone")
@@ -225,6 +241,8 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_appointments_channel", "channel IN ('Online', 'Panel', 'Phone', 'WalkIn')");
 
                             t.HasCheckConstraint("ck_appointments_client_app", "client_app IS NULL OR client_app IN ('BookingPage', 'CustomerApp', 'BusinessApp', 'Panel')");
+
+                            t.HasCheckConstraint("ck_appointments_deposit_outcome", "(deposit_received_utc IS NULL OR (deposit_required_minor IS NOT NULL AND deposit_payment_id IS NOT NULL AND deposit_waived_utc IS NULL)) AND (deposit_waived_utc IS NULL OR deposit_required_minor IS NOT NULL)");
 
                             t.HasCheckConstraint("ck_appointments_deposit_transfer_code", "deposit_transfer_code IS NULL OR deposit_required_minor IS NOT NULL");
 

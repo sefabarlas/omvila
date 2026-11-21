@@ -54,7 +54,7 @@ public sealed class ApprovalRaceTests(PostgresFixture db) : IAsyncLifetime
         var approveSession = await BeginAsync(approveScope, TenantScope.ForBrand(_data.BrandId));
         Clock.Advance(Timeout - Duration.FromMinutes(1));
         var approved = await approveScope.ServiceProvider.GetRequiredService<AppointmentApprovals>()
-            .ApproveAsync(held.Id, OwnerAccess(), userId: null, held.Version, Ct);
+            .ApproveAsync(held.Id, OwnerAccess(), userId: null, held.Version, waiveDeposit: false, Ct);
         approved.IsSuccess.ShouldBeTrue();
 
         // Onay henüz commit edilmedi; saat dolmuş görünse de iş kilitli satırı atlar.
@@ -87,7 +87,7 @@ public sealed class ApprovalRaceTests(PostgresFixture db) : IAsyncLifetime
                 try
                 {
                     return await scope.ServiceProvider.GetRequiredService<AppointmentApprovals>()
-                        .ApproveAsync(held.Id, OwnerAccess(), userId: null, held.Version, Ct);
+                        .ApproveAsync(held.Id, OwnerAccess(), userId: null, held.Version, waiveDeposit: false, Ct);
                 }
                 finally
                 {

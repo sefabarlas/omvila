@@ -10,6 +10,7 @@ using Omvila.Modules.Scheduling.Features.AppointmentLink;
 using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Scheduling.Features.Calendar;
+using Omvila.Modules.Scheduling.Features.Deposits;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
 using Omvila.Modules.Scheduling.Infrastructure;
@@ -22,7 +23,8 @@ namespace Omvila.Modules.Scheduling;
 /// <summary>
 /// Scheduling modülü girişi (D2: randevu alanı ve kalıcılığı, müsaitlik motoru ve anlık görüntü yükleyicisi, çakışma
 /// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; rezervasyon sayfası ve SMS bağlantısı (/r/) uçları; IAppointmentQueries; MarkNoShows ve ExtendRecurringSeries işleri). D3: onay akışı (onay, red, kuyruk) ve
-/// ExpireAppointmentHolds işi.
+/// ExpireAppointmentHolds işi. D4: "Kapora geldi" (tahsilat kaydı Sales IDepositPayments ile aynı transaction'da) ve
+/// "Kaporasız onayla".
 /// Yükleyici Tenancy (IBranchScheduleQueries) ve Catalog (IServiceOffers), randevu uçları Customers (ICustomerDirectory)
 /// ve Platform (ISubscriptionQueries) sözleşmelerine dayanır.
 /// </summary>
@@ -48,6 +50,7 @@ public static class SchedulingModule
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
+        services.AddScoped<DepositReceipts>();
         services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
             o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
         services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
@@ -67,6 +70,7 @@ public static class SchedulingModule
         SlotSearchEndpoints.Map(app);
         ManageAppointmentEndpoints.Map(app);
         ApprovalEndpoints.Map(app);
+        DepositEndpoints.Map(app);
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);
         PublicAppointmentLinkEndpoints.Map(app);

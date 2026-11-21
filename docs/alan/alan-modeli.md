@@ -421,6 +421,8 @@ CSV içe aktarma işi: `FileName`, `TotalRows`, `ToCreate`, `ToMerge`, `InvalidR
 | DepositReceivedUtc | Instant? | Salon "Kapora geldi" dedi |
 | DepositReceivedByUserId | uuid? | |
 | DepositPaymentId | uuid? | Kapora geldi denince oluşan `Payment` |
+| DepositWaivedUtc | Instant? | Salon "Kaporasız onayla" dedi (A2); kapora istenmiyor olarak kaydedilir, `Payment` oluşmaz |
+| DepositWaivedByUserId | uuid? | |
 
 "Kapora bekleniyor" bir durum değildir: `Status = PendingApproval AND DepositRequiredMinor IS NOT NULL AND DepositReceivedUtc IS NULL`. API bunu `displayStatus = DepositPending` olarak hesaplayıp verir.
 
@@ -504,6 +506,7 @@ OMVILA para almaz. Bu tablo salonun kendi tahsilatlarının **kaydıdır**.
 |---|---|---|
 | BranchId | uuid | |
 | BrandCustomerId | uuid? | |
+| CurrencyCode | char(3) | |
 | Method | enum | `Cash`, `Card` (salonun kendi POS'u), `Transfer` (havale/EFT), `PackageRedemption` |
 | AmountMinor | long | |
 | IsDeposit | bool | Kapora havalesi |

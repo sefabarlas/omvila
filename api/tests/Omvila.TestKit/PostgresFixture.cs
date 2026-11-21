@@ -12,6 +12,7 @@ using Omvila.Modules.Identity;
 using Omvila.Modules.Notifications;
 using Omvila.Modules.Platform;
 using Omvila.Modules.Platform.Infrastructure;
+using Omvila.Modules.Sales;
 using Omvila.Modules.Scheduling;
 using Omvila.Modules.Tenancy;
 using Omvila.SharedKernel;
@@ -56,6 +57,7 @@ public sealed class PostgresFixture : IAsyncLifetime
             .AddPlatformModule(configuration)
             .AddCatalogModule()
             .AddCustomersModule()
+            .AddSalesModule()
             .AddSchedulingModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
         await services.GetRequiredService<PlanSeeder>().SeedAsync(MigratorConnectionString, CancellationToken.None);

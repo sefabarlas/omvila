@@ -46,7 +46,7 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
             [.. appointment.Items.OrderBy(i => i.SeqNo).Select(i => Item(i, staff, currency))],
             DepositView.For(appointment, currency),
             new Money(appointment.TotalAmountMinor, currency),
-            // "Salonda ödenecek" = toplam − alınmış kapora (tahsilat Dilim 5'te).
+            // "Salonda ödenecek" = toplam − alınmış kapora (kaporasız onayda toplam; salondaki tahsilat Dilim 5'te).
             new Money(appointment.AmountDueMinor, currency),
             appointment.CustomerNote,
             appointment.StaffNote,
@@ -91,17 +91,33 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
             : null;
 
     /// <summary>
-    /// Zaman damgalarından geçmiş: oluşturma, onay (talep oluşturulduktan sonra onaylandıysa; A13 sonrası yeniden onayda
-    /// yalnız son onay görünür), her saat değişikliği (eski dilimlerin işaretlendiği an), gelmedi, geldi (gelmedi
-    /// sonrasındaysa "Geldiyse geri al"), tamamlama, iptal (salon reddi Declined, süresi dolan tutma HoldExpired). Yapan
-    /// kişinin adı tutulmadığından actorName yazılmaz.
+    /// Zaman damgalarından geçmiş: oluşturma, havale bildirimi, onay (talep oluşturulduktan sonra onaylandıysa; A13 sonrası
+    /// yeniden onayda yalnız son onay görünür), "Kapora geldi" (onay yerine), "Kaporasız onayla", her saat değişikliği (eski
+    /// dilimlerin işaretlendiği an), gelmedi, geldi (gelmedi sonrasındaysa "Geldiyse geri al"), tamamlama, iptal (salon reddi
+    /// Declined, süresi dolan tutma HoldExpired). Yapan kişinin adı tutulmadığından actorName yazılmaz.
     /// </summary>
     internal static IReadOnlyList<AppointmentHistoryEntry> History(Appointment a)
     {
         var entries = new List<(Instant At, int Order, string Kind)> { (a.CreatedUtc, 0, "Created") };
-        if (a.ConfirmedUtc is { } confirmed && confirmed > a.CreatedUtc)
+        if (a.DepositCustomerReportedUtc is { } reported)
+        {
+            entries.Add((reported, 1, "DepositReported"));
+        }
+
+        // "Kapora geldi" onay sayılır (A3): aynı anda ayrıca Approved yazılmaz. Kaporasız onayda Approved + DepositWaived.
+        if (a.ConfirmedUtc is { } confirmed && confirmed > a.CreatedUtc && confirmed != a.DepositReceivedUtc)
         {
             entries.Add((confirmed, 1, "Approved"));
+        }
+
+        if (a.DepositReceivedUtc is { } received)
+        {
+            entries.Add((received, 1, "DepositReceived"));
+        }
+
+        if (a.DepositWaivedUtc is { } waived)
+        {
+            entries.Add((waived, 2, "DepositWaived"));
         }
 
         entries.AddRange(a.Items.SelectMany(i => i.Segments).Where(s => s.SupersededUtc is not null)

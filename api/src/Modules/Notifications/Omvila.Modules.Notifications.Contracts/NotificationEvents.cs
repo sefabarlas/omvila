@@ -36,6 +36,12 @@ public static class NotificationEvents
     /// </summary>
     public const string DepositAwaiting = "deposit.awaiting";
 
+    /// <summary>
+    /// Salon "Kapora geldi" dedi (A3): "{salon}: {tutar} TL kaporanız alındı, {tarih} {saat} randevunuz kesinleşti…". Yalnız SMS
+    /// (V3; push denenmez), sessiz saatte kaydırılmaz.
+    /// </summary>
+    public const string DepositReceived = "deposit.received";
+
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 

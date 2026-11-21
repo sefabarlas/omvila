@@ -90,8 +90,18 @@ internal sealed class Appointment
     /// <summary>Müşteri "Havaleyi yaptım" dedi (Dilim 4).</summary>
     public Instant? DepositCustomerReportedUtc { get; private set; }
 
-    /// <summary>Salon "Kapora geldi" dedi (Dilim 4).</summary>
+    /// <summary>Salon "Kapora geldi" dedi (A3).</summary>
     public Instant? DepositReceivedUtc { get; private set; }
+
+    public Guid? DepositReceivedByUserId { get; private set; }
+
+    /// <summary>"Kapora geldi" denince Sales'te oluşan tahsilat kaydı (Payment).</summary>
+    public Guid? DepositPaymentId { get; private set; }
+
+    /// <summary>Salon "Kaporasız onayla" dedi (A2, <c>waiveDeposit</c>): kapora istenmiyor olarak kaydedilir (dilim-04 kabul kriteri 7).</summary>
+    public Instant? DepositWaivedUtc { get; private set; }
+
+    public Guid? DepositWaivedByUserId { get; private set; }
 
     public Instant CreatedUtc { get; private set; }
 
@@ -115,12 +125,16 @@ internal sealed class Appointment
     public DepositStatus? DepositStatus => DepositRequiredMinor switch
     {
         null => null,
+        _ when DepositWaivedUtc is not null => Domain.DepositStatus.Waived,
         _ when DepositReceivedUtc is not null => Domain.DepositStatus.Received,
         _ when DepositCustomerReportedUtc is not null => Domain.DepositStatus.CustomerReported,
         _ => Domain.DepositStatus.Awaiting,
     };
 
-    /// <summary>"Salonda ödenecek": toplam − alınmış kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden toplamdır.</summary>
+    /// <summary>
+    /// "Salonda ödenecek": toplam − alınmış kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden ve kaporasız onayda
+    /// toplamdır.
+    /// </summary>
     public long AmountDueMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
         ? Math.Max(0, TotalAmountMinor - deposit)
         : TotalAmountMinor;
@@ -250,10 +264,12 @@ internal sealed class Appointment
     /// <summary>
     /// A2: salon onay bekleyen talebi onaylar. Tutma süresi geçmişse (otomatik iptal işi henüz çalışmamış olsa da) 409
     /// <c>hold_expired</c> (T-62 (1)); sınır tam eşitlikte geçmiş sayılır (A5 <c>HoldExpiresUtc &lt;= şimdi</c>). Kapora
-    /// (<c>waiveDeposit</c>) Dilim 4'tedir.
+    /// bekleniyorsa (Awaiting, CustomerReported) <paramref name="waiveDeposit"/> zorunludur, yoksa 409 <c>deposit_required</c>;
+    /// verilirse kapora istenmiyor olarak kaydedilir (Waived), tahsilat oluşmaz. Kapora yoksa <paramref name="waiveDeposit"/>
+    /// yok sayılır.
     /// </summary>
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A2)
-    public Result Approve(Instant now, Guid? userId)
+    public Result Approve(Instant now, Guid? userId, bool waiveDeposit = false)
     {
         var pending = EnsureLivePending(now);
         if (!pending.IsSuccess)
@@ -261,12 +277,70 @@ internal sealed class Appointment
             return pending;
         }
 
+        if (IsDepositAwaited)
+        {
+            if (!waiveDeposit)
+            {
+                return Error.Conflict(ErrorCodes.DepositRequired);
+            }
+
+            DepositWaivedUtc = now;
+            DepositWaivedByUserId = userId;
+        }
+
+        Confirm(now, userId);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// A3 koruması: onay bekleyen, tutma süresi geçmemiş ve kaporası beklenen randevu. Tahsilat kaydı yazılmadan önce
+    /// denetlenir; <see cref="MarkDepositReceived"/> aynı kuralı yeniden uygular.
+    /// </summary>
+    public Result CanMarkDepositReceived(Instant now)
+    {
+        var pending = EnsureLivePending(now);
+        if (!pending.IsSuccess)
+        {
+            return pending;
+        }
+
+        return IsDepositAwaited ? Result.Success() : InvalidTransition();
+    }
+
+    /// <summary>
+    /// A3: salon "Kapora geldi" der. Salonun işaretlemesi onay sayılır (onay da gerekiyorsa ayrıca "Onayla" gerekmez):
+    /// randevu Confirmed, tutma temizlenir, <paramref name="paymentId"/> Sales'teki tahsilat kaydıdır. Kapora beklenmiyorsa
+    /// (yok, Received, Waived) veya durum PendingApproval değilse 409 <c>invalid_state_transition</c>; süre geçmişse
+    /// <c>hold_expired</c>.
+    /// </summary>
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A3)
+    public Result MarkDepositReceived(Guid paymentId, Instant now, Guid? userId)
+    {
+        if (paymentId == Guid.Empty)
+        {
+            throw new DomainException("Kapora tahsilat kimliği boş olamaz.");
+        }
+
+        var allowed = CanMarkDepositReceived(now);
+        if (!allowed.IsSuccess)
+        {
+            return allowed;
+        }
+
+        DepositReceivedUtc = now;
+        DepositReceivedByUserId = userId;
+        DepositPaymentId = paymentId;
+        Confirm(now, userId);
+        return Result.Success();
+    }
+
+    private void Confirm(Instant now, Guid? userId)
+    {
         Status = AppointmentStatus.Confirmed;
         ConfirmedUtc = now;
         HoldExpiresUtc = null;
         HoldReason = null;
         Touch(now, userId);
-        return Result.Success();
     }
 
     /// <summary>
@@ -470,6 +544,9 @@ internal sealed class Appointment
 
         return HoldExpiresUtc is { } expires && expires <= now ? Error.Conflict(ErrorCodes.HoldExpired) : Result.Success();
     }
+
+    /// <summary>Kapora istenmiş, ne alınmış ne de kaporasız onaylanmış (Awaiting veya CustomerReported).</summary>
+    private bool IsDepositAwaited => DepositStatus is Domain.DepositStatus.Awaiting or Domain.DepositStatus.CustomerReported;
 
     private static Error InvalidTransition() => Error.Conflict(ErrorCodes.InvalidStateTransition);
 
