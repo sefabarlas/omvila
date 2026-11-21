@@ -26,6 +26,7 @@ describe('İşletme bilgileri', () => {
       'Şubeler ve saatler',
       'Randevu kuralları',
       'Rezervasyon sayfası',
+      'Bildirimler ve SMS',
     ]);
     expect(
       within(nav).getByRole('link', { name: 'İşletme bilgileri' }).getAttribute('aria-current'),
