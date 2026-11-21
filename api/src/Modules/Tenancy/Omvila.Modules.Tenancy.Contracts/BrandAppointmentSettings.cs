@@ -5,4 +5,12 @@ namespace Omvila.Modules.Tenancy.Contracts;
 /// <param name="CancellationCutoffHours">Müşterinin iptal son süresi.</param>
 /// <param name="RescheduleCutoffHours">Müşterinin saat değiştirme son süresi.</param>
 /// <param name="MaskCustomerPhoneFromStaff">Personel müşteri telefonunu maskeli görür (roller-yetkiler.md **).</param>
-public sealed record BrandAppointmentSettings(int NoShowAfterMinutes, int CancellationCutoffHours, int RescheduleCutoffHours, bool MaskCustomerPhoneFromStaff);
+/// <param name="RequiresApproval">"Randevular onayıma kesinleşsin" (hizmet ayarı <c>null</c> ise geçerli).</param>
+/// <param name="ApprovalTimeoutMinutes">Onay yanıt süresi; dolarsa otomatik iptal.</param>
+public sealed record BrandAppointmentSettings(
+    int NoShowAfterMinutes,
+    int CancellationCutoffHours,
+    int RescheduleCutoffHours,
+    bool MaskCustomerPhoneFromStaff,
+    bool RequiresApproval,
+    int ApprovalTimeoutMinutes);

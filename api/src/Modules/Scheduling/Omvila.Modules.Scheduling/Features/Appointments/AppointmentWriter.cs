@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using NodaTime.Text;
 using Npgsql;
+using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
+using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
 using Omvila.Modules.Scheduling.Infrastructure.ConflictGuard;
@@ -23,7 +25,7 @@ namespace Omvila.Modules.Scheduling.Features.Appointments;
 /// </para>
 /// </summary>
 internal sealed class AppointmentWriter(
-    SchedulingDbContext db, AvailabilitySnapshotLoader loader, AppointmentLocks locks, IIdGenerator ids, IClock clock)
+    SchedulingDbContext db, AvailabilitySnapshotLoader loader, AppointmentLocks locks, IOutbox outbox, IIdGenerator ids, IClock clock)
 {
     private const SlotViolation Taken = SlotViolation.StaffBusy | SlotViolation.NoStaffAvailable | SlotViolation.ResourceUnavailable;
     private const SlotViolation Warnings = SlotViolation.OutsideWorkingHours | SlotViolation.StaffOnTimeOff;
@@ -41,6 +43,7 @@ internal sealed class AppointmentWriter(
 
         var (candidate, accepted) = guarded.Value;
         var now = clock.GetCurrentInstant();
+        var plan = candidate.ToPlan();
         var appointment = Appointment.Create(
             new NewAppointment(
                 command.BrandId,
@@ -53,8 +56,8 @@ internal sealed class AppointmentWriter(
                 command.StaffNote,
                 command.SeriesId,
                 command.CreatedByUserId,
-                command.ApprovalTimeout),
-            candidate.ToPlan(),
+                command.Approval?.HoldFor(plan)),
+            plan,
             ids,
             now);
         var accessCode = AppointmentAccessCode.IssueForManage(ids.New(), command.BrandId, appointment.Id, appointment.EndUtc, now);
@@ -105,7 +108,9 @@ internal sealed class AppointmentWriter(
 
         var (candidate, accepted) = guarded.Value;
         var now = clock.GetCurrentInstant();
-        var rescheduled = appointment.Reschedule(candidate.ToPlan(), command.Actor, now, command.RescheduleCutoff, ids, command.UserId);
+        var plan = candidate.ToPlan();
+        var approvalHold = command.Actor == ChangeActor.Customer ? command.Approval?.HoldFor(plan) : null;
+        var rescheduled = appointment.Reschedule(plan, command.Actor, now, command.RescheduleCutoff, ids, command.UserId, approvalHold);
         if (!rescheduled.IsSuccess)
         {
             return rescheduled.Error;
@@ -226,7 +231,8 @@ internal sealed class AppointmentWriter(
     /// <summary>
     /// Kural: durum-makinesi.md § Sistem işleri ("çakışma kontrolünden önce, aynı personelin süresi dolmuş tutmaları satır
     /// içinde iptal edilir") ve M17. Kısıt pasif olmayan dilimi kapsadığından iptal, yeni dilimler yazılmadan önce
-    /// kaydedilir.
+    /// kaydedilir. Her iptal için <c>AppointmentApprovalExpired</c> (işle aynı olay) aynı transaction'da outbox'a yazılır;
+    /// istek geri alınırsa iptal ve olay birlikte geri alınır, iş sonra yeniden dener.
     /// </summary>
     private async Task ExpireHoldsAsync(HashSet<Guid> staffIds, HashSet<LocalDate> dates, DateTimeZone zone, CancellationToken ct)
     {
@@ -254,16 +260,23 @@ internal sealed class AppointmentWriter(
             return;
         }
 
+        // Aynı anda onaylanan talep atlanır (onay kazanır; saat doluysa kısıt slot_taken der).
+        expiredIds = await ExpiredHolds.LockAsync(db, expiredIds, now, ct);
+        if (expiredIds.Count == 0)
+        {
+            return;
+        }
+
         var expired = await db.Appointments
             .Include(a => a.Items).ThenInclude(i => i.Segments)
             .Where(a => expiredIds.Contains(a.Id))
             .ToListAsync(ct);
-        foreach (var appointment in expired)
-        {
-            appointment.ExpireHold(now);
-        }
-
+        var cancelled = expired.Where(a => a.ExpireHold(now).IsSuccess).ToList();
         await db.SaveChangesAsync(ct);
+        foreach (var appointment in cancelled)
+        {
+            await outbox.EnqueueAsync(ApprovalEvents.Expired(appointment), ct);
+        }
     }
 
     /// <summary>

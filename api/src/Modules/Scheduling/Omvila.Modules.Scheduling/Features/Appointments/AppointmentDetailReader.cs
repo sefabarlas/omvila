@@ -90,12 +90,19 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
             : null;
 
     /// <summary>
-    /// Zaman damgalarından geçmiş: oluşturma, her saat değişikliği (eski dilimlerin işaretlendiği an), gelmedi, geldi
-    /// (gelmedi sonrasındaysa "Geldiyse geri al"), tamamlama, iptal. Yapan kişinin adı tutulmadığından actorName yazılmaz.
+    /// Zaman damgalarından geçmiş: oluşturma, onay (talep oluşturulduktan sonra onaylandıysa; A13 sonrası yeniden onayda
+    /// yalnız son onay görünür), her saat değişikliği (eski dilimlerin işaretlendiği an), gelmedi, geldi (gelmedi
+    /// sonrasındaysa "Geldiyse geri al"), tamamlama, iptal (salon reddi Declined, süresi dolan tutma HoldExpired). Yapan
+    /// kişinin adı tutulmadığından actorName yazılmaz.
     /// </summary>
     internal static IReadOnlyList<AppointmentHistoryEntry> History(Appointment a)
     {
         var entries = new List<(Instant At, int Order, string Kind)> { (a.CreatedUtc, 0, "Created") };
+        if (a.ConfirmedUtc is { } confirmed && confirmed > a.CreatedUtc)
+        {
+            entries.Add((confirmed, 1, "Approved"));
+        }
+
         entries.AddRange(a.Items.SelectMany(i => i.Segments).Where(s => s.SupersededUtc is not null)
             .Select(s => s.SupersededUtc!.Value).Distinct().Select(at => (at, 1, "Rescheduled")));
         if (a.NoShowUtc is { } noShow)
@@ -115,9 +122,17 @@ internal sealed class AppointmentDetailReader(SchedulingDbContext db, ITenantQue
 
         if (a.CancelledUtc is { } cancelled)
         {
-            entries.Add((cancelled, 5, "Cancelled"));
+            entries.Add((cancelled, 5, CancelKind(a)));
         }
 
         return [.. entries.OrderBy(e => e.At).ThenBy(e => e.Order).Select(e => new AppointmentHistoryEntry(e.At, e.Kind, null, null))];
     }
+
+    /// <summary>Sözleşme AppointmentHistoryEntry.kind: A4 Declined, A5 HoldExpired, diğer iptaller Cancelled.</summary>
+    private static string CancelKind(Appointment a) => a.CancellationReason switch
+    {
+        CancellationReason.DeclinedBySalon => "Declined",
+        CancellationReason.ApprovalExpired or CancellationReason.DepositNotReceived when a.CancelledBy == CancelledBy.System => "HoldExpired",
+        _ => "Cancelled",
+    };
 }

@@ -182,6 +182,10 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_appointments");
 
+                    b.HasIndex("HoldExpiresUtc")
+                        .HasDatabaseName("ix_appointments_hold_candidates")
+                        .HasFilter("status = 'PendingApproval'");
+
                     b.HasIndex("SeriesId")
                         .HasDatabaseName("ix_appointments_series_id");
 

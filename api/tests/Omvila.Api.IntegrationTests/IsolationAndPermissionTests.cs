@@ -49,7 +49,11 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             }
         }
 
-        foreach (var path in new[] { $"/api/v1/manage/services?branchId={_kaanIds["branchId"]}", $"/api/v1/manage/staff?branchId={_kaanIds["branchId"]}" })
+        foreach (var path in new[]
+                 {
+                     $"/api/v1/manage/services?branchId={_kaanIds["branchId"]}", $"/api/v1/manage/staff?branchId={_kaanIds["branchId"]}",
+                     $"/api/v1/manage/approval-queue?branchId={_kaanIds["branchId"]}",
+                 })
         {
             var result = await SendAsync("GET", path, _elif);
             if (result.Status != 404)
