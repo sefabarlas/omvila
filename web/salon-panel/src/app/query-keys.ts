@@ -27,4 +27,6 @@ export const queryKeys = {
   customer: (brandCustomerId: string) => ['customers', brandCustomerId] as const,
   customerAppointments: (brandCustomerId: string) =>
     ['customers', brandCustomerId, 'appointments'] as const,
+  /** Bildirim paneli (zil): ilk sayfa ve okunmamış sayısı. */
+  notifications: () => ['notifications'] as const,
 };

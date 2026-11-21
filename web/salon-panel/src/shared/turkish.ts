@@ -41,3 +41,40 @@ export function locativeTime(time: string): string {
       : (tensLocative[Math.floor(spoken / 10)] ?? 'de');
   return `${time}'${suffix}`;
 }
+
+const ones = ['', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz'];
+const tens = ['', 'on', 'yirmi', 'otuz', 'kırk', 'elli', 'altmış', 'yetmiş', 'seksen', 'doksan'];
+
+/** Sayının okunuşunun son kelimesi: 180 → "seksen", 1240 → "kırk", 200 → "yüz", 0 → "sıfır". */
+function spokenLastWord(n: number): string {
+  if (n === 0) {
+    return 'sıfır';
+  }
+
+  if (n % 1_000_000 === 0) {
+    return 'milyon';
+  }
+
+  if (n % 1000 === 0) {
+    return 'bin';
+  }
+
+  if (n % 100 === 0) {
+    return 'yüz';
+  }
+
+  const rest = n % 100;
+  return rest % 10 === 0 ? (tens[rest / 10] ?? '') : (ones[rest % 10] ?? '');
+}
+
+/** Tamsayı, binlik noktayla: 1240 → "1.240". */
+export function formatCount(n: number): string {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/** Sayının yönelme hâli, okunuşa göre: 180 → "180'e", 1240 → "1.240'a", 6 → "6'ya", 200 → "200'e". */
+export function dativeCount(n: number): string {
+  const word = spokenLastWord(Math.abs(Math.trunc(n)));
+  const vowel = backVowels.has(lastVowel(word) ?? 'e') ? 'a' : 'e';
+  return `${formatCount(n)}'${endsWithVowel(word) ? 'y' : ''}${vowel}`;
+}

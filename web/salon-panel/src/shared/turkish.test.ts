@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dative, locativeTime } from './turkish';
+import { dative, dativeCount, formatCount, locativeTime } from './turkish';
 
 // Kural: dilim-02 kabul kriteri 12 ("Zeynep Aksoy'a taşı"), RandevuOnayli ("Gelmezse 13:15'te otomatik").
 describe('yönelme eki', () => {
@@ -43,5 +43,28 @@ describe('saatin bulunma eki', () => {
     ['19:00', "19:00'da"],
   ])('%s → %s', (time, expected) => {
     expect(locativeTime(time)).toBe(expected);
+  });
+});
+
+// Kural: Durumlar "Kontör az" ("SMS kontörünüz 180'e düştü."), binlik nokta (urun-kurallari.md § Biçimler).
+describe('sayının yönelme eki', () => {
+  it.each([
+    [180, "180'e"],
+    [1240, "1.240'a"],
+    [6, "6'ya"],
+    [200, "200'e"],
+    [199, "199'a"],
+    [50, "50'ye"],
+    [3, "3'e"],
+    [1000, "1.000'e"],
+    [0, "0'a"],
+    [2_000_000, "2.000.000'a"],
+  ])('%s → %s', (n, expected) => {
+    expect(dativeCount(n)).toBe(expected);
+  });
+
+  it('binlik nokta', () => {
+    expect(formatCount(1240)).toBe('1.240');
+    expect(formatCount(180)).toBe('180');
   });
 });

@@ -3,6 +3,8 @@ import { createCalendarFake } from './fake-calendar';
 import type { CalendarFakeOptions } from './fake-calendar';
 import { createCustomersFake } from './fake-customers';
 import type { CustomersFakeOptions } from './fake-customers';
+import { createNotificationsFake } from './fake-notifications';
+import type { NotificationsFakeOptions } from './fake-notifications';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -82,6 +84,8 @@ export interface FakeApiOptions {
   calendar?: CalendarFakeOptions;
   /** Müşteri uçları (boş marka). */
   customers?: CustomersFakeOptions;
+  /** Bildirim paneli uçları. */
+  notifications?: NotificationsFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -341,9 +345,11 @@ export function fakeFetch({
   affectedAppointments = 0,
   calendar = {},
   customers = {},
+  notifications = {},
 }: FakeApiOptions = {}) {
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
+  const notificationsFake = createNotificationsFake(notifications);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -380,6 +386,11 @@ export function fakeFetch({
     const customersResponse = await customersFake(request);
     if (customersResponse) {
       return customersResponse;
+    }
+
+    const notificationsResponse = await notificationsFake(request);
+    if (notificationsResponse) {
+      return notificationsResponse;
     }
 
     if (path === '/api/v1/manage/auth/otp/request') {
