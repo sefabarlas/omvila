@@ -254,14 +254,18 @@ describe('CSV içe ve dışa aktarma', () => {
     await waitFor(() => {
       expect(downloads[0]?.name).toBe('musteriler-2026-11-25.csv');
     });
-    // jsdom Blob'unda text() yok; FileReader ile okunur.
-    const text = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(reader.result as string);
-      };
-      reader.readAsText(downloads[0]?.blob ?? new Blob());
-    });
+    // Yanıtın Blob'u ortama göre Node (text() var) veya jsdom (text() yok, FileReader) Blob'udur.
+    const blob = downloads[0]?.blob ?? new Blob();
+    const text =
+      'text' in blob && typeof blob.text === 'function'
+        ? await blob.text()
+        : await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve(reader.result as string);
+            };
+            reader.readAsText(blob);
+          });
     expect(text).toContain('Selin Öztürk');
     expect(text).not.toContain('Gizem Arslan');
   });
