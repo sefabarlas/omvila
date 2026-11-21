@@ -13,6 +13,9 @@ internal sealed class Appointment
     /// <summary>Sözleşme DepositRefundRequest.note maxLength.</summary>
     public const int DepositRefundNoteMaxLength = 300;
 
+    /// <summary>payment_total_mismatch hatasının meta anahtarı (sözleşme manageCompleteAppointment).</summary>
+    public const string ExpectedAmountMeta = "expectedAmountMinor";
+
     private static readonly Domain.CancellationReason[] CustomerReasons =
         [Domain.CancellationReason.PlanChanged, Domain.CancellationReason.Sick, Domain.CancellationReason.WantsDifferentTime, Domain.CancellationReason.Other];
 
@@ -153,9 +156,17 @@ internal sealed class Appointment
     /// "Salonda ödenecek": toplam − salonda kalan kapora (dilim-04 § Kapsam; kabul kriteri 5). Kapora gelmeden ve kaporasız
     /// onayda toplamdır; iade işaretinden sonra iade edilen kısım yeniden salonda ödenir (tam iadede toplam; T-83).
     /// </summary>
-    public long AmountDueMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
-        ? Math.Max(0, TotalAmountMinor - (deposit - (DepositRefundedAmountMinor ?? 0)))
-        : TotalAmountMinor;
+    public long AmountDueMinor => Status switch
+    {
+        // "Tamamla ve ödeme al"dan sonra salonda ödenecek kalmaz (A11).
+        AppointmentStatus.Completed => 0,
+        _ => TotalAmountMinor - RetainedDepositMinor,
+    };
+
+    /// <summary>Salonda kalan kapora: alınan − iade edilen, toplamı aşmaz; kapora alınmadıysa 0.</summary>
+    public long RetainedDepositMinor => DepositReceivedUtc is not null && DepositRequiredMinor is { } deposit
+        ? Math.Min(TotalAmountMinor, deposit - (DepositRefundedAmountMinor ?? 0))
+        : 0;
 
     // Kural: docs/alan/durum-makinesi.md#oluşturma-kuralı (A1)
     public static Appointment Create(NewAppointment input, AppointmentPlan plan, IIdGenerator ids, Instant now)
@@ -534,6 +545,41 @@ internal sealed class Appointment
         Status = AppointmentStatus.CheckedIn;
         CheckedInUtc = now;
         Touch(now, userId);
+        return Result.Success();
+    }
+
+    /// <summary>A11 koruması: yalnız <c>CheckedIn</c> randevu tamamlanır.</summary>
+    public Result CanComplete() => Status == AppointmentStatus.CheckedIn ? Result.Success() : InvalidTransition();
+
+    /// <summary>
+    /// A11 "Tamamla ve ödeme al": yalnız <c>CheckedIn</c>'den ve salonda alınan toplam (<paramref name="paidMinor"/>) "Salonda
+    /// ödenecek"e (<see cref="AmountDueMinor"/>) eşitse; değilse 409 <c>payment_total_mismatch</c> (meta.expectedAmountMinor).
+    /// Kalemler <c>Completed</c>; segmentler aktif kalır (geçmiş). Tahsilat, prim ve sayaçlar çağıranın (aynı transaction) işidir.
+    /// </summary>
+    // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A11); sözleşme manageCompleteAppointment
+    public Result Complete(long paidMinor, Instant now, Guid? userId)
+    {
+        var allowed = CanComplete();
+        if (!allowed.IsSuccess)
+        {
+            return allowed;
+        }
+
+        if (paidMinor != AmountDueMinor)
+        {
+            return Error.Conflict(
+                ErrorCodes.PaymentTotalMismatch,
+                new Dictionary<string, object?>(StringComparer.Ordinal) { [ExpectedAmountMeta] = AmountDueMinor });
+        }
+
+        Status = AppointmentStatus.Completed;
+        CompletedUtc = now;
+        Touch(now, userId);
+        foreach (var item in _items.Where(i => i.Status == AppointmentItemStatus.Active))
+        {
+            item.Complete();
+        }
+
         return Result.Success();
     }
 

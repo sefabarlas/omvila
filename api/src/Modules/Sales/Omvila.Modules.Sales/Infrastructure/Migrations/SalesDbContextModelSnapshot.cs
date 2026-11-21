@@ -24,6 +24,107 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CommissionEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_minor");
+
+                    b.Property<Guid?>("AppointmentItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_item_id");
+
+                    b.Property<long>("BasisMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("basis_minor");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<Guid?>("CustomerPackageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_package_id");
+
+                    b.Property<decimal>("Percent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("percent");
+
+                    b.Property<int>("PeriodYearMonth")
+                        .HasColumnType("integer")
+                        .HasColumnName("period_year_month");
+
+                    b.Property<Guid?>("ReversesEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reverses_entry_id");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("staff_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_commission_entries");
+
+                    b.HasIndex("BrandId", "AppointmentItemId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_commission_entries_brand_id_appointment_item_id")
+                        .HasFilter("type = 'Service' AND reverses_entry_id IS NULL");
+
+                    b.HasIndex("BrandId", "StaffId", "PeriodYearMonth")
+                        .HasDatabaseName("ix_commission_entries_brand_id_staff_id_period_year_month");
+
+                    b.ToTable("commission_entries", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_commission_entries_percent", "percent >= 0 AND percent <= 100");
+
+                            t.HasCheckConstraint("ck_commission_entries_reversal", "(status = 'Reversed') = (reverses_entry_id IS NOT NULL) AND (amount_minor >= 0 OR status = 'Reversed')");
+
+                            t.HasCheckConstraint("ck_commission_entries_status", "status IN ('Accrued', 'Approved', 'Paid', 'Reversed')");
+
+                            t.HasCheckConstraint("ck_commission_entries_target", "(type = 'Service' AND appointment_item_id IS NOT NULL) OR (type = 'Sale' AND customer_package_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_commission_entries_type", "type IN ('Service', 'Sale')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Sales.Domain.Payment", b =>
                 {
                     b.Property<Guid>("Id")
