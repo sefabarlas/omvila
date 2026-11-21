@@ -55,6 +55,14 @@ paketten düşülen kalem                   → kapora yok
 
 Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam lira, `MidpointRounding.AwayFromZero`). Havale tutarı kuruşlu olmasın diye. Randevu kaporası kalem kaporalarının toplamıdır.
 
+## Paketler ("Paketler")
+
+| Anahtar | Varsayılan | Kapsam | Not | Onay |
+|---|---|---|---|---|
+| `Package.ValidityDays` | — | Package | "Geçerlilik": son kullanım günü = satış günü + gün (şubenin yerel takvimi); bu gün dahil kullanılır | |
+| `PackageExpiringSoonDays` | 30 | Platform | "Süresi yaklaşan": 30 gün içinde biten Active paketler | |
+| `ExpireCustomerPackages` | günlük | Platform | Son kullanım günü yerel takvimde geçen Active paket Expired olur (iş saatlik turda çalışır, idempotent; T-95) | |
+
 ## Bekleme listesi ve kapıda sıra
 
 | Anahtar | Varsayılan | Kapsam | Not | Onay |

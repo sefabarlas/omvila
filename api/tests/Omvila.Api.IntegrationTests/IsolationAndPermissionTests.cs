@@ -217,8 +217,11 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             RETURNING id::text
             """);
         var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
+        var (packageId, customerPackageId) = await SeedPackageAsync(token, serviceId, branchId, ownerStaffId, brandCustomerId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["packageId"] = packageId,
+            ["customerPackageId"] = customerPackageId,
             ["branchId"] = branchId,
             ["brandCustomerId"] = brandCustomerId,
             ["appointmentId"] = appointmentId,
@@ -230,6 +233,24 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["timeOffId"] = timeOff.Body.GetProperty("timeOff").GetProperty("id").GetString()!,
             ["ticketId"] = ticketId,
         };
+    }
+
+    /// <summary>Paket tanımı ve müşteriye satılmış paketi (packageId, customerPackageId).</summary>
+    private async Task<(string PackageId, string CustomerPackageId)> SeedPackageAsync(
+        string token, string serviceId, string branchId, string staffId, string brandCustomerId)
+    {
+        var packageId = await PostIdAsync(token, "/api/v1/manage/packages", new
+        {
+            name = "Kesim paketi",
+            price = new { amountMinor = 120000, currency = "TRY" },
+            items = new[] { new { serviceId, sessionCount = 3 } },
+            validityDays = 90,
+            isAvailableAllBranches = true,
+            isActive = true,
+        });
+        var customerPackageId = await PostIdAsync(token, $"/api/v1/manage/customers/{brandCustomerId}/packages",
+            new { packageId, branchId, soldByStaffId = staffId, paymentMethod = "Cash" });
+        return (packageId, customerPackageId);
     }
 
     private async Task<string> PostIdAsync(string token, string path, object body)
