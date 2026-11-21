@@ -252,6 +252,10 @@ jobs:
         run: |
           mkdir -p .fvm && ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
           dart pub get
+          # Melos betiklerindeki `exec:` kısayolu `melos exec`'i kabuktan çağırır; melos PATH'te olmalı.
+          # Sürüm kökteki pubspec.lock'tan (yerelle aynı).
+          dart pub global activate melos "$(grep -A8 '^  melos:' pubspec.lock | sed -n 's/^ *version: "\(.*\)"/\1/p')"
+          echo "${PUB_CACHE:-$HOME/.pub-cache}/bin" >> "$GITHUB_PATH"
       - name: Biçim
         if: steps.guard.outputs.go == 'true'
         run: dart run melos run format:check --no-select
