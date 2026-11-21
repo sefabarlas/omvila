@@ -5,7 +5,7 @@ Her dilim, uçtan uca çalışan ve gösterilebilen bir parçadır: sözleşme +
 | # | Dilim | Ana yüzeyler | Durum |
 |---|---|---|---|
 | 1 | [Giriş + salon kurulumu](dilim-01-giris-ve-kurulum.md) | api, salon-panel | Uygulandı; ürün sahibi demosu ve açık soru onayları bekliyor |
-| 2 | [Müsaitlik + rezervasyon sayfası + panel takvimi](dilim-02-musaitlik-rezervasyon-takvim.md) | api, rezervasyon, salon-panel | Sözleşme hazır |
+| 2 | [Müsaitlik + rezervasyon sayfası + panel takvimi](dilim-02-musaitlik-rezervasyon-takvim.md) | api, rezervasyon, salon-panel | Uygulandı; ürün sahibi demosu ve açık soru onayları bekliyor |
 | 3 | [Onay akışı + SMS](dilim-03-onay-ve-sms.md) | api, salon-panel, rezervasyon | Plan |
 | 4 | [Kapora havalesi](dilim-04-kapora-havalesi.md) | api, rezervasyon, salon-panel | Plan |
 | 5 | [Mobil uygulamalar + bekleme listesi + kapıda sıra + paket + kasa](dilim-05-mobil-bekleme-sira.md) | api, isletme, musteri, salon-panel, rezervasyon | Plan |
