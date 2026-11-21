@@ -14,7 +14,7 @@ x-api-image: &api-image
 # api, worker, migrate ve seed aynı imaj ve yapılandırmayla çalışır; yalnız rol değişir.
 x-api-env: &api-env
   ASPNETCORE_ENVIRONMENT: Staging
-  # Ayrı PR: Staging'de sahte SMS/push sağlayıcısına izin (Fake yalnız Development/Testing'de açılıyor).
+  # Staging'de sahte SMS/push sağlayıcısına izin (T-73); gerçek SMS sağlayıcısı canlıya çıkışta (T-03).
   Staging__AllowFakeProviders: 'true'
   Sms__Provider: Fake
   Push__Provider: Fake
