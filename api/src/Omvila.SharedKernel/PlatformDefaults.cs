@@ -43,6 +43,12 @@ public static class PlatformDefaults
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: QuietHoursLocal bitişi (08:00; müşteri hatırlatması bu saate kayar).</summary>
     public const int QuietHoursEndHour = 8;
 
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: PushTitleMaxChars (40).</summary>
+    public const int PushTitleMaxChars = 40;
+
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: PushBodyMaxChars (90).</summary>
+    public const int PushBodyMaxChars = 90;
+
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: LowCreditThreshold 200 (bakiye bunun altına inince "Kontör azaldı").</summary>
     public const int LowCreditThreshold = 200;
 }

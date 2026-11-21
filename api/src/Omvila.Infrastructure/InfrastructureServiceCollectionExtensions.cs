@@ -17,6 +17,7 @@ using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Infrastructure.Security;
+using Omvila.Infrastructure.Push;
 using Omvila.Infrastructure.Sms;
 
 namespace Omvila.Infrastructure;
@@ -40,6 +41,9 @@ public static class InfrastructureServiceCollectionExtensions
         });
         services.AddOptions<SmsOptions>().Bind(configuration.GetSection(SmsOptions.Section));
         services.AddScoped<ISmsSender>(sp => CreateSmsSender(sp));
+        services.AddOptions<PushOptions>().Bind(configuration.GetSection(PushOptions.Section));
+        services.AddHttpClient(FcmPushSender.HttpClientName);
+        services.AddScoped<IPushSender>(sp => CreatePushSender(sp));
 
         // Teslim raporu adaptörleri sağlayıcı koduyla kaydedilir (webhook yolu /webhooks/sms/{provider}); kayıtsız kod 404.
         // Sahte sağlayıcının raporu yalnız sahte sağlayıcı seçiliyken (Development ve Testing) açılır.
@@ -102,6 +106,26 @@ public static class InfrastructureServiceCollectionExtensions
         }
 
         return ActivatorUtilities.CreateInstance<FakeSmsSender>(services);
+    }
+
+    // Push sağlayıcısı: boş → kapalı; Fake yalnız Development ve Testing'de; Fcm kimlik bilgisi yoksa kapalı (gizli depoda değil).
+    private static IPushSender CreatePushSender(IServiceProvider services)
+    {
+        var options = services.GetRequiredService<Microsoft.Extensions.Options.IOptions<PushOptions>>().Value;
+        var environment = services.GetService<IHostEnvironment>();
+        switch (options.Provider)
+        {
+            case "":
+                return new DisabledPushSender();
+            case PushOptions.FakeProvider when environment is null || environment.IsDevelopment() || environment.IsEnvironment("Testing"):
+                return ActivatorUtilities.CreateInstance<FakePushSender>(services);
+            case PushOptions.FakeProvider:
+                throw new InvalidOperationException("Sahte push sağlayıcısı yalnız Development ve Testing ortamında kullanılabilir.");
+            case PushOptions.FcmProvider:
+                return options.Fcm.IsConfigured ? ActivatorUtilities.CreateInstance<FcmPushSender>(services) : new DisabledPushSender();
+            default:
+                throw new InvalidOperationException($"Desteklenmeyen push sağlayıcısı: '{options.Provider}'.");
+        }
     }
 
     /// <summary>
