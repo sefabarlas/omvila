@@ -15,6 +15,10 @@ public static class SalesModule
     {
         services.AddModuleDbContext<SalesDbContext>(SalesDbContext.Schema);
         services.AddScoped<IDepositPayments, DepositPayments>();
+        // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
+        services.AddScoped<CustomerPaymentsParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerPaymentsParticipant>());
         // Demo verisi --reset (T-74): markanın tahsilat kayıtları.
         services.AddBrandDataEraser<SalesDbContext>();
         return services;

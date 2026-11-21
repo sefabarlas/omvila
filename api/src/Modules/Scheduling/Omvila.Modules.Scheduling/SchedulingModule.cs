@@ -48,6 +48,10 @@ public static class SchedulingModule
         services.AddScoped<PublicAppointmentLinkChanges>();
         services.AddScoped<CalendarReader>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        // Müşteri birleştirme ve KVKK silmesi (T-92): randevular ve seriler.
+        services.AddScoped<CustomerDataParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
         services.AddScoped<DepositReceipts>();

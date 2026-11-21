@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Omvila.Modules.Sales.Contracts\Omvila.Modules.Sales.Contracts.csproj" />
+    <ProjectReference Include="..\..\Customers\Omvila.Modules.Customers.Contracts\Omvila.Modules.Customers.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
