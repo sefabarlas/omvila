@@ -88,6 +88,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapCatalogEndpoints();
     app.MapCustomersEndpoints();
     app.MapSchedulingEndpoints();
+    app.MapNotificationsEndpoints();
 }
 
 HostLog.Started(app.Logger, role);

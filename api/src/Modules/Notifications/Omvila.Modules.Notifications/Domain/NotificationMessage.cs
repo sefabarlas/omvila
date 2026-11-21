@@ -1,4 +1,5 @@
 using NodaTime;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Notifications.Domain;
 
@@ -54,6 +55,9 @@ internal sealed class NotificationMessage
 
     public Instant CreatedUtc { get; private set; }
 
+    /// <summary>Sağlayıcı teslim raporunun "teslim edildi" anı (alan modeline ek, T-64); Sent satırda bir kez yazılır.</summary>
+    public Instant? DeliveredUtc { get; private set; }
+
     /// <summary>Telefona SMS satırı; zamanlanmış gönderim verilmezse hemen.</summary>
     public static NotificationMessage ForPhone(
         Guid id,
@@ -80,26 +84,88 @@ internal sealed class NotificationMessage
             TemplateVariant = templateVariant,
         };
 
-    public void MarkSent(string body, string? providerMessageId)
+    /// <summary>Sağlayıcı mesajı kabul etti; <paramref name="credits"/> bu gönderim için düşülen kontör (platform mesajında 0).</summary>
+    public void MarkSent(string body, string? providerMessageId, int credits = 0)
     {
+        EnsurePending();
         AttemptCount++;
         RenderedBody = body;
         ChannelUsed = "Sms";
         ProviderMessageId = providerMessageId;
+        CreditsConsumed = credits;
+        FailureReason = null;
         Status = NotificationStatus.Sent;
     }
 
-    /// <summary>Geçici hata: en fazla deneme sayısına kadar Pending kalır ve <paramref name="retryAtUtc"/>'de yeniden denenir.</summary>
-    public void MarkAttemptFailed(string reason, Instant retryAtUtc, int maxAttempts)
+    /// <summary>Gönderilmedi ve gönderilmeyecek (ör. <c>insufficient_credits</c>; alan-modeli.md § CreditTransaction).</summary>
+    public void MarkSkipped(string reason)
     {
-        AttemptCount++;
+        EnsurePending();
         FailureReason = reason;
-        if (AttemptCount >= maxAttempts)
+        Status = NotificationStatus.Skipped;
+    }
+
+    /// <summary>
+    /// Gönderim denemesi başarısız: <paramref name="maxAttempts"/>'e ulaşıldıysa veya hata kalıcıysa Failed; değilse Pending
+    /// kalır ve <paramref name="backoff"/> sonra yeniden denenir (dilim-03 kriter 10).
+    /// </summary>
+    public void MarkAttemptFailed(string reason, Instant now, Func<int, Duration> backoff, int maxAttempts, bool permanent = false)
+    {
+        ArgumentNullException.ThrowIfNull(backoff);
+        EnsurePending();
+        AttemptCount++;
+        ScheduleRetryOrFail(reason, now, backoff, maxAttempts, permanent);
+    }
+
+    /// <summary>Teslim raporu "teslim edildi": Sent satırda ilk raporda true; tekrar gelen veya geç kalan rapor false.</summary>
+    public bool MarkDelivered(Instant now)
+    {
+        if (Status != NotificationStatus.Sent || DeliveredUtc is not null)
+        {
+            return false;
+        }
+
+        DeliveredUtc = now;
+        return true;
+    }
+
+    /// <summary>
+    /// Teslim raporu "teslim edilemedi": yalnız teslim edilmemiş Sent satırda geçerlidir. Deneme sayısı gönderimde
+    /// artmıştı; sınırdaysa Failed, değilse geri çekilmeyle Pending. Düşülen kontör iade edilmek üzere döner (yoksa 0).
+    /// </summary>
+    public int? MarkDeliveryFailed(string reason, Instant now, Func<int, Duration> backoff, int maxAttempts)
+    {
+        ArgumentNullException.ThrowIfNull(backoff);
+        if (Status != NotificationStatus.Sent || DeliveredUtc is not null)
+        {
+            return null;
+        }
+
+        var refund = CreditsConsumed;
+        CreditsConsumed = 0;
+        Status = NotificationStatus.Pending;
+        ScheduleRetryOrFail(reason, now, backoff, maxAttempts, permanent: false);
+        return refund;
+    }
+
+    private void ScheduleRetryOrFail(string reason, Instant now, Func<int, Duration> backoff, int maxAttempts, bool permanent)
+    {
+        FailureReason = reason;
+        if (permanent || AttemptCount >= maxAttempts)
         {
             Status = NotificationStatus.Failed;
             return;
         }
 
-        ScheduledUtc = retryAtUtc;
+        // Tekrar zamanı ScheduledUtc'dir: dağıtıcının taradığı kısmi indeks (status = 'Pending') aynen kullanılır.
+        ScheduledUtc = now + backoff(AttemptCount);
+    }
+
+    private void EnsurePending()
+    {
+        if (Status != NotificationStatus.Pending)
+        {
+            throw new DomainException($"Bildirim {Status} durumunda; yalnız bekleyen bildirim gönderilir.");
+        }
     }
 }

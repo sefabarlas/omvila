@@ -21,20 +21,25 @@ internal static class GsmLength
         var units = 0;
         foreach (var c in text)
         {
-            if (Basic.Contains(c, StringComparison.Ordinal))
-            {
-                units += 1;
-            }
-            else if (TurkishShift.Contains(c, StringComparison.Ordinal))
-            {
-                units += 2;
-            }
-            else
+            if (CharUnits(c) is not { } charUnits)
             {
                 return null;
             }
+
+            units += charUnits;
         }
 
         return units;
+    }
+
+    /// <summary>Tek karakterin birimi: temel tablo 1, kaydırma tablosu 2 (kaçış + kod); tabloda yoksa null.</summary>
+    public static int? CharUnits(char c)
+    {
+        if (Basic.Contains(c, StringComparison.Ordinal))
+        {
+            return 1;
+        }
+
+        return TurkishShift.Contains(c, StringComparison.Ordinal) ? 2 : null;
     }
 }

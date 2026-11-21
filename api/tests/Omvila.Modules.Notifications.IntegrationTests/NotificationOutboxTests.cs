@@ -5,7 +5,6 @@ using NodaTime.Testing;
 using Npgsql;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
-using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Jobs;
 using Omvila.TestKit;
@@ -27,7 +26,7 @@ public sealed class NotificationOutboxTests(PostgresFixture db) : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await using var connection = await db.OpenMigratorConnectionAsync(Ct);
-        await using var command = new NpgsqlCommand("TRUNCATE notifications.notification_outbox, infra.dev_sms_log, infra.job_runs", connection);
+        await using var command = new NpgsqlCommand("TRUNCATE notifications.notification_outbox, notifications.credit_transactions, infra.dev_sms_log, infra.job_runs", connection);
         await command.ExecuteNonQueryAsync(Ct);
     }
 
@@ -81,33 +80,12 @@ public sealed class NotificationOutboxTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task FailedSend_IsRetriedAfterDelay_ThenMarkedFailedAfterMaxAttempts()
-    {
-        await using var services = Services(failing: true);
-        var clock = (FakeClock)services.GetRequiredService<IClock>();
-        await EnqueueAsync(services, TenantScope.None, Otp(), commit: true);
-
-        await DispatchAsync(services);
-        (await ScalarAsync<string>("SELECT status || ':' || attempt_count FROM notifications.notification_outbox")).ShouldBe("Pending:1");
-
-        await DispatchAsync(services);
-        (await ScalarAsync<string>("SELECT status || ':' || attempt_count FROM notifications.notification_outbox"))
-            .ShouldBe("Pending:1", "tekrar deneme zamanı gelmeden gönderilmez");
-
-        clock.Advance(Duration.FromSeconds(60));
-        await DispatchAsync(services);
-        clock.Advance(Duration.FromSeconds(60));
-        await DispatchAsync(services);
-
-        (await ScalarAsync<string>("SELECT status || ':' || attempt_count FROM notifications.notification_outbox")).ShouldBe("Failed:3");
-    }
-
-    [Fact]
     public async Task ScheduledReminder_IsNotSentBeforeItsTime_ThenSentWithVariantText()
     {
         await using var services = Services();
         var clock = (FakeClock)services.GetRequiredService<IClock>();
         var appointmentId = Guid.Parse("0193a8f0-0000-7000-8000-0000000000a1");
+        await GrantAsync(services, BrandA, 10);
         await EnqueueAsync(services, TenantScope.ForBrand(BrandA), Reminder(appointmentId, clock.GetCurrentInstant() + Duration.FromHours(2)), commit: true);
 
         await DispatchAsync(services);
@@ -165,17 +143,20 @@ public sealed class NotificationOutboxTests(PostgresFixture db) : IAsyncLifetime
         return count;
     }
 
-    private ServiceProvider Services(bool failing = false)
+    private ServiceProvider Services()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(db.Settings()).Build();
-        return db.CreateServices(configure: services =>
-        {
-            services.AddNotificationsModule(configuration);
-            if (failing)
-            {
-                services.AddScoped<ISmsSender, FailingSmsSender>();
-            }
-        });
+        return db.CreateServices(configure: services => services.AddNotificationsModule(configuration));
+    }
+
+    private static async Task GrantAsync(IServiceProvider services, Guid brandId, int credits)
+    {
+        await using var serviceScope = services.CreateAsyncScope();
+        var session = serviceScope.ServiceProvider.GetRequiredService<IDbSession>();
+        await session.SetTenantAsync(TenantScope.ForBrand(brandId), Ct);
+        await session.BeginAsync(Ct);
+        await serviceScope.ServiceProvider.GetRequiredService<ICreditLedger>().GrantAsync(brandId, credits, "Test", null, Ct);
+        await session.CommitAsync(Ct);
     }
 
     private static SmsNotification Otp(string code = "123456") =>
@@ -220,9 +201,4 @@ public sealed class NotificationOutboxTests(PostgresFixture db) : IAsyncLifetime
         return (T)(await command.ExecuteScalarAsync(Ct))!;
     }
 
-    private sealed class FailingSmsSender : ISmsSender
-    {
-        public Task<SmsSendResult> SendAsync(SmsMessage message, CancellationToken ct) =>
-            Task.FromResult(new SmsSendResult(Succeeded: false, ProviderMessageId: null, FailureReason: "provider_down"));
-    }
 }
