@@ -227,6 +227,154 @@
   white-space: pre-line;
 }
 
+.cellStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+}
+
+/* Kayıt işlemleri kartı (MusteriKarti) */
+.recordTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.recordActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bosluk-1);
+  margin: calc(var(--bosluk-2) * -1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dangerAction {
+  color: var(--hata);
+}
+
+/* Pencereler: birleştir, sil, içe aktar */
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.warnValue {
+  color: var(--uyari);
+}
+
+.mergeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.keepCard,
+.sourceCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+}
+
+.keepCard {
+  border: 2px solid var(--marka);
+  background: var(--zemin-marka-yumusak);
+}
+
+.sourceCard {
+  border: 2px solid transparent;
+  background: var(--zemin-ikincil);
+}
+
+.sourceHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--kontrol-sm);
+}
+
+.overline {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-ust-etiket-boyut);
+  font-weight: var(--yazi-ust-etiket-agirlik);
+  letter-spacing: var(--yazi-ust-etiket-harf);
+  text-transform: uppercase;
+}
+
+.pickList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pickItem {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  border: 0;
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pickItem:hover {
+  background: var(--zemin-hover);
+}
+
+.pickItem:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.fileCard {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.fileText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+  min-width: 0;
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.importBlocks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.importFoot {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.importActions {
+  display: flex;
+  gap: var(--bosluk-2);
+}
+
 @media (width <= 1199px) {
   .cardLayout {
     grid-template-columns: minmax(0, 1fr);
@@ -242,7 +390,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .tips {
+  .tips,
+  .mergeGrid,
+  .importBlocks {
     grid-template-columns: minmax(0, 1fr);
   }
 }

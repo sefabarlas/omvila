@@ -15,6 +15,8 @@ import { Route as KayitRouteImport } from './routes/kayit'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
 import { Route as PanelAyarlarRouteImport } from './routes/_panel/ayarlar'
+import { Route as PanelBeklemeRouteImport } from './routes/_panel/bekleme'
+import { Route as PanelDegerlendirmelerRouteImport } from './routes/_panel/degerlendirmeler'
 import { Route as PanelHizmetlerRouteImport } from './routes/_panel/hizmetler'
 import { Route as PanelKasaRouteImport } from './routes/_panel/kasa'
 import { Route as PanelPersonelRouteImport } from './routes/_panel/personel'
@@ -23,11 +25,13 @@ import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/i
 import { Route as PanelAyarlarBildirimlerRouteImport } from './routes/_panel/ayarlar/bildirimler'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarKaporaRouteImport } from './routes/_panel/ayarlar/kapora'
+import { Route as PanelAyarlarKvkkRouteImport } from './routes/_panel/ayarlar/kvkk'
 import { Route as PanelAyarlarRandevuKurallariRouteImport } from './routes/_panel/ayarlar/randevu-kurallari'
 import { Route as PanelAyarlarRezervasyonRouteImport } from './routes/_panel/ayarlar/rezervasyon'
 import { Route as PanelAyarlarSubeRouteImport } from './routes/_panel/ayarlar/sube'
 import { Route as PanelMusterilerIndexRouteImport } from './routes/_panel/musteriler/index'
 import { Route as PanelMusterilerIdRouteImport } from './routes/_panel/musteriler/$id'
+import { Route as PanelTakvimKapidaSiraRouteImport } from './routes/_panel/takvim_.kapida-sira'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
@@ -56,6 +60,16 @@ const PanelSplatRoute = PanelSplatRouteImport.update({
 const PanelAyarlarRoute = PanelAyarlarRouteImport.update({
   id: '/ayarlar',
   path: '/ayarlar',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelBeklemeRoute = PanelBeklemeRouteImport.update({
+  id: '/bekleme',
+  path: '/bekleme',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelDegerlendirmelerRoute = PanelDegerlendirmelerRouteImport.update({
+  id: '/degerlendirmeler',
+  path: '/degerlendirmeler',
   getParentRoute: () => PanelRoute,
 } as any)
 const PanelHizmetlerRoute = PanelHizmetlerRouteImport.update({
@@ -98,6 +112,11 @@ const PanelAyarlarKaporaRoute = PanelAyarlarKaporaRouteImport.update({
   path: '/kapora',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelAyarlarKvkkRoute = PanelAyarlarKvkkRouteImport.update({
+  id: '/kvkk',
+  path: '/kvkk',
+  getParentRoute: () => PanelAyarlarRoute,
+} as any)
 const PanelAyarlarRandevuKurallariRoute =
   PanelAyarlarRandevuKurallariRouteImport.update({
     id: '/randevu-kurallari',
@@ -124,6 +143,11 @@ const PanelMusterilerIdRoute = PanelMusterilerIdRouteImport.update({
   path: '/musteriler/$id',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelTakvimKapidaSiraRoute = PanelTakvimKapidaSiraRouteImport.update({
+  id: '/takvim_/kapida-sira',
+  path: '/takvim/kapida-sira',
+  getParentRoute: () => PanelRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
@@ -131,6 +155,8 @@ export interface FileRoutesByFullPath {
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
   '/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/bekleme': typeof PanelBeklemeRoute
+  '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
   '/kasa': typeof PanelKasaRoute
   '/personel': typeof PanelPersonelRoute
@@ -138,10 +164,12 @@ export interface FileRoutesByFullPath {
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/musteriler/$id': typeof PanelMusterilerIdRoute
+  '/takvim/kapida-sira': typeof PanelTakvimKapidaSiraRoute
   '/ayarlar/': typeof PanelAyarlarIndexRoute
   '/musteriler/': typeof PanelMusterilerIndexRoute
 }
@@ -149,6 +177,8 @@ export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/kayit': typeof KayitRoute
   '/$': typeof PanelSplatRoute
+  '/bekleme': typeof PanelBeklemeRoute
+  '/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/hizmetler': typeof PanelHizmetlerRoute
   '/kasa': typeof PanelKasaRoute
   '/personel': typeof PanelPersonelRoute
@@ -157,10 +187,12 @@ export interface FileRoutesByTo {
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/musteriler/$id': typeof PanelMusterilerIdRoute
+  '/takvim/kapida-sira': typeof PanelTakvimKapidaSiraRoute
   '/ayarlar': typeof PanelAyarlarIndexRoute
   '/musteriler': typeof PanelMusterilerIndexRoute
 }
@@ -171,6 +203,8 @@ export interface FileRoutesById {
   '/kayit': typeof KayitRoute
   '/_panel/$': typeof PanelSplatRoute
   '/_panel/ayarlar': typeof PanelAyarlarRouteWithChildren
+  '/_panel/bekleme': typeof PanelBeklemeRoute
+  '/_panel/degerlendirmeler': typeof PanelDegerlendirmelerRoute
   '/_panel/hizmetler': typeof PanelHizmetlerRoute
   '/_panel/kasa': typeof PanelKasaRoute
   '/_panel/personel': typeof PanelPersonelRoute
@@ -179,10 +213,12 @@ export interface FileRoutesById {
   '/_panel/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
+  '/_panel/ayarlar/kvkk': typeof PanelAyarlarKvkkRoute
   '/_panel/ayarlar/randevu-kurallari': typeof PanelAyarlarRandevuKurallariRoute
   '/_panel/ayarlar/rezervasyon': typeof PanelAyarlarRezervasyonRoute
   '/_panel/ayarlar/sube': typeof PanelAyarlarSubeRoute
   '/_panel/musteriler/$id': typeof PanelMusterilerIdRoute
+  '/_panel/takvim_/kapida-sira': typeof PanelTakvimKapidaSiraRoute
   '/_panel/ayarlar/': typeof PanelAyarlarIndexRoute
   '/_panel/musteriler/': typeof PanelMusterilerIndexRoute
 }
@@ -194,6 +230,8 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/$'
     | '/ayarlar'
+    | '/bekleme'
+    | '/degerlendirmeler'
     | '/hizmetler'
     | '/kasa'
     | '/personel'
@@ -201,10 +239,12 @@ export interface FileRouteTypes {
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
+    | '/ayarlar/kvkk'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
     | '/musteriler/$id'
+    | '/takvim/kapida-sira'
     | '/ayarlar/'
     | '/musteriler/'
   fileRoutesByTo: FileRoutesByTo
@@ -212,6 +252,8 @@ export interface FileRouteTypes {
     | '/giris'
     | '/kayit'
     | '/$'
+    | '/bekleme'
+    | '/degerlendirmeler'
     | '/hizmetler'
     | '/kasa'
     | '/personel'
@@ -220,10 +262,12 @@ export interface FileRouteTypes {
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
+    | '/ayarlar/kvkk'
     | '/ayarlar/randevu-kurallari'
     | '/ayarlar/rezervasyon'
     | '/ayarlar/sube'
     | '/musteriler/$id'
+    | '/takvim/kapida-sira'
     | '/ayarlar'
     | '/musteriler'
   id:
@@ -233,6 +277,8 @@ export interface FileRouteTypes {
     | '/kayit'
     | '/_panel/$'
     | '/_panel/ayarlar'
+    | '/_panel/bekleme'
+    | '/_panel/degerlendirmeler'
     | '/_panel/hizmetler'
     | '/_panel/kasa'
     | '/_panel/personel'
@@ -241,10 +287,12 @@ export interface FileRouteTypes {
     | '/_panel/ayarlar/bildirimler'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/kapora'
+    | '/_panel/ayarlar/kvkk'
     | '/_panel/ayarlar/randevu-kurallari'
     | '/_panel/ayarlar/rezervasyon'
     | '/_panel/ayarlar/sube'
     | '/_panel/musteriler/$id'
+    | '/_panel/takvim_/kapida-sira'
     | '/_panel/ayarlar/'
     | '/_panel/musteriler/'
   fileRoutesById: FileRoutesById
@@ -297,6 +345,20 @@ declare module '@tanstack/react-router' {
       path: '/ayarlar'
       fullPath: '/ayarlar'
       preLoaderRoute: typeof PanelAyarlarRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/bekleme': {
+      id: '/_panel/bekleme'
+      path: '/bekleme'
+      fullPath: '/bekleme'
+      preLoaderRoute: typeof PanelBeklemeRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/degerlendirmeler': {
+      id: '/_panel/degerlendirmeler'
+      path: '/degerlendirmeler'
+      fullPath: '/degerlendirmeler'
+      preLoaderRoute: typeof PanelDegerlendirmelerRouteImport
       parentRoute: typeof PanelRoute
     }
     '/_panel/hizmetler': {
@@ -355,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarKaporaRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/ayarlar/kvkk': {
+      id: '/_panel/ayarlar/kvkk'
+      path: '/kvkk'
+      fullPath: '/ayarlar/kvkk'
+      preLoaderRoute: typeof PanelAyarlarKvkkRouteImport
+      parentRoute: typeof PanelAyarlarRoute
+    }
     '/_panel/ayarlar/randevu-kurallari': {
       id: '/_panel/ayarlar/randevu-kurallari'
       path: '/randevu-kurallari'
@@ -390,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelMusterilerIdRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/takvim_/kapida-sira': {
+      id: '/_panel/takvim_/kapida-sira'
+      path: '/takvim/kapida-sira'
+      fullPath: '/takvim/kapida-sira'
+      preLoaderRoute: typeof PanelTakvimKapidaSiraRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
@@ -397,6 +473,7 @@ interface PanelAyarlarRouteChildren {
   PanelAyarlarBildirimlerRoute: typeof PanelAyarlarBildirimlerRoute
   PanelAyarlarIsletmeRoute: typeof PanelAyarlarIsletmeRoute
   PanelAyarlarKaporaRoute: typeof PanelAyarlarKaporaRoute
+  PanelAyarlarKvkkRoute: typeof PanelAyarlarKvkkRoute
   PanelAyarlarRandevuKurallariRoute: typeof PanelAyarlarRandevuKurallariRoute
   PanelAyarlarRezervasyonRoute: typeof PanelAyarlarRezervasyonRoute
   PanelAyarlarSubeRoute: typeof PanelAyarlarSubeRoute
@@ -407,6 +484,7 @@ const PanelAyarlarRouteChildren: PanelAyarlarRouteChildren = {
   PanelAyarlarBildirimlerRoute: PanelAyarlarBildirimlerRoute,
   PanelAyarlarIsletmeRoute: PanelAyarlarIsletmeRoute,
   PanelAyarlarKaporaRoute: PanelAyarlarKaporaRoute,
+  PanelAyarlarKvkkRoute: PanelAyarlarKvkkRoute,
   PanelAyarlarRandevuKurallariRoute: PanelAyarlarRandevuKurallariRoute,
   PanelAyarlarRezervasyonRoute: PanelAyarlarRezervasyonRoute,
   PanelAyarlarSubeRoute: PanelAyarlarSubeRoute,
@@ -420,24 +498,30 @@ const PanelAyarlarRouteWithChildren = PanelAyarlarRoute._addFileChildren(
 interface PanelRouteChildren {
   PanelSplatRoute: typeof PanelSplatRoute
   PanelAyarlarRoute: typeof PanelAyarlarRouteWithChildren
+  PanelBeklemeRoute: typeof PanelBeklemeRoute
+  PanelDegerlendirmelerRoute: typeof PanelDegerlendirmelerRoute
   PanelHizmetlerRoute: typeof PanelHizmetlerRoute
   PanelKasaRoute: typeof PanelKasaRoute
   PanelPersonelRoute: typeof PanelPersonelRoute
   PanelTakvimRoute: typeof PanelTakvimRoute
   PanelIndexRoute: typeof PanelIndexRoute
   PanelMusterilerIdRoute: typeof PanelMusterilerIdRoute
+  PanelTakvimKapidaSiraRoute: typeof PanelTakvimKapidaSiraRoute
   PanelMusterilerIndexRoute: typeof PanelMusterilerIndexRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
   PanelSplatRoute: PanelSplatRoute,
   PanelAyarlarRoute: PanelAyarlarRouteWithChildren,
+  PanelBeklemeRoute: PanelBeklemeRoute,
+  PanelDegerlendirmelerRoute: PanelDegerlendirmelerRoute,
   PanelHizmetlerRoute: PanelHizmetlerRoute,
   PanelKasaRoute: PanelKasaRoute,
   PanelPersonelRoute: PanelPersonelRoute,
   PanelTakvimRoute: PanelTakvimRoute,
   PanelIndexRoute: PanelIndexRoute,
   PanelMusterilerIdRoute: PanelMusterilerIdRoute,
+  PanelTakvimKapidaSiraRoute: PanelTakvimKapidaSiraRoute,
   PanelMusterilerIndexRoute: PanelMusterilerIndexRoute,
 }
 

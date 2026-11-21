@@ -45,7 +45,7 @@ test('personel girişi: menüde yalnız kişisel bölümler, yönetim sayfaları
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Merhaba Deniz' })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Ana menü' });
-  await expect(nav.getByRole('link')).toHaveText(['Takvimim', 'Müşteriler']);
+  await expect(nav.getByRole('link')).toHaveText(['Takvimim', 'Müşteriler', 'Kapıda sıra']);
   await expect(nav.getByText('Yönetim')).toHaveCount(0);
   await page.screenshot({ path: 'e2e-results/ekranlar/PersonelRolu.png', fullPage: true });
 

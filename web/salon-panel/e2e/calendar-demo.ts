@@ -204,6 +204,8 @@ export const ownerPermissions = [
   'customer.phone.view',
   'customer.edit',
   'report.view',
+  'waitlist.manage',
+  'walkin.manage',
 ];
 
 export const ownerMembership = { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId };

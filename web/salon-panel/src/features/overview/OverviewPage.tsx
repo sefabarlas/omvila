@@ -12,6 +12,8 @@ import { approvalQueueQuery, splitQueue } from '@/features/approvals/api';
 import { firstExpiresLabel, remainingMinutes } from '@/features/approvals/remaining';
 import { calendarQuery } from '@/features/calendar/api';
 import { AppointmentDrawer } from '@/features/calendar/AppointmentDrawer';
+import { WalkInBlock } from '@/features/calendar/CalendarSummaryBlocks';
+import { walkInsQuery } from '@/features/walk-ins/api';
 import { useDayRevenue } from '@/features/cash/api';
 import { bookingPageQuery } from '@/shared/booking-link';
 import { Page } from '@/shared/Page';
@@ -28,7 +30,7 @@ import { ShareLinkCard } from './ShareLinkCard';
  * Genel bakış: marka kurulumdayken adımlar (KayitKurulum). Sonra bugün randevu veya onay bekleyen talep varsa
  * GenelBakis (bento, "Gün akışı", "Dikkat isteyenler"); hiçbiri yoksa ilk hafta görünümü (GenelBakisBos, bağlantıyı
  * paylaş). Bugün bloğu kasayı görebilen kullanıcıda "Bugünkü ciro"dur (manageGetCashDay; T-97); hedef yüzdesi
- * sözleşmede yok. Kapıda sıra ayrı PR'da, doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
+ * sözleşmede yok. Kapıda sıra manageListWalkIns'ten (T-98), doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
  */
 export function OverviewPage() {
   const api = useApi();
@@ -51,6 +53,11 @@ export function OverviewPage() {
   const dayQuery = useQuery({
     ...calendarQuery(api, { branchId: activeBranch, from: today, to: today }),
     enabled: !onboardingView && can('calendar.view') && activeBranch !== '',
+  });
+  const managesWalkIns = can('walkin.manage');
+  const walkIns = useQuery({
+    ...walkInsQuery(api, activeBranch),
+    enabled: !onboardingView && managesWalkIns && activeBranch !== '',
   });
   const revenue = useDayRevenue(activeBranch, today, !onboardingView);
   const queueQuery = useQuery({
@@ -148,6 +155,14 @@ export function OverviewPage() {
               label="Onay bekliyor"
               value={queue ? String(pendingCount) : '—'}
               sub={firstExpiry > 0 ? firstExpiresLabel(firstExpiry) : 'Bekleyen talep yok'}
+            />
+          ) : null}
+          {managesWalkIns ? (
+            <WalkInBlock
+              summary={{
+                waitingCount: walkIns.data?.waitingCount ?? null,
+                estimatedWaitMinutesForNew: walkIns.data?.estimatedWaitMinutesForNew ?? null,
+              }}
             />
           ) : null}
           <BentoBlock label="Bu hafta doluluk" value="—" sub="henüz veri yok" />

@@ -4,6 +4,7 @@ import { formatDate, formatTime } from '@omvila/ui-web/format';
 import { Button, Modal, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
 import { toBranchDate } from '@omvila/ui-web/time';
 import { useState } from 'react';
+import { useSession } from '@/app/session';
 import { useCancelAppointment } from './api';
 import type { AppointmentDetail, CancelRequest } from './api';
 import styles from './Calendar.module.css';
@@ -40,6 +41,11 @@ export function CancelAppointmentModal({
   const [reason, setReason] = useState<CancelRequest['reason']>('CustomerRequested');
   const [note, setNote] = useState('');
   const [notify, setNotify] = useState(true);
+  // Boşalan saat bekleme listesine teklif edilsin (varsayılan açık, A7). Anahtar listeyi yönetene görünür; diğerlerinde
+  // alan gönderilmez, sunucu varsayılanı (true) geçerlidir (T-98).
+  const { can } = useSession();
+  const managesWaitlist = can('waitlist.manage');
+  const [offerToWaitlist, setOfferToWaitlist] = useState(true);
   const tz = detail.timeZone;
   const date = toBranchDate(new Date(detail.startUtc), tz);
   const time = formatTime(detail.startUtc, tz);
@@ -59,6 +65,7 @@ export function CancelAppointmentModal({
       notifyCustomer: notify,
       ...(note.trim() !== '' ? { note: note.trim() } : {}),
       ...(detail.isRecurring ? { scope } : {}),
+      ...(managesWaitlist ? { offerToWaitlist } : {}),
     };
     cancel.mutate(
       { detail, input: body },
@@ -159,6 +166,16 @@ export function CancelAppointmentModal({
             setNotify(event.target.checked);
           }}
         />
+        {managesWaitlist ? (
+          <Switch
+            label="Boşalan saat bekleme listesine teklif edilsin"
+            description="Uygun bekleyen varsa sıradaki kişiye teklif gider; saat bir süre onun için tutulur."
+            checked={offerToWaitlist}
+            onChange={(event) => {
+              setOfferToWaitlist(event.target.checked);
+            }}
+          />
+        ) : null}
       </div>
     </Modal>
   );

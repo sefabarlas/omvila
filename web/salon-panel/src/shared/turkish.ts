@@ -96,3 +96,22 @@ export function dativeCount(n: number): string {
   const vowel = backVowels.has(lastVowel(word) ?? 'e') ? 'a' : 'e';
   return `${formatCount(n)}'${endsWithVowel(word) ? 'y' : ''}${vowel}`;
 }
+
+function highVowel(vowel: string): string {
+  if ('aı'.includes(vowel)) {
+    return 'ı';
+  }
+
+  if ('eiâî'.includes(vowel)) {
+    return 'i';
+  }
+
+  return 'ouû'.includes(vowel) ? 'u' : 'ü';
+}
+
+/** Sayının belirtme hâli, okunuşa göre: 38 → "38'i", 40 → "40'ı", 6 → "6'yı", 100 → "100'ü". */
+export function accusativeCount(n: number): string {
+  const word = spokenLastWord(Math.abs(Math.trunc(n)));
+  const vowel = highVowel(lastVowel(word) ?? 'e');
+  return `${formatCount(n)}'${endsWithVowel(word) ? 'y' : ''}${vowel}`;
+}

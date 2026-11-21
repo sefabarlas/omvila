@@ -37,6 +37,23 @@ export const queryKeys = {
     ['customers', brandCustomerId, 'packages'] as const,
   /** Kasa (şube + yerel gün); önek ['cash'] bütün kasa sorgularını geçersizler. */
   cashDay: (branchId: string, date: string) => ['cash', branchId, date] as const,
+  /** Müşteri kartı Paketler sekmesi (imleçli); "Paketten" sorgusundan ayrı anahtar, aynı önek. */
+  customerPackageList: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'packages', 'list'] as const,
+  customerPayments: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'payments'] as const,
+  customerReviews: (brandCustomerId: string) => ['customers', brandCustomerId, 'reviews'] as const,
+  customerDeletionPreview: (brandCustomerId: string) =>
+    ['customers', brandCustomerId, 'deletion'] as const,
+  /** KVKK silme talepleri (Ayarlar → KVKK ve veri). */
+  deletionRequests: () => ['deletion-requests'] as const,
+  /** Değerlendirmeler; önek ['reviews'] bütün filtreleri geçersizler. */
+  reviews: (filter: string, branchId: string | undefined) =>
+    ['reviews', filter, branchId ?? 'all'] as const,
   /** Bildirim paneli (zil): ilk sayfa ve okunmamış sayısı. */
   notifications: () => ['notifications'] as const,
+  /** Bekleme listesi (manageListWaitlist); önek ['waitlist'] bütün şubeleri geçersizler. */
+  waitlist: (branchId: string) => ['waitlist', branchId] as const,
+  /** Kapıda sıra (manageListWalkIns); önek ['walk-ins'] takvim ve Genel bakış sayısını da tazeler. */
+  walkIns: (branchId: string) => ['walk-ins', branchId] as const,
 };

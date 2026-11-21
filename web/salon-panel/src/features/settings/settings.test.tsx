@@ -28,6 +28,7 @@ describe('İşletme bilgileri', () => {
       'Rezervasyon sayfası',
       'Bildirimler ve SMS',
       'Kapora ve IBAN',
+      'KVKK ve veri',
     ]);
     expect(
       within(nav).getByRole('link', { name: 'İşletme bilgileri' }).getAttribute('aria-current'),
