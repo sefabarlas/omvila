@@ -105,6 +105,29 @@ internal sealed class AppointmentSms(
         }
     }
 
+    /// <summary>
+    /// Talep iptal edildi (A4 red, A5 süre dolumu): bekleyen hatırlatmalar düşer, müşteriye "talep iptal edildi" metni ve
+    /// rezervasyon sayfası bağlantısı yazılır. Tarih ve saat iptal edilen talebinkidir.
+    /// </summary>
+    public async Task NotifyRequestCancelledAsync(Guid brandId, Guid appointmentId, Instant startUtc, string eventCode, CancellationToken ct)
+    {
+        var context = await LoadAsync(brandId, appointmentId, ct);
+        await CancelRemindersAsync(appointmentId, ct);
+        if (context is null || !CanText(context))
+        {
+            return;
+        }
+
+        var values = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["salon"] = context.Branch.BrandName,
+            ["tarih"] = Date(context, startUtc),
+            ["saat"] = Time(context, startUtc),
+            ["rezervasyon bağlantısı"] = BookingLink(context),
+        };
+        await EnqueueAsync(context, eventCode, values, ct);
+    }
+
     /// <summary>Randevunun bekleyen hatırlatmalarını düşürür (bildirimler.md § İptal). Kiracı bağlamı kurulmuş olmalı.</summary>
     public Task<int> CancelRemindersAsync(Guid appointmentId, CancellationToken ct) =>
         outbox.CancelPendingAsync(NotificationEvents.AppointmentReminder, NotificationReference.ForAppointment(appointmentId), ct);
