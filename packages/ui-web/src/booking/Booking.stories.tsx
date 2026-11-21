@@ -367,6 +367,11 @@ export const Havale = () => (
       <h1 style={{ ...sectionTitle, fontSize: 'var(--yazi-baslik-1-boyut)' }}>
         Kaporayı havale ile gönderin
       </h1>
+      <p style={{ margin: 0, color: 'var(--metin-ikincil)' }}>
+        Kendi bankanızdan aşağıdaki hesaba gönderin. Açıklamaya kodu yazmayı unutmayın; salon
+        havalenizi bu kodla eşleştirir.
+      </p>
+      {/* Kapora kartı, geri sayım ve "Salon onayı bekleniyor" uygulamada: web/rezervasyon/src/deposit. */}
       <CopyList>
         <CopyField label="Alıcı" value="Elif Kaya" onCopy={() => undefined} />
         <CopyField
