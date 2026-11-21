@@ -13,7 +13,7 @@ namespace Omvila.Modules.Identity.Features.ManageAuth;
 
 /// <summary>
 /// OTP isteği için IP başına sınır (ADR-0007; telefon başına sınır OtpService'te). Aşımda 429 rate_limited +
-/// Retry-After. Ters vekil arkasında istemci IP'si ForwardedHeaders ile gelmelidir (barındırma kararı T-07).
+/// Retry-After. Ters vekil arkasında istemci IP'sini yalnız güvenilen vekilden ForwardedHeaders verir (T-76).
 /// </summary>
 internal static class OtpRateLimiting
 {

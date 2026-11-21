@@ -7,6 +7,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Http.Cors;
 using Omvila.Infrastructure.Idempotency;
 using Omvila.Infrastructure.Persistence;
+using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Catalog;
 using Omvila.Modules.Customers;
 using Omvila.Modules.Identity;
@@ -74,6 +75,8 @@ if (role == HostRole.Seed)
     return;
 }
 
+// Ters vekil başlıkları en başta: hız sınırı ve günlük gerçek istemci IP'sini ve şemayı görür (yalnız güvenilen vekilden).
+app.UseTrustedForwardedHeaders();
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 // CORS kimlik doğrulama, hız sınırı ve idempotency'den önce: ön uçuş (OPTIONS) jetonsuz yanıtlanır.
@@ -97,6 +100,8 @@ if (role.HasFlag(HostRole.Api))
     app.MapCustomersEndpoints();
     app.MapSchedulingEndpoints();
     app.MapNotificationsEndpoints();
+    // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).
+    app.MapDevSmsLogPage();
 }
 
 HostLog.Started(app.Logger, role);
