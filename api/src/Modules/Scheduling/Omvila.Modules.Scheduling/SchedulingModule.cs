@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
+using Omvila.Modules.Scheduling.Features.AppointmentLink;
 using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Calendar;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
@@ -14,7 +15,7 @@ namespace Omvila.Modules.Scheduling;
 
 /// <summary>
 /// Scheduling modülü girişi (D2: randevu alanı ve kalıcılığı, müsaitlik motoru ve anlık görüntü yükleyicisi, çakışma
-/// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; IAppointmentQueries).
+/// engeli ve yazma yolu: AppointmentWriter; panel takvimi, boş saat arama ve randevu uçları; rezervasyon sayfası ve SMS bağlantısı (/r/) uçları; IAppointmentQueries).
 /// Yükleyici Tenancy (IBranchScheduleQueries) ve Catalog (IServiceOffers), randevu uçları Customers (ICustomerDirectory)
 /// ve Platform (ISubscriptionQueries) sözleşmelerine dayanır.
 /// </summary>
@@ -30,6 +31,8 @@ public static class SchedulingModule
         services.AddScoped<ManageAppointmentCreator>();
         services.AddScoped<PublicAppointmentCreator>();
         services.AddScoped<ManageAppointmentChanges>();
+        services.AddScoped<AppointmentLinkResolver>();
+        services.AddScoped<PublicAppointmentLinkChanges>();
         services.AddScoped<CalendarReader>();
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
         return services;
@@ -42,6 +45,7 @@ public static class SchedulingModule
         ManageAppointmentEndpoints.Map(app);
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);
+        PublicAppointmentLinkEndpoints.Map(app);
         return app;
     }
 }
