@@ -66,7 +66,7 @@ internal sealed class AppointmentSms(
         outbox.EnqueueSmsAsync(
             new SmsNotification(
                 eventCode,
-                context.Customer!.PhoneE164,
+                context.Customer!.PhoneE164!,
                 values,
                 context.BrandId,
                 NotificationReference.ForAppointment(context.Appointment.AppointmentId),

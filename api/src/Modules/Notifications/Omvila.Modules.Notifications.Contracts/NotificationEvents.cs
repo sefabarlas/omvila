@@ -48,6 +48,12 @@ public static class NotificationEvents
     /// </summary>
     public const string DepositNotReceived = "deposit.not_received";
 
+    /// <summary>
+    /// Kapıda sırada önünde 1 kişi kaldı (telefon verildiyse, bilet başına bir kez): "{salon}: Sıranız yaklaştı, önünüzde 1 kişi
+    /// var. Salona yakın olun." Yalnız SMS; "Sırası geldi" mesajı yoktur (W5).
+    /// </summary>
+    public const string WalkInAlmostTurn = "walkin.almost_turn";
+
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
 

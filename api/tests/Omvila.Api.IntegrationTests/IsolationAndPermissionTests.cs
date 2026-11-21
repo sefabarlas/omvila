@@ -170,7 +170,8 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
         return (result.Status, result.Body.ValueKind == System.Text.Json.JsonValueKind.Undefined ? string.Empty : result.Body.GetRawText());
     }
 
-    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu.
+    // Her markaya ait rota parametresi için bir kimlik: şube, kategori, hizmet, personel, özel gün, izin, müşteri kartı, randevu,
+    // kapıda sıra bileti.
     // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
@@ -215,6 +216,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
             RETURNING id::text
             """);
+        var ticketId = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" });
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["branchId"] = branchId,
@@ -226,6 +228,7 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["staffId"] = staffId,
             ["overrideId"] = overrideId,
             ["timeOffId"] = timeOff.Body.GetProperty("timeOff").GetProperty("id").GetString()!,
+            ["ticketId"] = ticketId,
         };
     }
 

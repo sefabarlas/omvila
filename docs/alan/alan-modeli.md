@@ -491,7 +491,7 @@ SMS'teki `omvila.com/r/{code}` bağlantısı. Bağlantıyı açan kişi o randev
 Kural: bir saat boşalınca uygun bekleyenler öncelik ve kayıt sırasına göre sıralanır, yalnız ilk kişiye teklif gider. Teklif süresince saat başka online müşteriye gösterilmez (geçici tutma). Teklif reddedilir veya süresi dolarsa sıradakine geçer. Kişi listede kalır ("Listede kalmaya devam ediyorsunuz").
 
 ### WalkInTicket (Kapıda sıra)
-`BranchId`, `QueueDate` (yerel), `QueueNumber` (şube + gün bazında 1'den), `CustomerId?`, `CustomerName?`, `PhoneE164?` (isteğe bağlı; sıra gelince SMS için), `ServiceId?`, `PreferredStaffId?`, `Status` (`Waiting`, `Called`, `Served`, `Left`), `JoinedUtc`, `CalledUtc?`, `AppointmentId?`.
+`BranchId`, `QueueDate` (yerel), `QueueNumber` (şube + gün bazında 1'den), `BrandCustomerId?` (var olan müşteri seçildiyse veya Başlat'ta), `CustomerName`, `PhoneE164?` (isteğe bağlı; sıra yaklaşınca SMS için), `ServiceId?`, `ServiceName?` ve `ServiceMinutes?` (katılımda kopya; tahmini bekleme), `PreferredStaffId?`, `Status` (`Waiting`, `Called`, `Served`, `Left`), `JoinedUtc`, `CalledUtc?`, `ClosedUtc?`, `AppointmentId?`, `AlmostTurnNotifiedUtc?` (`walkin.almost_turn` bir kez). Ayrıntı: `docs/acik-sorular.md` T-91.
 "Başlat / Randevuya çevir" → `Channel = WalkIn` ve `Status = CheckedIn` olan bir randevu oluşturur. Bilet `Served` olur. Müşteri kaydı bilet oluşurken değil, "Başlat"ta açılır: telefon varsa numarayla bulunur veya açılır; telefonsuz bilette adla, telefonsuz bir müşteri kaydı açılır (`Customer.PhoneE164` yalnız bu durumda boş olabilir; benzersizlik dolu değerler içindir). Ayrıntı: `docs/acik-sorular.md` T-86.
 `BranchQueueCounter` (`BranchId`, `Date`, `LastNumber`) numarayı atomik olarak verir (`UPDATE … RETURNING`).
 
