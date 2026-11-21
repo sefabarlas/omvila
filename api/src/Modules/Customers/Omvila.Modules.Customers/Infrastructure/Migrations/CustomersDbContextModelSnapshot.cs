@@ -30,6 +30,10 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Instant?>("AnonymizedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("anonymized_utc");
+
                     b.Property<bool>("AppointmentSmsEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("appointment_sms_enabled");
@@ -75,6 +79,14 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                     b.Property<LocalDate?>("LastVisitOn")
                         .HasColumnType("date")
                         .HasColumnName("last_visit_on");
+
+                    b.Property<Guid?>("MergedIntoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("merged_into_id");
+
+                    b.Property<Instant?>("MergedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("merged_utc");
 
                     b.Property<int>("NoShowCount")
                         .HasColumnType("integer")
@@ -246,6 +258,164 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Customers.Domain.CustomerImport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("CommittedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_utc");
+
+                    b.Property<int>("Created")
+                        .HasColumnType("integer")
+                        .HasColumnName("created");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("ErrorsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("errors");
+
+                    b.Property<Instant>("ExpiresUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_utc");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("file_name");
+
+                    b.Property<int>("InvalidRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("invalid_rows");
+
+                    b.Property<string>("MappedColumns")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("mapped_columns");
+
+                    b.Property<int>("Merged")
+                        .HasColumnType("integer")
+                        .HasColumnName("merged");
+
+                    b.Property<string>("RowsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rows");
+
+                    b.Property<bool>("SendInfoSms")
+                        .HasColumnType("boolean")
+                        .HasColumnName("send_info_sms");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("ToCreate")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_create");
+
+                    b.Property<int>("ToMerge")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_merge");
+
+                    b.Property<int>("TotalRows")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_rows");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_imports");
+
+                    b.HasIndex("BrandId", "CreatedUtc")
+                        .HasDatabaseName("ix_customer_imports_brand_id_created_utc");
+
+                    b.ToTable("customer_imports", "customers", t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_imports_status", "status IN ('Previewed', 'Committed', 'Failed')");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Customers.Domain.DataDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("BrandCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_customer_id");
+
+                    b.Property<Guid?>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("CompletedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("CustomerNameMasked")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("customer_name_masked");
+
+                    b.Property<LocalDate>("DueOn")
+                        .HasColumnType("date")
+                        .HasColumnName("due_on");
+
+                    b.Property<Instant>("RequestedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_utc");
+
+                    b.Property<string>("RequestedVia")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("requested_via");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_data_deletion_requests");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_data_deletion_requests_customer_id");
+
+                    b.HasIndex("BrandId", "RequestedUtc")
+                        .HasDatabaseName("ix_data_deletion_requests_brand_id_requested_utc");
+
+                    b.ToTable("data_deletion_requests", "customers", t =>
+                        {
+                            t.HasCheckConstraint("ck_data_deletion_requests_requested_via", "requested_via IN ('CustomerApp', 'Panel')");
+
+                            t.HasCheckConstraint("ck_data_deletion_requests_status", "status IN ('Pending', 'Completed', 'Rejected')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Customers.Domain.BrandCustomer", b =>
                 {
                     b.HasOne("Omvila.Modules.Customers.Domain.Customer", null)
@@ -264,6 +434,16 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_consent_records_customers_customer_id");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Customers.Domain.DataDeletionRequest", b =>
+                {
+                    b.HasOne("Omvila.Modules.Customers.Domain.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_data_deletion_requests_customers_customer_id");
                 });
 #pragma warning restore 612, 618
         }

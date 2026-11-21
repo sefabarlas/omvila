@@ -491,6 +491,22 @@ internal sealed class Appointment
         return Result.Success();
     }
 
+    /// <summary>
+    /// KVKK silmesi (alan-modeli.md § DataDeletionRequest: "Yaklaşan randevular iptal edilir, iptal nedeni AccountDeleted"):
+    /// başlamamış Draft, PendingApproval ve Confirmed randevu sistemce iptal edilir; saat boşalır. Müşteriye bildirim gitmez.
+    /// </summary>
+    // Kural: guvenlik-kvkk.md § Haklar ve işleyiş (Silme), alan-modeli.md § DataDeletionRequest
+    public Result CancelForAccountDeletion(Instant now, Guid? userId)
+    {
+        if (Status is not (AppointmentStatus.Draft or AppointmentStatus.PendingApproval or AppointmentStatus.Confirmed) || StartUtc <= now)
+        {
+            return InvalidTransition();
+        }
+
+        Cancel(Domain.CancelledBy.System, Domain.CancellationReason.AccountDeleted, note: null, userId, now);
+        return Result.Success();
+    }
+
     // Kural: docs/alan/durum-makinesi.md#geçiş-tablosu (A8)
     public Result MarkNoShow(Instant now, Duration noShowAfter)
     {

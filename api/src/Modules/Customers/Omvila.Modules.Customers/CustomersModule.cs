@@ -3,14 +3,19 @@ using Microsoft.Extensions.DependencyInjection;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Customers.Features;
 using Omvila.Modules.Customers.Features.Customers;
+using Omvila.Modules.Customers.Features.Deletion;
+using Omvila.Modules.Customers.Features.Export;
+using Omvila.Modules.Customers.Features.Imports;
+using Omvila.Modules.Customers.Features.Merge;
 using Omvila.Modules.Customers.Infrastructure;
 using Omvila.Modules.Customers.Infrastructure.Configurations;
 using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Customers;
 
-/// <summary>Customers modülü girişi (D2: müşteri listesi, arama, ekleme, kart; ICustomerDirectory).</summary>
+/// <summary>Customers modülü girişi (D2: müşteri listesi, arama, ekleme, kart; ICustomerDirectory. D5: birleştirme, içe/dışa aktarma, KVKK silme).</summary>
 public static class CustomersModule
 {
     public static IServiceCollection AddCustomersModule(this IServiceCollection services)
@@ -20,6 +25,15 @@ public static class CustomersModule
         services.AddScoped<CustomerReader>();
         services.AddScoped<CustomerWriter>();
         services.AddScoped<ICustomerDirectory, CustomerDirectory>();
+        // D5 (T-92): birleştirme, içe/dışa aktarma, KVKK silme.
+        services.AddOptions<CustomerImportOptions>()
+            .BindConfiguration(CustomerImportOptions.Section)
+            .Validate(o => o.IsValid(), "İçe aktarma ayarları geçersiz (appsettings \"Customers:Import\").");
+        services.AddScoped<CustomerMerger>();
+        services.AddScoped<CustomerImporter>();
+        services.AddScoped<CustomerExporter>();
+        services.AddScoped<CustomerEraser>();
+        services.AddScoped<DeletionRequestReader>();
         // Aynı numarayla eşzamanlı iki ekleme: ikincisi kart benzersizliğine takılır (meta'sız phone_already_exists).
         services.AddUniqueConstraintError(BrandCustomerConfiguration.BrandCustomerIndex, ErrorCodes.PhoneAlreadyExists);
         // Demo verisi --reset (T-74): markanın kartları ve rızaları; global kişi kalır.
@@ -30,6 +44,7 @@ public static class CustomersModule
     public static IEndpointRouteBuilder MapCustomersEndpoints(this IEndpointRouteBuilder app)
     {
         CustomerEndpoints.Map(app);
+        CustomerRecordsEndpoints.Map(app);
         return app;
     }
 }
