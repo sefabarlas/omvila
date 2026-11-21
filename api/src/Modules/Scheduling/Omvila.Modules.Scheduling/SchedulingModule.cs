@@ -53,12 +53,7 @@ public static class SchedulingModule
         services.AddScoped<AppointmentLinkResolver>();
         services.AddScoped<PublicAppointmentLinkChanges>();
         services.AddScoped<CalendarReader>();
-        services.AddScoped<IAppointmentQueries, AppointmentQueries>();
-        services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
-        // Müşteri birleştirme ve KVKK silmesi (T-92): randevular ve seriler.
-        services.AddScoped<CustomerDataParticipant>();
-        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
-        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
+        AddContractImplementations(services);
         services.AddScoped<AppointmentApprovals>();
         services.AddScoped<ApprovalQueueReader>();
         services.AddScoped<DepositReceipts>();
@@ -90,6 +85,17 @@ public static class SchedulingModule
             sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>(), sp.GetRequiredService<Sales.Contracts.IDepositPayments>()));
         services.AddBrandDataEraser<SchedulingDbContext>();
         return services;
+    }
+
+    // Diğer modüllere açılan sözleşmelerin uygulamaları. Müşteri birleştirme ve KVKK silmesi (T-92): randevular, seriler,
+    // bekleme kayıtları ve kapıda sıra biletleri.
+    private static void AddContractImplementations(IServiceCollection services)
+    {
+        services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
+        services.AddScoped<CustomerDataParticipant>();
+        services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
+        services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
     }
 
     public static IEndpointRouteBuilder MapSchedulingEndpoints(this IEndpointRouteBuilder app)

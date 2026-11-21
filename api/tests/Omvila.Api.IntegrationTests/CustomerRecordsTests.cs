@@ -285,6 +285,7 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
     {
         var (card, appointmentId) = await AyseWithReceivedDepositAsync();
         await _api.ScalarAsync<int>($"UPDATE customers.brand_customers SET notes = 'Boya tonu 7.1', birth_year = 1990 WHERE id = '{card}' RETURNING 1");
+        await AddToWaitlistAsync(card);
         var kaan = await _api.SignupAsync("+905330000001", "Berber Kaan");
         var kaanCard = (await _api.SendAsync(HttpMethod.Post, "/api/v1/manage/customers", new { fullName = "Ayşe", phone = AysePhone }, kaan, Key())).Body.GetProperty("id").GetString();
         (await _api.GetAsync($"/api/v1/manage/customers/{card}/deletion", kaan)).Status.ShouldBe(404, "başka markanın kartı");
@@ -317,12 +318,7 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
         await AssertErasureSideEffectsAsync(card, appointmentId);
 
         // Talepler listesi; ikinci deneme 409; aynı numara yeniden eklenince yeni kart açılır.
-        var list = await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Completed", _token);
-        list.Status.ShouldBe(200);
-        list.Body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("customerDisplayName").GetString()).ShouldBe(["A•••• Y••••"]);
-        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Pending", _token)).Body.GetProperty("items").GetArrayLength().ShouldBe(0);
-        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests", kaan)).Body.GetProperty("items").GetArrayLength().ShouldBe(0, "başka marka görmez");
-        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Done", _token)).Status.ShouldBe(400);
+        await AssertDeletionRequestsAsync(kaan);
         var twice = await DeleteAsync(card, "Silinmiş müşteri");
         twice.Status.ShouldBe(409);
         twice.Body.GetProperty("code").GetString().ShouldBe("invalid_state_transition");
@@ -368,6 +364,11 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'appointment.reminder' AND status = 'Pending'")).ShouldBe(0);
         (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'appointment.cancelled_by_salon'")).ShouldBe(0);
 
+        (await _api.ScalarAsync<string>($"""
+            SELECT w.status || '/' || (c.phone_e164 LIKE '+000%') FROM scheduling.waitlist_entries w JOIN customers.customers c ON c.id = w.customer_id
+            WHERE w.brand_customer_id = '{card}'
+            """)).ShouldBe("Cancelled/true", "bekleme kaydı kapanır, kişi bağı anonim");
+
         // Ödeme kaydı anonim kartta kalır; denetim kaydı Anonymize, kişisel veri yok.
         (await _api.ScalarAsync<string>("SELECT brand_customer_id::text FROM sales.payments")).ShouldBe(card);
         var audit = await _api.ScalarAsync<string>("SELECT action || '/' || entity_type || '/' || entity_id || '/' || changes::text FROM platform.audit_logs WHERE action = 'Anonymize'");
@@ -389,6 +390,27 @@ public sealed class CustomerRecordsTests(PostgresFixture db) : IAsyncLifetime
             new Dictionary<string, string>(Key(), StringComparer.Ordinal) { ["If-Match"] = etag });
         marked.Status.ShouldBe(200, marked.Body.ToString());
         return (risky, id);
+    }
+
+    private async Task AssertDeletionRequestsAsync(string otherBrand)
+    {
+        var list = await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Completed", _token);
+        list.Status.ShouldBe(200);
+        list.Body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("customerDisplayName").GetString()).ShouldBe(["A•••• Y••••"]);
+        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Pending", _token)).Body.GetProperty("items").GetArrayLength().ShouldBe(0);
+        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests", otherBrand)).Body.GetProperty("items").GetArrayLength().ShouldBe(0, "başka marka görmez");
+        (await _api.GetAsync("/api/v1/manage/customer-deletion-requests?status=Done", _token)).Status.ShouldBe(400);
+    }
+
+    private async Task AddToWaitlistAsync(string card)
+    {
+        var waitlist = await PostAsync("/api/v1/manage/waitlist", new
+        {
+            branchId = _merkez,
+            brandCustomerId = card,
+            preferences = new { serviceIds = new[] { _balyaj }, acceptOtherStaff = true, dates = Array.Empty<string>(), timeWindows = Array.Empty<string>() },
+        });
+        waitlist.Status.ShouldBe(201, waitlist.Body.ToString());
     }
 
     private async Task<string> CreateCustomerAsync(string fullName, string phone, string? notes = null)

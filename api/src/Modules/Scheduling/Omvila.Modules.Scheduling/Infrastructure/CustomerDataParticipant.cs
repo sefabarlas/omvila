@@ -7,8 +7,9 @@ using Omvila.Modules.Scheduling.Domain;
 namespace Omvila.Modules.Scheduling.Infrastructure;
 
 /// <summary>
-/// Müşteri birleştirme ve KVKK silmesinde Scheduling'in payı (T-92): randevular ve tekrarlayan seriler. Bekleme listesi
-/// kayıtları bekleme modülüyle birlikte eklenecek.
+/// Müşteri birleştirme ve KVKK silmesinde Scheduling'in payı (T-92): randevular, tekrarlayan seriler, bekleme listesi
+/// kayıtları ve kapıda sıra biletleri. Silmede bekleyen bekleme kaydı "Listeden çık" ile kapanır (teklif varsa reddedilir;
+/// saat otomatik sıradakine verilmez), biletteki ad ve telefon kopyası anonimleşir.
 /// </summary>
 internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox outbox) : ICustomerMergeParticipant, ICustomerErasureParticipant
 {
@@ -24,6 +25,12 @@ internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox ou
         await db.AppointmentSeries
             .Where(a => a.BrandId == merge.BrandId && a.BrandCustomerId == merge.SourceBrandCustomerId)
             .ExecuteUpdateAsync(s => s.SetProperty(a => a.BrandCustomerId, merge.TargetBrandCustomerId).SetProperty(a => a.CustomerId, merge.TargetCustomerId), ct);
+        await db.WaitlistEntries
+            .Where(w => w.BrandId == merge.BrandId && w.BrandCustomerId == merge.SourceBrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(w => w.BrandCustomerId, merge.TargetBrandCustomerId).SetProperty(w => w.CustomerId, merge.TargetCustomerId), ct);
+        await db.WalkInTickets
+            .Where(t => t.BrandId == merge.BrandId && t.BrandCustomerId == merge.SourceBrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.BrandCustomerId, (Guid?)merge.TargetBrandCustomerId), ct);
     }
 
     public async Task<CustomerErasureFootprint> GetFootprintAsync(Guid brandId, Guid brandCustomerId, NodaTime.Instant now, CancellationToken ct)
@@ -56,13 +63,9 @@ internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox ou
             s.End(erasure.Now);
         }
 
+        await CloseWaitlistAsync(erasure, ct);
         await db.SaveChangesAsync(ct);
-        await db.Appointments
-            .Where(a => a.BrandId == erasure.BrandId && a.BrandCustomerId == erasure.BrandCustomerId)
-            .ExecuteUpdateAsync(s => s.SetProperty(a => a.CustomerId, erasure.AnonymousCustomerId), ct);
-        await db.AppointmentSeries
-            .Where(a => a.BrandId == erasure.BrandId && a.BrandCustomerId == erasure.BrandCustomerId)
-            .ExecuteUpdateAsync(s => s.SetProperty(a => a.CustomerId, erasure.AnonymousCustomerId), ct);
+        await UnlinkAsync(erasure, ct);
 
         // Bildirim gitmez (NotifyCustomer = false); Notifications planlanmış hatırlatmaları düşürür (T-53).
         foreach (var appointment in upcoming)
@@ -74,4 +77,35 @@ internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox ou
                 ct);
         }
     }
+
+    // Bekleyen bekleme kaydı "Listeden çık" ile kapanır (sözleşme manageRequestCustomerDeletion: "bekleme kayıtları kapanır").
+    private async Task CloseWaitlistAsync(CustomerErasure erasure, CancellationToken ct)
+    {
+        var entries = await db.WaitlistEntries.Include(e => e.Offers)
+            .Where(e => e.BrandId == erasure.BrandId && e.BrandCustomerId == erasure.BrandCustomerId && e.Status == Domain.Waitlist.WaitlistEntryStatus.Waiting)
+            .ToListAsync(ct);
+        foreach (var entry in entries)
+        {
+            entry.Leave(erasure.Now);
+        }
+    }
+
+    // Global kişi bağı anonim kişiye döner; kapıda sıra biletindeki ad ve telefon kopyası silinir.
+    private async Task UnlinkAsync(CustomerErasure erasure, CancellationToken ct)
+    {
+        await db.Appointments
+            .Where(a => a.BrandId == erasure.BrandId && a.BrandCustomerId == erasure.BrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.CustomerId, erasure.AnonymousCustomerId), ct);
+        await db.AppointmentSeries
+            .Where(a => a.BrandId == erasure.BrandId && a.BrandCustomerId == erasure.BrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(a => a.CustomerId, erasure.AnonymousCustomerId), ct);
+        await db.WaitlistEntries
+            .Where(w => w.BrandId == erasure.BrandId && w.BrandCustomerId == erasure.BrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(w => w.CustomerId, erasure.AnonymousCustomerId), ct);
+        await db.WalkInTickets
+            .Where(t => t.BrandId == erasure.BrandId && t.BrandCustomerId == erasure.BrandCustomerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.CustomerName, AnonymizedName).SetProperty(t => t.PhoneE164, (string?)null), ct);
+    }
+
+    private const string AnonymizedName = "Silinmiş müşteri";
 }
