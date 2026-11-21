@@ -1,3 +1,4 @@
+export { formatCount } from './count';
 export { formatDate, formatDuration, formatTime } from './date';
 export type { DateStyle } from './date';
 export { formatIban, normalizeIban } from './iban';
@@ -6,3 +7,4 @@ export type { MoneyValue, PriceDisplay } from './money';
 export { formatPhone, maskPhone, parseMobilePhone } from './phone';
 export { withTimeSuffix } from './suffix';
 export type { TimeSuffix } from './suffix';
+export { initials } from './name';

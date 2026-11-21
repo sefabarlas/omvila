@@ -18,6 +18,8 @@ export { Switch } from './Switch';
 export type { SwitchProps } from './Switch';
 export { TextField } from './TextField';
 export type { TextFieldProps } from './TextField';
+export { TextArea } from './TextArea';
+export type { TextAreaProps } from './TextArea';
 export { Avatar, initials } from './Avatar';
 export type { AvatarProps } from './Avatar';
 export { Drawer, Modal } from './Modal';

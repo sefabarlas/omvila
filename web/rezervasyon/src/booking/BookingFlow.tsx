@@ -66,6 +66,9 @@ const ConfirmStep = lazy(() =>
   import('./steps/ConfirmStep').then((m) => ({ default: m.ConfirmStep })),
 );
 const DoneStep = lazy(() => import('./steps/DoneStep').then((m) => ({ default: m.DoneStep })));
+const RequestStep = lazy(() =>
+  import('./steps/RequestStep').then((m) => ({ default: m.RequestStep })),
+);
 
 function preloadSteps() {
   void import('./steps/StaffStep');
@@ -74,6 +77,7 @@ function preloadSteps() {
   void import('./steps/CodeStep');
   void import('./steps/ConfirmStep');
   void import('./steps/DoneStep');
+  void import('./steps/RequestStep');
 }
 
 const loadCatalog = (request: { branchId: string }) => fetchCatalog(request.branchId);
@@ -506,9 +510,18 @@ export function BookingFlow({ brand, initialSearch, clock = systemClock }: Booki
           />
         ) : null;
       case 'done':
-        return appointment ? (
+        if (!appointment) return null;
+        // Onay gerektiren salonda talep (A1); kapora isteyen talep Havale ekranına gider (Dilim 4).
+        return appointment.displayStatus === 'PendingApproval' ? (
+          <RequestStep
+            appointment={appointment}
+            phoneMasked={token?.phoneMasked ?? ''}
+            showPrices={brand.showPrices}
+            clock={clock}
+          />
+        ) : (
           <DoneStep appointment={appointment} phoneMasked={token?.phoneMasked ?? ''} />
-        ) : null;
+        );
       default:
         return null;
     }

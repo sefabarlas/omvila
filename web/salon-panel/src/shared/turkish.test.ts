@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dative, dativeCount, formatCount, locativeTime } from './turkish';
+import { dative, dativeCount, locativeTime } from './turkish';
 
 // Kural: dilim-02 kabul kriteri 12 ("Zeynep Aksoy'a taşı"), RandevuOnayli ("Gelmezse 13:15'te otomatik").
 describe('yönelme eki', () => {
@@ -61,10 +61,5 @@ describe('sayının yönelme eki', () => {
     [2_000_000, "2.000.000'a"],
   ])('%s → %s', (n, expected) => {
     expect(dativeCount(n)).toBe(expected);
-  });
-
-  it('binlik nokta', () => {
-    expect(formatCount(1240)).toBe('1.240');
-    expect(formatCount(180)).toBe('180');
   });
 });

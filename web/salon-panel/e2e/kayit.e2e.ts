@@ -6,6 +6,48 @@ test('kayıt → kurulum adımları → bağlantıyı kopyalama', async ({ page,
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await signedOut(page);
   await unregisteredPhone(page);
+  // Yeni salonda randevu ve onay bekleyen talep yok (Prism örnekleri dolu döner): genel bakış bağlantı kartını
+  // gösterir (GenelBakisBos).
+  const emptyJson = (body: unknown) => ({
+    contentType: 'application/json',
+    headers: {
+      'Access-Control-Allow-Origin': 'http://localhost:5180',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+    body: JSON.stringify(body),
+  });
+  await page.route(/\/api\/v1\/manage\/approval-queue/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill(
+          emptyJson({
+            generatedUtc: '2026-11-25T09:00:00Z',
+            totalCount: 0,
+            earliestHoldExpiresUtc: null,
+            items: [],
+          }),
+        ),
+  );
+  await page.route(/\/api\/v1\/manage\/calendar\?/, (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      return route.fallback();
+    }
+
+    const url = new URL(route.request().url());
+    const from = url.searchParams.get('from') ?? '';
+    return route.fulfill(
+      emptyJson({
+        branchId: url.searchParams.get('branchId'),
+        timeZone: 'Europe/Istanbul',
+        from,
+        to: url.searchParams.get('to') ?? from,
+        staff: [],
+        days: [],
+        appointments: [],
+        timeOffs: [],
+      }),
+    );
+  });
 
   await page.goto('/kayit');
   await expect(

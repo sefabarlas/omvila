@@ -14,4 +14,6 @@ internal sealed record AppointmentSmsContext(
     DateTimeZone Zone)
 {
     public bool IsConfirmed => string.Equals(Appointment.Status, "Confirmed", StringComparison.Ordinal);
+
+    public bool IsPendingApproval => string.Equals(Appointment.Status, "PendingApproval", StringComparison.Ordinal);
 }

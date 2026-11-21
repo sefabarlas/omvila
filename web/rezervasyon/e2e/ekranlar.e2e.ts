@@ -88,6 +88,15 @@ const screens: ScreenCase[] = [
       await expect(page.getByRole('heading', { name: 'Randevunuz onaylandı' })).toBeVisible();
     },
   },
+  {
+    name: 'Talep',
+    api: { requiresApproval: true },
+    reach: async (page) => {
+      await confirm(page);
+      await page.getByRole('button', { name: 'Randevuyu oluştur' }).click();
+      await expect(page.getByRole('heading', { name: 'Talebiniz alındı' })).toBeVisible();
+    },
+  },
   { name: 'Masaustu', desktop: true, reach: services },
   { name: 'MasaustuSaat', desktop: true, reach: time },
   { name: 'MasaustuOnay', desktop: true, reach: confirm },

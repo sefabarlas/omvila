@@ -63,6 +63,35 @@ export function cancelledFixture(): PublicAppointment {
   });
 }
 
+/** Onay bekleyen talep (Dilim 3, A1): salonun yanıt süresi şimdiden 1 sa 35 dk sonra doluyor. */
+export function pendingFixture(): PublicAppointment {
+  return linkAppointmentFixture({
+    status: 'PendingApproval',
+    displayStatus: 'PendingApproval',
+    holdExpiresUtc: '2026-11-24T08:35:00Z',
+  });
+}
+
+/** Salonun onaylayamadığı (A4) veya zamanında yanıtlamadığı (A5) talep. */
+export function requestCancelledFixture(
+  reason: 'DeclinedBySalon' | 'ApprovalExpired',
+): PublicAppointment {
+  return linkAppointmentFixture({
+    status: 'Cancelled',
+    displayStatus: 'Cancelled',
+    holdExpiresUtc: null,
+    canCancel: false,
+    canReschedule: false,
+    cancelDeadlineUtc: null,
+    rescheduleDeadlineUtc: null,
+    cancellation: {
+      cancelledUtc: '2026-11-24T06:50:00Z',
+      cancelledBy: reason === 'DeclinedBySalon' ? 'Salon' : 'System',
+      reason,
+    },
+  });
+}
+
 /** 15:15'e alınmış randevu. */
 export function rescheduledFixture(): PublicAppointment {
   return linkAppointmentFixture({

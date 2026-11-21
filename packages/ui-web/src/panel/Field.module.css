@@ -56,6 +56,13 @@
   border-color: var(--hata);
 }
 
+.textarea {
+  height: auto;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  line-height: var(--yazi-govde-satir);
+  resize: vertical;
+}
+
 .hasIcon {
   padding-left: calc(var(--bosluk-8) + var(--bosluk-0-5));
 }

@@ -5,13 +5,14 @@ import type { ReactNode } from 'react';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Bildirimler (D3), kapora ve IBAN (D4), roller, abonelik, KVKK (D5–6)
-// ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
+// Bölüm menüsü. Kapora ve IBAN (D4), roller, abonelik, KVKK (D5–6) ilgili dilim gelince eklenir;
+// yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
 const sections = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
   { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
   { to: '/ayarlar/randevu-kurallari', label: 'Randevu kuralları' },
   { to: '/ayarlar/rezervasyon', label: 'Rezervasyon sayfası' },
+  { to: '/ayarlar/bildirimler', label: 'Bildirimler ve SMS' },
 ] as const;
 
 export interface SettingsLayoutProps {

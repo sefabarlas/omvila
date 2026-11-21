@@ -1,3 +1,4 @@
+import { formatCount } from '@omvila/ui-web/format';
 // Türkçe ek yardımcıları (arayüz metinleri). Özel adlarda ek kesme işaretiyle ayrılır ve yazımda ünsüz
 // yumuşaması yapılmaz (TDK: "Mehmet'e", "Zeynep'e"); cins adlarda ("Salı" → "Salıya") kesme işareti yoktur.
 
@@ -65,11 +66,6 @@ function spokenLastWord(n: number): string {
 
   const rest = n % 100;
   return rest % 10 === 0 ? (tens[rest / 10] ?? '') : (ones[rest % 10] ?? '');
-}
-
-/** Tamsayı, binlik noktayla: 1240 → "1.240". */
-export function formatCount(n: number): string {
-  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 /** Sayının yönelme hâli, okunuşa göre: 180 → "180'e", 1240 → "1.240'a", 6 → "6'ya", 200 → "200'e". */

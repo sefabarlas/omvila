@@ -63,7 +63,12 @@ function useAppointmentAction<TInput>(
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.appointment(saved.id), saved);
     },
-    onSettled: () => invalidateCalendar(queryClient),
+    // Durum eylemleri onay kuyruğunu da değiştirebilir (onay, red, onay bekleyen talebin iptali).
+    onSettled: () =>
+      Promise.all([
+        invalidateCalendar(queryClient),
+        queryClient.invalidateQueries({ queryKey: ['approval-queue'] }),
+      ]),
   });
 }
 
@@ -101,6 +106,28 @@ export function useCancelAppointment() {
       api.POST('/api/v1/manage/appointments/{appointmentId}/cancel', {
         params: appointmentPath(detail),
         body,
+      }),
+    ),
+  );
+}
+
+/** "Onayla" (manageApproveAppointment, A2): gövdesiz; waiveDeposit Dilim 4'te. */
+export function useApproveAppointment() {
+  return useAppointmentAction<undefined>((api, detail) =>
+    unwrap(
+      api.POST('/api/v1/manage/appointments/{appointmentId}/approve', {
+        params: appointmentPath(detail),
+      }),
+    ),
+  );
+}
+
+/** "Reddet" (manageDeclineAppointment, A4): gövdesiz; müşteriye "iptal" bildirimi gider. */
+export function useDeclineAppointment() {
+  return useAppointmentAction<undefined>((api, detail) =>
+    unwrap(
+      api.POST('/api/v1/manage/appointments/{appointmentId}/decline', {
+        params: appointmentPath(detail),
       }),
     ),
   );

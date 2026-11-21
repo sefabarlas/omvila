@@ -4,6 +4,7 @@ import { Checkbox } from './Checkbox';
 import { previewStack } from './preview';
 import { Select } from './Select';
 import { Switch } from './Switch';
+import { TextArea } from './TextArea';
 import { TextField } from './TextField';
 
 export default { title: 'Panel/Form' } satisfies StoryDefault;
@@ -23,6 +24,11 @@ export const Alanlar = () => (
       label="Ara"
       icon={<Search size={16} />}
       placeholder="Müşteri, telefon veya randevu"
+    />
+    <TextArea
+      label="Salon metni"
+      defaultValue="Merhaba {ad}, {tarih} {saat} randevunuz onaylandı. Değişiklik ve iptal: {bağlantı}"
+      hint="Değişkenler: {salon}, {ad}, {tarih}, {saat}, {bağlantı}"
     />
     <Select
       label="İşletme türü"

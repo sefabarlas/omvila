@@ -2,11 +2,13 @@ import type { StoryDefault } from '@ladle/react';
 import { ArrowLeft, CalendarPlus, MapPin, Package } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate, formatDuration, formatIban, formatMoney } from '../format';
+import { statusKeys } from '../status';
 import { fixedClock } from '../time';
 import {
   ANY_STAFF,
   AppointmentTicket,
   BookingButton,
+  BookingStatusBadge,
   BookingSteps,
   branchOpenStatus,
   CategoryChips,
@@ -345,6 +347,16 @@ export const Randevum = () => (
       <BookingButton variant="danger" size="md" block>
         Randevuyu iptal et
       </BookingButton>
+    </div>
+  </Phone>
+);
+
+export const Durumlar = () => (
+  <Phone>
+    <div style={{ ...screenPad, flexDirection: 'row', flexWrap: 'wrap' }}>
+      {statusKeys.map((key) => (
+        <BookingStatusBadge key={key} status={key} />
+      ))}
     </div>
   </Phone>
 );

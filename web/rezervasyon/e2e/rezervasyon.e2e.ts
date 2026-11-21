@@ -68,6 +68,38 @@ test('Kritik akış 2: hizmet → personel → saat → telefon → kod → onay
   expect(errors).toEqual([]);
 });
 
+// Dilim 3 kriter 1: onay gerektiren salonda randevu talep olarak düşer; müşteri "Onaylandı" değil "Onay bekliyor"
+// görür, salonun yanıt süresi tutmadan (holdExpiresUtc) hesaplanır.
+test('onaylı salon: talep ekranı "Onay bekliyor" ve yanıt süresi', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const calls = await bookingApi(page, { requiresApproval: true });
+  await page.goto(
+    `/kuafor-elif?step=details&services=${ids.sac},${ids.fon}&staff=${ids.elif}&date=2026-11-24&time=14:30`,
+  );
+
+  await page.getByLabel('Ad soyad').fill('Ayşe Yılmaz');
+  await page.getByLabel('Telefon numaranız').fill('532 123 45 67');
+  await page.getByText(/okudum; randevu için/).click();
+  await page.getByRole('button', { name: 'Doğrulama kodu gönder' }).click();
+  await page.getByRole('textbox', { name: 'Doğrulama kodu, hane 1' }).fill('482193');
+  await page.getByRole('button', { name: 'Randevuyu oluştur' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Talebiniz alındı' })).toBeVisible();
+  await expect(
+    page.getByText('Kuaför Elif en geç 2 saat içinde yanıtlar.', { exact: false }),
+  ).toBeVisible();
+  const card = page.getByRole('region', { name: 'Talep özeti' });
+  await expect(card.getByText('Onay bekliyor')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Randevunuz onaylandı' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Salon sayfasına dön' })).toHaveAttribute(
+    'href',
+    '/kuafor-elif',
+  );
+  expect(calls.create).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
 test('çok şubeli salonda önce şube seçilir', async ({ page }) => {
   await bookingApi(page);
   await page.goto('/kuafor-elif-subeler');

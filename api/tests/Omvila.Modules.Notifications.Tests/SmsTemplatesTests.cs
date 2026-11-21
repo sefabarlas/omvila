@@ -12,6 +12,9 @@ public sealed class SmsTemplatesTests
     private const string LongDate = "Çar 30 Ağu";
     private const string LongTime = "23:45";
 
+    // Rezervasyon sayfası bağlantısı: 30 karakterlik salon adından türeyen bağlantı adı (T-65).
+    private const string BookingLink = "omvila.com/guzellik-ve-bakim-sisli-cagdas";
+
     // Her (olay kodu, çeşit) için en uzun gerçekçi değişken değerleri.
     private static readonly Dictionary<(string, string?), Dictionary<string, string>> LongestValues = new()
     {
@@ -25,6 +28,13 @@ public sealed class SmsTemplatesTests
             ("salon", Salon30), ("yeni tarih", LongDate), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentCancelledBySalon, null)] = Values(
             ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", "omvila.com/guzellik-ve-bakim-sisli-cagdas")),
+        [(NotificationEvents.AppointmentRequested, null)] = Values(("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("bağlantı", ManageLink)),
+        [(NotificationEvents.AppointmentApproved, null)] = Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("hizmet", "Saç kesimi ve fön +2"), ("bağlantı", ManageLink)),
+        [(NotificationEvents.AppointmentDeclined, null)] = Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)),
+        [(NotificationEvents.AppointmentApprovalExpired, null)] = Values(
+            ("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)),
         [(NotificationEvents.AppointmentReminder, null)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
         [(NotificationEvents.AppointmentReminder, SmsTemplates.SameDayVariant)] = Values(("salon", Salon30), ("saat", LongTime), ("bağlantı", ManageLink)),
     };
@@ -116,6 +126,53 @@ public sealed class SmsTemplatesTests
             .ShouldBe("Bugün 14:30'da Kuaför Elif'te görüşmek üzere. Yol tarifi: omvila.com/r/AbCdEfGh12");
         SmsTemplates.Render(NotificationEvents.AppointmentReminder, Values(("saat", "10:00"), ("salon", "Berber Ali"), ("bağlantı", ManageLink)))
             .ShouldStartWith("Hatırlatma: Yarın 10:00'da Berber Ali'de randevunuz var.");
+    }
+
+    [Fact]
+    public void Requested_RendersDocumentText() =>
+        SmsTemplates.Render(NotificationEvents.AppointmentRequested, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("bağlantı", ManageLink)))
+            .ShouldBe("Kuaför Elif: Talebiniz alındı. Cum 27 Kas 14:30 için salon onayladığında size haber vereceğiz. omvila.com/r/AbCdEfGh12");
+
+    [Fact]
+    public void Approved_RendersDocumentText_WithoutExclamation() =>
+        SmsTemplates.Render(NotificationEvents.AppointmentApproved, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("hizmet", "Saç kesimi +1"), ("bağlantı", ManageLink)))
+            .ShouldBe("Kuaför Elif talebinizi onayladı: Cum 27 Kas 14:30, Saç kesimi +1. Görüşmek üzere. omvila.com/r/AbCdEfGh12");
+
+    [Fact]
+    public void Declined_SaysCancelled_NeverRejected() =>
+        SmsTemplates.Render(NotificationEvents.AppointmentDeclined, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif")))
+            .ShouldBe("Kuaför Elif, Cum 27 Kas 14:30 talebinizi onaylayamadı, talep iptal edildi. Başka bir saat seçin: omvila.com/kuafor-elif");
+
+    [Fact]
+    public void ApprovalExpired_RendersDocumentText() =>
+        SmsTemplates.Render(NotificationEvents.AppointmentApprovalExpired, Values(
+            ("salon", "Kuaför Elif"), ("tarih", "Cum 27 Kas"), ("saat", "14:30"), ("rezervasyon bağlantısı", "omvila.com/kuafor-elif")))
+            .ShouldBe("Kuaför Elif, Cum 27 Kas 14:30 talebinizi zamanında yanıtlayamadı, talep iptal edildi. Başka bir saat seçin: omvila.com/kuafor-elif");
+
+    // T-65: 30 karakterlik salon adı + ondan türeyen bağlantıyla katalog metni 155'i aşar; salon adı kırpılmaz, kısa metin gider.
+    [Theory]
+    [InlineData(NotificationEvents.AppointmentDeclined)]
+    [InlineData(NotificationEvents.AppointmentApprovalExpired)]
+    public void RequestCancelled_WhenCatalogTextOverflows_UsesShortTextWithFullSalonName(string eventCode) =>
+        SmsTemplates.Render(eventCode, Values(("salon", Salon30), ("tarih", LongDate), ("saat", LongTime), ("rezervasyon bağlantısı", BookingLink)))
+            .ShouldBe($"{Salon30}, {LongDate} {LongTime} talebiniz iptal edildi. Başka bir saat seçin: {BookingLink}");
+
+    // Ses tonu (urun-kurallari.md): ünlem, "lütfen", "başarıyla", "reddedildi" hiçbir müşteri metninde geçmez.
+    [Fact]
+    public void NoTemplate_UsesForbiddenWording()
+    {
+        foreach (var ((eventCode, variant), values) in LongestValues)
+        {
+            var body = SmsTemplates.Render(eventCode, values, variant);
+            body.ShouldNotContain("!", Case.Sensitive, $"{eventCode} {variant}");
+            foreach (var word in new[] { "lütfen", "başarıyla", "reddedildi", "reddetti" })
+            {
+                body.ShouldNotContain(word, Case.Insensitive, $"{eventCode} {variant}");
+            }
+        }
     }
 
     [Fact]

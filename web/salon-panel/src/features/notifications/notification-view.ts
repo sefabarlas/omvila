@@ -4,12 +4,12 @@ import type { Clock } from '@omvila/ui-web/time';
 import type { InAppNotification } from './api';
 
 /**
- * Ayarlar → Bildirimler ve SMS (kontör). Bölüm ayrı PR'da geliyor; o rota eklenene kadar Ayarlar açılır (T-69).
+ * Ayarlar → Bildirimler ve SMS (kontör).
  * "Kontör az" şeridi ve kontör bildirimi buradan yönlenir; rota gelince yalnız burası değişir.
  */
-export const smsCreditsRoute = '/ayarlar';
+export const smsCreditsRoute = '/ayarlar/bildirimler';
 
-export type NotificationRoute = '/' | '/takvim' | '/ayarlar';
+export type NotificationRoute = '/' | '/takvim' | '/ayarlar' | '/ayarlar/bildirimler';
 
 /**
  * Bildirime dokununca açılacak sayfa (NotificationTarget). Randevu yan panelini adresten açan rota henüz yok; randevu
