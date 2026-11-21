@@ -31,7 +31,10 @@ const screens: ScreenCase[] = [
     name: 'GenelBakis',
     heading: 'İyi günler, Elif',
     setup: overviewDemo,
-    act: (page) => expect(page.getByText('2 online talep onay bekliyor')).toBeVisible(),
+    act: async (page) => {
+      await expect(page.getByText('2 online talep onay bekliyor')).toBeVisible();
+      await expect(page.getByText('Gizem Arslan kapora bekliyor')).toBeVisible();
+    },
   },
   { path: '/hizmetler', name: 'Hizmetler', heading: 'Hizmetler' },
   { path: '/personel', name: 'Personel', heading: 'Personel' },
