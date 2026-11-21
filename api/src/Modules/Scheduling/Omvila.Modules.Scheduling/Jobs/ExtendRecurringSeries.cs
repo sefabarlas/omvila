@@ -40,8 +40,6 @@ internal sealed partial class ExtendRecurringSeries(
 
     public string Key => "ExtendRecurringSeries";
 
-    public Duration Interval => Duration.FromHours(1);
-
     public async Task RunAsync(CancellationToken ct)
     {
         var now = clock.GetCurrentInstant();
