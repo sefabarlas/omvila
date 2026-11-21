@@ -1,0 +1,61 @@
+/* design/tasarim-sistemleri/mobil/components/Chip (om-chip). */
+.chips {
+  display: flex;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-1) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  gap: var(--bosluk-1);
+  align-items: center;
+  height: var(--kontrol-sm);
+  padding: 0 var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: inset 0 0 0 1px var(--cizgi);
+  color: var(--metin);
+  font: inherit;
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-etiket-kucuk-satir);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 36 px görünür, 44 px dokunma alanı */
+.chip::after {
+  position: absolute;
+  inset: calc((var(--kontrol-sm) - var(--dokunma-min)) / 2) 0;
+  content: '';
+}
+
+.chip:hover {
+  background: var(--zemin-hover);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.selected,
+.selected:hover {
+  padding-inline-start: var(--bosluk-3);
+  background: var(--blok-marka);
+  box-shadow: none;
+  color: var(--metin-ters);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
+}

@@ -5,7 +5,7 @@ import { formatDuration, parseMoneyInput } from '@omvila/ui-web/format';
 import { Button, Modal, Select, Switch, TextField, useToast } from '@omvila/ui-web/panel';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { ConflictBanner } from '@/features/settings/ConflictBanner';
+import { ConflictBanner } from '@/shared/ConflictBanner';
 import { CheckboxGroup } from '@/shared/CheckboxGroup';
 import { Segmented } from '@/shared/Segmented';
 import { useCreateService, useSetBranchPrice, useUpdateService } from './api';

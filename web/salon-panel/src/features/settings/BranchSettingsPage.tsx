@@ -13,7 +13,7 @@ import { AddBranchModal } from './AddBranchModal';
 import { brandSettingsQuery } from './api';
 import { branchQuery, useSaveBranchSettings, workingHoursQuery } from './branch-api';
 import type { Branch, SlotInterval } from './branch-api';
-import { ConflictBanner } from './ConflictBanner';
+import { ConflictBanner } from '@/shared/ConflictBanner';
 import { dayError, toDrafts, toWeeklyHours } from './hours';
 import type { DayDraft } from './hours';
 import { describeSaveError } from './save-error';

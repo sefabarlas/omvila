@@ -18,7 +18,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Takvim',
     to: '/takvim',
     permission: 'calendar.view',
-    available: false,
+    available: true,
     group: 'isletme',
   },
   {
@@ -97,11 +97,19 @@ export const menuEntries: readonly MenuEntry[] = [
 
 /**
  * Kişisel menü (salon-paneli/PersonelRolu, kabul kriteri 10): raporları göremeyen kullanıcı (personel) işletme
- * menüsü yerine "Benim" grubunu görür; ana sayfa onun için "Takvimim" özetidir. Müşteriler (D2), Kapıda sıra (D3)
- * ve Primim (D6) sayfaları gelince açılır (acik-sorular.md T-45).
+ * menüsü yerine "Benim" grubunu görür. "Takvimim" takvimi açar (sunucu yalnız kendi kolonunu döner); ana sayfa
+ * ("/", girişten sonra) kişisel özettir ve menüde Takvimim altında sayılır (acik-sorular.md T-45, T-54). Müşteriler
+ * (D2), Kapıda sıra (D3) ve Primim (D6) sayfaları gelince açılır.
  */
 export const personalEntries: readonly MenuEntry[] = [
-  { key: 'takvimim', label: 'Takvimim', to: '/', available: true, group: 'benim' },
+  {
+    key: 'takvimim',
+    label: 'Takvimim',
+    to: '/takvim',
+    permission: 'calendar.view',
+    available: true,
+    group: 'benim',
+  },
   {
     key: 'musteriler',
     label: 'Müşteriler',

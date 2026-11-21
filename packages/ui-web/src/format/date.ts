@@ -33,7 +33,18 @@ const shortMonths = [
 const weekdays = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 const shortWeekdays = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
-export type DateStyle = 'long' | 'panel' | 'short' | 'numeric' | 'dayMonth' | 'weekdayShort';
+export type DateStyle =
+  | 'long'
+  | 'panel'
+  | 'short'
+  | 'numeric'
+  | 'dayMonth'
+  | 'compact'
+  | 'weekdayDayMonth'
+  | 'monthYear'
+  | 'weekday'
+  | 'weekdayShort'
+  | 'day';
 
 interface Parts {
   year: number;
@@ -59,7 +70,9 @@ function parseLocalDate(localDate: string): Parts {
 
 /**
  * long "21 Kasım Cuma", panel "Salı, 25 Kasım", short "21 Kas Cum", numeric "21.11.2026", dayMonth "31 Aralık"
- * (salon-paneli/AyarlarSube özel günler), weekdayShort "Pzt" (salon-paneli/HaftaTakvim kolon başlığı).
+ * (salon-paneli/AyarlarSube özel günler). Rezervasyon sayfası: compact "Cum 28 Kas" (Randevum, Ertele alt çubuğu),
+ * weekdayDayMonth "Cuma 28 Kasım", monthYear "Kasım 2026" (gün şeridi başlığı), weekday "Cuma", weekdayShort "Cum",
+ * day "28". weekdayShort ayrıca salon-paneli/HaftaTakvim kolon başlığında kullanılır.
  * @param localDate Takvim günü, yyyy-aa-gg.
  */
 export function formatDate(localDate: string, style: DateStyle = 'long'): string {
@@ -73,12 +86,22 @@ export function formatDate(localDate: string, style: DateStyle = 'long'): string
       return `${weekday}, ${String(p.day)} ${month}`;
     case 'short':
       return `${String(p.day)} ${shortMonths[p.month - 1] ?? ''} ${shortWeekdays[p.weekday] ?? ''}`;
-    case 'weekdayShort':
-      return shortWeekdays[p.weekday] ?? '';
     case 'dayMonth':
       return `${String(p.day)} ${month}`;
     case 'numeric':
       return `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}.${String(p.year)}`;
+    case 'compact':
+      return `${shortWeekdays[p.weekday] ?? ''} ${String(p.day)} ${shortMonths[p.month - 1] ?? ''}`;
+    case 'weekdayDayMonth':
+      return `${weekday} ${String(p.day)} ${month}`;
+    case 'monthYear':
+      return `${month} ${String(p.year)}`;
+    case 'weekday':
+      return weekday;
+    case 'weekdayShort':
+      return shortWeekdays[p.weekday] ?? '';
+    case 'day':
+      return String(p.day);
   }
 }
 

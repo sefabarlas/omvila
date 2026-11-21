@@ -10,7 +10,7 @@ import { industries } from '@/shared/industries';
 import type { IndustryCode } from '@/shared/industries';
 import { brandQuery, useUpdateBrand } from './api';
 import type { Brand, BrandUpdate } from './api';
-import { ConflictBanner } from './ConflictBanner';
+import { ConflictBanner } from '@/shared/ConflictBanner';
 import { describeSaveError } from './save-error';
 import styles from './Settings.module.css';
 import { SettingsCard, SettingsLayout } from './SettingsLayout';

@@ -15,13 +15,13 @@ describe('oturum', () => {
     expect(router.state.location.search).toEqual({ yonlendir: '/hizmetler' });
   });
 
-  it('sayfa yenilenince çerezle oturum açılır; sahibin menüsü Dilim 1 bölümleri', async () => {
+  it('sayfa yenilenince çerezle oturum açılır; sahibin menüsü açılmış bölümler', async () => {
     renderApp('/');
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
     const labels = within(nav)
       .getAllByRole('link')
       .map((a) => a.textContent);
-    expect(labels).toEqual(['Genel bakış', 'Hizmetler', 'Personel', 'Ayarlar']);
+    expect(labels).toEqual(['Genel bakış', 'Takvim', 'Hizmetler', 'Personel', 'Ayarlar']);
     expect(
       within(nav).getByRole('link', { name: 'Genel bakış' }).getAttribute('aria-current'),
     ).toBe('page');
@@ -89,12 +89,14 @@ describe('menü', () => {
   it('izin ve dilim süzgeci', () => {
     expect(visibleMenu(() => true).map((e) => e.key)).toEqual([
       'genel',
+      'takvim',
       'hizmetler',
       'personel',
       'ayarlar',
     ]);
-    // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; Dilim 1'de yalnız Takvimim açık.
-    expect(visibleMenu(() => false).map((e) => e.key)).toEqual(['takvimim']);
+    // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; bugün yalnız Takvimim açık (calendar.view).
+    expect(visibleMenu((p) => p === 'calendar.view').map((e) => e.key)).toEqual(['takvimim']);
+    expect(visibleMenu(() => false)).toEqual([]);
   });
 
   it('personel menüsü bölümler gelince Takvimim, Müşteriler, Kapıda sıra, Primim (kabul kriteri 10)', () => {
@@ -110,6 +112,8 @@ describe('menü', () => {
   it('etkin öğe yoldan', () => {
     expect(activeMenuKey('/')).toBe('genel');
     expect(activeMenuKey('/', true)).toBe('takvimim');
+    expect(activeMenuKey('/takvim', true)).toBe('takvimim');
+    expect(activeMenuKey('/takvim')).toBe('takvim');
     expect(activeMenuKey('/ayarlar/isletme')).toBe('ayarlar');
     expect(activeMenuKey('/hizmetlerim')).toBe('');
   });

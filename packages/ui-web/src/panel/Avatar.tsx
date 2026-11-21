@@ -1,5 +1,8 @@
 import { classNames } from './Button';
+import { initials } from '../format/name';
 import styles from './Avatar.module.css';
+
+export { initials };
 
 export interface AvatarProps {
   name: string;
@@ -7,17 +10,6 @@ export interface AvatarProps {
   src?: string | null;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
-}
-
-/** Baş harfler Türkçe büyük harfle (İlker → İ), en çok iki. */
-export function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toLocaleUpperCase('tr-TR'))
-    .join('');
 }
 
 function tone(name: string): 't0' | 't1' | 't2' {

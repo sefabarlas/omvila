@@ -590,6 +590,30 @@
     "usage": "`blok-vurgu` özet bloğu üzerindeki metin."
    },
    {
+    "name": "kapak-petrol",
+    "value": {
+     "light": "{petrol-900}",
+     "dark": "{petrol-900}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `petrol` (BookingPageSettings.coverColor); SalonHeader kapağı. Panel ölçeğindeki aynı adlı tokenla aynı değer."
+   },
+   {
+    "name": "kapak-mercan",
+    "value": {
+     "light": "{mercan-600}",
+     "dark": "{mercan-600}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `mercan` (BookingPageSettings.coverColor); SalonHeader kapağı. Panel ölçeğindeki aynı adlı tokenla aynı değer."
+   },
+   {
+    "name": "kapak-kum",
+    "value": {
+     "light": "{kum-600}",
+     "dark": "{kum-600}"
+    },
+    "usage": "Rezervasyon sayfası kapak rengi `kum` (BookingPageSettings.coverColor); SalonHeader kapağı. Panel ölçeğindeki aynı adlı tokenla aynı değer."
+   },
+   {
     "name": "petrol-50",
     "value": "#EFF8F6",
     "usage": "Petrol rampası, 50 adımı. Doğrudan değil, semantik tokenlar üzerinden kullanılır."

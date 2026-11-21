@@ -1,0 +1,217 @@
+/* salon-paneli/Main, HaftaTakvim, RandevuOnayli, TekrarIptal. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.heading {
+  margin: 0 0 0 var(--bosluk-2);
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+  letter-spacing: var(--yazi-kart-basligi-harf);
+}
+
+.staffSelect {
+  min-width: 200px;
+}
+
+.dialogText {
+  margin: 0;
+  color: var(--metin-ikincil);
+}
+
+.interval {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+/* Yan panel */
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+}
+
+.statusCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--blok-marka);
+  color: var(--metin-ters);
+}
+
+.statusTop {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statusEyebrow {
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.statusTime {
+  font-size: var(--yazi-metrik-boyut);
+  line-height: var(--yazi-metrik-satir);
+  font-weight: var(--yazi-metrik-agirlik);
+  letter-spacing: var(--yazi-metrik-harf);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusLine {
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.customerCard {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.customerText,
+.actionText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.customerText small,
+.actionText small {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.action {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--bosluk-3);
+  border: 0;
+  border-radius: var(--kose-lg);
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  text-align: start;
+}
+
+button.action {
+  cursor: pointer;
+}
+
+button.action:hover {
+  background: var(--zemin-hover);
+}
+
+button.action:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.actionIcon,
+.actionIconDanger {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+}
+
+.actionIconDanger {
+  background: var(--hata-zemin);
+  color: var(--hata);
+}
+
+.danger {
+  color: var(--hata);
+}
+
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+/* İptal penceresi */
+.cancelForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.scopes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.scope {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.scope input {
+  margin: var(--bosluk-1) 0 0;
+  accent-color: var(--marka);
+}
+
+.scope span {
+  display: flex;
+  flex-direction: column;
+}
+
+.scope small {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

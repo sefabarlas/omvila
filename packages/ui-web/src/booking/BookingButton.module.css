@@ -1,0 +1,113 @@
+/* design/tasarim-sistemleri/mobil/components/Button (om-btn). */
+.button {
+  position: relative;
+  display: inline-flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 var(--bosluk-5);
+  border: 0;
+  border-radius: var(--kose-md);
+  font: inherit;
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-etiket-satir);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: inline-flex;
+}
+
+.lg {
+  height: var(--kontrol-lg);
+  border-radius: var(--kose-md);
+  font-size: var(--yazi-baslik-3-boyut);
+}
+
+.md {
+  height: var(--kontrol-md);
+}
+
+.sm {
+  gap: var(--bosluk-1);
+  height: var(--kontrol-sm);
+  padding: 0 var(--bosluk-3);
+  border-radius: var(--kose-sm);
+  font-size: var(--yazi-etiket-kucuk-boyut);
+  line-height: var(--yazi-etiket-kucuk-satir);
+}
+
+/* 36 px görünür, 44 px dokunma alanı (mobil README § Erişilebilirlik) */
+.sm::after {
+  position: absolute;
+  inset: calc((var(--kontrol-sm) - var(--dokunma-min)) / 2) 0;
+  content: '';
+}
+
+.block {
+  display: flex;
+  width: 100%;
+}
+
+.primary {
+  background: var(--marka);
+  color: var(--marka-ustu);
+}
+
+.primary:hover {
+  background: var(--marka-hover);
+}
+
+.secondary {
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+}
+
+.secondary:hover {
+  background: var(--zemin-hover);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--metin-marka);
+}
+
+.ghost:hover {
+  background: var(--zemin-hover);
+}
+
+.danger {
+  background: transparent;
+  color: var(--hata);
+}
+
+.danger:hover {
+  background: var(--hata-zemin);
+}
+
+.button:disabled {
+  background: var(--zemin-devre-disi);
+  color: var(--metin-devre-disi);
+  cursor: not-allowed;
+}
+
+.button[aria-busy='true'] {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

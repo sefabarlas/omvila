@@ -1,4 +1,6 @@
 import type { ManageSession } from '@/app/api';
+import { createCalendarFake } from './fake-calendar';
+import type { CalendarFakeOptions } from './fake-calendar';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -6,12 +8,22 @@ export const ownerPermissions = [
   'service.manage',
   'staff.manage',
   'calendar.view',
+  'calendar.view.all-staff',
+  'appointment.create',
+  'appointment.update',
+  'appointment.cancel',
+  'appointment.approve',
+  'appointment.checkin',
   'customer.view',
   'report.view',
   'timeoff.request',
 ];
 export const staffPermissions = [
   'calendar.view',
+  'appointment.create',
+  'appointment.update',
+  'appointment.cancel',
+  'appointment.checkin',
   'customer.view',
   'customer.edit',
   'timeoff.request',
@@ -62,6 +74,8 @@ export interface FakeApiOptions {
   onlyOwner?: boolean;
   /** İzin eklerken etkilenen randevu sayısı. */
   affectedAppointments?: number;
+  /** Takvim uçlarının hata yanıtları (sürükle-bırak, durum eylemleri). */
+  calendar?: CalendarFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -319,7 +333,9 @@ export function fakeFetch({
   withServices = false,
   onlyOwner = false,
   affectedAppointments = 0,
+  calendar = {},
 }: FakeApiOptions = {}) {
+  const calendarFake = createCalendarFake(session, calendar);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -341,6 +357,11 @@ export function fakeFetch({
           .json()
           .catch(() => null),
       );
+    }
+
+    const calendarResponse = await calendarFake(request);
+    if (calendarResponse) {
+      return calendarResponse;
     }
 
     if (path === '/api/v1/manage/auth/otp/request') {
