@@ -28,7 +28,11 @@ internal sealed class OtpService(
     IOptions<OtpOptions> options,
     IServiceScopeFactory scopes)
 {
-    public async Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, CancellationToken ct)
+    public Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, CancellationToken ct) =>
+        RequestAsync(phone, purpose, branchId: null, ct);
+
+    /// <summary>Rezervasyon kodu: <paramref name="branchId"/> kodun istendiği şube (doğrulamada geri verilir).</summary>
+    public async Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, Guid? branchId, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(phone);
         var settings = options.Value;
@@ -63,7 +67,7 @@ internal sealed class OtpService(
 
         var code = NewCode(settings.Length);
         var challenge = OtpChallenge.Create(
-            ids.New(), phone.E164, purpose, hasher.Hash(purpose, phone.E164, code), now, Duration.FromSeconds(settings.TtlSeconds));
+            ids.New(), phone.E164, purpose, hasher.Hash(purpose, phone.E164, code), now, Duration.FromSeconds(settings.TtlSeconds), branchId);
         db.OtpChallenges.Add(challenge);
         await db.SaveChangesAsync(ct);
         await notifications.EnqueueSmsAsync(
@@ -113,7 +117,7 @@ internal sealed class OtpService(
             .Where(c => c.Id == otpId && c.ConsumedUtc == null && c.AttemptCount < settings.MaxAttempts)
             .ExecuteUpdateAsync(set => set.SetProperty(c => c.ConsumedUtc, now), ct);
         return consumed == 1
-            ? new VerifiedOtp(challenge.PhoneE164, purpose)
+            ? new VerifiedOtp(challenge.PhoneE164, purpose, challenge.Id, challenge.BranchId)
             : Error.Unprocessable(ErrorCodes.OtpInvalid);
     }
 

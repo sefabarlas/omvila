@@ -35,13 +35,22 @@ internal sealed class AccessTokenIssuer(SigningKeyStore keys, IClock clock, IOpt
             identity.AddClaim(new Claim(OmvilaClaims.StaffId, staffId.ToString()));
         }
 
-        return Issue(Audiences.Manage, identity);
+        return Issue(Audiences.Manage, identity, Duration.FromMinutes(options.Value.AccessTokenMinutes));
     }
 
-    private (string Token, int ExpiresInSeconds) Issue(string audience, ClaimsIdentity identity)
+    /// <summary>
+    /// Rezervasyon sayfası jetonu (ADR-0007 public-booking: phone, otp_id; PublicBookingTokenMinutes). Yalnız randevu
+    /// oluşturma uçlarında geçerlidir; kiracı bağlamı taşımaz (marka yoldaki şubeden çözülür).
+    /// </summary>
+    public (string Token, int ExpiresInSeconds) IssuePublicBooking(string phoneE164, Guid otpId) =>
+        Issue(
+            Audiences.PublicBooking,
+            new ClaimsIdentity([new Claim(OmvilaClaims.Phone, phoneE164), new Claim(OmvilaClaims.OtpId, otpId.ToString())]),
+            Duration.FromMinutes(options.Value.PublicBookingTokenMinutes));
+
+    private (string Token, int ExpiresInSeconds) Issue(string audience, ClaimsIdentity identity, Duration lifetime)
     {
         var now = clock.GetCurrentInstant();
-        var lifetime = Duration.FromMinutes(options.Value.AccessTokenMinutes);
         var token = _handler.CreateToken(new SecurityTokenDescriptor
         {
             Issuer = options.Value.Issuer,

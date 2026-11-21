@@ -77,6 +77,18 @@ internal static class AvailabilityEngine
     }
 
     /// <summary>
+    /// Rezervasyon sayfasında seçilebilecek son gün (sözleşme DaySearchResult.maxDate, "60 gün ileriye kadar"): bugün +
+    /// en ileri tarih (dahil). Kural: musaitlik.md § 7; hizmet değeri marka değerini ezer, çok kalemde en sıkı değer (T-48).
+    /// </summary>
+    public static LocalDate LastBookableDate(AvailabilitySnapshot snapshot, AvailabilityRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(request);
+        var maxAdvance = request.Items.Min(i => snapshot.Services.GetValueOrDefault(i.ServiceId)?.MaxAdvanceDays ?? snapshot.Settings.MaxAdvanceDays);
+        return snapshot.Today.PlusDays(maxAdvance);
+    }
+
+    /// <summary>
     /// Belirli bir başlangıcı değerlendirir (yazma yolunun kilit altındaki yeniden doğrulaması, panel uyarıları).
     /// Personel sabitse aday, yalnız uyarı sınıfında ihlal olsa da döner; fark etmez kalemde boş personel yoksa aday yoktur.
     /// </summary>

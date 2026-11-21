@@ -12,6 +12,7 @@ using Omvila.SharedKernel;
 using Omvila.Infrastructure.Security;
 using Omvila.Modules.Identity.Features.ManageAuth;
 using Omvila.Modules.Identity.Features.ManageSession;
+using Omvila.Modules.Identity.Features.PublicBookingAuth;
 using Omvila.Modules.Identity.Infrastructure;
 using Omvila.Modules.Identity.Security;
 
@@ -37,6 +38,7 @@ public static class IdentityModule
             .Validate(o => o.IsValid(), "Auth:Otp ayarları eksik veya geçersiz.");
         services.AddSingleton<OtpHasher>();
         services.AddScoped<OtpService>();
+        services.AddScoped<TrustedDeviceService>();
         services.AddSingleton<SignupTokenService>();
         services.AddScoped<ManageSignInService>();
         services.AddOptions<LegalOptions>()
@@ -61,11 +63,12 @@ public static class IdentityModule
         return services;
     }
 
-    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session).</summary>
+    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session, rezervasyon sayfası telefon doğrulaması).</summary>
     public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
     {
         ManageAuthEndpoints.Map(app);
         ManageSessionEndpoints.Map(app);
+        PublicOtpEndpoints.Map(app);
         return app;
     }
 
