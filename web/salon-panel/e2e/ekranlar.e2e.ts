@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { calendarDemo, demoSunday } from './calendar-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
+import { newAppointmentDemo } from './new-appointment-demo';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
 // yazılır; tasarım görüntüleriyle (design/ekranlar/salon-paneli) yan yana insan gözüyle karşılaştırılır. Otomatik piksel
@@ -59,6 +60,24 @@ const screens: ScreenCase[] = [
           .getByText('13:00–13:45'),
       ).toBeVisible();
       // Yan panelin açılış hareketi bitsin.
+      await page.waitForFunction(() =>
+        document.getAnimations().every((animation) => animation.playState !== 'running'),
+      );
+    },
+  },
+  {
+    path: '/takvim',
+    name: 'YeniRandevu',
+    heading: 'Takvim',
+    setup: newAppointmentDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Randevu ekle', exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: 'Yeni randevu' });
+      await dialog.getByRole('searchbox', { name: 'Müşteri ara' }).fill('Derya');
+      await dialog.getByRole('button', { name: /Derya Şahin · 0532 760 21 18/ }).click();
+      await dialog.getByRole('button', { name: 'Saç kesimi · 45 dk' }).click();
+      await dialog.getByRole('radio', { name: '14:30' }).check();
+      await expect(dialog.getByText('Çar 25 Kas · 14:30–15:15')).toBeVisible();
       await page.waitForFunction(() =>
         document.getAnimations().every((animation) => animation.playState !== 'running'),
       );

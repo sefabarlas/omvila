@@ -1,0 +1,262 @@
+/* Yeni randevu (salon-paneli/YeniRandevu, Durumlar "Saat az önce doldu"). */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label {
+  margin: 0;
+  padding: 0;
+  color: var(--metin);
+  font-size: var(--yazi-etiket-boyut);
+  line-height: var(--yazi-etiket-satir);
+  font-weight: 700;
+}
+
+.subLabel {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.muted {
+  color: var(--metin-ikincil);
+}
+
+.error {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bosluk-4);
+}
+
+@media (width <= 899px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Müşteri: seçili kart */
+.customer {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  border: 2px solid var(--marka);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+}
+
+.customerText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customerText strong {
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+}
+
+/* Müşteri: arama sonuçları */
+.results {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--bosluk-1);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+  list-style: none;
+}
+
+.result {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  width: 100%;
+  padding: var(--bosluk-2);
+  border: 0;
+  border-radius: var(--kose-md);
+  background: none;
+  color: var(--metin-ikincil);
+  font: inherit;
+  font-size: var(--yazi-kucuk-boyut);
+  text-align: start;
+  cursor: pointer;
+}
+
+.result strong {
+  color: var(--metin);
+}
+
+.result:hover {
+  background: var(--zemin-hover);
+}
+
+.result:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+/* Hizmet çipleri */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}
+
+.chip {
+  display: inline-flex;
+  gap: var(--bosluk-1-5);
+  align-items: center;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-4);
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  font: inherit;
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: var(--zemin-hover);
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+/* Boş saat ızgarası */
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.slot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 76px;
+  height: var(--kontrol-md);
+  padding: 0 var(--bosluk-2);
+  border: 1px solid var(--cizgi-guclu);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  font-size: var(--yazi-kucuk-boyut);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.slot:hover {
+  background: var(--zemin-hover);
+}
+
+.slot:has(input:checked) {
+  border-color: var(--zemin-marka);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+  font-weight: 700;
+}
+
+.slotInput {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.slot:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.slotTaken {
+  border-color: var(--zemin-devre-disi);
+  background: var(--zemin-devre-disi);
+  color: var(--metin-devre-disi);
+  text-decoration: line-through;
+  cursor: default;
+}
+
+.customTime {
+  max-width: 200px;
+}
+
+/* Alt çubuk özeti */
+.summary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-inline-end: auto;
+}
+
+.summaryTitle {
+  font-size: var(--yazi-govde-guclu-boyut);
+  line-height: var(--yazi-govde-guclu-satir);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryText {
+  overflow: hidden;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Üst bar: salt okunurda pasif buton ve nedeni */
+.topbarAction {
+  display: inline-flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.reason {
+  max-width: 220px;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}

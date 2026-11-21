@@ -1,6 +1,7 @@
 import type { components } from '@omvila/api-client-ts';
 import { addDays, localDateTimeToUtc } from '@omvila/ui-web/time';
 import type { ManageSession } from '@/app/api';
+import { customersFixture } from './fake-customers';
 
 // Sahte takvim ve randevu uçları (manageGetCalendar, manageGetAppointment, durum eylemleri, sürükle-bırak, "Yalnızca
 // bu gün için aç"). Şekiller sözleşmeyle aynı; veriler salon-paneli/Main'den, kurgusal kişiler. Bugün Çarşamba 25 Kasım
@@ -9,6 +10,8 @@ type CalendarView = components['schemas']['CalendarView'];
 type CalendarAppointment = components['schemas']['CalendarAppointment'];
 type AppointmentDetail = components['schemas']['AppointmentDetail'];
 type AppointmentStatus = components['schemas']['AppointmentStatus'];
+type AppointmentCreate = components['schemas']['ManageAppointmentCreate'];
+type SlotSearchRequest = components['schemas']['SlotSearchRequest'];
 
 const tz = 'Europe/Istanbul';
 export const calendarDate = '2026-11-25';
@@ -152,7 +155,22 @@ export interface CalendarFakeOptions {
   rescheduleError?: 'slot_taken' | 'concurrency_conflict' | 'outside_working_hours';
   /** Durum eylemlerinde (Geldi, geri al, iptal) 412. */
   actionConflict?: boolean;
+  /** Yeni randevu: dolu saat (meta.alternatives ile). Salt okunur abonelikte 403 kendiliğinden döner. */
+  createError?: 'slot_taken';
+  /** Tekrarlayan randevuda atlanan tarihler. */
+  skippedOccurrences?: string[];
 }
+
+/** Yeni randevu boş saatleri (salon-paneli/YeniRandevu): dolu saatler üstü çizili. */
+export const fakeSlotTimes = ['10:30', '11:15', '13:45', '14:30', '16:45', '17:30'];
+export const fakeTakenTimes = ['09:00', '09:45', '15:15'];
+const serviceMinutes: Record<string, { minutes: number; price: number; name: string }> = {
+  '0193a8f0-0000-7000-8000-0000000000f1': { minutes: 45, price: 45000, name: 'Saç kesimi' },
+  '0193a8f0-0000-7000-8000-0000000000f2': { minutes: 90, price: 180000, name: 'Keratin' },
+};
+const serviceOf = (id: string) =>
+  serviceMinutes[id] ?? { minutes: 30, price: 30000, name: 'Hizmet' };
+export const createdAppointmentId = '0193a8f0-0000-7000-8000-00000000a0ff';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -333,6 +351,106 @@ export function createCalendarFake(session: ManageSession, options: CalendarFake
         isClosed: false,
         intervals: body.intervals ?? [],
         note: null,
+      });
+    }
+
+    if (/^\/api\/v1\/manage\/branches\/[^/]+\/availability\/slots$/.test(path)) {
+      const body = (await request.clone().json()) as SlotSearchRequest;
+      const staffId = body.items[0]?.staffId ?? staffIds.elif;
+      const staffName = staff.find((m) => m.staffId === staffId)?.fullName ?? '';
+      return json(200, {
+        timeZone: tz,
+        date: body.date,
+        slots: fakeSlotTimes.map((time) => {
+          let cursor = localDateTimeToUtc(body.date, time, tz);
+          const items = body.items.map((item) => {
+            const service = serviceOf(item.serviceId);
+            const start = cursor;
+            cursor = shift(cursor, service.minutes * 60_000);
+            return {
+              serviceId: item.serviceId,
+              staffId,
+              staffName,
+              startUtc: start,
+              endUtc: cursor,
+              price: { amountMinor: service.price, currency: 'TRY' },
+            };
+          });
+          const minutes =
+            (Date.parse(cursor) - Date.parse(localDateTimeToUtc(body.date, time, tz))) / 60_000;
+          const [h = 0, m = 0] = time.split(':').map(Number);
+          const end = h * 60 + m + minutes;
+          return {
+            startUtc: localDateTimeToUtc(body.date, time, tz),
+            localTime: time,
+            endLocalTime: `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`,
+            period: h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening',
+            items,
+            total: {
+              amountMinor: items.reduce((sum, item) => sum + item.price.amountMinor, 0),
+              currency: 'TRY',
+            },
+          };
+        }),
+        unavailableTimes: fakeTakenTimes,
+      });
+    }
+
+    if (path === '/api/v1/manage/appointments' && request.method === 'POST') {
+      const body = (await request.clone().json()) as AppointmentCreate;
+      if (session.subscription.status === 'ReadOnly') {
+        return json(403, { code: 'subscription_read_only' });
+      }
+
+      if (options.createError === 'slot_taken') {
+        return json(409, {
+          code: 'slot_taken',
+          meta: {
+            alternatives: [
+              localDateTimeToUtc(calendarDate, '14:45', tz),
+              localDateTimeToUtc(calendarDate, '15:15', tz),
+            ],
+          },
+        });
+      }
+
+      const local = new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz,
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }).format(new Date(body.startUtc));
+      if ((local < '09:00' || local >= '19:00') && !body.allowOutsideWorkingHours) {
+        return json(409, { code: 'outside_working_hours' });
+      }
+
+      const minutes = body.items.reduce((sum, item) => sum + serviceOf(item.serviceId).minutes, 0);
+      const name =
+        body.newCustomer?.fullName ??
+        customersFixture.find((c) => c.id === body.brandCustomerId)?.fullName ??
+        '';
+      const stored: Stored = {
+        row: {
+          id: createdAppointmentId,
+          staffId: body.items[0]?.staffId ?? staffIds.elif,
+          start: local,
+          end: local,
+          customer: name,
+          service: body.items.map((item) => serviceOf(item.serviceId).name).join(', '),
+          status: 'Confirmed',
+          channel: body.channel,
+        },
+        date: calendarDate,
+        staffId: body.items[0]?.staffId ?? staffIds.elif,
+        startUtc: new Date(body.startUtc).toISOString(),
+        endUtc: shift(body.startUtc, minutes * 60_000),
+        status: 'Confirmed',
+        version: 1,
+      };
+      store.push(stored);
+      return json(201, {
+        appointment: { ...toDetail(stored), isRecurring: body.recurrence !== undefined },
+        skippedOccurrences: body.recurrence ? (options.skippedOccurrences ?? []) : [],
       });
     }
 

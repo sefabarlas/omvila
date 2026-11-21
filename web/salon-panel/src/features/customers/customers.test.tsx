@@ -265,8 +265,8 @@ describe('müşteri kartı', () => {
     expect(within(cancelled).getByText('İptal')).toBeTruthy();
     expect(within(cancelled).getByText('—')).toBeTruthy();
     expect(screen.getByText(/Amonyaksız ürün tercih ediyor/)).toBeTruthy();
-    // Paket, KVKK, kayıt işlemleri, Randevu ver ve SMS gönder sonraki dilimlerde.
-    expect(screen.queryByRole('button', { name: 'Randevu ver' })).toBeNull();
+    // Randevu ver açık (T-58); paket, KVKK, kayıt işlemleri ve SMS gönder sonraki dilimlerde.
+    expect(screen.getByRole('button', { name: 'Randevu ver' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'SMS gönder' })).toBeNull();
   });
 

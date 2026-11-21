@@ -67,8 +67,8 @@ function content(subscription: ManageSession['subscription'], days: number | nul
     case 'ReadOnly':
       return (
         <Banner tone="hata" title="Online randevu kapalı.">
-          Rezervasyon sayfanız şu an randevu almıyor. Takvimi görebilir, elle randevu
-          ekleyebilirsiniz.
+          Rezervasyon sayfanız şu an randevu almıyor. Takviminizi ve müşterilerinizi görebilirsiniz;
+          yeni randevu eklenemez.
         </Banner>
       );
     default:
