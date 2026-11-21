@@ -12,8 +12,6 @@ internal sealed class PurgeIdempotencyKeys(
 {
     public string Key => "PurgeIdempotencyKeys";
 
-    public Duration Interval => Duration.FromMinutes(options.Value.PurgeIntervalMinutes);
-
     public async Task RunAsync(CancellationToken ct)
     {
         var cutoff = clock.GetCurrentInstant() - Duration.FromHours(options.Value.RetentionHours);

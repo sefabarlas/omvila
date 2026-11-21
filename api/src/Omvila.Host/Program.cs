@@ -38,7 +38,7 @@ builder.Services.AddTenancyModule(builder.Configuration);
 builder.Services.AddPlatformModule(builder.Configuration);
 builder.Services.AddCatalogModule();
 builder.Services.AddCustomersModule();
-builder.Services.AddSchedulingModule();
+builder.Services.AddSchedulingModule(builder.Configuration);
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)

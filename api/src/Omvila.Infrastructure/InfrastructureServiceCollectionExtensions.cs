@@ -66,12 +66,12 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IntegrationEventRegistry>();
         services.AddScoped<IOutbox, Outbox>();
         services.AddSingleton<JobRunner>();
-        services.AddPeriodicJob<OutboxDispatcher>();
+        services.AddPeriodicJob<OutboxDispatcher, OutboxOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
 
         services.AddOptions<IdempotencyOptions>()
             .Bind(configuration.GetSection(IdempotencyOptions.Section))
             .Validate(o => o.IsValid(), "Idempotency ayarları eksik veya geçersiz (appsettings \"Idempotency\").");
-        services.AddPeriodicJob<PurgeIdempotencyKeys>();
+        services.AddPeriodicJob<PurgeIdempotencyKeys, IdempotencyOptions>(o => Duration.FromMinutes(o.PurgeIntervalMinutes));
 
         services.AddSurfaceCors(configuration);
 
