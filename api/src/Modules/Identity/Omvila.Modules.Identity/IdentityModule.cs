@@ -27,7 +27,11 @@ public static class IdentityModule
     {
         services.AddOptions<AuthOptions>()
             .Bind(configuration.GetSection(AuthOptions.Section))
-            .Validate(o => o.IsValid(), "Auth ayarları eksik veya geçersiz (appsettings \"Auth\").");
+            .Validate(o => o.IsValid(), "Auth ayarları eksik veya geçersiz (appsettings \"Auth\").")
+            .ValidateOnStart();
+        // İmza ve OTP anahtarı Staging/Production'da gizli değerden; eksikse açılış durur (T-73).
+        services.AddSingleton<IValidateOptions<AuthOptions>, IdentitySecretsValidator>();
+        services.AddSingleton<IValidateOptions<OtpOptions>, IdentitySecretsValidator>();
         services.AddSingleton<SigningKeyStore>();
         services.AddSingleton<AccessTokenIssuer>();
         services.AddSingleton<IPermissionResolver, RolePermissionResolver>();
@@ -35,7 +39,8 @@ public static class IdentityModule
         services.AddScoped<RefreshTokenService>();
         services.AddOptions<OtpOptions>()
             .Bind(configuration.GetSection(OtpOptions.Section))
-            .Validate(o => o.IsValid(), "Auth:Otp ayarları eksik veya geçersiz.");
+            .Validate(o => o.IsValid(), "Auth:Otp ayarları eksik veya geçersiz.")
+            .ValidateOnStart();
         services.AddSingleton<OtpHasher>();
         services.AddScoped<OtpService>();
         services.AddScoped<TrustedDeviceService>();

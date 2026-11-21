@@ -11,6 +11,8 @@ Otomatik iptaller (onay ve havale süresi), gelmedi işaretleme, bekleme teklifi
 - **Bildirim outbox'ı:** `notifications.notification_outbox`, iş transaction'ında yazılır. `DispatchNotifications` worker'ı `SKIP LOCKED` ile alır, gönderir, durumu yazar. Hatırlatmalar `ScheduledUtc`'li satırlardır.
 - **Entegrasyon olayları:** `infra.outbox_events` aynı transaction'da yazılır. `DispatchIntegrationEvents` olayları kayıtlı in-process handler'lara iletir. Handler idempotenttir (`infra.processed_events (event_id, handler)` PK).
 - **Periyodik işler:** `BackgroundService` + `PeriodicTimer`. Her iş çalışmadan önce `pg_try_advisory_lock(job_key)` alır; birden çok worker örneğinde yalnız biri çalışır. Çalışma kaydı `infra.job_runs`.
+  - Aralık işin üyesi değildir; kayıtta yapılandırmadan seçilir (`AddPeriodicJob<TJob, TOptions>`). Zamanlayıcı aralığı açılışta işi oluşturmadan ve veritabanına bağlanmadan okur; iş yalnız `JobRunner`'ın başlattığı platform kapsamlı oturumda çözülür (T-77: aralığı okumak için işi oturumsuz oluşturmak DbContext alan her işin döngüsünü sessizce öldürüyordu).
+  - Hata ayrımı: kurulum/yapılandırma hatası (eksik ayar, geçersiz aralık) ve beklenmedik biten döngü Critical günlüğe yazılır, servis hata ile biter ve host durur (`BackgroundServiceExceptionBehavior.StopHost`). Tur hatası (veritabanına ulaşılamıyor, iş istisnası) geçicidir: Error günlüğe yazılır, sonraki turda yeniden denenir.
 - İş mantığı worker'da değil, modülün `Jobs/` sınıfındadır ve `IClock` alır. Testte `FakeClock` ilerletilip iş doğrudan çağrılır.
 - Hangfire, Quartz veya harici kuyruk (RabbitMQ, SQS) kullanılmaz.
 

@@ -1,17 +1,18 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Omvila.Infrastructure.Hosting;
 
 namespace Omvila.Infrastructure.Http.Cors;
 
 /// <summary>
 /// Başlangıçta denetlenir: bilinmeyen yüzey adı, joker ("*"), yol/sorgu taşıyan veya mutlak olmayan köken reddedilir.
-/// Development ve Testing dışında kökenler https olmalıdır.
+/// Development ve Testing dışında (Staging, Production) kökenler https olmalıdır.
 /// </summary>
 internal sealed class SurfaceCorsOptionsValidator(IHostEnvironment environment) : IValidateOptions<SurfaceCorsOptions>
 {
     public ValidateOptionsResult Validate(string? name, SurfaceCorsOptions options)
     {
-        var requireHttps = !environment.IsDevelopment() && !environment.IsEnvironment("Testing");
+        var requireHttps = !environment.IsDevelopmentOrTesting();
         var errors = Collect(options, requireHttps).ToList();
         return errors.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(errors);
     }

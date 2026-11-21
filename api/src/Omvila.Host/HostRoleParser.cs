@@ -7,7 +7,8 @@ internal static class HostRoleParser
         null or "" or "all" => HostRole.All,
         "api" => HostRole.Api,
         "worker" => HostRole.Worker,
+        "migrate" => HostRole.Migrate,
         "seed" => HostRole.Seed,
-        _ => throw new ArgumentException($"Geçersiz rol: '{value}'. Kullanım: --role=api|worker|all|seed", nameof(value)),
+        _ => throw new ArgumentException($"Geçersiz rol: '{value}'. Kullanım: --role=api|worker|all|migrate|seed", nameof(value)),
     };
 }

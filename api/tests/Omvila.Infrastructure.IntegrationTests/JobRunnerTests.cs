@@ -80,13 +80,21 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
 
     private ServiceProvider Services(Gate? gate = null) => db.CreateServices(configure: services => services
         .AddSingleton(gate ?? new Gate())
-        .AddPeriodicJob<SucceedingJob>()
-        .AddPeriodicJob<FailingJob>()
-        .AddPeriodicJob<BlockingJob>()
-        .AddPeriodicJob<ScopeProbeJob>()
-        .AddPeriodicJob<WritingThenFailingJob>());
+        .AddPeriodicJob<SucceedingJob, TestJobOptions>(Interval)
+        .AddPeriodicJob<FailingJob, TestJobOptions>(Interval)
+        .AddPeriodicJob<BlockingJob, TestJobOptions>(Interval)
+        .AddPeriodicJob<ScopeProbeJob, TestJobOptions>(Interval)
+        .AddPeriodicJob<WritingThenFailingJob, TestJobOptions>(Interval));
 
     private static JobRunner Runner(IServiceProvider services) => services.GetRequiredService<JobRunner>();
+
+    // Bu testler zamanlayıcıyı başlatmaz; aralık yalnız kayıt için (ayardan).
+    private static Duration Interval(TestJobOptions options) => Duration.FromSeconds(options.IntervalSeconds);
+
+    public sealed class TestJobOptions
+    {
+        public int IntervalSeconds { get; set; } = 60;
+    }
 
     public sealed class Gate
     {
@@ -101,8 +109,6 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
     {
         public string Key => "TestScopeProbeJob";
 
-        public Duration Interval => Duration.FromMinutes(1);
-
         public async Task RunAsync(CancellationToken ct)
         {
             await using var command = new NpgsqlCommand(
@@ -114,8 +120,6 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
     public sealed class WritingThenFailingJob(IDbSession session) : IPeriodicJob
     {
         public string Key => "TestWritingThenFailingJob";
-
-        public Duration Interval => Duration.FromMinutes(1);
 
         public async Task RunAsync(CancellationToken ct)
         {
@@ -132,8 +136,6 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
     {
         public string Key => "TestSucceedingJob";
 
-        public Duration Interval => Duration.FromMinutes(1);
-
         public Task RunAsync(CancellationToken ct) => Task.CompletedTask;
     }
 
@@ -141,16 +143,12 @@ public sealed class JobRunnerTests(PostgresFixture db) : IAsyncLifetime
     {
         public string Key => "TestFailingJob";
 
-        public Duration Interval => Duration.FromMinutes(1);
-
         public Task RunAsync(CancellationToken ct) => throw new InvalidOperationException("iş hatası");
     }
 
     public sealed class BlockingJob(Gate gate) : IPeriodicJob
     {
         public string Key => "TestBlockingJob";
-
-        public Duration Interval => Duration.FromMinutes(1);
 
         public async Task RunAsync(CancellationToken ct)
         {

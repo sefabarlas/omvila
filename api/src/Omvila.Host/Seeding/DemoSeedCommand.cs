@@ -1,3 +1,4 @@
+using Omvila.Infrastructure.Hosting;
 using Omvila.Infrastructure.Persistence;
 
 namespace Omvila.Host.Seeding;
@@ -8,15 +9,13 @@ namespace Omvila.Host.Seeding;
 /// </summary>
 internal static class DemoSeedCommand
 {
-    private static readonly string[] AllowedEnvironments = ["Development", "Staging", "Testing"];
-
     /// <returns>Çıkış kodu: 0 başarı, 1 izin verilmeyen ortam.</returns>
     public static async Task<int> RunAsync(IServiceProvider services, IHostEnvironment environment, bool reset, TextWriter output, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(environment);
         ArgumentNullException.ThrowIfNull(output);
-        if (!AllowedEnvironments.Contains(environment.EnvironmentName, StringComparer.Ordinal))
+        if (!environment.AllowsDemoData())
         {
             await output.WriteLineAsync($"Demo verisi {environment.EnvironmentName} ortamında yazılmaz (yalnız Development, Staging, Testing).");
             return 1;
