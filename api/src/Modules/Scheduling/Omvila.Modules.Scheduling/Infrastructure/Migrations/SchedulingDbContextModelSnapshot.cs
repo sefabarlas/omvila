@@ -581,6 +581,140 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.BranchQueueCounter", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<LocalDate>("QueueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("queue_date");
+
+                    b.Property<int>("LastNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_number");
+
+                    b.HasKey("BrandId", "BranchId", "QueueDate")
+                        .HasName("pk_branch_queue_counters");
+
+                    b.ToTable("branch_queue_counters", "scheduling", t =>
+                        {
+                            t.HasCheckConstraint("ck_branch_queue_counters_last_number", "last_number >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.WalkInTicket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Instant?>("AlmostTurnNotifiedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("almost_turn_notified_utc");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("appointment_id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid?>("BrandCustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_customer_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("CalledUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("called_utc");
+
+                    b.Property<Instant?>("ClosedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_utc");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("customer_name");
+
+                    b.Property<Instant>("JoinedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("joined_utc");
+
+                    b.Property<string>("PhoneE164")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("phone_e164");
+
+                    b.Property<Guid?>("PreferredStaffId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preferred_staff_id");
+
+                    b.Property<LocalDate>("QueueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("queue_date");
+
+                    b.Property<int>("QueueNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("queue_number");
+
+                    b.Property<Guid?>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.Property<int?>("ServiceMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("service_minutes");
+
+                    b.Property<string>("ServiceName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("service_name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_walk_in_tickets");
+
+                    b.HasIndex("BrandId", "BranchId", "QueueDate", "QueueNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_walk_in_tickets_brand_id_branch_id_queue_date_queue_number");
+
+                    b.ToTable("walk_in_tickets", "scheduling", t =>
+                        {
+                            t.HasCheckConstraint("ck_walk_in_tickets_queue_number", "queue_number >= 1");
+
+                            t.HasCheckConstraint("ck_walk_in_tickets_served", "status <> 'Served' OR appointment_id IS NOT NULL");
+
+                            t.HasCheckConstraint("ck_walk_in_tickets_status", "status IN ('Waiting', 'Called', 'Served', 'Left')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.Appointment", b =>
                 {
                     b.HasOne("Omvila.Modules.Scheduling.Domain.AppointmentSeries", null)

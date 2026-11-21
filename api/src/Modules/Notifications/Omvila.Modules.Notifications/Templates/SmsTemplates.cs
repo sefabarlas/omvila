@@ -89,6 +89,8 @@ internal static partial class SmsTemplates
         [Key(NotificationEvents.DepositNotReceived, null)] = new(
             "{salon}: {tutar} TL kapora {süre} içinde gelmediği için {tarih} {saat} randevunuz iptal edildi. Havale yaptıysanız salonu arayın.",
             SalonOnly),
+        // Tasarımdaki "Lütfen salona yakın olun." ses tonu kuralıyla (lütfen yok) "Salona yakın olun." yazılır (bildirimler.md ¹, S-17).
+        [Key(NotificationEvents.WalkInAlmostTurn, null)] = new("{salon}: Sıranız yaklaştı, önünüzde 1 kişi var. Salona yakın olun.", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, null)] = new(
             "Hatırlatma: Yarın {saat|bulunma} {salon|bulunma} randevunuz var. Değişiklik için: {bağlantı}", SalonOnly),
         [Key(NotificationEvents.AppointmentReminder, SameDayVariant)] = new(
