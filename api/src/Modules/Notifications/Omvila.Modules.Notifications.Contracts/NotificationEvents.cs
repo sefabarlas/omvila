@@ -20,4 +20,28 @@ public static class NotificationEvents
 
     /// <summary>Hatırlatma (ReminderOffsetsMinutes): zamanlanmış outbox satırı; randevu iptal olunca veya saati değişince düşer.</summary>
     public const string AppointmentReminder = "appointment.reminder";
+
+    /// <summary>İşletme push'u (Owner, BranchManager): "Onay bekliyor · {kalan süre}". Tercih: newOnlineAppointment.</summary>
+    public const string StaffApprovalNeeded = "staff.approval_needed";
+
+    /// <summary>İşletme push'u (ilgili personel): "Yeni randevu".</summary>
+    public const string StaffAppointmentCreated = "staff.appointment_created";
+
+    /// <summary>İşletme push'u (ilgili personel): "İptal" / "Saat değişti" (çeşit cancelled / rescheduled).</summary>
+    public const string StaffAppointmentChanged = "staff.appointment_changed";
+
+    /// <summary>İşletme push'u (ilgili personel): "Müşteri geldi".</summary>
+    public const string StaffCustomerCheckedIn = "staff.customer_checked_in";
+
+    /// <summary>İşletme push'u (Owner, BranchManager): "Havale bildirildi".</summary>
+    public const string StaffDepositReported = "staff.deposit_reported";
+
+    /// <summary>İşletme push'u: "Yeni değerlendirme".</summary>
+    public const string StaffReviewReceived = "staff.review_received";
+
+    /// <summary>İşletme push'u: "Sırada {n} kişi".</summary>
+    public const string StaffWalkInQueue = "staff.walkin_queue";
+
+    /// <summary>İşletme push'u: "Gün sonu özeti".</summary>
+    public const string StaffDailySummary = "staff.daily_summary";
 }
