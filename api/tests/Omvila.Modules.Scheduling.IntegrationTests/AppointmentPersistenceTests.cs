@@ -42,7 +42,7 @@ public sealed class AppointmentPersistenceTests(PostgresFixture db) : IAsyncLife
             await command.ExecuteNonQueryAsync(Ct);
         }
 
-        _services = db.CreateServices(configure: s => s.AddSchedulingModule());
+        _services = db.CreateServices(configure: s => s.AddSchedulingModule(db.Configuration()));
     }
 
     public async ValueTask DisposeAsync() => await _services.DisposeAsync();
