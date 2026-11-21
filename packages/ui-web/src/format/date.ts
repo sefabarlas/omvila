@@ -72,7 +72,7 @@ function parseLocalDate(localDate: string): Parts {
  * long "21 Kasım Cuma", panel "Salı, 25 Kasım", short "21 Kas Cum", numeric "21.11.2026", dayMonth "31 Aralık"
  * (salon-paneli/AyarlarSube özel günler). Rezervasyon sayfası: compact "Cum 28 Kas" (Randevum, Ertele alt çubuğu),
  * weekdayDayMonth "Cuma 28 Kasım", monthYear "Kasım 2026" (gün şeridi başlığı), weekday "Cuma", weekdayShort "Cum",
- * day "28".
+ * day "28". weekdayShort ayrıca salon-paneli/HaftaTakvim kolon başlığında kullanılır.
  * @param localDate Takvim günü, yyyy-aa-gg.
  */
 export function formatDate(localDate: string, style: DateStyle = 'long'): string {

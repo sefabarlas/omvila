@@ -46,5 +46,7 @@ internal sealed class AppointmentConfiguration : IEntityTypeConfiguration<Appoin
         builder.HasIndex(x => new { x.BrandId, x.BranchId, x.StartUtc });
         builder.HasIndex(x => new { x.BrandId, x.BrandCustomerId, x.StartUtc });
         builder.HasIndex(x => new { x.BrandId, x.SeriesId });
+        // MarkNoShows platform kapsamında her dakika tarar: yalnız Geldi denmemiş onaylı randevular.
+        builder.HasIndex(x => x.StartUtc).HasFilter("status = 'Confirmed' AND checked_in_utc IS NULL").HasDatabaseName("ix_appointments_no_show_candidates");
     }
 }

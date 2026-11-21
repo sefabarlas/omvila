@@ -12,7 +12,7 @@ namespace Omvila.Modules.Scheduling.Infrastructure;
 
 /// <summary>
 /// <see cref="IAppointmentQueries"/>: müşteri kartı randevuları (yeniden eskiye, opak imleç) ve yaklaşan randevu (toplu,
-/// tek sorgu). Personel adları Tenancy'den toplu okunur.
+/// tek sorgu), bildirim bilgisi. Personel adları Tenancy'den toplu okunur.
 /// </summary>
 internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries tenants) : IAppointmentQueries
 {
@@ -95,6 +95,34 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
             .Select(g => new { BrandCustomerId = g.Key, Next = g.Min(a => a.StartUtc) })
             .ToListAsync(ct);
         return rows.ToDictionary(r => r.BrandCustomerId, r => r.Next);
+    }
+
+    public async Task<AppointmentNotificationInfo?> GetNotificationInfoAsync(Guid brandId, Guid appointmentId, CancellationToken ct)
+    {
+        var appointment = await db.Appointments.AsNoTracking().Include(a => a.Items)
+            .SingleOrDefaultAsync(a => a.BrandId == brandId && a.Id == appointmentId, ct);
+        if (appointment is null)
+        {
+            return null;
+        }
+
+        var ordered = appointment.Items.OrderBy(i => i.SeqNo).ToList();
+        var staffIds = ordered.Where(i => i.StaffId is not null).Select(i => i.StaffId!.Value).Distinct().ToList();
+        var staff = await tenants.GetStaffCardsAsync(brandId, staffIds, ct);
+        var code = await db.AppointmentAccessCodes.AsNoTracking()
+            .Where(c => c.AppointmentId == appointmentId && c.Purpose == AccessCodePurpose.Manage && c.RevokedUtc == null)
+            .OrderByDescending(c => c.CreatedUtc)
+            .Select(c => c.Code)
+            .FirstOrDefaultAsync(ct);
+        return new AppointmentNotificationInfo(
+            appointment.Id,
+            appointment.BranchId,
+            appointment.BrandCustomerId,
+            appointment.Status.ToString(),
+            appointment.StartUtc,
+            [.. ordered.Select(i => i.ServiceNameSnapshot)],
+            [.. staffIds.Where(staff.ContainsKey).Select(id => staff[id].DisplayName ?? staff[id].FullName).Distinct(StringComparer.Ordinal)],
+            code);
     }
 
     private static string Encode(Instant start, Guid id) =>
