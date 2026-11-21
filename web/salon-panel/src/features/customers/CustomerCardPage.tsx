@@ -16,10 +16,15 @@ import {
 import { displayStatus } from '@omvila/ui-web/status';
 import { branchToday } from '@omvila/ui-web/time';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, CalendarPlus } from 'lucide-react';
+import { useState } from 'react';
 import { useApi } from '@/app/api-context';
+import { useSelectedBranch } from '@/app/branch';
 import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
+import { useSession } from '@/app/session';
+import { NewAppointmentButton } from '@/features/appointments/NewAppointmentButton';
+import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal';
 import { NotFoundPage } from '@/shared/NotFoundPage';
 import { Page } from '@/shared/Page';
 import { customerAppointmentsQuery, customerQuery } from './api';
@@ -31,8 +36,9 @@ const breadcrumb = 'Müşteriler / Müşteri kartı';
 
 /**
  * Müşteri kartı (salon-paneli/MusteriKarti): kimlik, etiketler, metrik blokları, Randevular sekmesi ve notlar.
- * "Müşteri since", ilk kanal, tercih ettiği personel, KVKK izinleri, kayıt işlemleri, paket bloğu, "Randevu ver" ve
- * "SMS gönder" sözleşmede/dilimde yok; gizli (acik-sorular.md T-57).
+ * "Randevu ver" yeni randevu ekranını müşteri seçili açar (appointment.create, T-58). "Müşteri since", ilk kanal,
+ * tercih ettiği personel, KVKK izinleri, kayıt işlemleri, paket bloğu ve "SMS gönder" sözleşmede/dilimde yok; gizli
+ * (acik-sorular.md T-57).
  */
 export function CustomerCardPage({ brandCustomerId }: { brandCustomerId: string }) {
   const api = useApi();
@@ -72,6 +78,10 @@ export function CustomerCardPage({ brandCustomerId }: { brandCustomerId: string 
 
 function CustomerCard({ customer }: { customer: CustomerSummary }) {
   const clock = useClock();
+  const { session, can } = useSession();
+  const { branchId: selectedBranch } = useSelectedBranch();
+  const branchId = selectedBranch ?? session.branches[0]?.id ?? '';
+  const [booking, setBooking] = useState(false);
   const today = branchToday(clock, defaultTimeZone);
   const phone = customerPhone(customer);
   const visits = customer.visitCount;
@@ -97,7 +107,33 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
   ];
 
   return (
-    <Page title={customer.fullName} context={breadcrumb}>
+    <Page
+      title={customer.fullName}
+      context={breadcrumb}
+      {...(can('appointment.create') && branchId
+        ? {
+            action: (
+              <NewAppointmentButton
+                label="Randevu ver"
+                icon={<CalendarPlus size={16} aria-hidden="true" />}
+                readOnly={session.subscription.status === 'ReadOnly'}
+                onClick={() => {
+                  setBooking(true);
+                }}
+              />
+            ),
+          }
+        : {})}
+    >
+      {booking ? (
+        <NewAppointmentModal
+          branchId={branchId}
+          prefill={{ customer }}
+          onClose={() => {
+            setBooking(false);
+          }}
+        />
+      ) : null}
       <div className={styles.cardLayout}>
         <aside className={styles.side}>
           <section className={styles.panel} aria-label="Müşteri">

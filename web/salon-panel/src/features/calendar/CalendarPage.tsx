@@ -5,18 +5,10 @@ import {
   CalendarGrid,
   WeekCalendar,
 } from '@omvila/ui-web/calendar';
-import type { CalendarDropTarget, CalendarMove } from '@omvila/ui-web/calendar';
+import type { CalendarDropTarget, CalendarMove, CalendarSlot } from '@omvila/ui-web/calendar';
 import { errorMessage } from '@omvila/ui-web/errors';
 import { formatDate, formatTime } from '@omvila/ui-web/format';
-import {
-  Banner,
-  Button,
-  EmptyState,
-  IconButton,
-  Modal,
-  Select,
-  Skeleton,
-} from '@omvila/ui-web/panel';
+import { Banner, Button, EmptyState, IconButton, Select, Skeleton } from '@omvila/ui-web/panel';
 import { addDays, branchToday } from '@omvila/ui-web/time';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -28,7 +20,11 @@ import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { isPersonalView } from '@/app/menu';
 import { useSession } from '@/app/session';
+import { NewAppointmentButton } from '@/features/appointments/NewAppointmentButton';
+import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal';
+import type { NewAppointmentPrefill } from '@/features/appointments/NewAppointmentModal';
 import { ConflictBanner } from '@/shared/ConflictBanner';
+import { OutsideHoursDialog } from '@/shared/OutsideHoursDialog';
 import { Page } from '@/shared/Page';
 import { Segmented } from '@/shared/Segmented';
 import { dative } from '@/shared/turkish';
@@ -70,7 +66,8 @@ const modes = [
 /**
  * Takvim (salon-paneli/Main, HaftaTakvim, TakvimBos, TakvimKapali): özet blokları, gün (personel kolonları) ve hafta
  * (tek personel) görünümü, randevu yan paneli, sürükle-bırak. Tarih ve görünüm adresin arama parametresindedir.
- * "Randevu ekle" ve boş alana tıklama yeni randevu ekranıyla gelir (PR-18; acik-sorular.md T-54).
+ * "Randevu ekle" ve boş alana tıklama yeni randevu ekranını açar (appointment.create); salt okunur abonelikte buton
+ * pasif ve nedeni yazar, boş alan tıklanmaz (T-58).
  */
 export function CalendarPage({ search }: { search: CalendarSearch }) {
   const api = useApi();
@@ -112,6 +109,9 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
   const [problem, setProblem] = useState<MoveProblem | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [openingDay, setOpeningDay] = useState(false);
+  const [creating, setCreating] = useState<NewAppointmentPrefill | null>(null);
+  const canCreate = can('appointment.create');
+  const readOnly = session.subscription.status === 'ReadOnly';
 
   const setSearch = (patch: Partial<CalendarSearch>) =>
     void navigate({ to: '/takvim', search: (prev) => ({ ...prev, ...patch }) });
@@ -169,6 +169,15 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
     return `${where} · ${target.startTime}–${target.endTime} · müşteriye SMS gider`;
   };
 
+  const onSlotClick = (slot: CalendarSlot) => {
+    setCreating({
+      staffId: slot.staffId,
+      date: slot.date,
+      time: formatTime(slot.startUtc, view?.timeZone ?? timeZone),
+    });
+  };
+  const slotProps = canCreate && !readOnly ? { onSlotClick } : {};
+
   const shownDates = mode === 'hafta' ? visibleWeekDays(view, dates) : dates;
   const hours = view ? gridHours(view, shownDates) : null;
   const day = findDay(view, date);
@@ -184,7 +193,22 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
   const nextWeekday = formatDate(addDays(date, 1), 'panel').split(',')[0] ?? '';
 
   return (
-    <Page title={personal ? 'Takvimim' : 'Takvim'} context={context}>
+    <Page
+      title={personal ? 'Takvimim' : 'Takvim'}
+      context={context}
+      {...(canCreate
+        ? {
+            action: (
+              <NewAppointmentButton
+                readOnly={readOnly}
+                onClick={() => {
+                  setCreating({ date });
+                }}
+              />
+            ),
+          }
+        : {})}
+    >
       {/* Özet yalnız bugünün gün görünümünde (Main); hafta, kapalı ve boş gün tasarımlarında yok. */}
       {mode === 'gun' && date === today ? (
         <CalendarSummaryBlocks
@@ -353,6 +377,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           unavailable={unavailableRanges(view, shownDates, hours)}
           now={clock.now()}
           onBlockClick={setSelected}
+          {...slotProps}
           {...(canMove ? { onMove, describeDrop } : {})}
         />
       ) : (
@@ -366,6 +391,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           unavailable={unavailableRanges(view, shownDates, hours)}
           now={clock.now()}
           onBlockClick={setSelected}
+          {...slotProps}
           {...(canMove ? { onMove, describeDrop } : {})}
         />
       )}
@@ -375,6 +401,15 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
           today={today}
           onClose={() => {
             setSelected(null);
+          }}
+        />
+      ) : null}
+      {creating ? (
+        <NewAppointmentModal
+          branchId={branchId}
+          prefill={creating}
+          onClose={() => {
+            setCreating(null);
           }}
         />
       ) : null}
@@ -391,6 +426,8 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
       {problem?.kind === 'confirm' ? (
         <OutsideHoursDialog
           code={problem.code}
+          confirmLabel="Yine de taşı"
+          consequence="Yine de taşırsanız randevu bu saate yazılır."
           onCancel={() => {
             setProblem(null);
           }}
@@ -400,36 +437,5 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
         />
       ) : null}
     </Page>
-  );
-}
-
-/** 409 outside_working_hours / staff_on_time_off: kullanıcı onaylarsa allowOutsideWorkingHours ile tekrar. */
-function OutsideHoursDialog({
-  code,
-  onCancel,
-  onConfirm,
-}: {
-  code: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <Modal
-      open
-      onClose={onCancel}
-      title={code === 'staff_on_time_off' ? 'Personel bu saatte izinli' : 'Çalışma saati dışında'}
-      footer={
-        <>
-          <Button onClick={onCancel}>Vazgeç</Button>
-          <Button variant="primary" onClick={onConfirm}>
-            Yine de taşı
-          </Button>
-        </>
-      }
-    >
-      <p className={styles.dialogText}>
-        {errorMessage(code)} Yine de taşırsanız randevu bu saate yazılır.
-      </p>
-    </Modal>
   );
 }

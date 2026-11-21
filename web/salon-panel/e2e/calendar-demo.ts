@@ -190,6 +190,8 @@ export async function calendarDemo(page: Page) {
       'appointment.approve',
       'appointment.checkin',
       'customer.view',
+      'customer.phone.view',
+      'customer.edit',
       'report.view',
     ],
     membership: { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId },

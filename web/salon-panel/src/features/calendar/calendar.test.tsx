@@ -47,8 +47,8 @@ describe('takvim gün görünümü', () => {
     expect(within(summary).getByText('ilki 1 sa 35 dk içinde iptal olur')).toBeTruthy();
     expect(within(summary).getByText('7')).toBeTruthy();
     expect(within(summary).getByText('randevu · 1 tamamlandı')).toBeTruthy();
-    // Yeni randevu ekranı gelene kadar buton yok (T-54); kapıda sıra ve ciro D5.
-    expect(screen.queryByRole('button', { name: 'Randevu ekle' })).toBeNull();
+    // Kapıda sıra ve ciro D5.
+    expect(screen.getByRole('button', { name: 'Randevu ekle' })).toBeTruthy();
     expect(screen.queryByText(/Kapıda sırada/i)).toBeNull();
   });
 
