@@ -139,7 +139,7 @@ internal static class CustomerEndpoints
             p.NextCursor)));
     }
 
-    private static async Task<IReadOnlyList<CustomerSummaryResponse>> WithNextAppointmentAsync(
+    internal static async Task<IReadOnlyList<CustomerSummaryResponse>> WithNextAppointmentAsync(
         Guid brandId, IReadOnlyList<CustomerSummaryResponse> items, IAppointmentQueries appointments, IClock clock, CancellationToken ct)
     {
         var next = await appointments.GetNextAppointmentsAsync(brandId, [.. items.Select(i => i.Id)], clock.GetCurrentInstant(), ct);
