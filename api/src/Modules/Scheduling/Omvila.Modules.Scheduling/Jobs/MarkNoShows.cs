@@ -28,8 +28,6 @@ internal sealed partial class MarkNoShows(
 {
     public string Key => "MarkNoShows";
 
-    public Duration Interval => Duration.FromMinutes(1);
-
     public async Task RunAsync(CancellationToken ct)
     {
         var now = clock.GetCurrentInstant();
