@@ -6,7 +6,10 @@ using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Customers.Features.Customers;
 
-/// <summary>Müşteri listesi ve kartı okuma (Musteriler, MusteriKarti). Yalnız markanın kartları; global kişiden yalnız telefon.</summary>
+/// <summary>
+/// Müşteri listesi ve kartı okuma (Musteriler, MusteriKarti). Yalnız markanın kartları; global kişiden yalnız telefon.
+/// Birleştirmeyle arşivlenen kart hiç görünmez (404); anonimleştirilen kart listede ve aramada yoktur, kartı "Silinmiş müşteri" olarak açılır.
+/// </summary>
 internal sealed class CustomerReader(CustomersDbContext db)
 {
     public const int DefaultLimit = 50;
@@ -18,10 +21,11 @@ internal sealed class CustomerReader(CustomersDbContext db)
     public IQueryable<CustomerRow> Rows(Guid brandId) =>
         from b in db.BrandCustomers.AsNoTracking()
         join c in db.Customers.AsNoTracking() on b.CustomerId equals c.Id
-        where b.BrandId == brandId
+        where b.BrandId == brandId && b.MergedIntoId == null
         select new CustomerRow
         {
             Id = b.Id,
+            IsAnonymized = b.AnonymizedUtc != null,
             FullName = b.DisplayName ?? c.FullName,
             PhoneE164 = c.PhoneE164,
             BirthYear = b.BirthYear,
@@ -31,13 +35,17 @@ internal sealed class CustomerReader(CustomersDbContext db)
             LastVisitOn = b.LastVisitOn,
             TotalSpentMinor = b.TotalSpentMinor,
             Notes = b.Notes,
+            Source = b.Source,
         };
+
+    /// <summary>Listede görünen kartlar: birleşmiş (arşiv) ve anonimleştirilmiş kartlar hariç (T-92).</summary>
+    public IQueryable<CustomerRow> ListedRows(Guid brandId) => Rows(brandId).Where(r => !r.IsAnonymized);
 
     public Task<CustomerRow?> FindAsync(Guid brandId, Guid brandCustomerId, CancellationToken ct) =>
         Rows(brandId).SingleOrDefaultAsync(r => r.Id == brandCustomerId, ct);
 
     public Task<bool> ExistsAsync(Guid brandId, Guid brandCustomerId, CancellationToken ct) =>
-        db.BrandCustomers.AnyAsync(b => b.Id == brandCustomerId && b.BrandId == brandId, ct);
+        db.BrandCustomers.AnyAsync(b => b.Id == brandCustomerId && b.BrandId == brandId && b.MergedIntoId == null, ct);
 
     public async Task<Result<CustomerList>> ListAsync(
         Guid brandId, string? q, string? filter, int? limit, string? cursor, CustomerViewContext view, CancellationToken ct)
@@ -85,7 +93,7 @@ internal sealed class CustomerReader(CustomersDbContext db)
             return new CustomerList([], null);
         }
 
-        var query = Filter(Search(Rows(brandId), term), parsedFilter, view);
+        var query = Filter(Search(ListedRows(brandId), term), parsedFilter, view);
         if (after is { } a)
         {
             query = After(query, a);
@@ -139,7 +147,7 @@ internal sealed class CustomerReader(CustomersDbContext db)
         return rows.Where(_ => false);
     }
 
-    private static IQueryable<CustomerRow> Filter(IQueryable<CustomerRow> rows, CustomerListFilter filter, CustomerViewContext view)
+    internal static IQueryable<CustomerRow> Filter(IQueryable<CustomerRow> rows, CustomerListFilter filter, CustomerViewContext view)
     {
         var today = view.Today;
         switch (filter)
