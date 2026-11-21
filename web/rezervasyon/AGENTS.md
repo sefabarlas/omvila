@@ -13,8 +13,9 @@ Next.js (App Router), React 19, TypeScript strict, CSS Modules + `@omvila/design
 |---|---|---|
 | `/[brandSlug]` | Sunucu (`generateMetadata` ile Open Graph: salon adı, logo) + istemci adımları | Şube tekse şube adımı atlanır |
 | `/r/[code]` | İstemci | Randevum; saat değiştir `?islem=saat`, iptal `?islem=iptal` (T-59) |
-| `/b/[code]` | İstemci | Bekleme teklifi (15 dk geri sayım) |
-| `/d/[code]` | İstemci | Değerlendirme (Dilim 5) |
+| `/b/[code]` | İstemci | Bekleme teklifi (BeklemeTeklif, BeklemeDoldu); geri sayım `holdExpiresUtc − generatedUtc`, kabul If-Match, sonuç Başarı / Talep / Havale (T-100) |
+| `/d/[code]` | İstemci | Değerlendirme (Dilim 5; web tasarımı yok, Degerlendir uyarlaması, T-100) |
+| `/.well-known/apple-app-site-association`, `/.well-known/assetlinks.json` | Sunucu (dinamik) | Derin bağlantı doğrulama (K3); `APPLE_TEAM_ID`, `ANDROID_CERT_SHA256` yoksa 404 (T-100) |
 
 ## Akış kuralları
 - Dört adım: **Hizmet → Personel → Saat → Onay.** Hiçbir adımda şifre veya üyelik istenmez.
