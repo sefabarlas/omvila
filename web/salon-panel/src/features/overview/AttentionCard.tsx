@@ -157,7 +157,10 @@ export function AttentionCard({
             const busy = busyId !== undefined;
             return (
               <li key={item.appointmentId} className={styles.attentionRow}>
-                <span className={`${styles.attentionIcon} ${styles.kapora}`} aria-hidden="true">
+                <span
+                  className={[styles.attentionIcon, styles.kapora].filter(Boolean).join(' ')}
+                  aria-hidden="true"
+                >
                   <Banknote size={18} />
                 </span>
                 <span className={styles.attentionText}>
