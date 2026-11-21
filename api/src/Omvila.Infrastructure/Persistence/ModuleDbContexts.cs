@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
@@ -20,7 +21,15 @@ public static class ModuleDbContexts
         services.AddScoped(sp =>
         {
             var session = sp.GetRequiredService<IDbSession>();
-            var options = Configure(new DbContextOptionsBuilder<TContext>(), session.Connection, schema).Options;
+            var builder = Configure(new DbContextOptionsBuilder<TContext>(), session.Connection, schema);
+            // Kayıtlı EF önleyicileri (ör. testteki sorgu sayacı; musaitlik.md § Performans hedefi N+1 testi).
+            var interceptors = sp.GetServices<IInterceptor>().ToList();
+            if (interceptors.Count > 0)
+            {
+                builder.AddInterceptors(interceptors);
+            }
+
+            var options = builder.Options;
             var context = ActivatorUtilities.CreateInstance<TContext>(sp, options);
             context.Database.UseTransaction(session.Transaction);
             return context;

@@ -16,6 +16,8 @@ namespace Omvila.Modules.Catalog.Contracts;
 /// <param name="Stages">Aşamalar sırasıyla; aşamasız hizmette tek örtük aşama (personel meşgul, süre = <paramref name="DurationMinutes"/>).</param>
 /// <param name="RequiresApproval">Hizmetin onay ayarı; <c>null</c> = marka ayarı.</param>
 /// <param name="IsOnlineBookable">Online randevuya açık mı.</param>
+/// <param name="MinNoticeMinutes">Hizmetin "En az ön bildirim" ezmesi; <c>null</c> = marka ayarı.</param>
+/// <param name="MaxAdvanceDays">Hizmetin "En ileri tarih" ezmesi; <c>null</c> = marka ayarı.</param>
 public sealed record ServiceOffer(
     Guid ServiceId,
     Guid? StaffId,
@@ -29,4 +31,6 @@ public sealed record ServiceOffer(
     int BufferAfterMinutes,
     IReadOnlyList<ServiceOfferStage> Stages,
     bool? RequiresApproval,
-    bool IsOnlineBookable);
+    bool IsOnlineBookable,
+    int? MinNoticeMinutes,
+    int? MaxAdvanceDays);
