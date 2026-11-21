@@ -34,7 +34,7 @@ internal sealed class DepositPayments(SalesDbContext db, IIdGenerator ids, ICloc
     {
         var payment = await db.Payments.SingleOrDefaultAsync(p => p.Id == paymentId && p.IsDeposit, ct)
             ?? throw new DomainException("Kapora tahsilatı bulunamadı.");
-        payment.MarkRefunded(amount);
+        payment.MarkRefunded(amount, clock.GetCurrentInstant());
         await db.SaveChangesAsync(ct);
     }
 }

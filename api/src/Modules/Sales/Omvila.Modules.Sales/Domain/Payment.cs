@@ -40,6 +40,9 @@ internal sealed class Payment
     /// <summary>Salonun iade ettiğini işaretlediği tutar (≤ <see cref="AmountMinor"/>).</summary>
     public long RefundedAmountMinor { get; private set; }
 
+    /// <summary>İadenin işaretlendiği an; kasada iade bu anın şube yerel gününe düşülür (W3).</summary>
+    public Instant? RefundedUtc { get; private set; }
+
     public Instant PaidUtc { get; private set; }
 
     public Guid? CollectedByUserId { get; private set; }
@@ -134,7 +137,7 @@ internal sealed class Payment
     /// tutarı ve tek seferliği önceden denetler; buraya aykırı girdi gelmesi programcı hatasıdır.
     /// </summary>
     // Kural: durum-makinesi.md § 6 (Recorded → PartiallyRefunded / Refunded); V7
-    public void MarkRefunded(Money amount)
+    public void MarkRefunded(Money amount, Instant now)
     {
         if (Status != PaymentStatus.Recorded)
         {
@@ -147,6 +150,7 @@ internal sealed class Payment
         }
 
         RefundedAmountMinor = amount.AmountMinor;
+        RefundedUtc = now;
         Status = amount.AmountMinor == AmountMinor ? PaymentStatus.Refunded : PaymentStatus.PartiallyRefunded;
     }
 }

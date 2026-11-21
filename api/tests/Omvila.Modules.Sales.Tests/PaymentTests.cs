@@ -51,8 +51,9 @@ public sealed class PaymentTests
     {
         var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
 
-        payment.MarkRefunded(Money.Try(amount));
+        payment.MarkRefunded(Money.Try(amount), Now.Plus(Duration.FromDays(1)));
 
+        payment.RefundedUtc.ShouldBe(Now.Plus(Duration.FromDays(1)));
         payment.Status.ToString().ShouldBe(expected);
         payment.RefundedAmountMinor.ShouldBe(amount);
         payment.AmountMinor.ShouldBe(84000, "tahsilat tutarı değişmez");
@@ -65,7 +66,7 @@ public sealed class PaymentTests
     {
         var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
 
-        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(amount)));
+        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(amount), Now));
         payment.Status.ShouldBe(PaymentStatus.Recorded);
     }
 
@@ -73,9 +74,9 @@ public sealed class PaymentTests
     public void MarkRefunded_Twice_IsProgrammerError()
     {
         var payment = Payment.RecordDeposit(new Ids(), Brand, Branch, Customer, Appointment, Money.Try(84000), null, User, Now);
-        payment.MarkRefunded(Money.Try(10000));
+        payment.MarkRefunded(Money.Try(10000), Now);
 
-        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(10000)));
+        Should.Throw<DomainException>(() => payment.MarkRefunded(Money.Try(10000), Now));
         payment.RefundedAmountMinor.ShouldBe(10000);
     }
 

@@ -24,6 +24,71 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Omvila.Modules.Sales.Domain.CashDayClose", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<LocalDate>("BusinessDate")
+                        .HasColumnType("date")
+                        .HasColumnName("business_date");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by_user_id");
+
+                    b.Property<Instant>("ClosedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_utc");
+
+                    b.Property<long>("CountedCashMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("counted_cash_minor");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<long>("DifferenceMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("difference_minor");
+
+                    b.Property<string>("DifferenceNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("difference_note");
+
+                    b.Property<long>("ExpectedCashMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("expected_cash_minor");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cash_day_closes");
+
+                    b.HasIndex("BrandId", "BranchId", "BusinessDate")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cash_day_closes_brand_id_branch_id_business_date");
+
+                    b.ToTable("cash_day_closes", "sales", t =>
+                        {
+                            t.HasCheckConstraint("ck_cash_day_closes_amounts", "expected_cash_minor >= 0 AND counted_cash_minor >= 0 AND difference_minor = counted_cash_minor - expected_cash_minor");
+
+                            t.HasCheckConstraint("ck_cash_day_closes_note", "difference_minor = 0 OR difference_note IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Sales.Domain.CommissionEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -180,6 +245,10 @@ namespace Omvila.Modules.Sales.Infrastructure.Migrations
                     b.Property<long>("RefundedAmountMinor")
                         .HasColumnType("bigint")
                         .HasColumnName("refunded_amount_minor");
+
+                    b.Property<Instant?>("RefundedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("refunded_utc");
 
                     b.Property<string>("Status")
                         .IsRequired()
