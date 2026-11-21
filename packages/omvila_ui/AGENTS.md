@@ -17,7 +17,7 @@
 ## Kurallar
 - Widget ölçüleri ve davranışı: `design/tasarim-sistemleri/mobil/components/<Bileşen>/README.md` (her README'de **Flutter:** satırı karşılığı söyler) ve `design/tasarim-sistemleri/mobil/README.md`.
 - Renkler yalnız `Theme.of(context)` / `OmvilaRenkler` ile; `Color(0x…)` yasak.
-- Her widget'ın widget testi ve golden testi (açık, koyu, 1.3× yazı; `test/helpers/golden.dart` → `omvilaGoldenTest`) vardır. Depoya yalnız alchemist CI goldenleri girer (`test/**/goldens/ci/`: metin blok çizilir, yazı tipi ve işletim sisteminden bağımsız). Gerçek yazı tipiyle bakmak için platform goldenleri yerelde üretilir (git dışı).
+- Her widget'ın widget testi ve golden testi (açık, koyu, 1.3× yazı; `test/helpers/golden.dart` → `omvilaGoldenTest`) vardır. Depoya yalnız alchemist CI goldenleri girer (`test/**/goldens/ci/`: metin blok çizilir, yazı tipinden bağımsız). macOS/Linux kenar yumuşatma farkı için karşılaştırıcı küçük farkı tolere eder (`test/flutter_test_config.dart`: kanal ≤ 24/255 ve piksel ≤ %1); goldenler hangi işletim sisteminde üretilirse üretilsin iki yerde de geçer. Gerçek yazı tipiyle bakmak için platform goldenleri yerelde üretilir (git dışı).
 - `test/source_rules_test.dart`: `lib/` içinde sabit renk (`Color(0x…)`, `Colors.*`; `Colors.transparent` hariç) ve `DateTime.now()` (time.dart dışında) yakalanır.
 - `format.dart` testleri ürün kurallarındaki biçim örneklerini birebir doğrular.
 - `errors/tr.dart` sözleşmedeki her `ErrorCode` için girdi içerir; test eksik kodu yakalar.
