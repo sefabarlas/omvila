@@ -1,19 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { parseMobilePhone } from '@omvila/ui-web/format';
-import { Banner, Button, Checkbox, Select, TextField } from '@omvila/ui-web/panel';
+import {
+  authStyles as styles,
+  CodeStep,
+  describeAuthProblem,
+  Banner,
+  Button,
+  Checkbox,
+  Select,
+  TextField,
+} from '@omvila/ui-web/panel';
+import type { OtpChallenge } from '@omvila/ui-web/panel';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuthApi } from './api';
-import type { OtpChallenge } from './api';
 import { industries } from '@/shared/industries';
 import type { IndustryCode } from '@/shared/industries';
-import styles from './auth.module.css';
-import { AuthLayout } from './AuthLayout';
-import { CodeStep } from './CodeStep';
+import { SalonAuthLayout as AuthLayout } from './SalonAuthLayout';
 import { signupHandoff } from './handoff';
-import { describeProblem } from './problem';
 
 const industryCodes = industries.map((i) => i.value) as [IndustryCode, ...IndustryCode[]];
 
@@ -72,7 +78,7 @@ export function SignupScreen() {
 
       setChallenge(await authApi.requestOtp(parseMobilePhone(phone) ?? phone, 'Signup'));
     } catch (problem) {
-      const message = describeProblem(problem).message;
+      const message = describeAuthProblem(problem).message;
       if (verified) {
         setSubmitError(message);
       } else {
