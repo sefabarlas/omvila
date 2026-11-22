@@ -70,6 +70,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
     required this.blokVurgu,
     required this.blokKum,
     required this.blokKumMetin,
+    required this.blokMarkaHap,
+    required this.blokMarkaHapMetin,
     required this.iskelet,
     required this.tutamak,
     required this.yildiz,
@@ -149,6 +151,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
     blokVurgu: Color(0xFFB54A30),
     blokKum: Color(0xFFE9E0D0),
     blokKumMetin: Color(0xFF241E18),
+    blokMarkaHap: Color(0xFF74C6B8),
+    blokMarkaHapMetin: Color(0xFF062320),
     iskelet: Color(0xFFF4EFE6),
     tutamak: Color(0xFFBDBDB6),
     yildiz: Color(0xFFB57A0A),
@@ -228,6 +232,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
     blokVurgu: Color(0xFFB54A30),
     blokKum: Color(0xFF2A2520),
     blokKumMetin: Color(0xFFF4EFE6),
+    blokMarkaHap: Color(0xFF74C6B8),
+    blokMarkaHapMetin: Color(0xFF062320),
     iskelet: Color(0xFF1C2624),
     tutamak: Color(0xFF3A4643),
     yildiz: Color(0xFFF0C35A),
@@ -366,6 +372,10 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
   final Color blokKum;
   /// `blok-kum` üzerindeki metin.
   final Color blokKumMetin;
+  /// `blok-marka` içindeki hap ("50 dk sonra"); iki temada aynı açık petrol. Üstünde `blok-marka-hap-metin`.
+  final Color blokMarkaHap;
+  /// `blok-marka-hap` üzerindeki metin.
+  final Color blokMarkaHapMetin;
   /// Yüklenirken gösterilen iskelet blokları.
   final Color iskelet;
   /// Alt sayfa (bottom sheet) tutamağı.
@@ -458,6 +468,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
     Color? blokVurgu,
     Color? blokKum,
     Color? blokKumMetin,
+    Color? blokMarkaHap,
+    Color? blokMarkaHapMetin,
     Color? iskelet,
     Color? tutamak,
     Color? yildiz,
@@ -535,6 +547,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
       blokVurgu: blokVurgu ?? this.blokVurgu,
       blokKum: blokKum ?? this.blokKum,
       blokKumMetin: blokKumMetin ?? this.blokKumMetin,
+      blokMarkaHap: blokMarkaHap ?? this.blokMarkaHap,
+      blokMarkaHapMetin: blokMarkaHapMetin ?? this.blokMarkaHapMetin,
       iskelet: iskelet ?? this.iskelet,
       tutamak: tutamak ?? this.tutamak,
       yildiz: yildiz ?? this.yildiz,
@@ -619,6 +633,8 @@ class OmvilaRenkler extends ThemeExtension<OmvilaRenkler> {
       blokVurgu: Color.lerp(blokVurgu, other.blokVurgu, t)!,
       blokKum: Color.lerp(blokKum, other.blokKum, t)!,
       blokKumMetin: Color.lerp(blokKumMetin, other.blokKumMetin, t)!,
+      blokMarkaHap: Color.lerp(blokMarkaHap, other.blokMarkaHap, t)!,
+      blokMarkaHapMetin: Color.lerp(blokMarkaHapMetin, other.blokMarkaHapMetin, t)!,
       iskelet: Color.lerp(iskelet, other.iskelet, t)!,
       tutamak: Color.lerp(tutamak, other.tutamak, t)!,
       yildiz: Color.lerp(yildiz, other.yildiz, t)!,
