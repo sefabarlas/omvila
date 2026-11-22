@@ -23,6 +23,7 @@ import { useSelectedBranch } from '@/app/branch';
 import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { useSession } from '@/app/session';
+import { blocksNewWork } from '@/app/SubscriptionBanner';
 import { NewAppointmentButton } from '@/features/appointments/NewAppointmentButton';
 import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal';
 import { SellPackageModal } from '@/features/packages/SellPackageModal';
@@ -125,7 +126,7 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
       <NewAppointmentButton
         label="Randevu ver"
         icon={<CalendarPlus size={16} aria-hidden="true" />}
-        readOnly={session.subscription.status === 'ReadOnly'}
+        readOnly={blocksNewWork(session.subscription.status)}
         onClick={() => {
           setBooking(true);
         }}

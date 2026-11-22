@@ -79,7 +79,7 @@ describe('abonelik şeridi', () => {
 
   it('salt okunur: hata şeridi', async () => {
     renderApp('/', { session: sessionFixture({ subscription: { status: 'ReadOnly' } }) });
-    expect((await screen.findByRole('alert')).textContent).toContain('Online randevu kapalı.');
+    expect((await screen.findByRole('alert')).textContent).toContain('Panel salt okunur');
   });
 
   it('aktif abonelikte şerit yok', async () => {
