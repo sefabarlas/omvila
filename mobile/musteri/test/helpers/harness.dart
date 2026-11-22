@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:omvila_musteri/app/app.dart';
 import 'package:omvila_musteri/app/config.dart';
 import 'package:omvila_musteri/app/providers.dart';
+import 'package:omvila_musteri/features/booking/domain/booking_draft.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import 'fakes.dart';
@@ -137,11 +139,18 @@ Future<void> screenGoldenTest(
   required Widget Function() screen,
   required TestDeps Function() deps,
   PumpAction pumpBeforeTest = onlyPumpAndSettle,
+  List<Override> overrides = const [],
 }) {
   Widget scenario(ThemeData theme, double scale) => SizedBox(
     width: OmvilaBoyut.ekranGenislik,
     height: 844,
-    child: screenApp(screen(), deps(), theme: theme, textScale: scale),
+    child: screenApp(
+      screen(),
+      deps(),
+      theme: theme,
+      textScale: scale,
+      extraOverrides: overrides,
+    ),
   );
 
   return goldenTest(
@@ -175,3 +184,16 @@ void usePhone(WidgetTester tester) {
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 }
+
+class _SeededBooking extends BookingController {
+  _SeededBooking(this.draft);
+
+  final BookingDraft draft;
+
+  @override
+  BookingDraft? build() => draft;
+}
+
+/// Randevu alma akışını [draft] ile başlatılmış sayar.
+Override seedBooking(BookingDraft draft) =>
+    bookingProvider.overrideWith(() => _SeededBooking(draft));

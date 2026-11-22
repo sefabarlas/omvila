@@ -117,11 +117,10 @@ class PersonelEkrani extends ConsumerWidget {
           ],
         if (multiple) ...[
           const SizedBox(height: OmvilaBosluk.bosluk2),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: r.zeminYukseltilmis,
-              borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
-            ),
+          Material(
+            color: r.zeminYukseltilmis,
+            borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
+            clipBehavior: Clip.antiAlias,
             child: SwitchListTile(
               value: draft.sameStaffForAll,
               onChanged: (v) => controller.setSameStaff(value: v),

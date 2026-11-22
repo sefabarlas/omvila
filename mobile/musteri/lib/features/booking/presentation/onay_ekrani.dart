@@ -473,12 +473,10 @@ class _PaketAnahtari extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = context.omvilaRenkler;
     final p = paket;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: r.zeminYukseltilmis,
-        borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
-        boxShadow: context.omvilaGolgeler.golgeSm,
-      ),
+    return Material(
+      color: r.zeminYukseltilmis,
+      borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
+      clipBehavior: Clip.antiAlias,
       child: SwitchListTile(
         value: acik,
         onChanged: onChanged,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_musteri/app/providers.dart';
+import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/appointments/domain/randevu_metinleri.dart';
 import 'package:omvila_musteri/features/appointments/presentation/appointment_providers.dart';
 import 'package:omvila_musteri/features/appointments/presentation/randevu_sayfalari.dart';
@@ -86,7 +87,11 @@ class _ErteleEkraniState extends ConsumerState<ErteleEkrani> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Yeni saat kaydedildi.')));
-      context.pop(true);
+      if (context.canPop()) {
+        context.pop(true);
+      } else {
+        context.go(Routes.randevu(widget.id));
+      }
     } on ApiProblem catch (e) {
       if (!mounted) {
         return;
@@ -112,7 +117,9 @@ class _ErteleEkraniState extends ConsumerState<ErteleEkrani> {
     final slot = _slot;
     return AkisSayfasi(
       baslik: 'Saati değiştir',
-      onKapat: () => context.pop(),
+      onKapat: () => context.canPop()
+          ? context.pop()
+          : context.go(Routes.randevu(widget.id)),
       body: switch (appointment) {
         AsyncData(:final value) => _body(context, value),
         AsyncError(:final error) => HataDurumu(
