@@ -23,6 +23,8 @@ test-results/
 bin/
 obj/
 api/artifacts/
+# Yerelde yüklenen dosyalar (FileStorage:RootPath varsayılanı)
+api/src/Omvila.Host/App_Data/
 *.user
 TestResults/
 

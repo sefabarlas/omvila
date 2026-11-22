@@ -31,6 +31,8 @@ public static class TenancyModule
         services.AddSingleton<IValidateOptions<TenancyOptions>, TenancySecretsValidator>();
         services.AddSingleton<IbanProtector>();
         services.AddScoped<IBrandBankAccounts, BrandBankAccounts>();
+        // Abonelik: faturalama bilgisi ve iptal sonrası arşiv (Platform, ADR-0006 K4).
+        services.AddScoped<IBrandBilling, BrandBilling>();
         services.AddModuleDbContext<TenancyDbContext>(TenancyDbContext.Schema);
         services.AddScoped<SlugRegistry>();
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();

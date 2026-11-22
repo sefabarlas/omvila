@@ -164,6 +164,7 @@ internal sealed class AdminBrandReader(
         var recent = await CreditRowsAsync(brandId, RecentCreditLimit, null, now - Duration.FromDays(RecentCreditDays), ct);
         var subscription = facts.Subscription;
         var version = unchecked(profile.Brand.Version + await SubscriptionVersionAsync(brandId, ct));
+        var pending = await PendingSubscriptionNoticeAsync(brandId, ct);
 
         var detail = new AdminBrandDetail(
             profile.Brand.Id,
@@ -186,15 +187,14 @@ internal sealed class AdminBrandReader(
                 facts.Plan.Code,
                 facts.Plan.Name,
                 subscription.BillingCycle.ToString(),
-                // Ödeme yolu, ABN- havale kodu ve bekleyen bildirim abonelik/faturalama PR'ında gelir (T-119).
-                PaymentMethod: null,
+                PaymentMethod: subscription.PaymentMethod?.ToString(),
                 subscription.TrialEndsOn,
                 facts.TrialDaysLeft,
                 subscription.PastDueSince,
                 facts.ReadOnlyOn,
-                TransferCode: string.Empty,
-                PendingNoticeId: null,
-                PendingNoticeNotifiedUtc: null),
+                subscription.TransferCode,
+                pending?.Id,
+                pending?.NotifiedUtc),
             new AdminBrandDetail.CreditsCard(balance, consumed > 0 ? (int)(balance * (long)RecentCreditDays / consumed) : null),
             new AdminBrandDetail.AppointmentsCard(
                 facts.Month.Total,
@@ -431,4 +431,14 @@ internal sealed class AdminBrandReader(
         int? TrialDaysLeft,
         int? PastDueDays,
         LocalDate? ReadOnlyOn);
+
+    // "Havale bildirildi · eşleştirme bekliyor" (T-118): markanın en yeni bekleyen abonelik bildirimi.
+    private async Task<(Guid Id, Instant NotifiedUtc)?> PendingSubscriptionNoticeAsync(Guid brandId, CancellationToken ct)
+    {
+        var notice = await db.PaymentNotices.AsNoTracking()
+            .Where(n => n.BrandId == brandId && n.Purpose == PaymentNoticePurpose.Subscription && n.Status == PaymentNoticeStatus.Pending)
+            .OrderByDescending(n => n.NotifiedUtc)
+            .FirstOrDefaultAsync(ct);
+        return notice is null ? null : (notice.Id, notice.NotifiedUtc);
+    }
 }

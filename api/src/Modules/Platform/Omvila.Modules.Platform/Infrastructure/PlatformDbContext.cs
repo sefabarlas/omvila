@@ -11,6 +11,14 @@ internal sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> opti
 
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
+    public DbSet<SubscriptionInvoice> Invoices => Set<SubscriptionInvoice>();
+
+    public DbSet<PaymentNotice> PaymentNotices => Set<PaymentNotice>();
+
+    public DbSet<CreditPackage> CreditPackages => Set<CreditPackage>();
+
+    public DbSet<InvoiceNumberCounter> InvoiceNumberCounters => Set<InvoiceNumberCounter>();
+
     public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

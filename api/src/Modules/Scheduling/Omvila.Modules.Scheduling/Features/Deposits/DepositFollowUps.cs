@@ -3,6 +3,7 @@ using NodaTime;
 using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Notifications.Contracts;
+using Omvila.Modules.Platform.Contracts;
 using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
@@ -17,7 +18,8 @@ namespace Omvila.Modules.Scheduling.Features.Deposits;
 /// Randevu durumu hiçbirinde değişmez; yan etkiler outbox'a aynı transaction'da yazılır. İadede tahsilat kaydı Sales'te
 /// <see cref="IDepositPayments.MarkDepositRefundedAsync"/> ile aynı transaction'da güncellenir.
 /// </summary>
-internal sealed class DepositFollowUps(SchedulingDbContext db, IDepositPayments payments, ICreditLedger credits, IOutbox outbox, IClock clock)
+internal sealed class DepositFollowUps(
+    SchedulingDbContext db, IDepositPayments payments, ICreditLedger credits, ISubscriptionQueries subscriptions, IOutbox outbox, IClock clock)
 {
     /// <summary>
     /// "Havaleyi yaptım, salona bildir". Randevu <see cref="Features.AppointmentLink.AppointmentLinkResolver"/> ile yüklenmiş
@@ -47,7 +49,7 @@ internal sealed class DepositFollowUps(SchedulingDbContext db, IDepositPayments 
     }
 
     /// <summary>
-    /// "Hatırlat": durum korumaları (409 invalid_state_transition / hold_expired / deposit_reminder_already_sent) → kontör
+    /// "Hatırlat": salt okunur abonelik (403 subscription_read_only; salonun başlattığı SMS, K5) → durum korumaları (409 invalid_state_transition / hold_expired / deposit_reminder_already_sent) → kontör
     /// (yoksa 409 insufficient_credits; hak harcanmaz, hiçbir şey yazılmaz) → işaret → <see cref="AppointmentDepositReminded"/>.
     /// Kilit alınmaz; eşzamanlı iki hatırlatmadan biri xmin ile 412 alır.
     /// </summary>
@@ -59,6 +61,12 @@ internal sealed class DepositFollowUps(SchedulingDbContext db, IDepositPayments 
         if (appointment is null)
         {
             return Error.NotFound();
+        }
+
+        // Kural: durum-makinesi.md § 8 ReadOnly ("SMS kapalı"); K5: salonun yeni başlattığı SMS kapalı, var olan hatırlatmalar sürer.
+        if (await subscriptions.GetBannerAsync(appointment.BrandId, ct) is { BlocksNewWork: true })
+        {
+            return Error.Forbidden(ErrorCodes.SubscriptionReadOnly);
         }
 
         var now = clock.GetCurrentInstant();

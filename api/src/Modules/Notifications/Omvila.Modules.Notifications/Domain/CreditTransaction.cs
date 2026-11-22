@@ -59,6 +59,32 @@ internal sealed class CreditTransaction
     }
 
     /// <summary>
+    /// Satın alma (alan-modeli.md § PaymentNotice "kontörde CreditTransaction(Purchase) yazılır"): havale eşleşince paketin
+    /// kontörü eklenir; birim fiyat paket fiyatından (tanımlı değilse boş).
+    /// </summary>
+    public static CreditTransaction Purchase(
+        Guid id, Guid brandId, int credits, int balanceBefore, long? unitPriceMinor, string referenceType, Guid referenceId, Instant now)
+    {
+        if (credits <= 0)
+        {
+            throw new DomainException("Satın alınan kontör sıfırdan büyük olmalıdır.");
+        }
+
+        return new CreditTransaction
+        {
+            Id = id,
+            BrandId = brandId,
+            Type = CreditTransactionType.Purchase,
+            Amount = credits,
+            BalanceAfter = checked(balanceBefore + credits),
+            ReferenceType = referenceType,
+            ReferenceId = referenceId,
+            UnitPriceMinor = unitPriceMinor,
+            CreatedUtc = now,
+        };
+    }
+
+    /// <summary>
     /// Platform eklemesi veya düzeltmesi (sözleşme adminGrantCredits; tür Grant, eksi değer düzeltme). Bakiye sıfırın altına inemez;
     /// çağıran önceden denetler, CHECK kısıtı son savunmadır.
     /// </summary>

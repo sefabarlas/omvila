@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Omvila.Modules.Platform.Contracts;
-using Omvila.Modules.Platform.Domain;
 
 namespace Omvila.Modules.Platform.Infrastructure;
 
@@ -15,10 +14,8 @@ internal sealed class SubscriptionQueries(PlatformDbContext db, IOptions<Platfor
             return null;
         }
 
-        var readOnlyOn = subscription.Status == SubscriptionStatus.PastDue && subscription.PastDueSince is { } since
-            ? since.PlusDays(options.Value.PastDueGraceDays)
-            : (NodaTime.LocalDate?)null;
-        return new SubscriptionBannerInfo(subscription.Status.ToString(), subscription.TrialEndsOn, subscription.PastDueSince, readOnlyOn);
+        return new SubscriptionBannerInfo(
+            subscription.Status.ToString(), subscription.TrialEndsOn, subscription.PastDueSince, subscription.ReadOnlyOn(options.Value.PastDueGraceDays));
     }
 
     public async Task<PlanLimitInfo?> GetPlanLimitsAsync(Guid brandId, CancellationToken ct) =>
