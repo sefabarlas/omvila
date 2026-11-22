@@ -32,6 +32,8 @@ x-api-env: &api-env
   # İstemci IP'si ve şeması Caddy'nin X-Forwarded-For/-Proto başlıklarından (OTP IP sınırı, T-07). Yalnız iç ağdan
   # gelen başlığa güvenilir; ağ aşağıda sabit alt ağla tanımlıdır (T-76).
   ForwardedHeaders__KnownNetworks__0: ${STAGING_SUBNET:-172.30.0.0/24}
+  # Dekontlar (T-118): imajda kök olmayan kullanıcıya açık klasör; api birimle kalıcı tutar. E-posta Mailpit'e (appsettings.Staging).
+  FileStorage__RootPath: /data/files
 
 services:
   postgres:
@@ -81,6 +83,8 @@ services:
     <<: *api-image
     command: ['--role=api']
     environment: *api-env
+    volumes:
+      - files:/data/files
     restart: unless-stopped
     depends_on:
       migrate:
@@ -167,5 +171,6 @@ networks:
 
 volumes:
   pgdata:
+  files:
   caddy_data:
   caddy_config:

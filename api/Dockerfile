@@ -21,6 +21,8 @@ WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     DOTNET_NOLOGO=1
 COPY --from=build /app ./
+# Yüklenen dosyalar (dekont; FileStorage:RootPath, T-118): kök olmayan kullanıcı yazabilsin; kalıcılık için birim bağlanır.
+RUN mkdir -p /data/files && chown "$APP_UID" /data/files
 # Kök olmayan kullanıcı (aspnet imajındaki "app", UID 1654).
 USER $APP_UID
 EXPOSE 8080
