@@ -30,7 +30,7 @@ internal sealed class AppointmentPayments(
 
         // Paketten düşülen kalemler (W1): 0 TL'lik kayıt; prim tabanı paket fiyatının seans payı (W2).
         var packaged = request.Items.Where(i => i.CustomerPackageItemId is not null).ToList();
-        var shares = await SessionSharesAsync([.. packaged.Select(i => i.CustomerPackageItemId!.Value)], ct);
+        var shares = await PackageSessionShares.LoadAsync(db, [.. packaged.Select(i => i.CustomerPackageItemId!.Value)], ct);
         for (var i = 0; i < packaged.Count; i++)
         {
             db.Payments.Add(Payment.RecordPackageRedemption(
@@ -89,24 +89,6 @@ internal sealed class AppointmentPayments(
             r.p.PaidUtc,
             r.p.CollectedByUserId,
             r.p.Reference))];
-    }
-
-    /// <summary>Paket kalemlerinin seans payı (ödenen ÷ paketin toplam seansı).</summary>
-    private async Task<Dictionary<Guid, long>> SessionSharesAsync(IReadOnlyCollection<Guid> customerPackageItemIds, CancellationToken ct)
-    {
-        if (customerPackageItemIds.Count == 0)
-        {
-            return [];
-        }
-
-        var packageIds = await db.CustomerPackageItems.AsNoTracking()
-            .Where(i => customerPackageItemIds.Contains(i.Id))
-            .ToDictionaryAsync(i => i.Id, i => i.CustomerPackageId, ct);
-        var distinct = packageIds.Values.Distinct().ToList();
-        var packages = await db.CustomerPackages.AsNoTracking().Include(p => p.Items)
-            .Where(p => distinct.Contains(p.Id))
-            .ToDictionaryAsync(p => p.Id, ct);
-        return packageIds.ToDictionary(x => x.Key, x => packages[x.Value].SessionShareMinor);
     }
 
     internal static PaymentMethod ToDomain(CollectedPaymentMethod method) => method switch
