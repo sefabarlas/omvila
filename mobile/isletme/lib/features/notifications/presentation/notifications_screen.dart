@@ -80,6 +80,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     ];
     final today = branchToday(ref.watch(clockProvider), defaultTimeZone);
 
+    final emptyAll =
+        data != null && items.isEmpty && _tab == NotificationTab.all;
     final List<Widget> body;
     if (data != null && items.isEmpty) {
       body = [
@@ -158,71 +160,22 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   : null,
             ),
             const SizedBox(height: OmvilaBosluk.bosluk4),
-            _Tabs(
-              selected: _tab,
-              onSelect: (tab) => setState(() => _tab = tab),
-            ),
-            const SizedBox(height: OmvilaBosluk.bosluk4),
+            // BildirimlerBos'ta segment yok; süzülmüş sekme boşsa geri
+            // dönebilmek için görünür kalır.
+            if (!emptyAll) ...[
+              OmvilaSegment<NotificationTab>(
+                ogeler: [
+                  for (final tab in NotificationTab.values)
+                    OmvilaSegmentOgesi(tab, tab.label),
+                ],
+                secili: _tab,
+                onSecildi: (tab) => setState(() => _tab = tab),
+              ),
+              const SizedBox(height: OmvilaBosluk.bosluk4),
+            ],
             ...body,
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Tabs extends StatelessWidget {
-  const _Tabs({required this.selected, required this.onSelect});
-
-  final NotificationTab selected;
-  final ValueChanged<NotificationTab> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final r = context.omvilaRenkler;
-    return Container(
-      padding: const EdgeInsets.all(OmvilaBosluk.bosluk1),
-      decoration: BoxDecoration(
-        color: r.zeminIkincil,
-        borderRadius: BorderRadius.circular(OmvilaKose.koseTam),
-      ),
-      child: Row(
-        children: [
-          for (final tab in NotificationTab.values)
-            Expanded(
-              child: Semantics(
-                selected: tab == selected,
-                button: true,
-                child: Material(
-                  color: tab == selected
-                      ? r.zeminYukseltilmis
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(OmvilaKose.koseTam),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(OmvilaKose.koseTam),
-                    onTap: () => onSelect(tab),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minHeight: OmvilaBoyut.kontrolSm,
-                      ),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            tab.label,
-                            maxLines: 1,
-                            style: OmvilaYazi.etiket.copyWith(
-                              color: tab == selected ? r.metin : r.metinIkincil,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
       ),
     );
   }

@@ -77,6 +77,8 @@ void main() {
     expect(find.text('Yeni bildirim yok'), findsOneWidget);
     expect(find.text('Kadıköy'), findsOneWidget);
     expect(find.text('Okundu say'), findsNothing);
+    // BildirimlerBos'ta segment kontrolü yok.
+    expect(find.text('Onay bekleyen'), findsNothing);
     await tester.tap(find.text('Bildirim ayarları'));
     await tester.pumpAndSettle();
     expect(find.text('Yeni online randevu'), findsOneWidget);
