@@ -10,7 +10,6 @@ import 'package:omvila_isletme/features/calendar/presentation/calendar_grid.dart
 import 'package:omvila_isletme/features/calendar/presentation/day_strip.dart';
 import 'package:omvila_isletme/features/shell/presentation/app_shell.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
-import 'package:omvila_isletme/shared/api_date.dart';
 import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 

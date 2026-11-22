@@ -16,6 +16,10 @@ final class ApiDate extends DateTime {
 
   ApiDate._(super.year, super.month, super.day) : super.utc();
 
+  /// Sorgu parametreleri `toString()` ile yazılır; o da yalnız tarihi verir.
+  @override
+  String toString() => toIso8601String();
+
   @override
   String toIso8601String() =>
       '${year.toString().padLeft(4, '0')}-'

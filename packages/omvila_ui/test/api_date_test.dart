@@ -31,4 +31,8 @@ void main() {
   test('yanıttaki tarih yerel güne çevrilir', () {
     expect(localDateOf(DateTime.parse('2026-11-26')), '2026-11-26');
   });
+
+  test('sorgu parametresinde (toString) de yalnız tarih yazılır', () {
+    expect(ApiDate('2026-11-25').toString(), '2026-11-25');
+  });
 }
