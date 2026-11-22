@@ -219,6 +219,7 @@ class _HavaleEkraniState extends ConsumerState<HavaleEkrani> {
         ),
         const SizedBox(height: OmvilaBosluk.bosluk5),
         EkranBasligi(
+          ikincil: true,
           reported
               ? 'Havaleniz salona bildirildi'
               : 'Kaporayı havale ile gönderin',

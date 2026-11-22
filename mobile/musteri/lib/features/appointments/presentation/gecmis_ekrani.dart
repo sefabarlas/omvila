@@ -8,7 +8,6 @@ import 'package:omvila_musteri/app/providers.dart';
 import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/appointments/domain/randevu_metinleri.dart';
 import 'package:omvila_musteri/features/appointments/presentation/randevu_detay_ekrani.dart';
-import 'package:omvila_musteri/features/booking/presentation/hizmet_ekrani.dart';
 import 'package:omvila_musteri/shared/widgets/durum_desenleri.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -92,6 +91,7 @@ class _GecmisEkraniState extends ConsumerState<GecmisEkrani> {
   Widget build(BuildContext context) {
     final r = context.omvilaRenkler;
     final list = ref.watch(pastProvider(_notReviewed));
+    final bosTumu = !_notReviewed && (list.value?.items.isEmpty ?? false);
     return Scaffold(
       backgroundColor: r.zemin,
       appBar: AppBar(
@@ -124,21 +124,17 @@ class _GecmisEkraniState extends ConsumerState<GecmisEkrani> {
               ),
             ),
             const SizedBox(height: OmvilaBosluk.bosluk4),
-            Wrap(
-              spacing: OmvilaBosluk.bosluk2,
-              children: [
-                SecimCipi(
-                  etiket: 'Tümü',
-                  secili: !_notReviewed,
-                  onTap: () => setState(() => _notReviewed = false),
-                ),
-                SecimCipi(
-                  etiket: 'Değerlendirilmedi',
-                  secili: _notReviewed,
-                  onTap: () => setState(() => _notReviewed = true),
-                ),
-              ],
-            ),
+            // GecmisBos'ta segment yok; "Değerlendirilmedi" boşsa geri
+            // dönebilmek için görünür kalır.
+            if (!bosTumu)
+              OmvilaSegment<bool>(
+                ogeler: const [
+                  OmvilaSegmentOgesi(false, 'Tümü'),
+                  OmvilaSegmentOgesi(true, 'Değerlendirilmedi'),
+                ],
+                secili: _notReviewed,
+                onSecildi: (v) => setState(() => _notReviewed = v),
+              ),
             ...switch (list) {
               AsyncData(:final value) when value.items.isEmpty => [
                 OmvilaBosDurum(

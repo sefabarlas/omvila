@@ -25,20 +25,35 @@ final FutureProviderFamily<InAppNotificationPage, bool> notificationsProvider =
       ),
     );
 
-/// Okundu say: `ids` verilirse onlar, yoksa hepsi ("Okundu say").
+/// Sekme çubuğundaki Bildirimler rozeti: sunucunun `unreadCount`'u (tek
+/// satırlık sayfa). Okunamazsa rozet yok (sahte sayı gösterilmez).
+final FutureProvider<int> unreadNotificationCountProvider =
+    FutureProvider.autoDispose<int>(
+      (ref) async => (await _call(
+        () => ref
+            .watch(apiProvider)
+            .getManageNotificationsApi()
+            .manageListInAppNotifications(limit: 1),
+      )).unreadCount,
+    );
+
+/// Okundu say: `ids` verilirse onlar, yoksa hepsi ("Okundu say"). Sonra
+/// sekme rozeti yeniden okunur.
 final markNotificationsReadProvider =
     Provider<Future<void> Function({Set<String>? ids})>(
-      (ref) =>
-          ({ids}) => _call(
-            () => ref
-                .read(apiProvider)
-                .getManageNotificationsApi()
-                .manageMarkNotificationsRead(
-                  markNotificationsReadRequest: ids == null
-                      ? MarkNotificationsReadRequest(all: true)
-                      : MarkNotificationsReadRequest(notificationIds: ids),
-                ),
-          ),
+      (ref) => ({ids}) async {
+        await _call(
+          () => ref
+              .read(apiProvider)
+              .getManageNotificationsApi()
+              .manageMarkNotificationsRead(
+                markNotificationsReadRequest: ids == null
+                    ? MarkNotificationsReadRequest(all: true)
+                    : MarkNotificationsReadRequest(notificationIds: ids),
+              ),
+        );
+        ref.invalidate(unreadNotificationCountProvider);
+      },
     );
 
 /// Satır içi "Reddet": If-Match için güncel sürüm okunur (A4; müşteriye

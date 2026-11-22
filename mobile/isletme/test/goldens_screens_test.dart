@@ -32,13 +32,17 @@ import 'helpers/screen_golden.dart';
 void main() {
   final clock = FixedClock.parse('2026-11-25T09:10:00Z');
 
-  List<Override> base({Map<String, Object?> sessionJson = ownerSessionJson}) =>
-      [
-        clockProvider.overrideWithValue(clock),
-        authControllerProvider.overrideWith(
-          () => FixedAuth(session(sessionJson)),
-        ),
-      ];
+  List<Override> base({
+    Map<String, Object?> sessionJson = ownerSessionJson,
+    int unread = 3,
+  }) => [
+    clockProvider.overrideWithValue(clock),
+    authControllerProvider.overrideWith(
+      () => FixedAuth(session(sessionJson)),
+    ),
+    // Sekme çubuğundaki okunmamış rozeti (sunucunun unreadCount'u).
+    unreadNotificationCountProvider.overrideWith((ref) => unread),
+  ];
 
   List<Override> catalog() => [
     servicesProvider.overrideWith(
@@ -180,7 +184,7 @@ void main() {
   );
 
   List<Override> notifications({bool empty = false}) => [
-    ...base(),
+    ...base(unread: empty ? 0 : 3),
     notificationsProvider.overrideWith(
       (ref, unreadOnly) =>
           InAppNotificationPage.fromJson(notificationsJson(empty: empty)),

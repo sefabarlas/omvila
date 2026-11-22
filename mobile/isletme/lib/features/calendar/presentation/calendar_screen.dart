@@ -342,6 +342,7 @@ class _DayBody extends StatelessWidget {
         eylemEtiketi: canCreate ? 'Randevu ekle' : null,
         eylemIkonu: LucideIcons.plus,
         onEylem: canCreate ? onNewAppointment : null,
+        eylemTuru: OmvilaButonTuru.birincil,
       );
     }
 

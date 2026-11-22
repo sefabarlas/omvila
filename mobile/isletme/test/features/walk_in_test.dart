@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import '../helpers/appointment_fixtures.dart';
@@ -131,15 +132,15 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.enterText(find.widgetWithText(TextField, 'Ad'), 'Burak');
+    await tester.enterText(_field('Ad'), 'Burak');
     await tester.enterText(
-      find.widgetWithText(TextField, 'Telefon (isteğe bağlı)'),
+      _field('Telefon (isteğe bağlı)'),
       '532 123',
     );
     await tester.pump();
     expect(find.text('Cep telefonu numarası girin'), findsOneWidget);
     await tester.enterText(
-      find.widgetWithText(TextField, 'Telefon (isteğe bağlı)'),
+      _field('Telefon (isteğe bağlı)'),
       '',
     );
     await tester.tap(find.text('Saç kesimi'));
@@ -247,3 +248,9 @@ void main() {
     expect(find.text(errorMessage('slot_taken')), findsOneWidget);
   });
 }
+
+/// Etiketi alanın üstünde olan metin alanı.
+Finder _field(String label) => find.descendant(
+  of: find.widgetWithText(LabeledField, label),
+  matching: find.byType(TextField),
+);

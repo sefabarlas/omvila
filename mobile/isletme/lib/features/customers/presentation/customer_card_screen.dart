@@ -9,7 +9,6 @@ import 'package:omvila_isletme/features/appointments/presentation/appointment_fo
 import 'package:omvila_isletme/features/auth/data/auth_controller.dart';
 import 'package:omvila_isletme/features/calendar/presentation/calendar_screen.dart';
 import 'package:omvila_isletme/features/customers/data/customer_repository.dart';
-import 'package:omvila_isletme/features/customers/presentation/customers_screen.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
 import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_isletme/shared/widgets.dart';
@@ -139,7 +138,9 @@ class _CardContentState extends ConsumerState<_CardContent> {
         ?.where((p) => p.status == CustomerPackageStatus.active)
         .firstOrNull;
     final firstVisit = c.visitCount == 0;
-    final phone = customerPhone(c);
+    final masked = c.phoneMasked;
+    // Ara/SMS yalnız numara (tam veya maskeli) varsa.
+    final hasPhone = c.phone != null || masked != null;
     final notes = c.notes;
     final total = c.totalSpent;
     final next = c.nextAppointmentUtc;
@@ -169,15 +170,19 @@ class _CardContentState extends ConsumerState<_CardContent> {
                     ),
                   ),
                   const SizedBox(height: OmvilaBosluk.bosluk1),
+                  // Başlıkta her rolde yalnız maskeli numara (MusteriKartiYeni
+                  // tasarımı; tam numara kartta yazılmaz). Ulaşım Ara/SMS;
+                  // personelde tam numara yalnız arama anında açılır
+                  // (roller-yetkiler.md, KK10).
                   Wrap(
                     spacing: OmvilaBosluk.bosluk2,
                     runSpacing: OmvilaBosluk.bosluk1,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       for (final tag in c.tags) TagPill(tag),
-                      if (phone != null)
+                      if (masked != null)
                         Text(
-                          phone,
+                          masked,
                           style: OmvilaYazi.aciklama.copyWith(
                             color: r.metinIkincil,
                           ),
@@ -248,7 +253,7 @@ class _CardContentState extends ConsumerState<_CardContent> {
               )
             else
               const Spacer(),
-            if (phone != null) ...[
+            if (hasPhone) ...[
               _SquareButton(
                 icon: LucideIcons.phone,
                 tooltip: 'Ara',

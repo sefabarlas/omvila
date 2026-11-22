@@ -5,7 +5,8 @@ import 'package:omvila_ui/omvila_ui.dart';
 import '../helpers/golden.dart';
 
 // Kural: mobil components/AppointmentListItem — saat, durum noktası, müşteri,
-// hizmet; durum adı rozetle yazılır (yalnız renk değil); eylem sağda.
+// hizmet; durum adı rozetle yazılır (yalnız renk değil); eylem sağda,
+// büyük yazıda altta.
 void main() {
   testWidgets('saat, müşteri, ayrıntı ve durum adı yazılır', (tester) async {
     var taps = 0;
@@ -43,6 +44,36 @@ void main() {
     );
     expect(find.byType(OmvilaDurumRozeti), findsNothing);
   });
+
+  // 1.3× yazıda eylem ayrıntının altına iner (müşteri adı sıkışmaz).
+  for (final (scale, below) in [(1.0, false), (1.3, true)]) {
+    testWidgets('eylem ${below ? 'altta' : 'sağda'} (${scale}x)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        omvilaApp(
+          MediaQuery(
+            data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+            child: RandevuSatiri(
+              baslangic: '12:00',
+              bitis: '12:45',
+              musteri: 'Deniz Acar',
+              ayrinti: 'Saç kesimi · Can',
+              eylem: OmvilaButon(etiket: 'Onayla', onPressed: () {}),
+            ),
+          ),
+        ),
+      );
+      final name = tester.getRect(find.text('Deniz Acar'));
+      final action = tester.getRect(find.byType(OmvilaButon));
+      if (below) {
+        expect(action.top, greaterThan(name.bottom));
+        expect(action.left, closeTo(name.left, 1));
+      } else {
+        expect(action.left, greaterThan(name.right));
+      }
+    });
+  }
 
   test('nokta rengi durum tokenından', () {
     expect(

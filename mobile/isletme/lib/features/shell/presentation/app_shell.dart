@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omvila_isletme/features/auth/data/auth_controller.dart';
+import 'package:omvila_isletme/features/notifications/data/notification_repository.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -26,6 +27,11 @@ class AppShell extends ConsumerWidget {
     final current =
         GoRouter.maybeOf(context)?.state.matchedLocation ?? location;
     final selected = tabs.indexWhere((t) => current.startsWith(t.path));
+    final hasNotificationsTab = tabs.any((t) => t.path == Routes.notifications);
+    // Okunmamış rozeti yalnız Bildirimler sekmesi olan rolde okunur.
+    final unread = hasNotificationsTab
+        ? ref.watch(unreadNotificationCountProvider).value
+        : null;
     return Scaffold(
       body: Stack(
         children: [
@@ -39,7 +45,11 @@ class AppShell extends ConsumerWidget {
               child: YuzenSekmeCubugu(
                 ogeler: [
                   for (final tab in tabs)
-                    SekmeOgesi(ikon: tab.icon, etiket: tab.label),
+                    SekmeOgesi(
+                      ikon: tab.icon,
+                      etiket: tab.label,
+                      rozet: tab.path == Routes.notifications ? unread : null,
+                    ),
                 ],
                 seciliIndex: selected,
                 onSecildi: (i) => context.go(tabs[i].path),

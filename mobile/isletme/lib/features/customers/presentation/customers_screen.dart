@@ -153,6 +153,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           eylemEtiketi: 'Müşteri ekle',
           eylemIkonu: LucideIcons.userPlus,
           onEylem: _add,
+          eylemTuru: OmvilaButonTuru.birincil,
         ),
       ];
     } else if (list.hasError) {

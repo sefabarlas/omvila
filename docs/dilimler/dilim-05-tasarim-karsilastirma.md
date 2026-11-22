@@ -94,68 +94,68 @@ Bütün goldenlerde ortak olan ve aşağıda yinelenmeyen farklar (≈): üsttek
 | MainBos | main_bos | ≈ | Koyu temada "Bağlantıyı yapıştır" dolu zeminli (küçük). |
 | MainYaklasanYok | main_yaklasan_yok | ≈ | "Geçmiş randevular" bağlantısı eklendi (T-108 (5)). |
 | MainBildirimKapali | main_bildirim_kapali | ✓ | |
-| Paketler | paketler | ✗ | "Az kaldı" rozeti uyarı tonu yerine beyaz (`paketler_ekrani.dart`). |
+| Paketler | paketler | ✓ | "Az kaldı" rozeti uyarı tonunda (`uyari-zemin`; T-115). |
 | PaketlerBos | paketler_bos | ✓ | |
-| Profil | profil | ✗ | Kullanıcı avatarı ve salon kapak rengi eşlemesi ters (petrol → kum, kum → nane; `profil_ekrani.dart`, `salon_secimi_ekrani.dart`). "Profil" başlığı bilinçli (T-112 (2)). |
-| ProfilDuzenle | profil_duzenle | ✗ | 1.3×'te telefon ikiye bölünüyor; yardım metni girintili. Dil seçimi yok (T-101 (2), ≈). |
+| Profil | profil | ≈ | Kullanıcı avatarı nane, kapak eşlemesi kum → kum, mercan → mercan, petrol → nane (T-115). "Profil" başlığı bilinçli (T-112 (2)). |
+| ProfilDuzenle | profil_duzenle | ≈ | Telefon bölünmez, büyük yazıda yardım metni alta geçer; e-posta yardım metni alan kenarıyla hizalı (T-115). Dil seçimi yok (T-101 (2)). |
 | Odemelerim | odemelerim | ✓ | |
 | OdemelerimBos | odemelerim_bos | ✓ | |
 | Izinler | izinler | ✓ | |
 | HesapSil | hesap_sil | ✓ | "Salonlara iptal bildirimi gider" bu PR'da eklendi (bildirim #120'de bağlandı; T-112 (7) güncellendi). |
-| HesapSilindi | hesap_silindi | ✗ | "Kapat" ikincil buton çerçeveli (ortak fark 1). |
+| HesapSilindi | hesap_silindi | ✓ | İkincil buton dolu (T-115). |
 | Bildirimler | bildirimler | ≈ | "15 dakika içinde" yerine "kısa süre" (T-112 (8)). |
 | BildirimlerBos | bildirimler_bos | ✓ | |
 | BeklemeKatil | bekleme_katil | ≈ | Tutma süresi sayısız (T-112 (8)). |
 | BeklemeTeklif | bekleme_teklif | ≈ | İlerleme çubuğu açılışta dolu (rezervasyon sayfasıyla aynı; T-100 (4)). |
-| BeklemeDoldu | bekleme_doldu | ✗ | "Başka saat seç" birincil (tasarımda ikincil). "Bir sonraki boşalmada haber ver" yok (T-112 (9), ≈). |
-| Durumlar | durumlar | ≈ | Golden iki deseni çizer; "Saat az önce doldu", "Kapora gelmedi", "Bağlantı yok" goldeni yok. |
-| YRSalon | salon_secimi | ≈ | Avatar renkleri kapak eşlemesine bağlı (Profil ✗). |
+| BeklemeDoldu | bekleme_doldu | ≈ | "Başka saat seç" ikincil (T-115). "Bir sonraki boşalmada haber ver" yok (T-112 (9)). |
+| Durumlar | durumlar | ≈ | Golden OTP sınırı, online randevu kapalı, bağlantı geçersiz ve "Bağlantı yok" desenlerini çizer (T-115). "Saat az önce doldu" YROnay'da satır içi uyarı ve saat çipleri, "Kapora gelmedi" randevunun İptal durumu olarak gösterilir; ayrı kutu deseni yok (T-115). |
+| YRSalon | salon_secimi | ✓ | Avatar tonu kapak rengiyle (T-115). |
 | YRSalonBos | yr_salon_bos | ✓ | |
 | YRHizmet | yr_hizmet | ≈ | Kategori test verisi. |
-| YRPersonel | yr_personel | ✗ | Personel avatarları hep nane (ortak fark 3). |
+| YRPersonel | yr_personel | ✓ | Avatar tonu addan (`OmvilaAvatar`, web ile aynı karma; T-115). |
 | YRSaat | yr_saat | ≈ | 17:30 "Akşam" grubunda (`SaatIzgarasi` dönem eşiği). |
 | YROnay | yr_onay | ≈ | Kapora metni süresiz (T-108 (1)). |
-| YRHavale | yr_havale | ✗ | Başlık `buyukBaslik` ile iki satır ve açıklamaya yapışık (`havale_ekrani.dart`; tasarımda `baslik-1`). |
-| YRBasari | yr_basari | ✗ | "Yol tarifi" / "Paylaş" çerçeveli (ortak fark 1). |
-| RandevuDetay | randevu_detay | ✗ | Eylem butonları çerçeveli (ortak fark 1); salon avatarı nane. |
-| RandevuErtele | randevu_ertele | ✗ | "Şu anki randevunuz" tarihi 1×'te kırılıyor. |
+| YRHavale | yr_havale | ✓ | Başlık `baslik-1`, açıklamayla arasında boşluk (T-115). |
+| YRBasari | yr_basari | ✓ | İkincil butonlar dolu (T-115). |
+| RandevuDetay | randevu_detay | ✓ | İkincil butonlar dolu; salon avatarı tonu addan (T-115). |
+| RandevuErtele | randevu_ertele | ≈ | Tarih 1×'te tek satır; 1.3×'te kırılır (T-115). |
 | ErteleKapali | ertele_kapali | ✓ | |
 | Iptal | iptal | ≈ | "Hastayım" yerine "Rahatsızlandım" (T-108 (4)). |
-| Gecmis | gecmis | ✗ | Segment kontrolü yerine çip; "600 / ₺" satır sonunda bölünüyor (ortak fark 2). |
-| GecmisBos | gecmis_bos | ✗ | Boş hâlde süzgeç çipleri görünüyor (küçük). |
+| Gecmis | gecmis | ✓ | Segment kontrolü (`OmvilaSegment`); tutar bölünmez boşlukla (T-115). |
+| GecmisBos | gecmis_bos | ✓ | Boş hâlde segment yok ("Değerlendirilmedi" boşsa geri dönmek için görünür; T-115). |
 | Degerlendir | degerlendir | ≈ | Kapat düğmesi zeminsiz; salon avatarı nane. |
 
 ## İşletme uygulaması
 
 | Ekran | Golden | Durum | Not |
 |---|---|---|---|
-| Acilis | acilis | ✗ | Amblem tasarımdan çok küçük; koyu temada arkasında koyu kare. |
-| Giris | giris | ✗ | Telefon alanında etiket ve "+90" öneki yok (müşteri uygulamasında var); amblem küçük. |
+| Acilis | acilis | ✓ | Uygulama ikonu yerine amblem (`omvila-amblem-ters.svg`); kare yok (T-115). |
+| Giris | giris | ✓ | Üstte "Cep telefonu" etiketi, her zaman görünen "+90" öneki, amblem (T-115). |
 | GirisKod | giris_kod | ≈ | Golden boş kod. |
 | BildirimIzni | bildirim_izni | ≈ | "2 saat içinde" yazılmadı (T-107 (7)). |
-| Main (Bugün) | bugun | ✗ | "+ Randevu" siyah hap yerine marka yeşili; "50 dk sonra" çipi beyaz ve yukarıda; sekme çubuğunda okunmamış rozeti verilmiyor (`app_shell.dart`); 1.3×'te gün akışı adı sıkışıyor. |
+| Main (Bugün) | bugun | ≈ | "+ Randevu" koyu hap (`OmvilaButonTuru.koyu`), "50 dk sonra" `blok-marka-hap`, sekme rozeti `unreadCount`'tan, 1.3×'te satır eylemi alta iner (T-115). Çip bloğun altına sabitlenmez, açıklamanın altında (küçük). |
 | MainBos | bugun_bos | ≈ | "ÇALIŞMA 10–20" bloğu yok (T-107 (6)). |
-| MainBildirimKapali | bugun_bildirim_kapali | ✗ | Main satırındaki farklar. |
-| MainSaltOkunur | — | ✗ | Golden yok; Bugün'de salt okunur şerit ve pasif "+ Randevu" uygulanmamış (takvim ve yeni randevuda var). |
+| MainBildirimKapali | bugun_bildirim_kapali | ≈ | Main satırıyla aynı. |
+| MainSaltOkunur | bugun_salt_okunur | ✓ | Kırmızı şerit ve pasif "+ Randevu" (oturumdaki `subscription.status = ReadOnly`; T-115). |
 | Takvim | takvim | ≈ | "Bekleme · müsait" kutusu düz çerçeveli (küçük). |
-| TakvimBos | takvim_bos | ✗ | "Randevu ekle" ikincil (tasarımda birincil). |
+| TakvimBos | takvim_bos | ✓ | "Randevu ekle" birincil (`OmvilaBosDurum.eylemTuru`; T-115). |
 | TakvimKapali | takvim_kapali | ≈ | Seçili kapalı gün marka zemininde (küçük). |
 | RandevuDetay | randevu_detay | ≈ | Personelde ara/SMS gizleme notu yok (T-109 (4)). |
 | RandevuIslem | randevu_islem | ≈ | "Hizmet ekle" ve "SMS gönder" yok (T-109 (5)). |
 | OdemeAl | odeme_al | ≈ | "Kapora (havale)" (ürün kuralı 1); varsayılan Nakit (T-109 (7)). |
-| KaporaOnay | kapora_onay | ✗ | "Henüz gelmedi, hatırlat" çerçeveli (ortak fark 1). |
+| KaporaOnay | kapora_onay | ✓ | İkincil buton dolu (T-115). |
 | YeniRandevu | yeni_randevu | ≈ | Tek hizmet (T-109 (8)). |
-| Sira | sira | ✗ | Koyu temada ilk satırın numarası ve "Başlat" okunmuyor (`walk_in_screen.dart`). |
-| SiraBos | sira_bos | ✗ | "Sıraya ekle" ikincil (tasarımda birincil). |
-| SiraEkle | sira_ekle | ✗ | Ad/Telefon etiketleri ve "+90" öneki yok; "No 11" rozeti yok (T-111 (1), ≈). |
-| Musteriler | musteriler | ≈ | Süzgeçler Düzenli/Yeni/Paketli (T-111 (2)); avatarlar hep nane. |
-| MusterilerAramaYok | musteriler_arama_yok | ✗ | "Filtreyi temizle" çerçeveli (ortak fark 1). |
-| MusterilerBos | musteriler_bos | ✗ | "Müşteri ekle" ikincil (tasarımda birincil). |
-| MusteriKarti | musteri_karti | ✗ | Ad altında tam telefon yazıyor (tasarımda yok; T-111 (3) ile karşılaştırılmalı). Not düzenleme ve İzinler yok (T-111 (3), ≈). |
+| Sira | sira | ✓ | Numara kutusu `metin-ters` örtüsü, "Başlat" `metin-ters` zeminde `blok-marka` yazı; iki temada okunur (T-115). |
+| SiraBos | sira_bos | ✓ | "Sıraya ekle" birincil (T-115). |
+| SiraEkle | sira_ekle | ≈ | Ad/Telefon etiketleri üstte, "+90" öneki (T-115). "No 11" rozeti yok (T-111 (1)). |
+| Musteriler | musteriler | ≈ | Süzgeçler Düzenli/Yeni/Paketli (T-111 (2)); avatar tonu addan (T-115). |
+| MusterilerAramaYok | musteriler_arama_yok | ✓ | İkincil buton dolu (T-115). |
+| MusterilerBos | musteriler_bos | ✓ | "Müşteri ekle" birincil (T-115). |
+| MusteriKarti | musteri_karti | ≈ | Başlıkta her rolde yalnız maskeli numara (MusteriKartiYeni deseni; tam numara kartta yazılmaz, T-115). Not düzenleme ve İzinler yok (T-111 (3)). |
 | MusteriKartiYeni | musteri_karti_yeni | ≈ | "Not ekle" yok (T-111 (3)). |
-| Bildirimler | bildirimler | ✗ | Sekme rozeti yok; 1.3×'te segment etiketleri çakışıyor; "Reddet" çerçeveli. |
-| BildirimlerBos | bildirimler_bos | ✗ | Boş hâlde segment kontrolü görünüyor; 1.3× çakışması. |
-| Profil | profil | ✗ | "Bu hafta" grafiği yalnız verideki günleri çiziyor (sabit haftalık sütun olmalı); avatar nane. |
+| Bildirimler | bildirimler | ✓ | Sekme rozeti, `OmvilaSegment` (etiketler 1.3×'te çakışmaz), "Reddet" dolu ikincil (T-115). |
+| BildirimlerBos | bildirimler_bos | ✓ | "Tümü" boşken segment yok (T-115). |
+| Profil | profil | ✓ | "Bu hafta" Pazartesi–Pazar sabit yedi sütun, gelecek günler boş; avatar tonu addan (T-115). |
 | BildirimAyar | bildirim_ayar | ≈ | Sessiz saat salt okunur (T-111 (6)). |
 
 ## Bulunan farklar
@@ -167,13 +167,12 @@ Bütün goldenlerde ortak olan ve aşağıda yinelenmeyen farklar (≈): üsttek
 - KK4 "takvimde Kapıdan kanalıyla" adımı panel testine eklendi.
 - Müşteri uygulaması HesapSil uyarısına "Salonlara iptal bildirimi gider." eklendi (bildirim #120'de bağlandı).
 
-**Mobilde açık kalan ✗ farklar (ayrı düzeltme PR'ı; T-114 (6)):**
-1. Ortak: `OmvilaButon(tur: ikincil)` çerçeveli (`packages/omvila_ui/lib/widgets/buton.dart`); tasarımda dolu nötr (`zemin-ikincil`).
-2. Ortak: `formatMoney` tutar ile "₺" arasında normal boşluk (`packages/omvila_ui/lib/format.dart`); bölünmez boşluk olmalı.
-3. Ortak: avatar tonları hep nane; tasarımda mercan/kum/nane dönüşümlü.
-4. Müşteri: kapak rengi eşlemesi ters; "Az kaldı" rozeti beyaz; YRHavale başlığı; RandevuErtele tarih kırılması; Geçmiş segment kontrolü ve boş hâlde süzgeç; BeklemeDoldu birincil buton; ProfilDuzenle 1.3×.
-5. İşletme: Bugün'de salt okunur hâl yok; sekme çubuğunda okunmamış rozeti verilmiyor; kapıda sıra koyu temada ilk satır okunmuyor; telefon alanları etiketsiz ve öneksiz; boş durumların ana eylemi ikincil; Bugün "+ Randevu" ve "50 dk sonra" çipi; amblem küçük; Bildirimler 1.3× segment çakışması; Profil haftalık grafik; müşteri kartında tam telefon.
-6. Golden kapsamı: işletme MainSaltOkunur; müşteri Durumlar'ın "Saat az önce doldu", "Kapora gelmedi", "Bağlantı yok" desenleri.
+**Mobil farklar (T-114 (6)) T-115'te düzeltildi:**
+1. Ortak: `OmvilaButon(tur: ikincil)` dolu nötr (`zemin-ikincil`, çerçevesiz); başlıktaki kısa eylem için `koyu` hap eklendi.
+2. Ortak: `formatMoney` tutar ile "₺" arasında bölünmez boşluk (U+00A0); `packages/ui-web/src/format/money.ts` aynı kurala getirildi (ikisi de normal boşluk kullanıyordu).
+3. Ortak: `OmvilaAvatar` tonu addan türetir (web `Avatar` ile aynı karma; `avatar-1…3`).
+4. Ortak: `OmvilaSegment` (segment kontrolü), `OmvilaBosDurum.eylemTuru`, `RandevuSatiri` büyük yazıda eylemi alta alır; yeni semantik token `blok-marka-hap` / `blok-marka-hap-metin`.
+5. Müşteri ve işletme ekran farkları yukarıdaki satırlarda; kalan ≈'ler bilinçli veya küçük.
 
 Web'de başka ✗ fark yok; listelenen bütün web ekranlarının görüntüsü e2e'de vardır.
 
@@ -193,5 +192,4 @@ Dilim 5 kapsamında bilinçli olarak yapılmayan veya dışa bağlı işler (T-1
 - i18n: yalnız Türkçe.
 - H-04 hukuk metinleri (hesap silme, kapora/iade, SSS).
 - S-10 paket iade hesabı 🔴 (şimdilik W9: tutarı salon elle girer).
-- Mobil tasarım farkları (yukarıdaki ✗ listesi).
 - Uçtan uca gece koşusu (iki uygulama + gerçek backend aynı testte) yok (T-72).

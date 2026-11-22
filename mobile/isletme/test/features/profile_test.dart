@@ -81,6 +81,11 @@ void main() {
     expect(find.text('4,9'), findsOneWidget);
     expect(find.text('%4'), findsOneWidget);
     expect(find.text('Çar en yoğun'), findsOneWidget);
+    // "Bu hafta" Pazartesi–Pazar sabit yedi sütun; gelecek günler boş.
+    for (final day in ['Pzt', 'Sal', 'Per', 'Cum', 'Cmt', 'Paz']) {
+      expect(find.text(day), findsOneWidget);
+    }
+    expect(find.bySemanticsLabel(RegExp('^Pazar ')), findsNothing);
     expect(find.text('Ayşe Yılmaz'), findsOneWidget);
     expect(find.text('Bugün 09:30 · Saç kesimi'), findsOneWidget);
     expect(find.text('+${formatMoney(9000)}'), findsOneWidget);

@@ -502,6 +502,22 @@
     "usage": "`blok-kum` üzerindeki metin."
    },
    {
+    "name": "blok-marka-hap",
+    "value": {
+     "light": "{petrol-300}",
+     "dark": "{petrol-300}"
+    },
+    "usage": "`blok-marka` içindeki hap (\"50 dk sonra\"); iki temada aynı açık petrol. Üstünde `blok-marka-hap-metin`."
+   },
+   {
+    "name": "blok-marka-hap-metin",
+    "value": {
+     "light": "{petrol-950}",
+     "dark": "{petrol-950}"
+    },
+    "usage": "`blok-marka-hap` üzerindeki metin."
+   },
+   {
     "name": "iskelet",
     "value": {
      "light": "{kum-100}",

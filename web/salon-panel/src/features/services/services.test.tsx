@@ -67,9 +67,9 @@ describe('hizmet listesi', () => {
     }
 
     expect(first.textContent).toContain('45 dk');
-    expect(first.textContent).toContain('450 ₺');
+    expect(first.textContent).toContain('450\u00a0₺');
     expect(within(first).getByLabelText('Elif Kaya, Mert Demir, Can Yücel')).toBeTruthy();
-    expect(second.textContent).toContain("1.800 ₺'den");
+    expect(second.textContent).toContain("1.800\u00a0₺'den");
     // IBAN yokken kapora istenemez.
     expect(second.textContent).toContain('Yok');
     await userEvent.click(screen.getByRole('switch', { name: 'Keratin online randevuya açık' }));
@@ -168,7 +168,7 @@ describe('hizmet listesi', () => {
     expect(calls['/api/v1/manage/services']).toBeUndefined();
   });
 
-  it('Nişantaşı şube fiyatı 550 ₺ görünür ve değiştirilir; genel fiyat korunur (kabul kriteri 9)', async () => {
+  it('Nişantaşı şube fiyatı 550\u00a0₺ görünür ve değiştirilir; genel fiyat korunur (kabul kriteri 9)', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/hizmetler', { calls, withServices: true, session: twoBranches });
     await screen.findByRole('table', { name: 'Hizmetler' });

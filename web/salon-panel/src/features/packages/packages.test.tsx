@@ -74,7 +74,7 @@ describe('Paketler', () => {
     expect(within(block('Kullanım oranı')).getByText('%81')).toBeTruthy();
     const table = screen.getByRole('table', { name: 'Paket tanımları' });
     const fon = within(table).getByText('Fön paketi').closest('tr');
-    expect(fon?.textContent).toContain('1.000 ₺');
+    expect(fon?.textContent).toContain('1.000\u00a0₺');
     expect(fon?.textContent).toContain('3 ay');
     expect(fon?.textContent).toContain('Satışta');
     expect(within(table).getByText('Satışta değil')).toBeTruthy();
@@ -181,7 +181,7 @@ describe('Paketler', () => {
     expect(within(dialog).getByText("23 Şubat 2027'ye kadar")).toBeTruthy();
     await userEvent.click(within(dialog).getByRole('radio', { name: 'Nakit' }));
     await userEvent.click(
-      within(dialog).getByRole('button', { name: '1.700 ₺ al ve paketi tanımla' }),
+      within(dialog).getByRole('button', { name: '1.700\u00a0₺ al ve paketi tanımla' }),
     );
     const path = `/api/v1/manage/customers/${customerIds.selin}/packages`;
     await waitFor(() => {
@@ -203,7 +203,7 @@ describe('Paketler', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Paket sat' }));
     const dialog = await screen.findByRole('dialog', { name: 'Müşteriye paket sat' });
     await userEvent.click(
-      await within(dialog).findByRole('button', { name: '1.000 ₺ al ve paketi tanımla' }),
+      await within(dialog).findByRole('button', { name: '1.000\u00a0₺ al ve paketi tanımla' }),
     );
     expect(
       await within(dialog).findByText('Bu personel bu şubede çalışmıyor. Başka personel seçin.'),
@@ -216,7 +216,7 @@ describe('Paketler', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Müşteriye paket sat' });
     expect(within(dialog).getByText('Selin Öztürk')).toBeTruthy();
     await userEvent.click(
-      await within(dialog).findByRole('button', { name: '1.000 ₺ al ve paketi tanımla' }),
+      await within(dialog).findByRole('button', { name: '1.000\u00a0₺ al ve paketi tanımla' }),
     );
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Müşteriye paket sat' })).toBeNull();

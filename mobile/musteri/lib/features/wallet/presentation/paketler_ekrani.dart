@@ -162,7 +162,8 @@ class PaketKarti extends StatelessWidget {
                 if (p.isRunningLow)
                   EtiketCipi(
                     'Az kaldı',
-                    zemin: r.zeminYukseltilmis,
+                    // Uyarı tonu (tasarım); beyaz zemin değil.
+                    zemin: r.uyariZemin,
                     renk: r.metin,
                   ),
               ],

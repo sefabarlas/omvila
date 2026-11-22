@@ -83,7 +83,9 @@ class _Shape extends StatelessWidget {
   }
 }
 
-/// OMVILA İşletme uygulama ikonu (design-tokens app-icon-isletme.svg).
+/// OMVILA amblemi, koyu zemin için (design-tokens omvila-amblem-ters.svg).
+/// Uygulama ikonunun kare zemini ve iç boşluğu çizilmez: amblem verilen
+/// boyutu doldurur, koyu temada arkasında kare görünmez.
 class AppIcon extends StatelessWidget {
   /// İkon.
   const AppIcon({this.size = 56, super.key});
@@ -94,7 +96,7 @@ class AppIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      'assets/app-icon-isletme.svg',
+      'assets/omvila-amblem-ters.svg',
       width: size,
       height: size,
       semanticsLabel: 'OMVILA',
