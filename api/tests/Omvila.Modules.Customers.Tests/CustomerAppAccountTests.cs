@@ -53,4 +53,26 @@ public sealed class CustomerAppAccountTests
         customer.FullName.ShouldBe("Merve Yıldız");
         customer.Email.ShouldBeNull();
     }
+
+    // Kural: guvenlik-kvkk.md § Anonimleştirme (müşterinin kendi silmesi; T-104)
+    [Fact]
+    public void AnonymizeAccount_ClearsPersonalData_ClosesTheAppAccount_AndIsIdempotent()
+    {
+        var customer = Unnamed();
+        customer.OpenAppAccount();
+        customer.UpdateProfile("Merve Yıldız", "merve@example.com");
+
+        customer.AnonymizeAccount(Now);
+        var phone = customer.PhoneE164;
+        customer.AnonymizeAccount(Now.Plus(Duration.FromHours(1)));
+
+        customer.FullName.ShouldBe(Customer.AnonymizedName);
+        customer.Email.ShouldBeNull();
+        customer.HasAppAccount.ShouldBeFalse();
+        customer.AnonymizedUtc.ShouldBe(Now);
+        phone.ShouldStartWith(Customer.AnonymizedPhonePrefix);
+        customer.PhoneE164.ShouldBe(phone);
+        PhoneNumber.TryParse(phone, out _).ShouldBeFalse("anonim numara telefonla bulunmaz");
+        Should.Throw<DomainException>(() => customer.OpenAppAccount());
+    }
 }
