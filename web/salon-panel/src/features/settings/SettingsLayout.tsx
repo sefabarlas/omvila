@@ -6,9 +6,10 @@ import { useSession } from '@/app/session';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Roller ve abonelik (D6) ilgili dilim gelince eklenir; yapılmamış bölüm menüde görünmez
-// (acik-sorular.md T-38, T-41). Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment; KVKK ve veri: customer.kvkk)
-// yalnız o izinle görünür. KVKK ve veri D5'te yalnız "Silme talepleri" ile açıldı (T-99).
+// Bölüm menüsü. Roller (D6) ilgili PR gelince eklenir; yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
+// Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment; Abonelik ve fatura: subscription.manage; KVKK ve veri:
+// customer.kvkk) yalnız o izinle görünür. KVKK ve veri D5'te yalnız "Silme talepleri" ile açıldı (T-99); Abonelik ve
+// fatura D6'da (T-125).
 const sections: readonly { to: string; label: string; permission?: string }[] = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
   { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
@@ -16,6 +17,7 @@ const sections: readonly { to: string; label: string; permission?: string }[] = 
   { to: '/ayarlar/rezervasyon', label: 'Rezervasyon sayfası' },
   { to: '/ayarlar/bildirimler', label: 'Bildirimler ve SMS' },
   { to: '/ayarlar/kapora', label: 'Kapora ve IBAN', permission: 'settings.payment' },
+  { to: '/ayarlar/abonelik', label: 'Abonelik ve fatura', permission: 'subscription.manage' },
   { to: '/ayarlar/kvkk', label: 'KVKK ve veri', permission: 'customer.kvkk' },
 ];
 
@@ -28,6 +30,8 @@ export interface SettingsLayoutProps {
   saveLabel?: string;
   /** Kaydetmenin solunda ikincil eylem ("Şube ekle"). */
   extraAction?: ReactNode;
+  /** Abonelik ve fatura sayfası abonelik şeridini kendi çizer. */
+  hideSubscriptionBanner?: boolean;
   children: ReactNode;
 }
 
@@ -38,6 +42,7 @@ export function SettingsLayout({
   saving = false,
   saveLabel = 'Değişiklikleri kaydet',
   extraAction,
+  hideSubscriptionBanner = false,
   children,
 }: SettingsLayoutProps) {
   const { can } = useSession();
@@ -45,6 +50,7 @@ export function SettingsLayout({
     <Page
       title="Ayarlar"
       context={context}
+      hideSubscriptionBanner={hideSubscriptionBanner}
       action={
         <>
           {extraAction}

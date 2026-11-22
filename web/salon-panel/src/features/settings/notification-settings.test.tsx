@@ -34,8 +34,8 @@ describe('Bildirimler ve SMS', () => {
     expect(within(sender).getByText('KUAFORELIF')).toBeTruthy();
     expect(within(sender).getByText('operatör onaylı')).toBeTruthy();
     expect(screen.getByText(/Bakiye 200 kontörün altına/)).toBeTruthy();
-    // Kontör satın alma ve kart formu yok (ürün kuralı 1).
-    expect(screen.queryByRole('button', { name: /Kontör al/ })).toBeNull();
+    // Kontör yalnız havaleyle alınır (K1); "Kontör al" işletme sahibinde üst barda (T-125).
+    expect(screen.getByRole('button', { name: 'Kontör al' })).toBeTruthy();
   });
 
   it('tahmin yoksa alt satır yazılmaz (sahte sayı yok)', async () => {

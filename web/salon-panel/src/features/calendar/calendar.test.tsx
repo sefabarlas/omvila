@@ -83,7 +83,7 @@ describe('takvim gün görünümü', () => {
     openCalendar('/takvim', {
       session: sessionFixture({ subscription: { status: 'ReadOnly', trialEndsOn: null } }),
     });
-    expect(await screen.findByText('Online randevu kapalı.')).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toContain('Panel salt okunur');
     expect(await screen.findByRole('region', { name: 'Günlük takvim' })).toBeTruthy();
   });
 });

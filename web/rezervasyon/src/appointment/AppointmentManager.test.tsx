@@ -270,10 +270,9 @@ describe('kapora (Dilim 4)', () => {
     const calls = mockLink({
       appointment: () => (expired ? depositExpiredFixture() : linkDepositFixture('Awaiting')),
     });
+    const clock = { now: () => now };
     window.history.replaceState(null, '', `/r/${accessCode}`);
-    render(
-      <AppointmentManager code={accessCode} initialAction="view" clock={{ now: () => now }} />,
-    );
+    render(<AppointmentManager code={accessCode} initialAction="view" clock={clock} />);
     expect(await screen.findByText('1 sa 58 dk kaldı')).toBeTruthy();
 
     expired = true;

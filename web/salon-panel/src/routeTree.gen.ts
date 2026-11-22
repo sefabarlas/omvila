@@ -25,6 +25,7 @@ import { Route as PanelPrimimRouteImport } from './routes/_panel/primim'
 import { Route as PanelRaporlarRouteImport } from './routes/_panel/raporlar'
 import { Route as PanelTakvimRouteImport } from './routes/_panel/takvim'
 import { Route as PanelAyarlarIndexRouteImport } from './routes/_panel/ayarlar/index'
+import { Route as PanelAyarlarAbonelikRouteImport } from './routes/_panel/ayarlar/abonelik'
 import { Route as PanelAyarlarBildirimlerRouteImport } from './routes/_panel/ayarlar/bildirimler'
 import { Route as PanelAyarlarIsletmeRouteImport } from './routes/_panel/ayarlar/isletme'
 import { Route as PanelAyarlarKaporaRouteImport } from './routes/_panel/ayarlar/kapora'
@@ -115,6 +116,11 @@ const PanelAyarlarIndexRoute = PanelAyarlarIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PanelAyarlarRoute,
 } as any)
+const PanelAyarlarAbonelikRoute = PanelAyarlarAbonelikRouteImport.update({
+  id: '/abonelik',
+  path: '/abonelik',
+  getParentRoute: () => PanelAyarlarRoute,
+} as any)
 const PanelAyarlarBildirimlerRoute = PanelAyarlarBildirimlerRouteImport.update({
   id: '/bildirimler',
   path: '/bildirimler',
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/primim': typeof PanelPrimimRoute
   '/raporlar': typeof PanelRaporlarRoute
   '/takvim': typeof PanelTakvimRoute
+  '/ayarlar/abonelik': typeof PanelAyarlarAbonelikRoute
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/raporlar': typeof PanelRaporlarRoute
   '/takvim': typeof PanelTakvimRoute
   '/': typeof PanelIndexRoute
+  '/ayarlar/abonelik': typeof PanelAyarlarAbonelikRoute
   '/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/_panel/raporlar': typeof PanelRaporlarRoute
   '/_panel/takvim': typeof PanelTakvimRoute
   '/_panel/': typeof PanelIndexRoute
+  '/_panel/ayarlar/abonelik': typeof PanelAyarlarAbonelikRoute
   '/_panel/ayarlar/bildirimler': typeof PanelAyarlarBildirimlerRoute
   '/_panel/ayarlar/isletme': typeof PanelAyarlarIsletmeRoute
   '/_panel/ayarlar/kapora': typeof PanelAyarlarKaporaRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/primim'
     | '/raporlar'
     | '/takvim'
+    | '/ayarlar/abonelik'
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/raporlar'
     | '/takvim'
     | '/'
+    | '/ayarlar/abonelik'
     | '/ayarlar/bildirimler'
     | '/ayarlar/isletme'
     | '/ayarlar/kapora'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/_panel/raporlar'
     | '/_panel/takvim'
     | '/_panel/'
+    | '/_panel/ayarlar/abonelik'
     | '/_panel/ayarlar/bildirimler'
     | '/_panel/ayarlar/isletme'
     | '/_panel/ayarlar/kapora'
@@ -453,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelAyarlarIndexRouteImport
       parentRoute: typeof PanelAyarlarRoute
     }
+    '/_panel/ayarlar/abonelik': {
+      id: '/_panel/ayarlar/abonelik'
+      path: '/abonelik'
+      fullPath: '/ayarlar/abonelik'
+      preLoaderRoute: typeof PanelAyarlarAbonelikRouteImport
+      parentRoute: typeof PanelAyarlarRoute
+    }
     '/_panel/ayarlar/bildirimler': {
       id: '/_panel/ayarlar/bildirimler'
       path: '/bildirimler'
@@ -527,6 +546,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface PanelAyarlarRouteChildren {
+  PanelAyarlarAbonelikRoute: typeof PanelAyarlarAbonelikRoute
   PanelAyarlarBildirimlerRoute: typeof PanelAyarlarBildirimlerRoute
   PanelAyarlarIsletmeRoute: typeof PanelAyarlarIsletmeRoute
   PanelAyarlarKaporaRoute: typeof PanelAyarlarKaporaRoute
@@ -538,6 +558,7 @@ interface PanelAyarlarRouteChildren {
 }
 
 const PanelAyarlarRouteChildren: PanelAyarlarRouteChildren = {
+  PanelAyarlarAbonelikRoute: PanelAyarlarAbonelikRoute,
   PanelAyarlarBildirimlerRoute: PanelAyarlarBildirimlerRoute,
   PanelAyarlarIsletmeRoute: PanelAyarlarIsletmeRoute,
   PanelAyarlarKaporaRoute: PanelAyarlarKaporaRoute,

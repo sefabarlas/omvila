@@ -20,5 +20,6 @@ internal sealed class BrandSmsSenderConfiguration : IEntityTypeConfiguration<Bra
         builder.Property(x => x.ApprovedName).HasMaxLength(11);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(x => x.RejectionReason).HasMaxLength(500);
+        builder.Property(x => x.Version).IsRowVersion();
     }
 }

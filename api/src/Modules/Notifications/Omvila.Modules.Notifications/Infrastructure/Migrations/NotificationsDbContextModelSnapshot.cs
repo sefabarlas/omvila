@@ -60,6 +60,12 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("submitted_utc");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("BrandId")
                         .HasName("pk_brand_sms_senders");
 

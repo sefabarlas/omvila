@@ -10,24 +10,29 @@ import styles from './Page.module.css';
 
 export interface PageProps extends TopbarProps {
   children?: ReactNode;
+  /** Abonelik ve fatura sayfası şeridi kendi çizer (her gün görünen deneme şeridi, butonsuz). */
+  hideSubscriptionBanner?: boolean;
 }
 
 /**
  * Panel sayfası: üst bar (zil: salon-paneli/BildirimPaneli), abonelik ve kontör şeritleri
  * (salon-paneli/GenelBakisGecikti, Durumlar: üst barın altında), içerik.
  */
-export function Page({ children, ...topbar }: PageProps) {
+export function Page({ children, hideSubscriptionBanner = false, ...topbar }: PageProps) {
   const { session, can } = useSession();
   const bell = useNotificationBell();
   return (
     <>
       <Topbar notifications={bell} {...topbar} />
       <div className={styles.content}>
-        <SubscriptionBanner
-          subscription={session.subscription}
-          timeZone={defaultTimeZone}
-          manages={can('settings.manage')}
-        />
+        {hideSubscriptionBanner ? null : (
+          <SubscriptionBanner
+            subscription={session.subscription}
+            timeZone={defaultTimeZone}
+            manages={can('settings.manage')}
+            canPay={can('subscription.manage')}
+          />
+        )}
         <SmsCreditsBanner smsCredits={session.smsCredits} />
         {children}
       </div>

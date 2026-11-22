@@ -28,6 +28,7 @@ describe('İşletme bilgileri', () => {
       'Rezervasyon sayfası',
       'Bildirimler ve SMS',
       'Kapora ve IBAN',
+      'Abonelik ve fatura',
       'KVKK ve veri',
     ]);
     expect(

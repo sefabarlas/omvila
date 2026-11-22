@@ -70,4 +70,9 @@ export const queryKeys = {
     ['reports', 'commissions', branchId, from, to] as const,
   /** Primim (manageGetMyCommissionSummary); önek ['reports']. */
   myCommission: (month: string) => ['reports', 'mine', month] as const,
+  /** OMVILA aboneliği (manageGetSubscription); önek ['subscription'] faturaları da kapsar. */
+  subscription: () => ['subscription'] as const,
+  invoices: () => ['subscription', 'invoices'] as const,
+  /** SMS kontör paketleri (manageListCreditPackages). */
+  creditPackages: () => ['credit-packages'] as const,
 };

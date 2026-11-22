@@ -1,0 +1,6 @@
+{
+  "$comment": "Sitede anılan varsayılan ayarlar (docs/alan/sureler-ve-ayarlar.md ile aynı değerler; değişince birlikte güncellenir, T-117) ve alt bilgideki telif yılı.",
+  "copyrightYear": 2026,
+  "reminderOffsetsMinutes": [1440, 120],
+  "waitlistOfferHoldMinutes": 15
+}

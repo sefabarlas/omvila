@@ -81,6 +81,12 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<SmsCreditsLow, EmailCreditsLow>();
         services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionTrialEnding, EmailOwnerAboutSubscription>();
         services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionPastDue, EmailOwnerAboutSubscription>();
+        // Havale bildirimi sonuçları ve gönderen adı kararı markaya; platform paneli gönderen adı kararı (K4, T-124).
+        services.AddScoped<IPlatformSmsSenders, Infrastructure.PlatformSmsSenders>();
+        services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeMatched, NotifyOwnerAboutPaymentNotice>();
+        services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeNotFound, NotifyOwnerAboutPaymentNotice>();
+        services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeRejected, NotifyOwnerAboutPaymentNotice>();
+        services.AddIntegrationEventHandler<SmsSenderDecided, EmailOwnerAboutSmsSender>();
     }
 
     public static IEndpointRouteBuilder MapNotificationsEndpoints(this IEndpointRouteBuilder app)

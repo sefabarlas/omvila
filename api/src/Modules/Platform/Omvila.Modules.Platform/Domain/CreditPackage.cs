@@ -21,6 +21,9 @@ internal sealed class CreditPackage
 
     public bool IsActive { get; private set; }
 
+    /// <summary>Satır sürümü (xmin; If-Match).</summary>
+    public uint Version { get; private set; }
+
     public static CreditPackage Unpriced(Guid id, string code, string name, int credits) => new()
     {
         Id = id,
@@ -29,4 +32,21 @@ internal sealed class CreditPackage
         Credits = credits,
         IsActive = true,
     };
+
+    /// <summary>
+    /// Kontör paketini düzenler (adminUpdateCreditPackages). Kod değişmez; bekleyen havale bildirimlerinin beklenen tutarı bildirimde
+    /// saklı olduğundan etkilenmez. Doğrulama uçtadır.
+    /// </summary>
+    public void Update(string name, int credits, long? priceMinor, bool isActive)
+    {
+        if (credits <= 0 || priceMinor < 0 || string.IsNullOrWhiteSpace(name))
+        {
+            throw new SharedKernel.DomainException("Kontör paketi değerleri geçersiz.");
+        }
+
+        Name = name.Trim();
+        Credits = credits;
+        PriceMinor = priceMinor;
+        IsActive = isActive;
+    }
 }

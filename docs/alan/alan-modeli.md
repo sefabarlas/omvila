@@ -620,7 +620,7 @@ Kartla ödeme için kart bilgisi OMVILA'da tutulmaz; ödeme sağlayıcısının 
 
 ### PaymentNotice (Havale bildirimi)
 Salonun "Havaleyi bildir" ile yaptığı abonelik veya kontör ödemesi bildirimi.
-`BrandId`, `Purpose` (`Subscription`, `Credits`), `CreditPackageId?` (kontörde), `PeriodStart?` (abonelikte ödenen dönem), `ExpectedAmountMinor?` (fiyat tanımlı değilse boş), `Channel` (`Panel`, `App`), `TransferCode` (`ABN-…` / `KNT-…`), `SenderName?`, `ReceiptFileUrl?` (dekont, isteğe bağlı), `NotifiedUtc`, `Status` (`Pending`, `Matched`, `NotFound`, `Rejected`), `MatchedBankTransactionId?`, `ResolvedByUserId?`, `ResolvedUtc?`.
+`BrandId`, `Purpose` (`Subscription`, `Credits`), `CreditPackageId?` (kontörde), `PeriodStart?` (abonelikte ödenen dönem), `ExpectedAmountMinor?` (fiyat tanımlı değilse boş), `Channel` (`Panel`, `App`), `TransferCode` (`ABN-…` / `KNT-…`), `SenderName?`, `ReceiptFileUrl?` (dekont, isteğe bağlı; adı ve boyutu da saklanır), `NotifiedUtc`, `Status` (`Pending`, `Matched`, `NotFound`, `Rejected`), `MatchedBankTransactionId?`, `ResolvedByUserId?`, `ResolvedUtc?`, `ResolutionMessage?` (NotFound/Rejected'de markaya not; T-124).
 
 ### PlatformBankTransaction
 OMVILA hesabına gelen havaleler: banka dökümünden CSV ile içe aktarılır veya elle girilir. `ValueDate`, `ReceivedUtc?`, `AmountMinor`, `SenderName`, `Description?`, `BankReference` (UNIQUE), `Source` (`Import`, `Manual`), `MatchedNoticeId?`.
