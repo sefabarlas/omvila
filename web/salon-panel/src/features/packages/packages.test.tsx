@@ -134,7 +134,9 @@ describe('Paketler', () => {
     });
     expect(calls['/api/v1/manage/packages Idempotency-Key']).toHaveLength(1);
     // Ad hem bildirimde hem tabloda görünür; satır tabloda aranır (ekran genelinde arama zamanlamaya göre iki eşleşme bulur).
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Paket oluştur' })).toBeNull());
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Paket oluştur' })).toBeNull();
+    });
     const table = screen.getByRole('table', { name: 'Paket tanımları' });
     expect(await within(table).findByText('Kesim ve keratin')).toBeTruthy();
   });
