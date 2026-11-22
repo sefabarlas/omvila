@@ -9,8 +9,9 @@ enum OmvilaButonTuru {
   /// Alternatif eylem: dolu nötr zemin (`zemin-ikincil`), çerçevesiz.
   ikincil,
 
-  /// Koyu hap (`metin` zemin, `zemin` metin; bundle.css `om-btn-koyu`): başlıktaki "+ Randevu" gibi
-  /// ekranın ana eylemi olmayan ama öne çıkan kısa eylem.
+  /// Koyu hap (`metin` zemin, `zemin` metin; bundle.css `om-btn-koyu`):
+  /// başlıktaki "+ Randevu" gibi ekranın ana eylemi olmayan ama öne çıkan
+  /// kısa eylem.
   koyu,
 
   /// Düşük öncelik.

@@ -19,4 +19,5 @@ export 'widgets/otp_girisi.dart';
 export 'widgets/randevu_karti.dart';
 export 'widgets/randevu_satiri.dart';
 export 'widgets/saat_izgarasi.dart';
+export 'widgets/segment.dart';
 export 'widgets/yuzen_sekme_cubugu.dart';
