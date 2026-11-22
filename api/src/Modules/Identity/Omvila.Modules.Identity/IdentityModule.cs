@@ -82,6 +82,7 @@ public static class IdentityModule
         ManageSessionEndpoints.Map(app);
         PublicOtpEndpoints.Map(app);
         Features.MeAuth.MeAuthEndpoints.Map(app);
+        Features.MeAuth.MeAccountDeletionEndpoints.Map(app);
         return app;
     }
 

@@ -86,17 +86,37 @@ internal sealed class Customer
     // Kural: guvenlik-kvkk.md § Anonimleştirme
     public static Customer CreateAnonymous(Guid id, Instant now)
     {
-        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(id.ToByteArray()));
         return new Customer
         {
             Id = id,
-            PhoneE164 = AnonymizedPhonePrefix + hash[..16],
+            PhoneE164 = AnonymizedPhoneFor(id),
             FullName = AnonymizedName,
             LanguageCode = DefaultLanguageCode,
             IsVerified = false,
             CreatedUtc = now,
             AnonymizedUtc = now,
         };
+    }
+
+    /// <summary>
+    /// Müşterinin kendi hesabını silmesi (KK9; guvenlik-kvkk.md § Anonimleştirme): kayıt yerinde anonimleşir. Ad "Silinmiş müşteri",
+    /// telefon <c>+000</c> + kimlik özeti (benzersiz, telefonla bulunmaz), e-posta ve doğum yılı silinir, uygulama hesabı kapanır.
+    /// Aynı numarayla sonraki giriş yeni kayıt açar.
+    /// </summary>
+    // Kural: guvenlik-kvkk.md § Haklar ve işleyiş (Silme, müşteri)
+    public void AnonymizeAccount(Instant now)
+    {
+        if (AnonymizedUtc is not null)
+        {
+            return;
+        }
+
+        PhoneE164 = AnonymizedPhoneFor(Id);
+        FullName = AnonymizedName;
+        Email = null;
+        BirthYear = null;
+        HasAppAccount = false;
+        AnonymizedUtc = now;
     }
 
     /// <summary>Telefon OTP ile doğrulandı (online randevu). Doğrulama geri alınmaz.</summary>
@@ -148,4 +168,7 @@ internal sealed class Customer
 
         Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
     }
+
+    private static string AnonymizedPhoneFor(Guid id) =>
+        AnonymizedPhonePrefix + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(id.ToByteArray()))[..16];
 }

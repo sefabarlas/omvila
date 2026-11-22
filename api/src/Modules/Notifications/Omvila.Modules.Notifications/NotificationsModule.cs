@@ -40,6 +40,7 @@ public static class NotificationsModule
         services.AddScoped<DepositSms>();
         services.AddScoped<InAppNotifier>();
         services.AddScoped<ICustomerDevices, CustomerDevices>();
+        services.AddScoped<ICustomerAppDataEraser, CustomerAppDataEraser>();
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
         services.AddBrandDataEraser<NotificationsDbContext>();
@@ -49,6 +50,7 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
         services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();
         services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, CancelRemindersOnCustomerCancel>();
+        services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, NotifyAppointmentCancelledByCustomer>();
         services.AddIntegrationEventHandler<AppointmentRequested, NotifyAppointmentRequested>();
         services.AddIntegrationEventHandler<AppointmentApproved, NotifyAppointmentApproved>();
         services.AddIntegrationEventHandler<AppointmentDeclined, NotifyAppointmentDeclined>();

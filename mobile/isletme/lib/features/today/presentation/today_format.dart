@@ -1,12 +1,6 @@
 import 'package:omvila_api/omvila_api.dart';
+import 'package:omvila_isletme/shared/api_date.dart';
 import 'package:omvila_ui/omvila_ui.dart';
-
-/// API'nin `date` alanı ("2026-11-25" → yerel gün; saat dilimi dönüşümü
-/// yapılmaz, bileşenler olduğu gibi alınır).
-String localDateOf(DateTime date) =>
-    '${date.year.toString().padLeft(4, '0')}-'
-    '${date.month.toString().padLeft(2, '0')}-'
-    '${date.day.toString().padLeft(2, '0')}';
 
 /// "Salı 25 Kasım · Kadıköy".
 String todayHeader(ManageToday today) =>

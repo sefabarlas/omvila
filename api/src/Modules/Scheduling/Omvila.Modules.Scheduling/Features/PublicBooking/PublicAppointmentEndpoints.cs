@@ -16,24 +16,23 @@ namespace Omvila.Modules.Scheduling.Features.PublicBooking;
 
 /// <summary>
 /// Rezervasyon sayfasında randevu oluşturma ve paket listesi (sözleşme publicCreateAppointment, publicListMyPackages).
-/// İkisi de telefon doğrulama jetonu (aud=public-booking, ADR-0007) ister; müşteri uygulaması jetonu (aud=me) /me yüzeyiyle
-/// eklenir. Oluşturma Idempotency-Key ister; anahtar şubenin markası kapsamında saklanır.
+/// İkisi de telefon doğrulama jetonu (aud=public-booking, ADR-0007) veya müşteri uygulaması jetonu (aud=me; telefon global kayıttan,
+/// kod adımı yok; T-101 (3)) ister. Oluşturma Idempotency-Key ister; anahtar şubenin markası kapsamında saklanır. Uygulamadan alınan
+/// randevuda marka "Salonlarım"a eklenir (CustomerSavedBrand, Source Booking).
 /// </summary>
 internal static class PublicAppointmentEndpoints
 {
-    private const string CustomerAppClient = "customer-app";
-
     public static void Map(IEndpointRouteBuilder app)
     {
         var group = app.MapApiGroup("/api/v1/public/branches");
         group.MapPost("/{branchId:guid}/appointments", CreateAsync).WithName("publicCreateAppointment")
-            .RequireAuthenticated(Audiences.PublicBooking)
+            .RequireAuthenticated(Audiences.PublicBooking, Audiences.Me)
             .AddEndpointFilter<PublicBranchFilter>()
             .RequireIdempotencyKey();
 
         group.MapGet("/{branchId:guid}/my-packages", ListMyPackagesAsync)
             .WithName("publicListMyPackages")
-            .RequireAuthenticated(Audiences.PublicBooking)
+            .RequireAuthenticated(Audiences.PublicBooking, Audiences.Me)
             .AddEndpointFilter<PublicBranchFilter>();
     }
 
@@ -42,15 +41,21 @@ internal static class PublicAppointmentEndpoints
     /// yoksa liste boştur; başka markanın paketi görünmez (kiracı bağlamı şubenin markası).
     /// </summary>
     private static async Task<IResult> ListMyPackagesAsync(
-        HttpContext http, ICustomerDirectory customers, IPackageSessions packageSessions, ITenantQueries tenants, IClock clock, CancellationToken ct)
+        HttpContext http,
+        ICustomerDirectory customers,
+        ICustomerAccounts accounts,
+        IPackageSessions packageSessions,
+        ITenantQueries tenants,
+        IClock clock,
+        CancellationToken ct)
     {
-        if (!PhoneNumber.TryParse(http.User.FindFirst(OmvilaClaims.Phone)?.Value, out var phone))
+        if (await PublicBookingCaller.ResolveAsync(http, accounts, ct) is not { } caller)
         {
             return Error.Unauthorized().ToProblem();
         }
 
         var scope = PublicBranchFilter.ScopeOf(http);
-        if (await customers.FindBrandCustomerIdAsync(scope.BrandId, phone, ct) is not { } brandCustomerId)
+        if (await customers.FindBrandCustomerIdAsync(scope.BrandId, caller.Phone, ct) is not { } brandCustomerId)
         {
             return TypedResults.Ok(new PackageList([]));
         }
@@ -65,29 +70,29 @@ internal static class PublicAppointmentEndpoints
         PublicAppointmentCreate body,
         HttpContext http,
         PublicAppointmentCreator creator,
+        ICustomerAccounts accounts,
         IPublicBookingQueries booking,
         ITenantQueries tenants,
         IBrandBankAccounts bankAccounts,
         IClock clock,
         CancellationToken ct)
     {
-        if (!PhoneNumber.TryParse(http.User.FindFirst(OmvilaClaims.Phone)?.Value, out var phone))
+        if (await PublicBookingCaller.ResolveAsync(http, accounts, ct) is not { } caller)
         {
             return Error.Unauthorized().ToProblem();
         }
 
         var scope = PublicBranchFilter.ScopeOf(http);
-        var customerApp = string.Equals(http.Request.Headers["X-Client"].ToString(), CustomerAppClient, StringComparison.Ordinal);
-        var context = new PublicBookingRequest(
-            scope,
-            phone,
-            customerApp ? ClientApp.CustomerApp : ClientApp.BookingPage,
-            customerApp ? ConsentChannel.CustomerApp : ConsentChannel.Web,
-            http.Connection.RemoteIpAddress?.ToString());
-        var created = await creator.CreateAsync(context, body, ct);
+        var created = await creator.CreateAsync(caller.Request(http, scope), body with { FullName = caller.NameOr(body.FullName) }, ct);
         if (!created.IsSuccess)
         {
             return created.Error.ToProblem();
+        }
+
+        if (caller.AppCustomerId is { } appCustomerId)
+        {
+            // Kural: alan-modeli.md § CustomerSavedBrand (Source Booking); sözleşme publicCreateAppointment (meBearer)
+            await accounts.SaveBookedBrandAsync(appCustomerId, scope.BrandId, ct);
         }
 
         var (appointment, accessCode, _) = created.Value;

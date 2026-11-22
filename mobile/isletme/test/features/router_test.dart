@@ -117,4 +117,33 @@ void main() {
       'Profil',
     ]);
   });
+
+  test('yeni randevu yalnız appointment.create izniyle', () {
+    final readOnlyStaff = AsyncData(
+      session({
+        ...staffSessionJson,
+        'permissions': ['calendar.view', 'customer.view'],
+      }),
+    );
+    expect(
+      redirectFor(
+        location: Routes.newAppointment,
+        auth: readOnlyStaff,
+        prompt: asked,
+      ),
+      Routes.today,
+    );
+    expect(
+      redirectFor(location: Routes.newAppointment, auth: owner, prompt: asked),
+      isNull,
+    );
+    expect(
+      redirectFor(
+        location: Routes.reschedule(pendingId),
+        auth: staff,
+        prompt: asked,
+      ),
+      isNull,
+    );
+  });
 }

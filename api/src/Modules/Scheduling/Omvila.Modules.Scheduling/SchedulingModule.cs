@@ -95,6 +95,8 @@ public static class SchedulingModule
     {
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
         services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
+        // D5 müşteri uygulaması Randevularım (T-104).
+        services.AddScoped<Features.Me.MeAppointmentReader>();
         services.AddScoped<CustomerDataParticipant>();
         services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
         services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
@@ -113,6 +115,7 @@ public static class SchedulingModule
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);
         PublicAppointmentLinkEndpoints.Map(app);
+        Features.Me.MeAppointmentEndpoints.Map(app);
         WaitlistEndpoints.Map(app);
         return app;
     }
