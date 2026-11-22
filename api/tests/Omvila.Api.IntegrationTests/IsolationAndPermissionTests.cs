@@ -175,6 +175,13 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
     // İki marka aynı numarayı ekler: global kişi ortaktır, kartlar ayrıdır.
     private async Task<Dictionary<string, string>> SeedBrandAsync(string token)
     {
+        var ids = await SeedBrandDataAsync(token);
+        ids["userId"] = (await _api.GetAsync("/api/v1/manage/session", token)).Body.GetProperty("user").GetProperty("id").GetString()!;
+        return ids;
+    }
+
+    private async Task<Dictionary<string, string>> SeedBrandDataAsync(string token)
+    {
         var session = (await _api.GetAsync("/api/v1/manage/session", token)).Body;
         var branchId = session.GetProperty("branches")[0].GetProperty("id").GetString()!;
         var ownerStaffId = session.GetProperty("membership").GetProperty("staffId").GetString()!;

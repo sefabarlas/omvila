@@ -67,6 +67,9 @@ internal sealed class TenantQueries(TenancyDbContext db) : ITenantQueries
                 s.RequiresApproval, s.ApprovalTimeoutMinutes))
             .SingleOrDefaultAsync(ct);
 
+    public async Task<int?> GetTransactionRetentionYearsAsync(Guid brandId, CancellationToken ct) =>
+        await db.BrandSettings.AsNoTracking().Where(s => s.BrandId == brandId).Select(s => (int?)s.TransactionRetentionYears).SingleOrDefaultAsync(ct);
+
     public async Task<BrandNotificationSettings?> GetNotificationSettingsAsync(Guid brandId, CancellationToken ct)
     {
         var row = await db.BrandSettings.AsNoTracking()
