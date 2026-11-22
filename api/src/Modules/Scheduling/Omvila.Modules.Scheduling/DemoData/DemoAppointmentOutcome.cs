@@ -1,6 +1,6 @@
 namespace Omvila.Modules.Scheduling.DemoData;
 
-/// <summary>Demo randevusunun varacağı durum (durum-makinesi.md; <c>Completed</c> adisyonla gelir, Dilim 6).</summary>
+/// <summary>Demo randevusunun varacağı durum (durum-makinesi.md).</summary>
 public enum DemoAppointmentOutcome
 {
     /// <summary>Telefonla, onaylı.</summary>
@@ -32,4 +32,10 @@ public enum DemoAppointmentOutcome
 
     /// <summary>Salon "Kaporasız onayla" dedi (A2, waiveDeposit): Onaylandı, kapora istenmiyor (Waived).</summary>
     DepositWaived,
+
+    /// <summary>
+    /// Geldi (A10) ve bitişinde "Tamamla ve ödeme al" (A11); paket kalemi verilmişse paketten düşülür. Tahsilat ve prim çağıranın
+    /// (Sales demo verisi), ziyaret sayacı burada.
+    /// </summary>
+    Completed,
 }

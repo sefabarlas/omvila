@@ -108,6 +108,85 @@ internal static class DemoDataSet
         "Ayşe Yılmaz", "Hande Er", "Kerem Aydın", "Aslı Kurt", "Tuğba Er", "Kaan Polat", "Deniz Acar",
     ];
 
+    /// <summary>
+    /// Prim oranları (Personel düzenle; hizmet / satış yüzdesi). Elif Kaya %24 hizmet primi (dilim-05 KK5); satış primi pakete özel
+    /// oran yoksa bu orandır.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (decimal Service, decimal Sale)> Commissions = new Dictionary<string, (decimal, decimal)>(StringComparer.Ordinal)
+    {
+        ["Elif Kaya"] = (24m, 5m),
+        ["Mert Demir"] = (20m, 5m),
+        ["Can Yücel"] = (20m, 5m),
+        ["Zeynep Aksoy"] = (22m, 5m),
+    };
+
+    /// <summary>Paket tanımları (Paketler.png): 10 seanslık Fön paketi satış primi %10 (KK6); bakım paketi personelin oranıyla.</summary>
+    public static readonly IReadOnlyList<PackageSeed> Packages =
+    [
+        new("Fön paketi", "Fön", 10, 225000, 180, SaleCommissionPercent: 10m),
+        new("Saç bakımı paketi", "Saç bakımı", 4, 216000, 90, SaleCommissionPercent: null),
+    ];
+
+    /// <summary>
+    /// Satılmış müşteri paketleri. <see cref="CustomerPackageSeed.Redeem"/> kadar seans geçmiş randevularda paketten düşülür (o
+    /// hizmetin tamamlanan randevuları bu müşteriye yazılır): Selin Öztürk'te 2 seans kalır ("Az kaldı"), Derya Şahin'in paketi 10
+    /// gün içinde biter ("Süresi yaklaşan"), Melis Tunç'a dün Elif Kaya sattı (Kasa'da paket satışı, %10 satış primi).
+    /// </summary>
+    public static readonly IReadOnlyList<CustomerPackageSeed> CustomerPackages =
+    [
+        new(Customer: 2, "Saç bakımı paketi", SoldDaysAgo: 20, "Elif Kaya", "Card", Redeem: 2),
+        new(Customer: 3, "Fön paketi", SoldDaysAgo: 170, "Zeynep Aksoy", "Cash", Redeem: 1),
+        new(Customer: 6, "Fön paketi", SoldDaysAgo: 1, "Elif Kaya", "Card", Redeem: 0),
+    ];
+
+    /// <summary>Tamamlanan randevuların tahsilat yöntemi sırayla (Kasa: nakit, kart, havale).</summary>
+    public static readonly IReadOnlyList<string> PaymentMethods = ["Cash", "Card", "Cash", "Transfer"];
+
+    /// <summary>Kapatılmış kasa günü (KK7 örneği): Kadıköy'de bugünden önceki son nakit tahsilatlı gün, sayılan beklenenden 50 ₺ az.</summary>
+    public const long CashDayDifferenceMinor = -5000;
+
+    public const string CashDayNote = "Para üstü eksik verildi";
+
+    /// <summary>Gün kapatma saati (şube yerel; Kadıköy 20:00'de kapanır).</summary>
+    public static readonly LocalTime CashDayClosedAt = new(20, 30);
+
+    /// <summary>
+    /// Değerlendirmeler, en yeni tamamlanan randevulardan başlayarak (Degerlendirmeler.png). İlki yanıtlı, düşük puanlı olan yanıt
+    /// bekliyor.
+    /// </summary>
+    public static readonly IReadOnlyList<ReviewSeed> Reviews =
+    [
+        new(5, "Elif Hanım çok ilgiliydi, saçım tam istediğim gibi oldu.", "Teşekkür ederiz, yine bekleriz."),
+        new(5, "Randevu saatinde başladı, hiç beklemedim.", null),
+        new(4, "Sonuç güzel, yalnız biraz kalabalıktı.", null),
+        new(2, "Fön beklediğimden kısa sürdü, kısa süre sonra dağıldı.", null),
+        new(5, null, null),
+        new(4, "Temiz ve düzenli bir salon.", null),
+    ];
+
+    /// <summary>Paket satış saati (şube yerel).</summary>
+    public static readonly LocalTime PackageSoldAt = new(15, 0);
+
+    /// <summary>Salonun yanıtının değerlendirmeden sonra yazıldığı süre.</summary>
+    public static readonly Duration ReplyDelay = Duration.FromHours(1);
+
+    /// <summary>Değerlendirmenin randevu bitişinden sonra yazıldığı süre.</summary>
+    public static readonly Duration ReviewDelay = Duration.FromHours(2);
+
+    /// <summary>Bekleme listesi (BeklemeListesi.png): Kadıköy'de iki kişi.</summary>
+    public static readonly IReadOnlyList<WaitlistSeed> Waitlist =
+    [
+        new(Customer: 9, "Boya", "Elif Kaya", AcceptOtherStaff: false, DatesAhead: 3, ["Afternoon"], Online: true, JoinedAgo: Duration.FromDays(1)),
+        new(Customer: 11, "Saç kesimi", null, AcceptOtherStaff: true, DatesAhead: 0, ["Evening"], Online: false, JoinedAgo: Duration.FromHours(3)),
+    ];
+
+    /// <summary>Kapıda sıra (KapidaSira.png): bugün Kadıköy'de iki bilet; ilki telefonsuz, adla.</summary>
+    public static readonly IReadOnlyList<WalkInSeed> WalkIns =
+    [
+        new("Okan Er", Customer: null, "Saç kesimi", "Mert Demir", CreatedAgo: Duration.FromMinutes(25)),
+        new(null, Customer: 13, "Sakal ve kesim", "Mert Demir", CreatedAgo: Duration.FromMinutes(10)),
+    ];
+
     /// <summary>Demo müşterisinin telefonu: +90 555 001 00xx (sıra 1'den).</summary>
     public static PhoneNumber CustomerPhone(int index) => PhoneNumber.Parse($"+9055500100{index + 1:00}");
 
@@ -122,6 +201,17 @@ internal static class DemoDataSet
 
     internal sealed record StaffSeed(
         string FullName, string Title, string Role, string Phone, string CalendarColor, bool IsBookableOnline, Branch Branch, IReadOnlyList<DemoHours> Hours);
+
+    internal sealed record PackageSeed(string Name, string Service, int SessionCount, long PriceMinor, int ValidityDays, decimal? SaleCommissionPercent);
+
+    internal sealed record CustomerPackageSeed(int Customer, string Package, int SoldDaysAgo, string Seller, string Method, int Redeem);
+
+    internal sealed record ReviewSeed(int Rating, string? Comment, string? Reply);
+
+    internal sealed record WaitlistSeed(
+        int Customer, string Service, string? Staff, bool AcceptOtherStaff, int DatesAhead, IReadOnlyList<string> TimeWindows, bool Online, Duration JoinedAgo);
+
+    internal sealed record WalkInSeed(string? Name, int? Customer, string Service, string? Staff, Duration CreatedAgo);
 
     internal sealed record ServiceSeed(
         string Category, string Name, string? Description, int DurationMinutes, long PriceMinor, bool StartingFrom, bool? RequiresApproval, IReadOnlyList<string> Staff,
