@@ -56,9 +56,9 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `staff.walkin_queue` | Tercihe göre | `Sırada {n} kişi` | `Kapıda sıra · tahmini bekleme {dk} dk.` | Sıra |
 | `owner.credits_low` | Owner | `SMS kontörü azaldı` | `{kalan} SMS kaldı, tahmini {gün} gün yeter.` | Panel · kontör |
 | `owner.subscription_payment_failed` | Owner | `Abonelik ödemesi alınamadı` | `{gün} gün içinde kartı güncelleyin ya da havale ile ödeyin; {tarih} salt okunur.` | Panel · abonelik |
-| `owner.payment_notice_matched` | Owner | taslak (T-116) | Havale eşleşti: abonelik dönemi ödendi veya kontör eklendi | Panel · abonelik |
-| `owner.payment_notice_not_found` | Owner | taslak (T-116) | Havale OMVILA hesabında bulunamadı; platformun notu eklenir, salon yeniden bildirebilir | Panel · abonelik |
-| `owner.payment_notice_rejected` | Owner | taslak (T-116) | Havale bildirimi reddedildi (yinelenen veya geçersiz); platformun notu eklenir | Panel · abonelik |
+| `owner.payment_notice_matched` | Owner | `Havaleniz eşleşti` | Abonelik: `Abonelik ödemeniz alındı; aboneliğiniz aktif.` · Kontör: `{kontör} SMS kontörü hesabınıza eklendi.` | Panel · abonelik |
+| `owner.payment_notice_not_found` | Owner | `Havaleniz bulunamadı` | `Bildirdiğiniz havale OMVILA hesabında görünmüyor. Kontrol edip yeniden bildirin.` (platformun notu e-postada) | Panel · abonelik |
+| `owner.payment_notice_rejected` | Owner | `Havale bildiriminiz reddedildi` | `Bildirim yinelenen veya geçersiz bulundu. Nedeni e-postanızda.` (platformun notu e-postada) | Panel · abonelik |
 
 ### İşletme SMS'leri
 
@@ -73,8 +73,9 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.trial_ending` | Deneme bitmeden 3 gün önce |
 | `owner.credits_low` | Kontör eşiğin altına inince (push ile birlikte) |
 | `owner.subscription_payment_failed` | Çekim başarısız / havale gelmedi |
-| `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte; metin taslak, T-116) |
-| `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte; metin taslak, T-116) |
+| `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte). Konu `Havaleniz eşleşti`; abonelikte "Aboneliğiniz aktif", kontörde eklenen SMS sayısı; buton `Aboneliği aç` (T-124) |
+| `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte). Konu `Havaleniz bulunamadı` / `Havale bildiriminiz reddedildi`; "OMVILA ekibinin notu: {not}"; buton `Yeniden bildir` / `Aboneliği aç` (T-124) |
+| `owner.sms_sender_approved` / `owner.sms_sender_rejected` | SMS gönderen adı onaylandı / onaylanmadı (yalnız e-posta; panel olay kodu sözleşmede yok, T-124). Konu `SMS gönderen adınız onaylandı` / `SMS gönderen adınız onaylanmadı`; retde "Neden: {neden}"; buton `Ayarları aç` |
 
 Platform ekibine ayrı bildirim olayı yoktur: yeni havale bildirimi ve SMS adı başvurusu platform panelindeki "Onay kuyrukları" rozetinde (`AdminSession.pendingApprovalCount`) görünür (T-116).
 

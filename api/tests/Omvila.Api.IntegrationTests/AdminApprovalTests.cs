@@ -253,7 +253,10 @@ public sealed class AdminApprovalTests(PostgresFixture db) : IAsyncLifetime
         // Elle ekleme: aynı referans 409 bank_transaction_duplicate; liste arama ve eşleşmemiş süzgeci.
         var duplicate = await _api.SendAsync(HttpMethod.Post, "/api/v1/admin/bank-transactions", new
         {
-            valueDate = "2026-11-20", amount = new { amountMinor = 1000, currency = "TRY" }, senderName = "ELİF KAYA", bankReference = "R-100",
+            valueDate = "2026-11-20",
+            amount = new { amountMinor = 1000, currency = "TRY" },
+            senderName = "ELİF KAYA",
+            bankReference = "R-100",
         }, finance, Key());
         duplicate.Status.ShouldBe(409);
         duplicate.Body.GetProperty("code").GetString().ShouldBe("bank_transaction_duplicate");
@@ -480,7 +483,11 @@ public sealed class AdminApprovalTests(PostgresFixture db) : IAsyncLifetime
     {
         var created = await _api.SendAsync(HttpMethod.Post, "/api/v1/admin/bank-transactions", new
         {
-            valueDate, amount = new { amountMinor = amount, currency = "TRY" }, senderName = "ELİF KAYA", description, bankReference = reference,
+            valueDate,
+            amount = new { amountMinor = amount, currency = "TRY" },
+            senderName = "ELİF KAYA",
+            description,
+            bankReference = reference,
         }, token, Key());
         created.Status.ShouldBe(201, created.Body.ToString());
         created.Body.GetProperty("source").GetString().ShouldBe("Manual");
@@ -547,5 +554,5 @@ public sealed class AdminApprovalTests(PostgresFixture db) : IAsyncLifetime
     }
 
     private Dictionary<string, string> Key() =>
-        new(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8000-{++_requests:D12}" };
+        new(StringComparer.Ordinal) { ["Idempotency-Key"] = $"0193a8f0-0000-7000-8124-{++_requests:D12}" };
 }
