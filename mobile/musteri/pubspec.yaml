@@ -21,10 +21,10 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.5.0
   # Yenileme jetonu ve oturum (kodlama-flutter.md § API).
-  flutter_secure_storage: ^9.2.2
+  flutter_secure_storage: ^11.2.0
   # OMVILA amblemi (packages/design-tokens/assets/logos).
-  flutter_svg: ^2.0.10
-  go_router: ^16.0.0
+  flutter_svg: ^2.5.0
+  go_router: ^18.1.4
   # Lucide ikonları (kodlama-flutter.md § Tema). `lucide_icons` paketi Flutter 3.47 ile derlenmiyor
   # (IconData final sınıf); bakımı süren eşdeğeri.
   lucide_icons_flutter: ^4.0.3
