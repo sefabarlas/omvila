@@ -20,4 +20,5 @@ internal sealed record StaffDetailResponse(
     decimal SaleCommissionPercent,
     IReadOnlyList<StaffServiceDto> Services,
     IReadOnlyList<StaffBranchHoursDto> WorkingHours,
+    string? GoogleCalendarStatus,
     string Version);
