@@ -18,6 +18,10 @@ import 'package:omvila_api/src/model/booking_page_settings_update.dart';
 import 'package:omvila_api/src/model/brand.dart';
 import 'package:omvila_api/src/model/brand_settings.dart';
 import 'package:omvila_api/src/model/brand_update.dart';
+import 'package:omvila_api/src/model/data_export_request.dart';
+import 'package:omvila_api/src/model/data_export_request_result.dart';
+import 'package:omvila_api/src/model/privacy_settings.dart';
+import 'package:omvila_api/src/model/privacy_settings_update.dart';
 import 'package:omvila_api/src/model/problem.dart';
 
 class ManageBrandApi {
@@ -319,6 +323,182 @@ _responseData = rawData == null ? null : deserialize<BrandSettings, BrandSetting
     }
 
     return Response<BrandSettings>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// KVKK ve veri (aydınlatma metni, saklama süresi)
+  /// AyarlarKvkk \&quot;Aydınlatma metni\&quot; (\&quot;OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026\&quot;, \&quot;Önizle\&quot;, \&quot;Kendi metnimi kullan\&quot;) ve \&quot;Veri saklama\&quot; (\&quot;İşlem kayıtlarını saklama süresi\&quot; 3 / 5 / 10 yıl). \&quot;Silme talepleri\&quot; manageListDeletionRequests ile gelir. Veri sorumlusu olarak işletme adı ve iletişim bilgisi metne sunucuda eklenir. İzin: settings.manage (Owner). 
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [PrivacySettings] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<PrivacySettings>> manageGetPrivacySettings({ 
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/brand/privacy';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    PrivacySettings? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<PrivacySettings, PrivacySettings>(rawData, 'PrivacySettings', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<PrivacySettings>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Tüm verileri dışa aktar (\&quot;Dışa aktarma iste\&quot;)
+  /// AyarlarKvkk \&quot;Tüm verileri dışa aktar · Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir\&quot;. İstek kuyruğa alınır (202); dosyalar arka planda hazırlanır, indirme bağlantısı e-postayla gider (bağlantı süresi yapılandırmadadır). email verilmezse kullanıcının kayıtlı e-postası kullanılır; ikisi de yoksa 400 validation_failed (errors.email &#x3D; [required]). Markada hazırlanmakta olan istek varsa yeni istek açılmaz, o istek 202 ile döner. Her istek denetime yazılır (Export). İzin: customer.export (yalnız Owner). 
+  ///
+  /// Parameters:
+  /// * [idempotencyKey] - İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)
+  /// * [dataExportRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [DataExportRequestResult] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<DataExportRequestResult>> manageRequestDataExport({ 
+    required String idempotencyKey,
+    DataExportRequest? dataExportRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/brand/data-exports';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        r'Idempotency-Key': idempotencyKey,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      _bodyData = jsonEncode(dataExportRequest);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    DataExportRequestResult? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<DataExportRequestResult, DataExportRequestResult>(rawData, 'DataExportRequestResult', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<DataExportRequestResult>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -719,6 +899,106 @@ _responseData = rawData == null ? null : deserialize<BrandSettings, BrandSetting
     }
 
     return Response<BrandSettings>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// KVKK ayarlarını kaydet (\&quot;Değişiklikleri kaydet\&quot;)
+  /// noticeMode &#x3D; Custom ise customNoticeText zorunludur (yoksa 400 validation_failed, errors.customNoticeText &#x3D; [required]); Standard&#39;a dönünce salonun metni saklanır ama gösterilmez. transactionRetentionYears yalnız 3, 5 veya 10 olabilir (yoksa errors.transactionRetentionYears &#x3D; [out_of_range]). Kaydedilen metin rezervasyon sayfasında ve müşteri uygulamasında gösterilir; değişiklik denetime yazılır. İzin: settings.manage (Owner). 
+  ///
+  /// Parameters:
+  /// * [ifMatch] - GET yanıtındaki ETag değeri
+  /// * [privacySettingsUpdate] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [PrivacySettings] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<PrivacySettings>> manageUpdatePrivacySettings({ 
+    required String ifMatch,
+    required PrivacySettingsUpdate privacySettingsUpdate,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/brand/privacy';
+    final _options = Options(
+      method: r'PUT',
+      headers: <String, dynamic>{
+        r'If-Match': ifMatch,
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      _bodyData = jsonEncode(privacySettingsUpdate);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    PrivacySettings? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<PrivacySettings, PrivacySettings>(rawData, 'PrivacySettings', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<PrivacySettings>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
