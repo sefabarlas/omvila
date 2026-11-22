@@ -59,15 +59,12 @@ internal sealed class NotifyApprovalNeeded(
             recipients,
             ct);
 
-        // Kural: T-66 (8) — sessiz saatte ertelenen push tutma süresinden sonra gidecekse yazılmaz (yanıtlanamaz talep).
-        if (QuietHours.Defer(now, context.Zone) >= integrationEvent.HoldExpiresUtc)
-        {
-            return;
-        }
-
         values["müşteri"] = StaffText.ShortName(fullName);
         await outbox.EnqueueStaffPushAsync(
-            new StaffPushNotification(NotificationEvents.StaffApprovalNeeded, integrationEvent.BrandId, recipients, values, context.Zone.Id, reference),
+            // Kural: T-66 (8) — sessiz saatte ertelenen push tutma süresinden sonra gidecekse yazılmaz (yanıtlanamaz talep).
+            new StaffPushNotification(
+                NotificationEvents.StaffApprovalNeeded, integrationEvent.BrandId, recipients, values, context.Zone.Id, reference,
+                NotAfterUtc: integrationEvent.HoldExpiresUtc),
             ct);
     }
 }

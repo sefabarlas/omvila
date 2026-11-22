@@ -8,6 +8,7 @@ using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Notifications.Features.Devices;
 using Omvila.Modules.Notifications.Features.InAppNotifications;
+using Omvila.Modules.Notifications.Features.Preferences;
 using Omvila.Modules.Notifications.Features.Sms;
 using Omvila.Modules.Notifications.Features.SmsDeliveryReports;
 using Omvila.Modules.Notifications.Infrastructure;
@@ -62,6 +63,7 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<ReviewInviteScheduled, NotifyReviewInvite>();
         services.AddIntegrationEventHandler<ReviewReceived, NotifyReviewReceived>();
         services.AddIntegrationEventHandler<WaitlistOfferCreated, NotifyWaitlistOffer>();
+        services.AddIntegrationEventHandler<WalkInTicketCreated, NotifyWalkInQueue>();
         return services;
     }
 
@@ -71,6 +73,7 @@ public static class NotificationsModule
         SmsDeliveryReportEndpoints.Map(app);
         DeviceEndpoints.Map(app);
         InAppNotificationEndpoints.Map(app);
+        NotificationPreferenceEndpoints.Map(app);
         SmsEndpoints.Map(app);
         return app;
     }

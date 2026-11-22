@@ -420,6 +420,64 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                             t.HasCheckConstraint("ck_notification_outbox_status", "status IN ('Pending', 'Sent', 'Failed', 'Cancelled', 'Skipped')");
                         });
                 });
+
+            modelBuilder.Entity("Omvila.Modules.Notifications.Domain.NotificationPreference", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("CancellationAndReschedule")
+                        .HasColumnType("boolean")
+                        .HasColumnName("cancellation_and_reschedule");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<bool>("CustomerCheckedIn")
+                        .HasColumnType("boolean")
+                        .HasColumnName("customer_checked_in");
+
+                    b.Property<bool>("DailySummary")
+                        .HasColumnType("boolean")
+                        .HasColumnName("daily_summary");
+
+                    b.Property<bool>("NewOnlineAppointment")
+                        .HasColumnType("boolean")
+                        .HasColumnName("new_online_appointment");
+
+                    b.Property<bool>("NewReview")
+                        .HasColumnType("boolean")
+                        .HasColumnName("new_review");
+
+                    b.Property<bool>("QuietHoursEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("quiet_hours_enabled");
+
+                    b.Property<Instant>("UpdatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_utc");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<bool>("WalkInQueue")
+                        .HasColumnType("boolean")
+                        .HasColumnName("walk_in_queue");
+
+                    b.HasKey("BrandId", "UserId")
+                        .HasName("pk_notification_preferences");
+
+                    b.ToTable("notification_preferences", "notifications");
+                });
 #pragma warning restore 612, 618
         }
     }

@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Catalog.Contracts;
 using Omvila.Modules.Customers.Contracts;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Platform.Contracts;
+using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
 using Omvila.Modules.Scheduling.Features.Appointments;
@@ -18,7 +20,7 @@ namespace Omvila.Modules.Scheduling.Features.WalkIns;
 /// Kapıda sıra yazma işleri (sözleşme manageCreateWalkIn, manageStartWalkIn, manageLeaveWalkIn; dilim-05 kabul kriteri 4).
 /// "Başlat" randevuyu yalnız <see cref="AppointmentWriter"/> ile yazar (A1, kapıda kanal: doğrudan CheckedIn). Sıra ilerleyince
 /// (başlatma veya sıradan çıkma) önünde 1 kişi kalan biletin telefonuna bir kez <c>walkin.almost_turn</c> SMS'i aynı
-/// transaction'da outbox'a yazılır.
+/// transaction'da outbox'a yazılır. Yeni bilet <see cref="WalkInTicketCreated"/> yayımlar (staff.walkin_queue, T-105).
 /// </summary>
 internal sealed class WalkInTickets(
     SchedulingDbContext db,
@@ -30,6 +32,8 @@ internal sealed class WalkInTickets(
     ISubscriptionQueries subscriptions,
     IPublicBookingQueries booking,
     INotificationOutbox notifications,
+    IOutbox outbox,
+    WalkInQueueReader queues,
     IIdGenerator ids,
     IClock clock)
 {
@@ -85,6 +89,12 @@ internal sealed class WalkInTickets(
             now);
         db.WalkInTickets.Add(ticket);
         await db.SaveChangesAsync(ct);
+
+        // Kural: bildirimler.md staff.walkin_queue ("Sırada {n} kişi · tahmini bekleme {dk} dk"); alıcı ve tercih Notifications'ta.
+        var queue = await queues.LoadAsync(brandId, branchId, ct);
+        var waiting = queue?.WaitingCount ?? 1;
+        var wait = queue?.Items.SingleOrDefault(i => i.Id == ticket.Id)?.EstimatedWaitMinutes;
+        await outbox.EnqueueAsync(new WalkInTicketCreated(brandId, branchId, ticket.Id, userId, waiting, wait), ct);
         return ticket;
     }
 
