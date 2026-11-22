@@ -184,9 +184,10 @@ export function demoAppointment(example: Record<string, unknown>) {
   };
 }
 
-/** Tam yetkili sahip oturumunun izinleri. */
+/** Tam yetkili sahip oturumunun izinleri (menü tasarımdaki gibi tam: roller-yetkiler.md § Sahip). */
 export const ownerPermissions = [
   'settings.manage',
+  'settings.payment',
   'service.manage',
   'staff.manage',
   'calendar.view',
@@ -203,9 +204,17 @@ export const ownerPermissions = [
   'customer.view',
   'customer.phone.view',
   'customer.edit',
+  'customer.merge',
+  'customer.import',
+  'customer.export',
+  'customer.kvkk',
   'report.view',
   'waitlist.manage',
   'walkin.manage',
+  'review.view',
+  'review.reply',
+  'package.manage',
+  'package.sell',
 ];
 
 export const ownerMembership = { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId };

@@ -30,4 +30,5 @@ fvm flutter run --dart-define=API_URL=http://10.0.2.2:4010   # Prism mock (Andro
 fvm flutter test
 fvm flutter test --update-goldens   # yalnız bilinçli görsel değişiklikte
 fvm flutter analyze --fatal-infos
+fvm flutter --show-test-device test integration_test -d flutter-tester --dart-define=API_URL=http://127.0.0.1:4010   # uçtan uca, Prism'e karşı (önce kökte `pnpm --filter @omvila/contracts mock`); emülatörsüz
 ```

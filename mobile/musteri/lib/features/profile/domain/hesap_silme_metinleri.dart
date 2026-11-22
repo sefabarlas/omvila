@@ -11,7 +11,7 @@ String iptalEdilecekBaslik(int count) =>
     '$count yaklaşan randevunuz iptal edilecek.';
 
 /// Uyarı kutusunun son cümlesi.
-const iptalEdilecekNot = 'Bu saatler salonların takviminde boşalır.';
+const iptalEdilecekNot = 'Salonlara iptal bildirimi gider.';
 
 /// "Silinenler" ve "Salonlarda kalanlar" maddeleri: (başlık, açıklama).
 const silinenler = [

@@ -182,6 +182,14 @@
     "usage": "Kapora bekleniyor, yaklaşan randevu. Metin olarak; dolgu için `uyari-400`."
    },
    {
+    "name": "yildiz",
+    "value": {
+     "light": "#B57A0A",
+     "dark": "#F0C35A"
+    },
+    "usage": "Değerlendirme yıldızları (dolu). Yanında her zaman sayısal puan."
+   },
+   {
     "name": "hata",
     "value": {
      "light": "{hata-600}",

@@ -54,6 +54,10 @@ public static class SalesModule
         services.AddScoped<CustomerPackagesParticipant>();
         services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerPackagesParticipant>());
         services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerPackagesParticipant>());
+        // Demo verisi (--role=seed; T-114): paketler, tahsilatlar, prim ve kapatılmış kasa günü.
+        services.AddScoped(sp => new DemoData.SalesDemoData(
+            sp.GetRequiredService<SalesDbContext>(), sp.GetRequiredService<Tenancy.Contracts.ITenantQueries>(),
+            sp.GetRequiredService<Catalog.Contracts.IStaffServiceAssignments>(), sp.GetRequiredService<IIdGenerator>()));
         // Demo verisi --reset (T-74): markanın tahsilat, paket ve prim kayıtları.
         services.AddBrandDataEraser<SalesDbContext>();
         return services;

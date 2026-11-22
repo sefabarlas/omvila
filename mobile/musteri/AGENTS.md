@@ -38,5 +38,6 @@ fvm flutter test
 fvm flutter test --update-goldens test/goldens   # yalnız bilinçli görsel değişiklikte (goldens/ci)
 OMVILA_PLATFORM_GOLDENS=1 fvm flutter test --update-goldens test/goldens   # gerçek yazı tipiyle bakmak için (git dışı)
 fvm flutter analyze --fatal-infos
+fvm flutter --show-test-device test integration_test -d flutter-tester --dart-define=API_URL=http://127.0.0.1:4010   # uçtan uca, Prism'e karşı (önce kökte `pnpm --filter @omvila/contracts mock`); emülatörsüz
 fvm flutter build apk --debug                   # CI'da da derlenir
 ```

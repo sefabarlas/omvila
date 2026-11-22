@@ -35,6 +35,9 @@ dev_dependencies:
   alchemist: ^0.12.0
   flutter_test:
     sdk: flutter
+  # Uçtan uca akışlar Prism mock'a karşı (docs/standartlar/test-stratejisi.md; integration_test/).
+  integration_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true

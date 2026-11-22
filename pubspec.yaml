@@ -38,3 +38,13 @@ melos:
       exec: flutter test --no-pub
       packageFilters:
         dirExists: test
+    # Uçtan uca akışlar (integration_test/) Prism mock'a karşı; önce `pnpm --filter @omvila/contracts mock`.
+    # Cihaz/emülatör gerekmez: flutter_tester'da (başsız) çalışır. `-d flutter-tester` verilmezse araç cihaz arar
+    # (`--show-test-device` bu gizli aygıtı görünür yapar). Prism yalnız IPv4 dinler; adres 127.0.0.1 (başka adres: PRISM_URL).
+    integration:
+      description: Uçtan uca akışlar (Prism mock, flutter_tester)
+      run: flutter --show-test-device test integration_test --no-pub -d flutter-tester --dart-define=API_URL=${PRISM_URL:-http://127.0.0.1:4010}
+      exec:
+        concurrency: 1
+      packageFilters:
+        dirExists: integration_test

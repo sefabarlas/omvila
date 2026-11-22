@@ -149,6 +149,21 @@ public sealed class TenancyDemoData
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Personelin hizmet ve satış primi oranları (Personel düzenle; StaffRules sınırları 0–100).</summary>
+    public async Task SetCommissionAsync(Guid staffId, decimal servicePercent, decimal salePercent, CancellationToken ct)
+    {
+        if (servicePercent is < 0 or > 100 || salePercent is < 0 or > 100)
+        {
+            throw new DomainException("Geçersiz demo prim oranı.");
+        }
+
+        var staff = await _db.Staff.SingleAsync(s => s.Id == staffId, ct);
+        staff.Update(new StaffProfile(
+            staff.FullName, staff.DisplayName, staff.Title, staff.Bio, staff.CalendarColor, servicePercent, salePercent, staff.IsBookableOnline,
+            staff.IsActive));
+        await _db.SaveChangesAsync(ct);
+    }
+
     /// <summary>
     /// Kurulumun son adımı (bağlantı paylaşıldı) kaydedilir ve adımlar değerlendirilir; hepsi tamamsa marka Active olur.
     /// Dönüş: marka Active mi.

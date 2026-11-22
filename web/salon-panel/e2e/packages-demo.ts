@@ -1,5 +1,5 @@
 import type { Page, Route } from '@playwright/test';
-import { demoNow, demoStaff } from './calendar-demo';
+import { demoNow, demoStaff, ownerPermissions } from './calendar-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { sessionAs } from './support';
 
@@ -113,22 +113,6 @@ const owned = expiringRows
   }))
   .sort((a, b) => a.expiresOn.localeCompare(b.expiresOn));
 
-const permissions = [
-  'settings.manage',
-  'service.manage',
-  'staff.manage',
-  'calendar.view',
-  'calendar.view.all-staff',
-  'customer.view',
-  'customer.phone.view',
-  'customer.edit',
-  'report.view',
-  'payment.collect',
-  'review.view',
-  'package.sell',
-  'package.manage',
-];
-
 const handle = (route: Route, fn: () => Promise<void>) =>
   route.request().method() === 'OPTIONS' ? route.fallback() : fn();
 
@@ -137,7 +121,7 @@ export async function packagesDemo(page: Page, { empty = false }: { empty?: bool
   await customersDemo(page);
   await page.clock.setFixedTime(demoNow);
   await sessionAs(page, {
-    permissions,
+    permissions: ownerPermissions,
     membership: { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId },
     branches: [{ id: branchId, name: 'Kadıköy' }],
   });

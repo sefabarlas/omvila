@@ -109,6 +109,8 @@ Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com
 - **KK2'yi denemek:** Gizem Arslan (0555 001 00 01) ve Ece Koç (0555 001 00 02) 2 kez gelmemiştir. Rezervasyon sayfasında bu numarayla Balyaj veya Keratin alın: Havale ekranı açılır; başka numarayla aynı hizmette kapora istenmez. Kod SMS günlüğündedir.
 - IBAN şifreli yazılır: seed, API ve worker'la aynı `TENANCY_IBAN_KEY`'i kullanır (compose'da ortak). Anahtar değişirse demo IBAN'ı okunamaz; `--reset` ile yeniden kurun.
 
+**Dilim 5 (T-114):** geçmişte biten randevular tamamlanmıştır (Nakit, Kart, Havale tahsilatları; Elif Kaya'ya %24 hizmet primi). Paketler: "Fön paketi" (10 seans, satış primi %10) ve "Saç bakımı paketi"; Selin Öztürk'ün paketinde 2 seans kaldı, Derya Şahin'in paketi 10 gün içinde biter, Melis Tunç'a dün paket satıldı. Kasa'da Kadıköy'ün son nakitli günü (genellikle dün) kapatılmıştır, sayılan beklenenden 50 ₺ az. Değerlendirmeler'de altı kayıt (biri yanıtlı, 2 puanlı biri yanıt bekliyor), bekleme listesinde 2 kişi, kapıda sırada bugün 2 bilet (Kadıköy). Şu an süren randevu Geldi'dir: "Tamamla ve ödeme al" onunla denenir. Personel bildirim tercihleri varsayılandır.
+
 - Komut idempotenttir: marka varsa bir şey yazmaz.
 - **Demodan önce sıfırlama:** randevu tarihleri çalıştırma anına göre yazıldığından demodan önce yenileyin. `--reset` yalnız demo markasını silip yeniden kurar; başka markalara dokunmaz:
   ```bash

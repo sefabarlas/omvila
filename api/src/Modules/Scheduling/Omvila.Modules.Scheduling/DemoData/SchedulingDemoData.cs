@@ -3,6 +3,7 @@ using Omvila.Modules.Customers.Contracts;
 using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Scheduling.Domain.Availability;
+using Omvila.Modules.Scheduling.Domain.Waitlist;
 using Omvila.Modules.Scheduling.Features.Appointments;
 using Omvila.Modules.Scheduling.Features.Approvals;
 using Omvila.Modules.Scheduling.Infrastructure;
@@ -14,9 +15,10 @@ namespace Omvila.Modules.Scheduling.DemoData;
 /// <summary>
 /// Demo verisi (<c>--role=seed</c>; acik-sorular.md T-74, T-85) için randevu yazma yolu. Randevu <see cref="AppointmentWriter"/> ile
 /// yazılır (kilit, çakışma, müsaitlik, kapora çözümü); durum yalnız aggregate metodlarıyla değişir. Geçmiş geçişler (Geldi,
-/// Gelmedi, iptal) randevunun kendi zamanına göre kaydedilir. Kaporalı sonuçlar rezervasyon sayfasındaki gibi online yazılır
+/// Gelmedi, iptal, tamamlama) randevunun kendi zamanına göre kaydedilir. Kaporalı sonuçlar rezervasyon sayfasındaki gibi online yazılır
 /// (aktif hesabın öneki ve havale süresiyle); "Kapora geldi" tahsilatı Sales <see cref="IDepositPayments"/> ile aynı
-/// transaction'da. Entegrasyon olayı yazılmaz: demo kurulumu müşteriye SMS, hatırlatma veya personel bildirimi üretmez.
+/// transaction'da. Bekleme kaydı ve kapıda sıra bileti domain metodlarıyla (numara <see cref="BranchQueueNumbers"/>). Entegrasyon
+/// olayı yazılmaz: demo kurulumu müşteriye SMS, hatırlatma veya personel bildirimi üretmez.
 /// Çağıranın transaction'ında ve markanın kiracı bağlamında çalışır.
 /// </summary>
 public sealed class SchedulingDemoData
@@ -27,11 +29,15 @@ public sealed class SchedulingDemoData
     private readonly IBrandBankAccounts _bankAccounts;
     private readonly ICustomerDirectory _customers;
     private readonly IDepositPayments _payments;
+    private readonly BranchQueueNumbers _queueNumbers;
+    private readonly IIdGenerator _ids;
 
     internal SchedulingDemoData(
         SchedulingDbContext db, AppointmentWriter writer, ITenantQueries tenants, IBrandBankAccounts bankAccounts, ICustomerDirectory customers,
-        IDepositPayments payments)
+        IDepositPayments payments, BranchQueueNumbers queueNumbers, IIdGenerator ids)
     {
+        _queueNumbers = queueNumbers;
+        _ids = ids;
         _db = db;
         _writer = writer;
         _tenants = tenants;
@@ -44,7 +50,7 @@ public sealed class SchedulingDemoData
     /// <param name="input">Randevu.</param>
     /// <param name="now">Seed'in saati (IClock); iptal ve kapora anı için.</param>
     /// <param name="ct">İptal belirteci.</param>
-    public async Task<Guid> AddAsync(DemoAppointment input, Instant now, CancellationToken ct)
+    public async Task<DemoAppointmentResult> AddAsync(DemoAppointment input, Instant now, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(input);
         var settings = await _tenants.GetAppointmentSettingsAsync(input.BrandId, ct)
@@ -76,6 +82,8 @@ public sealed class SchedulingDemoData
         }
 
         var noShowAfter = Duration.FromMinutes(settings.NoShowAfterMinutes);
+        var collected = 0L;
+        var retained = 0L;
         var changed = input.Outcome switch
         {
             DemoAppointmentOutcome.Confirmed => Expect(appointment, AppointmentStatus.Confirmed),
@@ -89,6 +97,7 @@ public sealed class SchedulingDemoData
             DemoAppointmentOutcome.DepositReported => Reported(appointment.ReportDepositTransfer(now)),
             DemoAppointmentOutcome.DepositReceived => await MarkReceivedAsync(appointment, now, ct),
             DemoAppointmentOutcome.DepositWaived => appointment.Approve(now, userId: null, waiveDeposit: true),
+            DemoAppointmentOutcome.Completed => Complete(appointment, input, out collected, out retained),
             _ => throw new ArgumentOutOfRangeException(nameof(input), input.Outcome, null),
         };
         if (!changed.IsSuccess)
@@ -97,16 +106,104 @@ public sealed class SchedulingDemoData
         }
 
         await _db.SaveChangesAsync(ct);
-        await ApplyCountersAsync(input, ct);
-        return appointment.Id;
+        return await FinishAsync(input, appointment, collected, retained, ct);
     }
 
-    private async Task ApplyCountersAsync(DemoAppointment input, CancellationToken ct)
+    /// <summary>Müşteri sayaçları ve sonuç (tamamlamada tahsilatın girdisi).</summary>
+    private async Task<DemoAppointmentResult> FinishAsync(DemoAppointment input, Appointment appointment, long collected, long retained, CancellationToken ct)
+    {
+        var item = appointment.Items.Single();
+        var zoneId = await _tenants.GetBranchTimeZoneAsync(input.BrandId, input.BranchId, ct) ?? PlatformDefaults.DefaultTimeZoneId;
+        var localDate = input.StartUtc.InZone(DateTimeZoneProviders.Tzdb[zoneId]).Date;
+        await ApplyCountersAsync(input, appointment.PayableAmountMinor, localDate, ct);
+        var currency = Enum.TryParse<Currency>(appointment.CurrencyCode, out var c) ? c : PlatformDefaults.DefaultCurrency;
+        return new DemoAppointmentResult(
+            appointment.Id, item.Id, appointment.EndUtc, localDate, currency, item.NetAmountMinor, collected, retained, item.CustomerPackageItemId);
+    }
+
+    /// <summary>
+    /// Demo bekleme kaydı (PublicWaitlist/WaitlistManagement gibi, tercih denetimi uçta olduğundan burada yapılmaz).
+    /// </summary>
+    /// <param name="input">Kayıt.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    public async Task<Guid> AddWaitlistEntryAsync(DemoWaitlistEntry input, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var preferences = new WaitlistPreferences(
+            input.ServiceIds, input.PreferredStaffId, input.AcceptOtherStaff, input.Dates, [.. input.TimeWindows.Select(Enum.Parse<WaitlistTimeWindow>)]);
+        var entry = WaitlistEntry.Create(
+            _ids.New(), input.BrandId, input.BranchId, input.CustomerId, input.BrandCustomerId, preferences, input.Note,
+            input.Online ? WaitlistSource.Online : WaitlistSource.Panel, AccessCodeGenerator.New(), input.JoinedUtc);
+        _db.WaitlistEntries.Add(entry);
+        await _db.SaveChangesAsync(ct);
+        return entry.Id;
+    }
+
+    /// <summary>Demo kapıda sıra bileti (WalkInTickets.CreateAsync gibi; olay ve bildirim yok). Dönüş: sıra numarası.</summary>
+    /// <param name="input">Bilet.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    public async Task<int> AddWalkInTicketAsync(DemoWalkInTicket input, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        var zoneId = await _tenants.GetBranchTimeZoneAsync(input.BrandId, input.BranchId, ct)
+            ?? throw new DomainException("Demo biletinin şubesi yok.");
+        PhoneNumber? phone = null;
+        if (input.BrandCustomerId is { } cardId
+            && (await _customers.GetDisplayInfoAsync(input.BrandId, [cardId], ct)).TryGetValue(cardId, out var card)
+            && card.AppointmentSmsEnabled && PhoneNumber.TryParse(card.PhoneE164, out var cardPhone))
+        {
+            phone = cardPhone;
+        }
+
+        var date = input.CreatedUtc.InZone(DateTimeZoneProviders.Tzdb[zoneId]).Date;
+        var number = await _queueNumbers.NextAsync(input.BrandId, input.BranchId, date, ct);
+        _db.WalkInTickets.Add(WalkInTicket.Create(
+            new NewWalkInTicket(
+                input.BrandId, input.BranchId, input.CustomerName, phone, input.BrandCustomerId, input.ServiceId, input.ServiceName, input.ServiceMinutes,
+                input.PreferredStaffId, CreatedByUserId: null),
+            _ids.New(),
+            date,
+            number,
+            input.CreatedUtc));
+        await _db.SaveChangesAsync(ct);
+        return number;
+    }
+
+    /// <summary>
+    /// Geldi (başlangıçta) → paket kalemi verilmişse paketten düşüm → bitişte A11; salonda alınan "Salonda ödenecek"in tamamı.
+    /// Seans kullanımı ve tahsilat Sales demo verisindedir.
+    /// </summary>
+    private static Result Complete(Appointment appointment, DemoAppointment input, out long collected, out long retained)
+    {
+        collected = 0;
+        retained = 0;
+        var checkedIn = appointment.CheckIn(input.StartUtc, userId: null);
+        if (!checkedIn.IsSuccess)
+        {
+            return checkedIn;
+        }
+
+        if (input.CustomerPackageItemId is { } packageItemId)
+        {
+            var redeemed = appointment.RedeemFromPackage(appointment.Items.Single().Id, packageItemId, "customerPackageItemId");
+            if (!redeemed.IsSuccess)
+            {
+                return redeemed;
+            }
+        }
+
+        collected = appointment.AmountDueMinor;
+        retained = appointment.RetainedDepositMinor;
+        return appointment.Complete(collected, appointment.EndUtc, userId: null);
+    }
+
+    private async Task ApplyCountersAsync(DemoAppointment input, long payableMinor, LocalDate localDate, CancellationToken ct)
     {
         var counters = input.Outcome switch
         {
             DemoAppointmentOutcome.NoShow => new CustomerCounterChange(NoShows: 1),
             DemoAppointmentOutcome.CancelledByCustomer => new CustomerCounterChange(Cancels: 1),
+            DemoAppointmentOutcome.Completed => new CustomerCounterChange(Visits: 1, SpentMinor: payableMinor, VisitedOn: localDate),
             _ => null,
         };
         if (counters is not null && !(await _customers.ApplyCountersAsync(input.BrandId, input.BrandCustomerId, counters, ct)).IsSuccess)

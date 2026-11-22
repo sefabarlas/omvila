@@ -34,6 +34,8 @@ public static class ReviewsModule
         services.AddScoped<Customers.Contracts.ICustomerMergeParticipant, CustomerReviewsParticipant>();
         // Aynı bağlantıdan eşzamanlı iki gönderim: ikincisi randevu benzersizliğine takılır.
         services.AddUniqueConstraintError(ReviewConfiguration.AppointmentIndex, ErrorCodes.AlreadyReviewed);
+        // Demo verisi (--role=seed; T-114): değerlendirmeler ve yanıt.
+        services.AddScoped(sp => new DemoData.ReviewsDemoData(sp.GetRequiredService<ReviewsDbContext>(), sp.GetRequiredService<IIdGenerator>()));
         // Demo verisi --reset (T-74): markanın değerlendirmeleri ve davetleri.
         services.AddBrandDataEraser<ReviewsDbContext>();
         return services;

@@ -104,6 +104,110 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
         (await CountAsync("SELECT count(*) FROM infra.outbox_events")).ShouldBe(0, "kapora geçişleri de olay yazmaz");
     }
 
+    // T-114: Dilim 5 verisi. Saat Çarşamba 12:00 İstanbul: dün (Salı) Kadıköy'de nakit tahsilat var.
+    [Fact]
+    public async Task Seed_AddsDilim5Data()
+    {
+        var seeded = await SeedAsync(reset: false);
+        seeded.Code.ShouldBe(0);
+        seeded.Output.ShouldContain("Kasa: 2026-11-24 kapatıldı");
+
+        // Geçmişte biten randevular tamamlanmıştır: yöntem başına tahsilat, Elif'e %24 hizmet primi; Geldi yalnız şu an süren.
+        (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = 'CheckedIn' AND end_utc <= '2026-11-25T09:00:00Z'")).ShouldBe(0);
+        (await CountAsync($"SELECT count(*) FROM scheduling.appointments WHERE brand_id = {Brand} AND status = 'Completed' AND end_utc <= '2026-11-25T09:00:00Z'")).ShouldBeGreaterThan(20);
+        foreach (var method in new[] { "Cash", "Card", "Transfer" })
+        {
+            (await CountAsync($"SELECT count(*) FROM sales.payments WHERE brand_id = {Brand} AND method = '{method}' AND NOT is_deposit")).ShouldBeGreaterThan(0, method);
+        }
+
+        (await CountAsync(
+            "SELECT count(*) FROM scheduling.appointments s WHERE s.brand_id = " + Brand + " AND s.status = 'Completed' AND NOT EXISTS "
+            + "(SELECT 1 FROM sales.payment_allocations a WHERE a.target_id = s.id)")).ShouldBe(0, "her tamamlanan randevunun tahsilatı (veya paket kaydı) var");
+        const string Elif = "(SELECT id FROM tenancy.staff WHERE full_name = 'Elif Kaya')";
+        (await CountAsync($"SELECT count(*) FROM sales.commission_entries WHERE staff_id = {Elif} AND type = 'Service' AND percent = 24 AND status = 'Accrued' AND amount_minor > 0"))
+            .ShouldBeGreaterThan(0);
+        (await CountAsync($"SELECT count(*) FROM customers.brand_customers WHERE brand_id = {Brand} AND visit_count > 0")).ShouldBeGreaterThan(5);
+
+        // Paketler: Fön paketi %10 satış primi (KK6); Selin'de 2 seans kaldı, Derya'nın paketi 10 gün sonra biter, Melis'e dün satıldı.
+        (await CountAsync($"SELECT count(*) FROM sales.packages WHERE brand_id = {Brand} AND is_active")).ShouldBe(2);
+        (await CountAsync($"SELECT count(*) FROM sales.packages WHERE brand_id = {Brand} AND name = 'Fön paketi' AND sale_commission_percent_override = 10")).ShouldBe(1);
+        (await CountAsync($"SELECT count(*) FROM sales.customer_packages WHERE brand_id = {Brand} AND status = 'Active'")).ShouldBe(3);
+        const string Remaining =
+            "SELECT i.total_sessions - (SELECT count(*) FROM sales.package_session_usages u WHERE u.customer_package_item_id = i.id AND u.reverted_utc IS NULL) "
+            + "FROM sales.customer_package_items i JOIN sales.customer_packages p ON p.id = i.customer_package_id "
+            + "JOIN customers.brand_customers c ON c.id = p.brand_customer_id WHERE c.display_name = ";
+        (await CountAsync(Remaining + "'Selin Öztürk'")).ShouldBe(2);
+        (await CountAsync(Remaining + "'Derya Şahin'")).ShouldBe(9);
+        (await CountAsync(Remaining + "'Melis Tunç'")).ShouldBe(10);
+        (await CountAsync($"SELECT count(*) FROM sales.customer_packages WHERE brand_id = {Brand} AND expires_on = '2026-12-05'")).ShouldBe(1, "süresi yaklaşan");
+        (await CountAsync($"SELECT count(*) FROM sales.payments WHERE brand_id = {Brand} AND method = 'PackageRedemption' AND amount_minor = 0")).ShouldBe(3);
+        (await CountAsync(
+            $"SELECT count(*) FROM sales.commission_entries WHERE staff_id = {Elif} AND type = 'Sale' AND percent = 10 AND basis_minor = 225000 AND amount_minor = 22500 AND period_year_month = 202611"))
+            .ShouldBe(1, "Fön paketi: pakete özel %10 (Melis, dün)");
+        (await CountAsync($"SELECT count(*) FROM sales.commission_entries WHERE staff_id = {Elif} AND type = 'Sale' AND percent = 5 AND basis_minor = 216000"))
+            .ShouldBe(1, "bakım paketi: satan personelin oranı (Selin)");
+
+        // Kasa: dün Kadıköy kapatıldı, fark −50 ₺ ve açıklama; beklenen o günün nakit tahsilatları (KK7 örneği).
+        const string Close = "FROM sales.cash_day_closes WHERE brand_id = " + Brand;
+        (await CountAsync($"SELECT count(*) {Close}")).ShouldBe(1);
+        (await CountAsync($"SELECT count(*) {Close} AND business_date = '2026-11-24' AND difference_minor = -5000 AND difference_note IS NOT NULL AND expected_cash_minor > 0")).ShouldBe(1);
+        (await CountAsync(
+            "SELECT count(*) FROM sales.cash_day_closes c WHERE c.expected_cash_minor = (SELECT sum(p.amount_minor) FROM sales.payments p WHERE p.branch_id = c.branch_id AND p.method = 'Cash' "
+            + "AND p.paid_utc >= '2026-11-23T21:00:00Z' AND p.paid_utc < '2026-11-24T21:00:00Z')")).ShouldBe(1);
+
+    }
+
+    [Fact]
+    public async Task Seed_AddsReviewsWaitlistAndWalkIns()
+    {
+        (await SeedAsync(reset: false)).Code.ShouldBe(0);
+
+        // Değerlendirmeler: en az 5, biri yanıtlı, düşük puanlı biri yanıt bekliyor; hepsi tamamlanan randevuda.
+        (await CountAsync($"SELECT count(*) FROM reviews.reviews WHERE brand_id = {Brand} AND is_published")).ShouldBeGreaterThanOrEqualTo(5);
+        (await CountAsync($"SELECT count(*) FROM reviews.reviews WHERE brand_id = {Brand} AND reply_text IS NOT NULL")).ShouldBe(1);
+        (await CountAsync($"SELECT count(*) FROM reviews.reviews WHERE brand_id = {Brand} AND rating <= 2 AND reply_text IS NULL")).ShouldBe(1);
+        (await CountAsync(
+            $"SELECT count(*) FROM reviews.reviews r WHERE r.brand_id = {Brand} AND NOT EXISTS (SELECT 1 FROM scheduling.appointments s WHERE s.id = r.appointment_id AND s.status = 'Completed')"))
+            .ShouldBe(0);
+
+        // Bekleme listesinde 2 kişi; bugün kapıda sırada 1 ve 2 numara.
+        (await CountAsync($"SELECT count(*) FROM scheduling.waitlist_entries WHERE brand_id = {Brand} AND status = 'Waiting'")).ShouldBe(2);
+        (await CountAsync($"SELECT count(*) FROM scheduling.walk_in_tickets WHERE brand_id = {Brand} AND status = 'Waiting' AND queue_date = '2026-11-25' AND queue_number IN (1, 2)"))
+            .ShouldBe(2);
+
+        // Personel bildirim tercihleri varsayılan (kayıt yok).
+        (await CountAsync($"SELECT count(*) FROM notifications.notification_preferences WHERE brand_id = {Brand}")).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Seed_PanelReadsDilim5Data()
+    {
+        (await SeedAsync(reset: false)).Code.ShouldBe(0);
+        var token = (await _api.SignInAsync("+905550000001")).Body.GetProperty("accessToken").GetString()!;
+        var branch = (Guid)(await ScalarAsync($"SELECT id FROM tenancy.branches WHERE brand_id = {Brand} AND name = 'Kadıköy'"))!;
+
+        var cash = await _api.GetAsync($"/api/v1/manage/cash?branchId={branch}&date=2026-11-24", token);
+        cash.Status.ShouldBe(200);
+        cash.Body.GetProperty("status").GetString().ShouldBe("Closed");
+
+        var queue = await _api.GetAsync($"/api/v1/manage/walk-in-tickets?branchId={branch}", token);
+        queue.Status.ShouldBe(200);
+        queue.Body.GetProperty("items").GetArrayLength().ShouldBe(2);
+
+        var waitlist = await _api.GetAsync($"/api/v1/manage/waitlist?branchId={branch}", token);
+        waitlist.Status.ShouldBe(200);
+        waitlist.Body.GetProperty("items").GetArrayLength().ShouldBe(2);
+
+        var reviews = await _api.GetAsync("/api/v1/manage/reviews", token);
+        reviews.Status.ShouldBe(200);
+
+        var commission = await _api.GetAsync("/api/v1/manage/me/commission-summary", token);
+        commission.Status.ShouldBe(200);
+
+        var preferences = await _api.GetAsync("/api/v1/manage/me/notification-preferences", token);
+        preferences.Status.ShouldBe(200);
+    }
+
     [Fact]
     public async Task Seed_OwnerAndStaffCanSignIn_AndPanelOpensActive()
     {

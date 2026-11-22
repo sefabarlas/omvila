@@ -80,11 +80,12 @@ public static class SchedulingModule
         services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
         services.AddPeriodicJob<ExtendRecurringSeries, SchedulingOptions>(
             o => Duration.FromMinutes(o.ExtendRecurringSeriesIntervalMinutes));
-        // Demo verisi (--role=seed; T-74): randevular AppointmentWriter ile; --reset'te markanın randevuları.
+        // Demo verisi (--role=seed; T-74, T-114): randevular AppointmentWriter ile, bekleme kaydı ve kapıda sıra; --reset'te markanın satırları.
         services.AddScoped(sp => new DemoData.SchedulingDemoData(
             sp.GetRequiredService<SchedulingDbContext>(), sp.GetRequiredService<AppointmentWriter>(),
             sp.GetRequiredService<Tenancy.Contracts.ITenantQueries>(), sp.GetRequiredService<Tenancy.Contracts.IBrandBankAccounts>(),
-            sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>(), sp.GetRequiredService<Sales.Contracts.IDepositPayments>()));
+            sp.GetRequiredService<Customers.Contracts.ICustomerDirectory>(), sp.GetRequiredService<Sales.Contracts.IDepositPayments>(),
+            sp.GetRequiredService<BranchQueueNumbers>(), sp.GetRequiredService<SharedKernel.IIdGenerator>()));
         services.AddBrandDataEraser<SchedulingDbContext>();
         return services;
     }
