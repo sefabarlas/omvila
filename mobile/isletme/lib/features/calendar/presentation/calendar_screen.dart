@@ -10,7 +10,7 @@ import 'package:omvila_isletme/features/calendar/presentation/calendar_grid.dart
 import 'package:omvila_isletme/features/calendar/presentation/day_strip.dart';
 import 'package:omvila_isletme/features/shell/presentation/app_shell.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
-import 'package:omvila_isletme/shared/api_date.dart';
+import 'package:omvila_isletme/shared/local_date.dart';
 import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -37,6 +37,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late String _selected = branchToday(ref.read(clockProvider), _timeZone);
   late String _windowStart = addDays(_selected, -2);
   Set<String>? _staffFilter;
+
+  /// Filtre sayfasındaki personel: son filtresiz yanıttan (filtreli yanıt
+  /// yalnız seçilen kolonları döner).
+  List<CalendarViewStaffInner> _allStaff = const [];
 
   void _select(String date) {
     setState(() {
@@ -91,11 +95,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       branchId: branch.id,
       from: _windowStart,
       to: addDays(_windowStart, stripDays - 1),
+      staffIds: _staffFilter == null
+          ? null
+          : (_staffFilter!.toList()..sort()).join(','),
     );
     final calendar = ref.watch(calendarProvider(range));
     final view = calendar.value;
     if (view != null) {
       _syncTimeZone(view.timeZone);
+      if (range.staffIds == null) {
+        _allStaff = view.staff;
+      }
     }
 
     final day = view?.days
@@ -106,14 +116,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         session.subscription.status == SubscriptionBannerStatusEnum.readOnly;
     final canCreate = session.can('appointment.create');
     final canFilter =
-        session.can('calendar.view.all-staff') && (view?.staff.length ?? 0) > 1;
+        session.can('calendar.view.all-staff') && _allStaff.length > 1;
 
     final Widget body;
     if (view != null && day != null) {
       body = _DayBody(
         view: view,
         day: day,
-        staffFilter: _staffFilter,
         canCreate: canCreate && !readOnly,
         onNewAppointment: () => _newAppointment(context),
         now: ref.watch(clockProvider).now(),
@@ -183,7 +192,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       _HeaderButton(
                         icon: LucideIcons.slidersHorizontal,
                         tooltip: 'Personeli filtrele',
-                        onPressed: () => _openFilter(view!.staff),
+                        onPressed: () => _openFilter(_allStaff),
                       ),
                     if (canCreate) ...[
                       const SizedBox(width: OmvilaBosluk.bosluk2),
@@ -262,7 +271,6 @@ class _DayBody extends StatelessWidget {
   const _DayBody({
     required this.view,
     required this.day,
-    required this.staffFilter,
     required this.canCreate,
     required this.onNewAppointment,
     required this.now,
@@ -270,7 +278,6 @@ class _DayBody extends StatelessWidget {
 
   final CalendarView view;
   final CalendarViewDaysInner day;
-  final Set<String>? staffFilter;
   final bool canCreate;
   final VoidCallback onNewAppointment;
   final DateTime now;
@@ -316,16 +323,11 @@ class _DayBody extends StatelessWidget {
       );
     }
 
-    final staff = [
-      for (final s in view.staff)
-        if (staffFilter == null || staffFilter!.contains(s.staffId)) s,
-    ];
-    final ids = {for (final s in staff) s.staffId};
+    final staff = view.staff;
     final blocks = [
       for (final a in view.appointments)
         if (a.status != AppointmentStatus.cancelled &&
-            toBranchDate(a.startUtc, view.timeZone) == date &&
-            (a.staffId == null || ids.contains(a.staffId)))
+            toBranchDate(a.startUtc, view.timeZone) == date)
           a,
     ];
     if (blocks.isEmpty) {

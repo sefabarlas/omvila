@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:omvila_api/omvila_api.dart';
-import 'package:omvila_isletme/shared/api_date.dart';
+import 'package:omvila_isletme/shared/local_date.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 /// Gün şeridinin yüksekliği.
