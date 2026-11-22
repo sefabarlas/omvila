@@ -120,6 +120,16 @@ Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com
   ```
 - Test ortamında kayıt akışıyla açılan markalar da gerçek kişi verisi taşımamalıdır; deneme için `0555 000 …` biçimli uydurma numaralar kullanın.
 
+## Platform kullanıcısı
+
+Platform paneli (iç ekip) hesapları web'den açılmaz; sunucuda komutla oluşturulur (K2, T-119). Komut idempotenttir: numara zaten platform kullanıcısıysa rolü ve adı güncellenir. Bir markanın üyesi olan numara platform kullanıcısı olamaz (ve tersi). Rol: `PlatformAdmin` (Yönetici), `PlatformSupport` (Destek) veya `PlatformFinance` (Finans).
+
+```bash
+dc --profile seed run --rm seed --role=platform-user --platform-phone=05550009901 --platform-name="Deniz Yılmaz" --platform-role=PlatformAdmin
+```
+
+Giriş: platform panelinde (`admin.test.omvila.com.tr`, panelin dağıtımı ayrı PR) telefonu yazın, kodu SMS günlüğünden okuyun. Yerelde: `dotnet run --project src/Omvila.Host -- --role=platform-user --platform-phone=… --platform-name=… --platform-role=…`.
+
 ## Günlük işler
 
 Sunucuda kısaltma olarak (`/srv/omvila/app` içinde çalışır):

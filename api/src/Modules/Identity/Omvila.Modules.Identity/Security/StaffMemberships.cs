@@ -19,7 +19,8 @@ internal sealed class StaffMemberships(
 
         // users markaya ait değildir (RLS yok); üyelik v1'de kullanıcı başına tektir (S-16).
         var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == invitation.PhoneE164, ct);
-        if (user is not null && await HasAnyMembershipAsync(user.Id, ct))
+        // Platform kullanıcısının marka üyeliği olamaz (alan-modeli.md § User.PlatformRole).
+        if (user is not null && (user.PlatformRole is not null || await HasAnyMembershipAsync(user.Id, ct)))
         {
             return Error.Conflict(ErrorCodes.PhoneAlreadyExists);
         }
