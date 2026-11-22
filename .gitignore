@@ -44,6 +44,8 @@ web/salon-panel/e2e-results/
 web/salon-panel/e2e-report/
 web/rezervasyon/e2e-results/
 web/rezervasyon/e2e-report/
+web/tanitim/e2e-results/
+web/tanitim/e2e-report/
 
 # Next.js (derlemede üretilir)
 web/*/next-env.d.ts
