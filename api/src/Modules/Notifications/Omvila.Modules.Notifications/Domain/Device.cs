@@ -5,7 +5,8 @@ namespace Omvila.Modules.Notifications.Domain;
 /// <summary>
 /// Push cihaz kaydı (alan-modeli.md § Device; sözleşme manageRegisterDevice). Doğal anahtar push jetonudur: aynı jeton
 /// tekrar gelirse kayıt yeni sahibe, platforma ve sürüme güncellenir ve etkinleşir. Aktif kayıtlar arasında jeton tektir.
-/// Sağlayıcı "geçersiz jeton" derse pasifleşir. D3'te yalnız işletme uygulaması (User, Business); müşteri cihazı D5'te.
+/// Sağlayıcı "geçersiz jeton" derse pasifleşir. İşletme cihazı (User, Business) markanın kiracı bağlamındadır; müşteri cihazı
+/// (Customer, Customer) markasızdır, müşterinin kendi bağlamında (RLS: owner_id = app.customer_id) görünür (T-103).
 /// </summary>
 internal sealed class Device
 {
@@ -15,13 +16,16 @@ internal sealed class Device
 
     public const string BusinessApp = "Business";
 
+    public const string CustomerApp = "Customer";
+
     private Device()
     {
     }
 
     public Guid Id { get; private set; }
 
-    public Guid BrandId { get; private set; }
+    /// <summary>İşletme cihazında kaydedildiği marka; müşteri cihazında boş.</summary>
+    public Guid? BrandId { get; private set; }
 
     public string OwnerType { get; private set; } = UserOwner;
 
@@ -55,6 +59,31 @@ internal sealed class Device
         CreatedUtc = now,
     };
 
+    /// <summary>Müşteri uygulaması cihazı (sözleşme meRegisterDevice): markasız, sahibi global müşteri kaydı.</summary>
+    public static Device RegisterForCustomer(Guid id, Guid customerId, DevicePlatform platform, string pushToken, string appVersion, Instant now) => new()
+    {
+        Id = id,
+        OwnerType = CustomerOwner,
+        OwnerId = customerId,
+        App = CustomerApp,
+        Platform = platform,
+        PushToken = pushToken,
+        AppVersion = appVersion,
+        IsActive = true,
+        LastSeenUtc = now,
+        CreatedUtc = now,
+    };
+
+    /// <summary>Müşteri cihazının jetonu yeniden kaydedildi: sahip (aynı telefonda hesap değişimi), platform ve sürüm güncellenir, etkinleşir.</summary>
+    public void RefreshForCustomer(Guid customerId, DevicePlatform platform, string appVersion, Instant now)
+    {
+        OwnerId = customerId;
+        Platform = platform;
+        AppVersion = appVersion;
+        IsActive = true;
+        LastSeenUtc = now;
+    }
+
     /// <summary>Aynı jeton yeniden kaydedildi: sahip (aynı telefonda hesap değişimi), platform ve sürüm güncellenir, etkinleşir.</summary>
     public void Refresh(Guid userId, DevicePlatform platform, string appVersion, Instant now)
     {
@@ -66,6 +95,6 @@ internal sealed class Device
         LastSeenUtc = now;
     }
 
-    /// <summary>Sağlayıcı jetonu geçersiz saydı veya jeton başka kullanıcıya geçti.</summary>
+    /// <summary>Sağlayıcı jetonu geçersiz saydı, jeton başka kullanıcıya geçti veya müşteri çıkış yaptı.</summary>
     public void Deactivate() => IsActive = false;
 }

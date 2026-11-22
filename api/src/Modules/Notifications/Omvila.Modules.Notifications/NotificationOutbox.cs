@@ -61,13 +61,17 @@ internal sealed class NotificationOutbox(NotificationsDbContext db, IClock clock
         await db.SaveChangesAsync(ct);
     }
 
-    // Kural: bildirimler.md § Kanal planı — push metni olan müşteri mesajı [Push, Sms]; giriş kodu her zaman SMS.
+    // Kural: bildirimler.md § Kanal planı — push metni olan müşteri mesajı [Push, Sms]; giriş kodu ve kapora mesajları
+    // (deposit.*: IBAN ve tutar içerir, V3) her zaman SMS.
     private static Guid? PushCustomer(SmsNotification notification) =>
         notification.CustomerId is { } customerId
         && !string.Equals(notification.EventCode, NotificationEvents.OtpCode, StringComparison.Ordinal)
+        && !notification.EventCode.StartsWith(DepositEventPrefix, StringComparison.Ordinal)
         && PushTemplates.Has(notification.EventCode, notification.Variant)
             ? customerId
             : null;
+
+    private const string DepositEventPrefix = "deposit.";
 
     public Task<int> CancelPendingAsync(string eventCode, NotificationReference reference, CancellationToken ct)
     {

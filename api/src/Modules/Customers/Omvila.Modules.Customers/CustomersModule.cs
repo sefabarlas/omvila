@@ -8,6 +8,7 @@ using Omvila.Modules.Customers.Features.Customers;
 using Omvila.Modules.Customers.Features.Deletion;
 using Omvila.Modules.Customers.Features.Export;
 using Omvila.Modules.Customers.Features.Imports;
+using Omvila.Modules.Customers.Features.Me;
 using Omvila.Modules.Customers.Features.Merge;
 using Omvila.Modules.Customers.Infrastructure;
 using Omvila.Modules.Customers.Infrastructure.Configurations;
@@ -25,6 +26,9 @@ public static class CustomersModule
         services.AddScoped<CustomerReader>();
         services.AddScoped<CustomerWriter>();
         services.AddScoped<ICustomerDirectory, CustomerDirectory>();
+        // D5 müşteri uygulaması (T-103): hesap, profil, Salonlarım.
+        services.AddScoped<ICustomerAccounts, CustomerAccounts>();
+        services.AddScoped<MeBrandReader>();
         // D5 (T-92): birleştirme, içe/dışa aktarma, KVKK silme.
         services.AddOptions<CustomerImportOptions>()
             .BindConfiguration(CustomerImportOptions.Section)
@@ -45,6 +49,8 @@ public static class CustomersModule
     {
         CustomerEndpoints.Map(app);
         CustomerRecordsEndpoints.Map(app);
+        Features.Me.MeProfileEndpoints.Map(app);
+        Features.Me.MeBrandEndpoints.Map(app);
         return app;
     }
 }

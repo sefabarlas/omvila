@@ -86,7 +86,7 @@ internal static class DeviceEndpoints
         return TypedResults.Ok(new RegisteredDevice(device.Id, device.Platform, device.LastSeenUtc));
     }
 
-    private static Dictionary<string, string[]> Validate(DeviceRegistration body, out DevicePlatform platform)
+    internal static Dictionary<string, string[]> Validate(DeviceRegistration body, out DevicePlatform platform)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
         platform = default;

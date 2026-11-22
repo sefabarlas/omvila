@@ -41,6 +41,15 @@ internal sealed class Customer
     /// <summary>KVKK silmesi yapıldıysa.</summary>
     public Instant? AnonymizedUtc { get; private set; }
 
+    /// <summary>"Makbuz ve hatırlatma için" e-posta (müşterinin kendi verdiği; isteğe bağlı).</summary>
+    public string? Email { get; private set; }
+
+    /// <summary>Müşteri uygulamasına en az bir kez giriş yaptı (alan-modeli.md § Customer.HasAppAccount).</summary>
+    public bool HasAppAccount { get; private set; }
+
+    /// <summary>xmin (iyimser kilit; meUpdateProfile If-Match).</summary>
+    public uint Version { get; private set; }
+
     public static Customer Create(Guid id, PhoneNumber phone, string fullName, int? birthYear, bool isVerified, Instant now)
     {
         ArgumentNullException.ThrowIfNull(phone);
@@ -92,4 +101,51 @@ internal sealed class Customer
 
     /// <summary>Telefon OTP ile doğrulandı (online randevu). Doğrulama geri alınmaz.</summary>
     public void MarkVerified() => IsVerified = true;
+
+    /// <summary>Henüz ad verilmemiş (müşteri uygulamasına randevusuz giriş, T-101 (2)).</summary>
+    public bool HasName => !string.IsNullOrWhiteSpace(FullName);
+
+    /// <summary>
+    /// Müşteri uygulamasına OTP ile girildi: kişi doğrulanmış ve uygulama hesabı açık olur. İlk girişse true (sözleşme
+    /// MeAuthResult.isNewAccount).
+    /// </summary>
+    // Kural: sözleşme meVerifyOtp (IsVerified ve HasAppAccount olur; BrandCustomer açılmaz)
+    public bool OpenAppAccount()
+    {
+        if (AnonymizedUtc is not null)
+        {
+            throw new DomainException("Anonimleştirilmiş kayıtla oturum açılamaz.");
+        }
+
+        IsVerified = true;
+        if (HasAppAccount)
+        {
+            return false;
+        }
+
+        HasAppAccount = true;
+        return true;
+    }
+
+    /// <summary>Adı yoksa verilen adı yazar (ilk randevuda verilen ad; var olan ad değişmez).</summary>
+    public void FillNameIfMissing(string fullName)
+    {
+        if (!HasName && !string.IsNullOrWhiteSpace(fullName))
+        {
+            FullName = fullName.Trim();
+        }
+    }
+
+    /// <summary>
+    /// "Profil bilgilerim" kaydı: ad (null = değişmez) ve e-posta (null = yok); telefon değişmez. Biçim uçta denetlenir.
+    /// </summary>
+    public void UpdateProfile(string? fullName, string? email)
+    {
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            FullName = fullName.Trim();
+        }
+
+        Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+    }
 }

@@ -34,6 +34,7 @@ public static class SalesModule
         services.AddScoped<IDepositPayments, DepositPayments>();
         services.AddScoped<IAppointmentPayments, AppointmentPayments>();
         services.AddScoped<IPackageSessions, PackageSessions>();
+        services.AddScoped<ICustomerPackageBadges, CustomerPackageBadges>();
         services.AddScoped<PackageReader>();
         services.AddScoped<PackageSales>();
         services.AddPeriodicJob<ExpireCustomerPackages, SalesOptions>(o => Duration.FromMinutes(o.ExpireCustomerPackagesIntervalMinutes));
