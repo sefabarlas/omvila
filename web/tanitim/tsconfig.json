@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./src/*"], "@content/*": ["./content/*"] }
+  },
+  "include": ["next-env.d.ts", "src", "content", "*.config.ts"],
+  "exclude": ["node_modules", ".next", "out"]
+}

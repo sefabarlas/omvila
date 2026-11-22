@@ -1,0 +1,59 @@
+{
+  "$comment": "Fiyat ve plan bilgisinin tek kaynağı (web/tanitim/AGENTS.md, S-14). null = karar bekleniyor: sitede 'yakında açıklanacak' metni çıkar. Tutarlar kuruş cinsinden tamsayı. İleride platform panelindeki plan verisine bağlanacak (T-117).",
+  "trialDays": 14,
+  "pastDueGraceDays": 7,
+  "cardPaymentEnabled": false,
+  "vatNote": null,
+  "smsCharactersPerCredit": 155,
+  "currency": "TRY",
+  "plans": [
+    {
+      "code": "solo",
+      "name": "Tekil",
+      "audience": "Tek başına çalışanlar",
+      "monthlyPriceMinor": null,
+      "recommended": false,
+      "features": [
+        { "text": "1 personel, 1 şube" },
+        { "text": "Online randevu bağlantısı" },
+        { "text": "SMS hatırlatma (kontörle)" },
+        { "text": "Havale ile kapora takibi" }
+      ]
+    },
+    {
+      "code": "salon",
+      "name": "Salon",
+      "audience": "Küçük ve orta işletmeler",
+      "monthlyPriceMinor": null,
+      "recommended": true,
+      "features": [
+        { "limit": null, "unit": "personel", "pendingText": "Personel sınırı yakında açıklanacak" },
+        { "text": "Kapıda sıra ve bekleme listesi" },
+        { "text": "Paketler, kasa ve prim raporu" },
+        { "text": "Personel uygulaması" }
+      ]
+    },
+    {
+      "code": "salon_plus",
+      "name": "Salon Plus",
+      "audience": "Çok şubeli işletmeler",
+      "monthlyPriceMinor": null,
+      "recommended": false,
+      "features": [
+        { "text": "Sınırsız personel" },
+        {
+          "limit": null,
+          "unit": "şube dahil",
+          "pendingText": "Dahil şube sayısı yakında açıklanacak"
+        },
+        { "text": "Şubeler arası rapor" },
+        { "text": "Öncelikli destek" }
+      ]
+    }
+  ],
+  "creditPackages": [
+    { "code": "sms_1000", "credits": 1000, "priceMinor": null },
+    { "code": "sms_5000", "credits": 5000, "priceMinor": null },
+    { "code": "sms_20000", "credits": 20000, "priceMinor": null }
+  ]
+}
