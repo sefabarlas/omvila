@@ -1,5 +1,8 @@
 # Dilim 5: Mobil uygulamalar + bekleme listesi + kapıda sıra + paket + kasa
 
+## Durum
+Uygulandı. Backend (tamamla, kasa, paket, prim, değerlendirme, bekleme listesi, kapıda sıra, müşteri kartı ve KVKK, `/me` ve işletme uçları), salon paneli ve rezervasyon sayfası ekranları, müşteri uygulaması ve OMVILA İşletme main'de; kabul kriterlerinin test eşlemesi, uçtan uca akışlar 8–10, tasarım karşılaştırması ve açık kalanlar: [dilim-05-tasarim-karsilastirma.md](dilim-05-tasarim-karsilastirma.md). Demo verisi Dilim 5 kayıtlarını içerir (T-114). Kapanış için ürün sahibi demosu ve `docs/acik-sorular.md`'deki varsayımların (T-86…T-114) onayı bekleniyor. Mağaza yayını (hesaplar, imzalama, Firebase/APNs) K4'e bağlı ayrı adımdır; o zamana kadar sahte push ve emülatör.
+
 ## Amaç
 İki Flutter uygulaması yayına hazır hâle gelir. Bekleme listesi ve kapıda sıra çalışır. Randevu "Tamamla ve ödeme al" ile kapanır; paket satışı ve seans düşümü, kasa ve gün kapatma, değerlendirme ve prim doğumu devreye girer.
 
