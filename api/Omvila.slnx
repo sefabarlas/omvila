@@ -59,6 +59,8 @@
     <Project Path="tests/Omvila.Modules.Identity.Tests/Omvila.Modules.Identity.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.IntegrationTests/Omvila.Modules.Notifications.IntegrationTests.csproj" />
     <Project Path="tests/Omvila.Modules.Notifications.Tests/Omvila.Modules.Notifications.Tests.csproj" />
+    <Project Path="tests/Omvila.Modules.Platform.IntegrationTests/Omvila.Modules.Platform.IntegrationTests.csproj" />
+    <Project Path="tests/Omvila.Modules.Platform.Tests/Omvila.Modules.Platform.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Reviews.Tests/Omvila.Modules.Reviews.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Sales.Tests/Omvila.Modules.Sales.Tests.csproj" />
     <Project Path="tests/Omvila.Modules.Scheduling.IntegrationTests/Omvila.Modules.Scheduling.IntegrationTests.csproj" />

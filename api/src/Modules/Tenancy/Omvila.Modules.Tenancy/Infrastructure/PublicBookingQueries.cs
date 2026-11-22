@@ -14,9 +14,6 @@ namespace Omvila.Modules.Tenancy.Infrastructure;
 internal sealed class PublicBookingQueries(
     TenancyDbContext db, IDbSession session, ISubscriptionQueries subscriptions, IOptions<TenancyOptions> options) : IPublicBookingQueries
 {
-    // durum-makinesi.md § Abonelik: salt okunur aboneliğde online rezervasyon kapalı; iptal edilen abonelik de randevu almaz.
-    private static readonly HashSet<string> ClosedSubscriptionStatuses = new(["ReadOnly", "Cancelled"], StringComparer.Ordinal);
-
     public async Task<PublicBranchScope?> EnterBranchAsync(Guid branchId, CancellationToken ct)
     {
         var previous = session.Scope;
@@ -105,8 +102,9 @@ internal sealed class PublicBookingQueries(
             return false;
         }
 
+        // durum-makinesi.md § Abonelik: salt okunur abonelikte online rezervasyon kapalı; iptal edilen abonelik de randevu almaz.
         var banner = await subscriptions.GetBannerAsync(brandId, ct);
-        return banner is null || !ClosedSubscriptionStatuses.Contains(banner.Status);
+        return banner is null || !banner.BlocksNewWork;
     }
 
     private sealed record BranchRow(Guid BrandId, string TimeZoneId, BrandStatus Status);

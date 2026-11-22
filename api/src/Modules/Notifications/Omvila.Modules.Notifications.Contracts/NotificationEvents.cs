@@ -95,4 +95,10 @@ public static class NotificationEvents
 
     /// <summary>İşletme push'u ve bildirim paneli (Owner): "SMS kontörü azaldı" (eşik altına iniş veya yetersiz kontör).</summary>
     public const string OwnerCreditsLow = "owner.credits_low";
+
+    /// <summary>İşletme e-postası (Owner): "Deneme sürenizin bitmesine 3 gün kaldı" (bildirimler.md § E-posta).</summary>
+    public const string OwnerTrialEnding = "owner.trial_ending";
+
+    /// <summary>İşletme e-postası (Owner): "Abonelik ödemeniz alınamadı" (PastDue'ya geçiş; kart yok, havale bekleniyor).</summary>
+    public const string OwnerSubscriptionPaymentFailed = "owner.subscription_payment_failed";
 }

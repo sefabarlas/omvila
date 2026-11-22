@@ -7,6 +7,7 @@
     <ProjectReference Include="..\Omvila.Modules.Notifications.Contracts\Omvila.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="..\..\Identity\Omvila.Modules.Identity.Contracts\Omvila.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="..\..\Customers\Omvila.Modules.Customers.Contracts\Omvila.Modules.Customers.Contracts.csproj" />
+    <ProjectReference Include="..\..\Platform\Omvila.Modules.Platform.Contracts\Omvila.Modules.Platform.Contracts.csproj" />
     <ProjectReference Include="..\..\Reviews\Omvila.Modules.Reviews.Contracts\Omvila.Modules.Reviews.Contracts.csproj" />
     <ProjectReference Include="..\..\Scheduling\Omvila.Modules.Scheduling.Contracts\Omvila.Modules.Scheduling.Contracts.csproj" />
     <ProjectReference Include="..\..\Tenancy\Omvila.Modules.Tenancy.Contracts\Omvila.Modules.Tenancy.Contracts.csproj" />

@@ -39,7 +39,6 @@ internal sealed class WalkInTickets(
 {
     private const int NameMinLength = 2;
     private const int NameMaxLength = 120;
-    private const string ReadOnlyStatus = "ReadOnly";
 
     // Kural: alan-modeli.md § WalkInTicket (numara şube + gün bazında 1'den; müşteri kaydı "Başlat"ta açılır)
     public async Task<Result<WalkInTicket>> CreateAsync(Guid brandId, WalkInCreate body, ManageAccess access, Guid? userId, CancellationToken ct)
@@ -122,7 +121,7 @@ internal sealed class WalkInTickets(
         }
 
         var (serviceId, staffId) = target.Value;
-        if (await subscriptions.GetBannerAsync(brandId, ct) is { Status: ReadOnlyStatus })
+        if (await subscriptions.GetBannerAsync(brandId, ct) is { BlocksNewWork: true })
         {
             return Error.Forbidden(ErrorCodes.SubscriptionReadOnly);
         }

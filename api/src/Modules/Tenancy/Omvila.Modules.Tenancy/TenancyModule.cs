@@ -34,6 +34,8 @@ public static class TenancyModule
             .Bind(configuration.GetSection(Features.Privacy.PrivacyNoticeOptions.Section))
             .Validate(o => o.IsValid(), "Legal:PrivacyNoticeVersion eksik veya yyyy-MM-dd değil.");
         services.AddScoped<IBrandBankAccounts, BrandBankAccounts>();
+        // Abonelik: faturalama bilgisi ve iptal sonrası arşiv (Platform, ADR-0006 K4).
+        services.AddScoped<IBrandBilling, BrandBilling>();
         services.AddModuleDbContext<TenancyDbContext>(TenancyDbContext.Schema);
         services.AddScoped<SlugRegistry>();
         services.AddScoped<ITenantProvisioning, TenantProvisioning>();

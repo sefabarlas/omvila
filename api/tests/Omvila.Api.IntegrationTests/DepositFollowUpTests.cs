@@ -216,6 +216,20 @@ public sealed class DepositFollowUpTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Remind_ReadOnlySubscription_IsForbidden_NothingWritten()
+    {
+        // Kural: durum-makinesi.md § 8 ReadOnly ("SMS kapalı"); K5 (salonun yeni başlattığı SMS kapalı); T-118.
+        var (id, _, _) = await CreateDepositPendingAsync();
+        await _api.ScalarAsync<int>("UPDATE platform.subscriptions SET status = 'ReadOnly' RETURNING 1");
+
+        var refused = await RemindAsync(id, _token);
+
+        refused.Status.ShouldBe(403);
+        refused.Body.GetProperty("code").GetString().ShouldBe("subscription_read_only");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM infra.outbox_events WHERE type LIKE '%.AppointmentDepositReminded'")).ShouldBe(0);
+    }
+
+    [Fact]
     public async Task Remind_NotAwaited_Expired_Staff_OtherBrand_AreRejected()
     {
         var (id, _, _) = await CreateDepositPendingAsync();

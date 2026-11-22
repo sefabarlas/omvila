@@ -87,6 +87,21 @@ internal sealed class Brand
     }
 
     /// <summary>
+    /// Abonelik iptalinden CancelledArchiveDays sonra (durum-makinesi.md § 8 Cancelled "30 gün sonra arşiv"): her durumdan Archived.
+    /// Veri silinmez. Zaten arşivdeyse false.
+    /// </summary>
+    public bool Archive()
+    {
+        if (Status == BrandStatus.Archived)
+        {
+            return false;
+        }
+
+        Status = BrandStatus.Archived;
+        return true;
+    }
+
+    /// <summary>
     /// Platformun askıya alması veya yeniden açması (durum-makinesi.md § 10: Active ↔ Suspended; sözleşme adminChangeBrandStatus).
     /// Onboarding veya Archived markada ya da durum zaten istenen değerdeyse 409 invalid_state_transition.
     /// </summary>

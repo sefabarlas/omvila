@@ -133,7 +133,10 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 |---|---|---|---|
 | `TrialDays` | 14 | Deneme süresi; kart gerekmez | |
 | `PastDueGraceDays` | 7 | 7 gün hatırlatma, sonra salt okunur | |
+| `ReadOnlyToCancelledDays` | 30 | Salt okunurdan 30 gün sonra iptal (durum-makinesi.md § 8 "ReadOnly → Cancelled: 30 gün"; `CancelledArchiveDays`'ten ayrı anahtar, T-118) | |
 | `CancelledArchiveDays` | 30 | İptalden 30 gün sonra arşiv | |
+| `TrialEndingNoticeDays` | 3 | owner.trial_ending e-postası deneme bitmeden 3 gün önce (bildirimler.md § E-posta) | |
+| `VatRate` | `[KDV ORANI]` | Fatura KDV oranı (`Platform:VatRatePercent`); tanımlı değilse fatura vergisi 0 yazılır (T-118) | ✔ |
 | `TrialCredits` | `[DENEME KONTÖRÜ]` | Deneme hediyesi SMS | ✔ |
 | `Plan.*Price*`, `CreditPackage.PriceMinor` | `[AYLIK FİYAT]`, `[FİYAT]` | Veride; kodda yok | ✔ |
 | `Plan.StaffLimit`, `IncludedBranchCount` | `[PLAN SINIRI]` | | ✔ |
