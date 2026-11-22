@@ -35,7 +35,7 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
     {
         await using var connection = await db.OpenMigratorConnectionAsync(Ct);
         await using var command = new NpgsqlCommand("""
-            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.devices,
+            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.devices, notifications.notification_preferences,
               infra.dev_sms_log, infra.job_runs, infra.outbox_events CASCADE
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);
