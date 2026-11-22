@@ -44,6 +44,8 @@ build/
 # Playwright çıktıları
 web/salon-panel/e2e-results/
 web/salon-panel/e2e-report/
+web/platform-panel/e2e-results/
+web/platform-panel/e2e-report/
 web/rezervasyon/e2e-results/
 web/rezervasyon/e2e-report/
 

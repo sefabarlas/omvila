@@ -1,0 +1,37 @@
+/* Panel düzeni: kenar menü + içerik (salon-panel/AGENTS.md § Düzen; platform paneli aynı). */
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--zemin);
+  color: var(--metin);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.skip {
+  position: absolute;
+  top: var(--bosluk-2);
+  left: var(--bosluk-2);
+  z-index: 100;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin);
+  transform: translateY(-200%);
+}
+
+.skip:focus {
+  transform: none;
+}

@@ -1,7 +1,7 @@
 import { ApiProblem } from '@omvila/api-client-ts';
 import { errorMessage } from '@omvila/ui-web/errors';
 import { formatCount } from '@omvila/ui-web/format';
-import { Bento, BentoBlock, Button, EmptyState, Skeleton } from '@omvila/ui-web/panel';
+import { Bento, BentoBlock, Button, EmptyState, FilterChips, Skeleton } from '@omvila/ui-web/panel';
 import { branchToday } from '@omvila/ui-web/time';
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
@@ -12,7 +12,6 @@ import { useSelectedBranch } from '@/app/branch';
 import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { useSession } from '@/app/session';
-import { FilterChips } from '@/features/customers/FilterChips';
 import { bookingPageQuery } from '@/shared/booking-link';
 import { Page } from '@/shared/Page';
 import { accusativeCount } from '@/shared/turkish';

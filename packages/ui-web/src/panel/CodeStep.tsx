@@ -1,13 +1,22 @@
-import { Banner, Button, Checkbox, CodeInput } from '@omvila/ui-web/panel';
 import { ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import type { SyntheticEvent } from 'react';
-import type { OtpChallenge } from './api';
-import styles from './auth.module.css';
-import { describeProblem, formatCountdown } from './problem';
-import { useCountdown } from './use-countdown';
+import styles from './Auth.module.css';
+import { describeAuthProblem, formatCountdown } from './authProblem';
+import { Banner } from './Banner';
+import { Button } from './Button';
+import { Checkbox } from './Checkbox';
+import { CodeInput } from './CodeInput';
+import { useCountdown } from './useCountdown';
 
-interface CodeStepProps {
+/** SMS kodu isteğinin yanıtı (OtpChallengeResponse; salon ve platform girişi). */
+export interface OtpChallenge {
+  otpId: string;
+  phoneMasked: string;
+  resendAfterSeconds: number;
+}
+
+export interface CodeStepProps {
   challenge: OtpChallenge;
   /** Giriş "Giriş yap", kayıt "İşletmeyi oluştur". */
   submitLabel: string;
@@ -19,7 +28,7 @@ interface CodeStepProps {
   onResend: () => Promise<OtpChallenge>;
 }
 
-/** salon-paneli/GirisKod: altı haneli kod; hatalı kodda kalan deneme, sınırda bekleme, yeniden gönderme sayacı. */
+/** salon-paneli/GirisKod (platform paneli girişi de): altı haneli kod; hatalı kodda kalan deneme, sınırda bekleme, yeniden gönderme sayacı. */
 export function CodeStep({
   challenge,
   submitLabel,
@@ -49,7 +58,7 @@ export function CodeStep({
     try {
       await onVerify(code, remember);
     } catch (problem) {
-      const described = describeProblem(problem);
+      const described = describeAuthProblem(problem);
       if (described.retryAfterSeconds !== undefined) {
         setLockedFor(described.retryAfterSeconds);
       } else {
@@ -69,7 +78,7 @@ export function CodeStep({
       setPhoneMasked(next.phoneMasked);
       setResendIn(next.resendAfterSeconds);
     } catch (problem) {
-      const described = describeProblem(problem);
+      const described = describeAuthProblem(problem);
       if (described.retryAfterSeconds !== undefined) {
         setResendIn(described.retryAfterSeconds);
       } else {

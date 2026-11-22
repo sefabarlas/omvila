@@ -1,4 +1,4 @@
-import styles from './Customers.module.css';
+import styles from './FilterChips.module.css';
 
 export interface FilterChipsProps<T extends string> {
   legend: string;
@@ -9,8 +9,8 @@ export interface FilterChipsProps<T extends string> {
 }
 
 /**
- * Liste filtre çipleri (salon-paneli/Musteriler: Tümü, Düzenli…): tek seçim, radyo grubu; ok tuşlarıyla gezilir.
- * ui-web'de panel çipi yok; ikinci kullanım gelince oraya taşınır (acik-sorular.md T-57).
+ * Liste filtre çipleri (salon-paneli/Musteriler: Tümü, Düzenli…; platform-paneli/PMarkalar): tek seçim, radyo grubu;
+ * ok tuşlarıyla gezilir.
  */
 export function FilterChips<T extends string>({
   legend,

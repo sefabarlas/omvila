@@ -1,0 +1,19 @@
+# Platform paneli statik sunucusu (imaj içi). TLS, basic auth ve X-Robots-Tag kenardaki Caddy'de (deploy/staging/Caddyfile).
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	root * /srv
+	encode zstd gzip
+
+	# Parmak izli varlıklar değişmez; index.html her seferinde yeniden doğrulanır (yeni sürüm hemen görünsün).
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	header ?Cache-Control "no-cache"
+
+	# SPA geri düşüşü: dosya yoksa index.html (TanStack Router istemcide çözer).
+	try_files {path} /index.html
+	file_server
+}
