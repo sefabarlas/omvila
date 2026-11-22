@@ -1,7 +1,7 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
-import { sessionFixture, staffPermissions } from '../../test/fake-api';
+import { ownerPermissions, sessionFixture, staffPermissions } from '../../test/fake-api';
 import { notificationIds } from '../../test/fake-notifications';
 import { renderApp } from '../../test/render-app';
 
@@ -113,9 +113,21 @@ describe('bildirim paneli', () => {
 });
 
 describe('kontör az şeridi', () => {
-  it('isLow iken bakiye ve "Kontör al" (ayarlar)', async () => {
-    const { router } = renderApp('/hizmetler', {
+  it('isLow iken bakiye ve "Kontör al": sahipte kontör satın alma penceresi (T-125)', async () => {
+    renderApp('/hizmetler', {
       session: sessionFixture({ smsCredits: { balance: 180, isLow: true } }),
+    });
+    expect(await screen.findByText("SMS kontörünüz 180'e düştü.")).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Kontör al' }));
+    expect(await screen.findByRole('dialog', { name: 'Kontör al' })).toBeTruthy();
+  });
+
+  it('kontör alamayan yöneticide "Kontör al" ayarları açar', async () => {
+    const { router } = renderApp('/hizmetler', {
+      session: sessionFixture({
+        smsCredits: { balance: 180, isLow: true },
+        permissions: ownerPermissions.filter((p) => p !== 'subscription.manage'),
+      }),
     });
     expect(await screen.findByText("SMS kontörünüz 180'e düştü.")).toBeTruthy();
     expect(

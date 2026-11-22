@@ -53,6 +53,7 @@ test('"Tümünü okundu say" ve "Kontör al"', async ({ page }) => {
   expect(await markRead()).toEqual({ all: true });
   await expect(page.getByRole('button', { name: 'Bildirimler', exact: true })).toBeVisible();
 
+  // İşletme sahibinde (subscription.manage) şeritteki "Kontör al" kontör satın alma penceresini açar (T-125).
   await page.getByRole('button', { name: 'Kontör al' }).click();
-  await expect(page).toHaveURL(/\/ayarlar\/bildirimler$/);
+  await expect(page.getByRole('dialog', { name: 'Kontör al' })).toBeVisible();
 });

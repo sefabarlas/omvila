@@ -1,0 +1,229 @@
+/* Ayarlar → Abonelik ve fatura (salon-paneli/AyarlarAbonelik), Havaleyi bildir ve Kontör al pencereleri. */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bosluk-3);
+}
+
+/* Faturalar: tablo kart kenarına kadar uzanır (AyarlarKvkk gibi). */
+.tableCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding-top: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  overflow: hidden;
+}
+
+.tableHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 var(--bosluk-4);
+}
+
+/* "Havale / EFT ile öde" kutusu: Alıcı, IBAN, Açıklama, Tutar. */
+.transferBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-2) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.transferList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.transferRow {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+}
+
+.transferRow + .transferRow {
+  border-top: 1px solid var(--cizgi);
+}
+
+.transferLabel {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.transferValue {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.transferMuted {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.transferNote {
+  margin: 0;
+  padding-top: var(--bosluk-2);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.pending {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: center;
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+/* Havaleyi bildir formu. */
+.notifyForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.fileCard {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.fileIcon {
+  flex: none;
+  color: var(--metin-ikincil);
+}
+
+.fileText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-0-5);
+  min-width: 0;
+  font-size: var(--yazi-kucuk-boyut);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.fieldError {
+  color: var(--hata);
+  font-weight: 600;
+}
+
+/* Kontör al: paket seçimi. */
+.packages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+}
+
+.packageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.packageOption {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--bosluk-0-5) var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+  cursor: pointer;
+}
+
+.packageOption:hover {
+  background: var(--zemin-hover);
+}
+
+.packageOption:has(.packageRadio:checked) {
+  border-color: var(--zemin-marka);
+  background: var(--zemin-marka-yumusak);
+}
+
+.packageOption:has(.packageRadio:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.packageRadio {
+  grid-row: span 2;
+  margin: 0;
+  accent-color: var(--zemin-marka);
+}
+
+.packageName {
+  font-weight: 700;
+}
+
+.packageCredits {
+  grid-column: 2;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.packagePrice {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (width <= 899px) {
+  .cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .transferRow {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--bosluk-2) 0;
+  }
+
+  .transferValue {
+    text-align: left;
+  }
+}

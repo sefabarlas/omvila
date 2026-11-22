@@ -2,11 +2,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Badge, Banner, Button, IconButton, Select, Switch, useToast } from '@omvila/ui-web/panel';
 import { formatCount } from '@omvila/ui-web/format';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { Plus, X } from 'lucide-react';
+import { Coins, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { useApi } from '@/app/api-context';
+import { useSession } from '@/app/session';
+import { CreditPurchaseModal } from '@/features/subscription/CreditPurchaseModal';
 import { ConflictBanner } from '@/shared/ConflictBanner';
 import {
   notificationSettingsQuery,
@@ -98,8 +100,8 @@ function templateErrors(
 }
 
 /**
- * Ayarlar → Bildirimler ve SMS (salon-paneli/AyarlarBildirim). Kontör satın alma bu sayfada yok: OMVILA ödeme almaz,
- * kontör alma ucu (managePurchaseCredits) henüz sözleşmede değil (acik-sorular.md T-70).
+ * Ayarlar → Bildirimler ve SMS (salon-paneli/AyarlarBildirim). Üst bardaki "Kontör al" yalnız subscription.manage
+ * (işletme sahibi) ile; kontör havaleyle alınır (K1, T-125; T-70 (1) yerine).
  */
 export function NotificationSettingsPage() {
   const api = useApi();
@@ -112,6 +114,8 @@ export function NotificationSettingsPage() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [senderOpen, setSenderOpen] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const { can } = useSession();
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -175,7 +179,23 @@ export function NotificationSettingsPage() {
   const editingTemplate = settings.templates.find((t) => templateKey(t) === editing);
 
   return (
-    <SettingsLayout context="Bildirimler ve SMS" formId={formId} saving={update.isPending}>
+    <SettingsLayout
+      context="Bildirimler ve SMS"
+      formId={formId}
+      saving={update.isPending}
+      extraAction={
+        can('subscription.manage') ? (
+          <Button
+            icon={<Coins size={16} aria-hidden="true" />}
+            onClick={() => {
+              setBuying(true);
+            }}
+          >
+            Kontör al
+          </Button>
+        ) : null
+      }
+    >
       {conflict ? <ConflictBanner onReload={() => void reload()} /> : null}
       <SmsSummary
         overview={sms.data}
@@ -343,6 +363,12 @@ export function NotificationSettingsPage() {
           }}
         />
       ) : null}
+      <CreditPurchaseModal
+        open={buying}
+        onClose={() => {
+          setBuying(false);
+        }}
+      />
       <SmsSenderModal
         open={senderOpen}
         onClose={() => {
