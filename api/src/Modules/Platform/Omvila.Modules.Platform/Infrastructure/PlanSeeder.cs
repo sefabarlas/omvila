@@ -6,13 +6,14 @@ namespace Omvila.Modules.Platform.Infrastructure;
 
 /// <summary>
 /// Geliştirme ve test planları (S-14: "geliştirmede sınırsız plan seed'i"). Yalnız Platform:SeedPlans doluysa çalışır;
-/// üretim yapılandırmasında bu bölüm yoktur. Var olan koda dokunmaz.
+/// üretim yapılandırmasında bu bölüm yoktur. Var olan koda dokunmaz. Platform:SeedCreditPackages doluysa fiyatsız kontör
+/// paketleri de eklenir.
 /// </summary>
 public sealed class PlanSeeder(IOptions<PlatformOptions> options, IIdGenerator ids)
 {
     public async Task SeedAsync(string migratorConnectionString, CancellationToken ct)
     {
-        if (options.Value.SeedPlans.Count == 0)
+        if (options.Value.SeedPlans.Count == 0 && options.Value.SeedCreditPackages.Count == 0)
         {
             return;
         }
@@ -27,6 +28,18 @@ public sealed class PlanSeeder(IOptions<PlatformOptions> options, IIdGenerator i
             command.Parameters.Add(new NpgsqlParameter { Value = ids.New() });
             command.Parameters.Add(new NpgsqlParameter { Value = seed.Code });
             command.Parameters.Add(new NpgsqlParameter { Value = seed.Name });
+            await command.ExecuteNonQueryAsync(ct);
+        }
+
+        foreach (var seed in options.Value.SeedCreditPackages)
+        {
+            await using var command = new NpgsqlCommand(
+                "INSERT INTO platform.credit_packages (id, code, name, credits, is_active) VALUES ($1, $2, $3, $4, true) ON CONFLICT (code) DO NOTHING",
+                connection);
+            command.Parameters.Add(new NpgsqlParameter { Value = ids.New() });
+            command.Parameters.Add(new NpgsqlParameter { Value = seed.Code });
+            command.Parameters.Add(new NpgsqlParameter { Value = seed.Name });
+            command.Parameters.Add(new NpgsqlParameter { Value = seed.Credits });
             await command.ExecuteNonQueryAsync(ct);
         }
     }

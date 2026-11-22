@@ -1,14 +1,18 @@
+using Microsoft.EntityFrameworkCore;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Platform.Contracts;
+using Omvila.Modules.Platform.Domain;
 
 namespace Omvila.Modules.Platform.Infrastructure;
 
 /// <summary>
-/// <see cref="IPendingApprovalCounts"/>: SMS gönderen adı başvuruları Notifications'tan. Havale bildirimi (PaymentNotice) tablosu
-/// abonelik ve faturalama PR'ında gelir; o zamana kadar bekleyen bildirim 0 sayılır (acik-sorular.md T-119).
+/// <see cref="IPendingApprovalCounts"/>: bekleyen havale bildirimleri Platform'un kendi tablosundan (T-118), SMS gönderen adı
+/// başvuruları Notifications'tan. Platform bağlamında çağrılır (bütün markalar).
 /// </summary>
-internal sealed class PendingApprovals(IPlatformCredits credits) : IPendingApprovalCounts
+internal sealed class PendingApprovals(PlatformDbContext db, IPlatformCredits credits) : IPendingApprovalCounts
 {
     public async Task<PendingApprovalCounts> GetAsync(CancellationToken ct) =>
-        new(PaymentNotices: 0, SmsSenders: await credits.CountPendingSmsSendersAsync(ct));
+        new(
+            PaymentNotices: await db.PaymentNotices.CountAsync(n => n.Status == PaymentNoticeStatus.Pending, ct),
+            SmsSenders: await credits.CountPendingSmsSendersAsync(ct));
 }

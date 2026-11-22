@@ -463,3 +463,63 @@ a.step:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* salon-paneli/GenelBakis sağ sütun: "Dikkat isteyenler" ve "Bu hafta doluluk" alt alta. */
+.overviewSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  min-width: 0;
+}
+
+.occupancy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.occupancyRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--bosluk-1) var(--bosluk-3);
+  align-items: center;
+}
+
+.occupancyName {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.occupancyDot {
+  flex: none;
+  width: var(--bosluk-2);
+  height: var(--bosluk-2);
+  border-radius: var(--kose-tam);
+  background: var(--personel-rengi, var(--metin-ikincil));
+}
+
+.occupancyValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.occupancyTrack {
+  grid-column: 1 / -1;
+  height: var(--bosluk-2);
+  overflow: hidden;
+  border-radius: var(--kose-tam);
+  background: var(--zemin-ikincil);
+}
+
+.occupancyBar {
+  display: block;
+  height: 100%;
+  border-radius: var(--kose-tam);
+  background: var(--marka);
+}

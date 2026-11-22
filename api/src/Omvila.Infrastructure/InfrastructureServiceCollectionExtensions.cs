@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Omvila.Infrastructure.Email;
+using Omvila.Infrastructure.Files;
 using Omvila.Infrastructure.Health;
 using Omvila.Infrastructure.Hosting;
 using Omvila.Infrastructure.Http;
@@ -96,6 +98,17 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOptions<PushOptions>().Bind(configuration.GetSection(PushOptions.Section)).ValidateOnStart();
         services.AddHttpClient(FcmPushSender.HttpClientName);
         services.AddScoped<IPushSender>(sp => CreatePushSender(sp));
+        services.AddSingleton<IValidateOptions<EmailOptions>, FakeProviderOptionsValidator>();
+        services.AddOptions<EmailOptions>()
+            .Bind(configuration.GetSection(EmailOptions.Section))
+            .Validate(o => o.IsValid(), "E-posta ayarları eksik veya geçersiz (appsettings \"Email\": Provider boş, Fake veya Smtp).")
+            .ValidateOnStart();
+        services.AddSingleton<FakeEmailSender>();
+        services.AddScoped<IEmailSender>(sp => CreateEmailSender(sp));
+        services.AddOptions<FileStorageOptions>()
+            .Bind(configuration.GetSection(FileStorageOptions.Section))
+            .Validate(o => o.IsValid(), "Dosya deposu ayarı eksik (appsettings \"FileStorage:RootPath\").");
+        services.AddSingleton<IFileStorage, DiskFileStorage>();
 
         // Teslim raporu adaptörleri sağlayıcı koduyla kaydedilir (webhook yolu /webhooks/sms/{provider}); kayıtsız kod 404.
         // Sahte sağlayıcının raporu yalnız sahte sağlayıcı seçiliyken (Development, Testing, izinli Staging) açılır.
@@ -128,6 +141,19 @@ public static class InfrastructureServiceCollectionExtensions
             PushOptions.FakeProvider => ActivatorUtilities.CreateInstance<FakePushSender>(services),
             PushOptions.FcmProvider => options.Fcm.IsConfigured ? ActivatorUtilities.CreateInstance<FcmPushSender>(services) : new DisabledPushSender(),
             _ => throw new InvalidOperationException($"Desteklenmeyen push sağlayıcısı: '{options.Provider}'."),
+        };
+    }
+
+    // E-posta sağlayıcısı (T-05): boş → kapalı; Fake ortam izniyle (FakeProviderOptionsValidator); Smtp (Mailpit).
+    private static IEmailSender CreateEmailSender(IServiceProvider services)
+    {
+        var options = services.GetRequiredService<IOptions<EmailOptions>>().Value;
+        return options.Provider switch
+        {
+            "" => new DisabledEmailSender(),
+            EmailOptions.FakeProvider => services.GetRequiredService<FakeEmailSender>(),
+            EmailOptions.SmtpProvider => ActivatorUtilities.CreateInstance<SmtpEmailSender>(services),
+            _ => throw new InvalidOperationException($"Desteklenmeyen e-posta sağlayıcısı: '{options.Provider}'."),
         };
     }
 

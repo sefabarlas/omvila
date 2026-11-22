@@ -28,7 +28,12 @@ export function walkInsQuery(api: Api, branchId: string) {
 
 function useQueueInvalidation() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ['walk-ins'] });
+  // Genel bakış "Kapıda sırada" bloğu manageGetOverview'dan gelir.
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['walk-ins'] }),
+      queryClient.invalidateQueries({ queryKey: ['overview'] }),
+    ]);
 }
 
 /** "Sıraya ekle" (manageCreateWalkIn): numara sunucuda atomik verilir; dönen bilet numarayı taşır. */
