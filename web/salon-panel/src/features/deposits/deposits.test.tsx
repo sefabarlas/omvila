@@ -53,23 +53,23 @@ function bentoBlock(label: HTMLElement): HTMLElement {
 describe('takvim: kapora rozeti ve bento', () => {
   it('kapora bekleyen blok "Kapora bekleniyor"; havale bildirildiyse işaret; bento kapora bekleyeni saymaz', async () => {
     renderApp('/takvim', { session: owner, calendar: { deposits: true } });
-    expect(
-      await screen.findByRole('button', {
-        name: 'Gizem Arslan, Fön, 14:30–15:00, Kapora bekleniyor',
-      }),
-    ).toBeTruthy();
-    const buse = screen.getByRole('button', {
-      name: 'Buse Kaya, Keratin, 15:30–16:30, Kapora bekleniyor, Havale bildirildi',
-    });
+    // Bloklar aria-label'lı düğmelerdir. Izgarada her boş saat de bir düğme ("Randevu ekle: …") olduğundan
+    // getByRole + name bütün düğmelerin erişilebilir adını hesaplar ve yavaş CI'da 5 sn'yi aşıyordu; aynı
+    // etiket araması etiketten okunur, düğme olduğu ayrıca denetlenir (beklenti aynı).
+    const gizem = await screen.findByLabelText('Gizem Arslan, Fön, 14:30–15:00, Kapora bekleniyor');
+    expect(gizem.tagName).toBe('BUTTON');
+    const buse = screen.getByLabelText(
+      'Buse Kaya, Keratin, 15:30–16:30, Kapora bekleniyor, Havale bildirildi',
+    );
+    expect(buse.tagName).toBe('BUTTON');
     expect(buse.dataset.status).toBe('kapora');
     expect(within(buse).getByText('Havale bildirildi')).toBeTruthy();
     // Alınmış ve kaporasız onaylanmış randevular düz "Onaylandı".
-    expect(
-      screen.getByRole('button', { name: /^Nur Ateş, Fön, 17:00–17:45, Onaylandı$/ }),
-    ).toBeTruthy();
+    expect(screen.getByLabelText('Nur Ateş, Fön, 17:00–17:45, Onaylandı').tagName).toBe('BUTTON');
 
     // İki kapora bekleyen + Pınar: "Onay bekliyor" yalnız Pınar'ı sayar (T-72 (3)).
-    const summary = screen.getByRole('group', { name: 'Bugünün özeti' });
+    const summary = screen.getByLabelText('Bugünün özeti');
+    expect(summary.getAttribute('role')).toBe('group');
     const pendingBlock = bentoBlock(within(summary).getByText('Onay bekliyor'));
     expect(within(pendingBlock).getByText('1')).toBeTruthy();
     expect(within(pendingBlock).queryByText('3')).toBeNull();
