@@ -7,8 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omvila_ui/theme/omvila_theme.dart';
 
-/// packages/omvila_ui/test/flutter_test_config.dart ile aynı ayar (test
-/// dosyaları paketler arasında içe aktarılamaz; değişiklik ikisine birden).
+/// packages/omvila_ui/test/flutter_test_config.dart ile aynı karşılaştırıcı
+/// (test dosyaları paketler arasında içe aktarılamaz); fark: CI goldenleri
+/// test yazı tipiyle çizilir (aşağıda).
 /// Golden ayarı (docs/standartlar/test-stratejisi.md: alchemist, açık/koyu,
 /// 1.3× yazı). Depoya yalnız CI goldenleri girer (`goldens/ci/`): metin blok
 /// olarak çizilir, gölge çizilmez; yazı tipinden bağımsız. macOS ve Linux
@@ -17,15 +18,22 @@ import 'package:omvila_ui/theme/omvila_theme.dart';
 /// test --update-goldens` (çıktı `goldens/macos/` gibi, depo dışı).
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
-  await _loadPackageFonts();
+  final platformGoldens =
+      Platform.environment['OMVILA_PLATFORM_GOLDENS'] == '1';
+  // Ekran goldenlerinde çok sayıda metin var; gerçek yazı tipinin alt piksel
+  // genişlikleri macOS ve Linux'ta farklı yuvarlanıp metin bloklarını 1 px
+  // kaydırıyor. CI goldenleri bu yüzden test yazı tipiyle (FlutterTest, her
+  // platformda aynı) çizilir; gerçek yazı tipi yalnız platform goldenlerinde.
+  if (platformGoldens) {
+    await _loadPackageFonts();
+  }
+
   if (goldenFileComparator case final LocalFileComparator local) {
     goldenFileComparator = _AntiAliasTolerantComparator(
       local.basedir.resolve('flutter_test_config.dart'),
     );
   }
 
-  final platformGoldens =
-      Platform.environment['OMVILA_PLATFORM_GOLDENS'] == '1';
   return AlchemistConfig.runWithConfig(
     config: AlchemistConfig(
       theme: OmvilaTema.acik(),

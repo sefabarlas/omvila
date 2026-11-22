@@ -99,8 +99,7 @@ void main() {
       });
     await h.pumpApp(tester);
 
-    await tester.ensureVisible(find.text('Onayla'));
-    await tester.tap(find.text('Onayla'));
+    await tapCentered(tester, find.text('Onayla'));
     await tester.pumpAndSettle();
 
     final post = h.api.to(
@@ -131,8 +130,7 @@ void main() {
       );
     await h.pumpApp(tester);
 
-    await tester.ensureVisible(find.text('Onayla'));
-    await tester.tap(find.text('Onayla'));
+    await tapCentered(tester, find.text('Onayla'));
     await tester.pumpAndSettle();
     expect(find.text(errorMessage('deposit_required')), findsOneWidget);
     expect(find.text('Randevu'), findsWidgets);
@@ -207,4 +205,12 @@ void main() {
     expect(find.text('Randevu'), findsWidgets);
     expect(find.text('Bugün'), findsNothing);
   });
+}
+
+/// Öğeyi ekranın ortasına kaydırıp dokunur (yüzen sekme çubuğunun altında
+/// kalmasın).
+Future<void> tapCentered(WidgetTester tester, Finder finder) async {
+  await Scrollable.ensureVisible(tester.element(finder), alignment: 0.5);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
 }
