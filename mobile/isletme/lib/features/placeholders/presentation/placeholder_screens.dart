@@ -62,22 +62,6 @@ class TabPlaceholderScreen extends StatelessWidget {
   }
 }
 
-/// Takvim / Takvimim.
-class CalendarPlaceholder extends ConsumerWidget {
-  /// Takvim.
-  const CalendarPlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final staff = ref.watch(authControllerProvider).value?.isStaff ?? false;
-    return TabPlaceholderScreen(
-      title: staff ? 'Takvimim' : 'Takvim',
-      icon: LucideIcons.calendar,
-      description: 'Gün ve hafta görünümü sonraki sürümde bu sekmede açılacak.',
-    );
-  }
-}
-
 /// Profil; "Çıkış yap" şimdiden çalışır.
 class ProfilePlaceholder extends ConsumerWidget {
   /// Profil.
@@ -96,36 +80,6 @@ class ProfilePlaceholder extends ConsumerWidget {
         tur: OmvilaButonTuru.ikincil,
         tamGenislik: true,
         onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-      ),
-    );
-  }
-}
-
-/// Sekme dışı ekranlar (randevu ayrıntısı, yeni randevu): geri butonlu.
-class PagePlaceholderScreen extends StatelessWidget {
-  /// Yer tutucu sayfa.
-  const PagePlaceholderScreen({
-    required this.title,
-    required this.description,
-    super.key,
-  });
-
-  /// Üst bar başlığı.
-  final String title;
-
-  /// Boş durum cümlesi.
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: OmvilaBosDurum(
-          ikon: LucideIcons.calendarDays,
-          baslik: 'Bu bölüm hazırlanıyor',
-          aciklama: description,
-        ),
       ),
     );
   }

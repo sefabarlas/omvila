@@ -54,8 +54,15 @@ abstract final class Routes {
   /// Yeni randevu.
   static const newAppointment = '/yeni-randevu';
 
+  /// Yeni randevu, gün seçili ("/yeni-randevu?gun=2026-11-28").
+  static String newAppointmentOn(String localDate) =>
+      '$newAppointment?gun=$localDate';
+
   /// Randevu ayrıntısı.
   static String appointment(String id) => '/randevu/$id';
+
+  /// Saati veya personeli değiştir.
+  static String reschedule(String id) => '/randevu/$id/degistir';
 }
 
 /// Rol ve izne göre sekmeler (mobile/isletme/AGENTS.md, roller-yetkiler.md §

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_isletme/features/auth/data/auth_tokens.dart';
 import 'package:omvila_isletme/features/push/data/push_service.dart';
+import 'package:omvila_isletme/shared/external_launcher.dart';
 import 'package:omvila_isletme/shared/key_value_store.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -25,6 +26,11 @@ final keyValueStoreProvider = Provider<KeyValueStore>(
 
 /// Push katmanı (K4: Firebase açılana kadar sahte).
 final pushServiceProvider = Provider<PushService>((ref) => FakePushService());
+
+/// tel: ve sms: bağlantıları (testte sahte).
+final externalLauncherProvider = Provider<ExternalLauncher>(
+  (ref) => const PlatformExternalLauncher(),
+);
 
 /// Testte sahte HTTP bağdaştırıcısı; üretimde null (Dio varsayılanı).
 final httpAdapterProvider = Provider<HttpClientAdapter?>((ref) => null);

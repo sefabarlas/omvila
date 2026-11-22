@@ -28,6 +28,8 @@ dependencies:
     path: ../../packages/omvila_ui
   # MainBos "Rezervasyon bağlantısını paylaş": sistem paylaşım sayfası (iOS/Android yerel paylaşım).
   share_plus: ^13.3.1
+  # RandevuDetay "Ara" / "SMS": açılan numarayla tel: / sms: bağlantısı (musteri ile aynı paket).
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   alchemist: ^0.12.0
