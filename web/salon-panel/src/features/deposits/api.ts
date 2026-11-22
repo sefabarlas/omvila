@@ -49,6 +49,7 @@ export function useMarkDepositReceivedById() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ['calendar'] }),
         queryClient.invalidateQueries({ queryKey: ['approval-queue'] }),
+        queryClient.invalidateQueries({ queryKey: ['overview'] }),
       ]),
   });
 }

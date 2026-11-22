@@ -209,6 +209,7 @@ export const ownerPermissions = [
   'customer.export',
   'customer.kvkk',
   'report.view',
+  'commission.view',
   'waitlist.manage',
   'walkin.manage',
   'review.view',

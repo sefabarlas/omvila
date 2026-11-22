@@ -43,18 +43,18 @@ describe('personel görünümü', () => {
     expect(screen.queryByRole('button', { name: 'Kopyala' })).toBeNull();
   });
 
-  it('menü Takvimim, Müşteriler, Kapıda sıra; ayarlar, hizmetler ve personel adresleri 403', async () => {
+  it('menü Takvimim, Müşteriler, Kapıda sıra, Primim; ayarlar, hizmetler, personel ve raporlar adresleri 403', async () => {
     const { router } = renderApp('/', { session: deniz });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
     expect(
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Takvimim', 'Müşteriler', 'Kapıda sıra']);
+    ).toEqual(['Takvimim', 'Müşteriler', 'Kapıda sıra', 'Primim']);
     expect(within(nav).getByRole('link', { name: 'Takvimim' }).getAttribute('aria-current')).toBe(
       'page',
     );
-    for (const path of ['/ayarlar/isletme', '/hizmetler', '/personel'] as const) {
+    for (const path of ['/ayarlar/isletme', '/hizmetler', '/personel', '/raporlar'] as const) {
       await router.navigate({ to: path });
       expect(
         await screen.findByRole('heading', { level: 1, name: 'Bu sayfayı görme yetkiniz yok' }),

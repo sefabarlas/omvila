@@ -69,6 +69,7 @@ export function useAppointmentAction<TInput>(
       Promise.all([
         invalidateCalendar(queryClient),
         queryClient.invalidateQueries({ queryKey: ['approval-queue'] }),
+        queryClient.invalidateQueries({ queryKey: ['overview'] }),
       ]),
   });
 }

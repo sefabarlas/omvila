@@ -13,6 +13,8 @@ import { createPackagesFake } from './fake-packages';
 import type { PackagesFakeOptions } from './fake-packages';
 import { createSalesFake } from './fake-sales';
 import type { SalesFakeOptions } from './fake-sales';
+import { createReportsFake } from './fake-reports';
+import type { ReportsFakeOptions } from './fake-reports';
 import { createReviewsFake } from './fake-reviews';
 import type { ReviewsFakeOptions } from './fake-reviews';
 
@@ -37,6 +39,7 @@ export const ownerPermissions = [
   'customer.phone.view',
   'customer.edit',
   'report.view',
+  'commission.view',
   'timeoff.request',
   'waitlist.manage',
   'walkin.manage',
@@ -125,6 +128,8 @@ export interface FakeApiOptions {
   reviews?: ReviewsFakeOptions;
   /** Paket tanımları, müşteri paketleri, satış ve iade. */
   packages?: PackagesFakeOptions;
+  /** Genel bakış, raporlar ve Primim uçları. */
+  reports?: ReportsFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -414,6 +419,7 @@ export function fakeFetch({
   sales = {},
   reviews = {},
   packages = {},
+  reports = {},
 }: FakeApiOptions = {}) {
   const queuesFake = createQueuesFake(queues);
   const salesFake = createSalesFake(session, sales);
@@ -423,6 +429,7 @@ export function fakeFetch({
   const notificationsFake = createNotificationsFake(notifications);
   const notificationSettingsFake = createNotificationSettingsFake(notificationSettings);
   const reviewsFake = createReviewsFake(reviews);
+  const reportsFake = createReportsFake(session, reports);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -474,6 +481,11 @@ export function fakeFetch({
     const customersResponse = await customersFake(request);
     if (customersResponse) {
       return customersResponse;
+    }
+
+    const reportsResponse = reportsFake(request);
+    if (reportsResponse) {
+      return reportsResponse;
     }
 
     const reviewsResponse = await reviewsFake.handle(request);
