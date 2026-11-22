@@ -1,5 +1,7 @@
 import type { components } from '@omvila/api-client-ts';
 import type { AdminPermission, AdminSession } from '@/app/api';
+import { platformRoute } from './fake-platform';
+import type { PlatformFakeOptions } from './fake-platform';
 
 // Test için sahte admin API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle
 // ve platform-paneli tasarımlarıyla aynı.
@@ -21,6 +23,21 @@ export const adminPermissions: AdminPermission[] = [
   'platform.audit.export',
 ];
 
+export const financePermissions: AdminPermission[] = [
+  'platform.brands.view',
+  'platform.payments.match',
+  'platform.plans.view',
+  'platform.plans.manage',
+  'platform.billing.manage',
+  'platform.audit.view',
+];
+
+const rolePermissions: Record<AdminSession['role'], AdminPermission[]> = {
+  PlatformAdmin: adminPermissions,
+  PlatformSupport: supportPermissions,
+  PlatformFinance: financePermissions,
+};
+
 export function sessionFixture(role: AdminSession['role'] = 'PlatformSupport'): AdminSession {
   return {
     user: {
@@ -29,7 +46,7 @@ export function sessionFixture(role: AdminSession['role'] = 'PlatformSupport'): 
       phoneMasked: '0532 *** ** 20',
     },
     role,
-    permissions: role === 'PlatformAdmin' ? adminPermissions : supportPermissions,
+    permissions: rolePermissions[role],
     pendingApprovalCount: 7,
   };
 }
@@ -186,28 +203,6 @@ export const brandDetailFixture: Schemas['AdminBrandDetail'] = {
   version: 'W/"5120"',
 };
 
-const plan = (code: string, name: string, isActive = true): Schemas['AdminPlan'] => ({
-  code,
-  name,
-  description: null,
-  monthlyPrice: null,
-  yearlyPrice: null,
-  includedBranchCount: 1,
-  extraBranchPrice: null,
-  staffLimit: null,
-  includedSmsCredits: null,
-  features: {
-    walkInQueue: true,
-    waitlist: true,
-    packages: true,
-    crossBranchReports: false,
-    prioritySupport: false,
-  },
-  isPublic: true,
-  isActive,
-  brandCount: 0,
-});
-
 export interface FakeApiOptions {
   /** Sekmede yenileme jetonu var mı (sayfa yenilendiğinde oturum sürer mi). */
   signedIn?: boolean;
@@ -222,6 +217,8 @@ export interface FakeApiOptions {
   paged?: boolean;
   /** Plan değişikliği yanıtı. */
   planError?: 'plan_limit_exceeded' | 'concurrency_conflict';
+  /** Onay kuyruğu, bildirim, banka hareketleri, abonelik, denetim ve plan uçları (fake-platform.ts). */
+  platform?: PlatformFakeOptions;
 }
 
 function json(status: number, body: unknown): Response {
@@ -243,6 +240,7 @@ export function fakeFetch({
   brands = brandsFixture,
   paged = false,
   planError,
+  platform = {},
 }: FakeApiOptions = {}) {
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url);
@@ -322,7 +320,6 @@ export function fakeFetch({
         return json(200, { items: creditTransactions, nextCursor: null });
       case `GET /api/v1/admin/brands/${brandId}/invoices`:
       case `GET /api/v1/admin/brands/${brandId}/payment-notices`:
-      case 'GET /api/v1/admin/audit-log':
         return json(200, { items: [], nextCursor: null });
       case `POST /api/v1/admin/brands/${brandId}/credits`:
         return json(201, {
@@ -335,12 +332,6 @@ export function fakeFetch({
             note: 'Destek talebi #4821',
           },
           balance: 1740,
-        });
-      case 'GET /api/v1/admin/plans':
-        return json(200, {
-          plans: [plan('solo', 'Tekil'), plan('salon', 'Salon'), plan('salon_plus', 'Salon Plus')],
-          rules: { trialDays: 14, pastDueGraceDays: 7, trialCredits: null },
-          version: '1',
         });
       case `POST /api/v1/admin/brands/${brandId}/plan`:
         if (planError === 'plan_limit_exceeded') {
@@ -360,8 +351,10 @@ export function fakeFetch({
           },
           version: 'W/"5121"',
         });
-      default:
-        return problem(404, 'not_found');
+      default: {
+        const handled = await platformRoute(key, url, request, platform);
+        return handled ?? problem(404, 'not_found');
+      }
     }
   };
 }

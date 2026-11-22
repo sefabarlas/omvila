@@ -62,28 +62,26 @@ describe('giriş ve oturum', () => {
 });
 
 describe('düzen ve roller', () => {
-  it('kenar menü: yapılmış bölümler, rol ve ad; yapılmamışlar gizli', async () => {
+  it('kenar menü: bölümler, onay rozeti, rol ve ad', async () => {
     renderApp('/');
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
     expect(
       within(nav).getByRole('link', { name: 'Genel bakış' }).getAttribute('aria-current'),
     ).toBe('page');
     expect(within(nav).getByRole('link', { name: 'Markalar' })).toBeTruthy();
-    expect(within(nav).queryByRole('link', { name: /Onay kuyrukları/ })).toBeNull();
+    for (const name of [/Onay kuyrukları/, 'Abonelikler', 'Denetim kaydı', 'Planlar ve fiyat']) {
+      expect(within(nav).getByRole('link', { name })).toBeTruthy();
+    }
     expect(within(nav).getByText('Destek · OMVILA')).toBeTruthy();
     // Zil rozeti oturumdaki onay sayısı.
     expect(screen.getByRole('button', { name: 'Bildirimler, 7 okunmamış' })).toBeTruthy();
   });
 
-  it('menü izinle süzülür (açılınca onay kuyruğu ödeme eşleştirme izniyle)', () => {
+  it('menü izinle süzülür (KK4: menüde izin denetimi)', () => {
     const support = toSessionApi(sessionFixture());
-    expect(visibleMenu(support.can, true).map((e) => e.key)).toEqual(menuEntries.map((e) => e.key));
+    expect(visibleMenu(support.can).map((e) => e.key)).toEqual(menuEntries.map((e) => e.key));
     const none = toSessionApi({ ...sessionFixture(), permissions: ['platform.brands.view'] });
-    expect(visibleMenu(none.can, true).map((e) => e.key)).toEqual([
-      'genel',
-      'markalar',
-      'abonelikler',
-    ]);
+    expect(visibleMenu(none.can).map((e) => e.key)).toEqual(['genel', 'markalar', 'abonelikler']);
   });
 
   it('uçtan 403 gelirse yetki sayfası', async () => {
@@ -93,8 +91,17 @@ describe('düzen ve roller', () => {
     ).toBeTruthy();
   });
 
+  it('izni olmayan rol adresi elle yazsa da sayfayı göremez', async () => {
+    renderApp('/denetim', {
+      session: { ...sessionFixture(), permissions: ['platform.brands.view'] },
+    });
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Bu sayfayı görme yetkiniz yok' }),
+    ).toBeTruthy();
+  });
+
   it('bilinmeyen adres 404', async () => {
-    renderApp('/onay');
+    renderApp('/olmayan-sayfa');
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Bu kayıt bulunamadı' }),
     ).toBeTruthy();

@@ -1,7 +1,7 @@
 import type { AdminPermission } from './api';
 
-// Kenar menüsü (platform-paneli/Main): PLATFORM ve DESTEK grupları. Henüz yapılmamış bölümler (onay kuyrukları,
-// abonelikler, denetim kaydı, planlar) `available: false` ile gizli ve rotasızdır; ekranları gelince açılır (T-123).
+// Kenar menüsü (platform-paneli/Main): PLATFORM ve DESTEK grupları. Öğe izinle süzülür; rota da aynı izni denetler
+// (shared/RequirePermission). `available: false` henüz yapılmamış bölüm içindir (T-123, T-126).
 
 export interface MenuEntry {
   key: string;
@@ -34,7 +34,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Onay kuyrukları',
     to: '/onay',
     permission: 'platform.payments.match',
-    available: false,
+    available: true,
     group: 'platform',
   },
   {
@@ -42,7 +42,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Abonelikler',
     to: '/abonelikler',
     permission: 'platform.brands.view',
-    available: false,
+    available: true,
     group: 'platform',
   },
   {
@@ -50,7 +50,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Denetim kaydı',
     to: '/denetim',
     permission: 'platform.audit.view',
-    available: false,
+    available: true,
     group: 'destek',
   },
   {
@@ -58,7 +58,7 @@ export const menuEntries: readonly MenuEntry[] = [
     label: 'Planlar ve fiyat',
     to: '/planlar',
     permission: 'platform.plans.view',
-    available: false,
+    available: true,
     group: 'destek',
   },
 ];

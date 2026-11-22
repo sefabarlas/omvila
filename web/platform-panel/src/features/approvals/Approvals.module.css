@@ -1,0 +1,237 @@
+/* platform-paneli/POnay, POnayBos, POnayDetay ve banka hareketleri. */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4) var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.row {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  color: var(--metin-ikincil);
+}
+
+.title {
+  margin: 0;
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+  font-weight: 700;
+}
+
+.title span {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  justify-content: flex-end;
+}
+
+.badgeRow {
+  display: flex;
+}
+
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.emptyCard {
+  padding: var(--bosluk-10) var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+/* POnayDetay */
+.detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.candidate {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border: 2px solid transparent;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+  cursor: pointer;
+}
+
+.candidate:has(input:checked) {
+  border-color: var(--marka);
+  background: var(--zemin-yukseltilmis);
+}
+
+.candidate:has(input:focus-visible) {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.candidate input {
+  accent-color: var(--marka);
+}
+
+.candidateText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.candidateText strong {
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+}
+
+.amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.file {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.fileIcon {
+  display: grid;
+  place-items: center;
+  width: var(--bosluk-10);
+  height: var(--bosluk-10);
+  border-radius: var(--kose-md);
+  background: var(--zemin-yukseltilmis);
+  color: var(--metin-ikincil);
+}
+
+.decision {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  justify-content: flex-end;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+/* Banka hareketleri */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search {
+  display: flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+  min-width: min(100%, 320px);
+  padding: var(--bosluk-2) var(--bosluk-4);
+  border-radius: var(--kose-tam);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+  color: var(--metin-ikincil);
+}
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--metin);
+  font: inherit;
+}
+
+.search input:focus {
+  outline: none;
+}
+
+.search:focus-within {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (width <= 899px) {
+  .detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .row {
+    flex-wrap: wrap;
+  }
+}

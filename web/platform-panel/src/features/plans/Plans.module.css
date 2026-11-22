@@ -1,0 +1,138 @@
+/* platform-paneli/PPlanlar. */
+.plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--bosluk-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-5) var(--bosluk-5) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.featured {
+  background: var(--blok-marka);
+  color: var(--metin-ters);
+  box-shadow: none;
+}
+
+.planHead {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.planName {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.count,
+.description {
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.count {
+  font-weight: 700;
+}
+
+.description {
+  margin: 0;
+  color: var(--metin-ikincil);
+}
+
+.featured .description {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.price {
+  margin: var(--bosluk-1) 0 var(--bosluk-2);
+  font-size: var(--yazi-metrik-boyut);
+  line-height: var(--yazi-metrik-satir);
+  font-weight: var(--yazi-metrik-agirlik);
+  letter-spacing: var(--yazi-metrik-harf);
+}
+
+.unpriced {
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+}
+
+.inactive {
+  align-self: flex-start;
+}
+
+.tables {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+}
+
+.planFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: var(--bosluk-3);
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--bosluk-3);
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--bosluk-2);
+}
+
+@media (width <= 899px) {
+  .tables {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
