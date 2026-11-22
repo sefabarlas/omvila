@@ -34,6 +34,8 @@ public static class NotificationsModule
         services.AddModuleDbContext<NotificationsDbContext>(NotificationsDbContext.Schema);
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
         services.AddScoped<ICreditLedger, CreditLedger>();
+        // Platform paneli: bakiyeler, kontör hareketleri, gönderen adı ve platform kontör eklemesi (K4).
+        services.AddScoped<IPlatformCredits, Infrastructure.PlatformCredits>();
         services.AddPeriodicJob<DispatchNotifications, NotificationsOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
         services.AddScoped<SmsDeliveryReportHandler>();
         services.AddScoped<AppointmentSms>();
@@ -44,6 +46,7 @@ public static class NotificationsModule
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
         services.AddBrandDataEraser<NotificationsDbContext>();
+        services.AddIntegrationEventHandler<BranchDailySummaryReady, NotifyDailySummary>();
         services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();

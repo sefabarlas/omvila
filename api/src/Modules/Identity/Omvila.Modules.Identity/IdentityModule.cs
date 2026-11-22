@@ -35,6 +35,7 @@ public static class IdentityModule
         services.AddSingleton<SigningKeyStore>();
         services.AddSingleton<AccessTokenIssuer>();
         services.AddSingleton<IPermissionResolver, RolePermissionResolver>();
+        services.AddSingleton<IAdminPermissionResolver, PlatformRolePermissionResolver>();
         services.AddModuleDbContext<IdentityDbContext>(IdentityDbContext.Schema);
         services.AddScoped<RefreshTokenService>();
         services.AddOptions<OtpOptions>()
@@ -52,6 +53,10 @@ public static class IdentityModule
         services.AddScoped<ManageSignupService>();
         services.AddScoped<IStaffMemberships, StaffMemberships>();
         services.AddScoped<IBrandUserDirectory, BrandUserDirectory>();
+        // Platform kullanıcısı (K2: --role=platform-user) ve platform paneli okuma servisi (marka sahipleri).
+        services.AddScoped<PlatformUsers>();
+        services.AddScoped<IPlatformUserProvisioning>(sp => sp.GetRequiredService<PlatformUsers>());
+        services.AddScoped<IBrandOwnerDirectory>(sp => sp.GetRequiredService<PlatformUsers>());
         // Demo verisi (--role=seed; T-74): kayıt akışının adımları ve --reset için markanın üyelik satırları.
         services.AddScoped(sp => new DemoData.IdentityDemoData(
             sp.GetRequiredService<IdentityDbContext>(), sp.GetRequiredService<IDbSession>(), sp.GetRequiredService<Tenancy.Contracts.ITenantProvisioning>(),
@@ -75,7 +80,7 @@ public static class IdentityModule
         return services;
     }
 
-    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session, rezervasyon sayfası telefon doğrulaması, me-auth).</summary>
+    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session, rezervasyon sayfası telefon doğrulaması, me-auth, admin-auth ve platform oturumu).</summary>
     public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
     {
         ManageAuthEndpoints.Map(app);
@@ -84,6 +89,7 @@ public static class IdentityModule
         Features.MeAuth.MeAuthEndpoints.Map(app);
         Features.MeAuth.MeAccountDeletionEndpoints.Map(app);
         Features.Users.UserEndpoints.Map(app);
+        Features.AdminAuth.AdminAuthEndpoints.Map(app);
         return app;
     }
 

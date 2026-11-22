@@ -81,6 +81,14 @@ if (role == HostRole.Seed)
     return;
 }
 
+// `--role=platform-user --platform-phone=… --platform-name=… --platform-role=…`: platform kullanıcısını oluşturur veya günceller
+// ve çıkar (K2: web'den kayıt yok; idempotent; PlatformUsers/PlatformUserCommand, T-119).
+if (role == HostRole.PlatformUser)
+{
+    Environment.ExitCode = await Omvila.Host.PlatformUsers.PlatformUserCommand.RunAsync(app.Services, builder.Configuration, Console.Out, CancellationToken.None);
+    return;
+}
+
 // Ters vekil başlıkları en başta: hız sınırı ve günlük gerçek istemci IP'sini ve şemayı görür (yalnız güvenilen vekilden).
 app.UseTrustedForwardedHeaders();
 app.UseExceptionHandler();
@@ -108,6 +116,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapSalesEndpoints();
     app.MapReviewsEndpoints();
     app.MapNotificationsEndpoints();
+    app.MapPlatformEndpoints();
     app.MapIntegrationsEndpoints();
     // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).
     app.MapDevSmsLogPage();

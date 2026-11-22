@@ -23,6 +23,8 @@ public static class CatalogModule
         services.AddScoped<IOnboardingStepProvider, ServicesOnboardingStep>();
         services.AddScoped<IStaffServiceAssignments, StaffServiceAssignments>();
         services.AddScoped<IServiceOffers, ServiceOffers>();
+        // Platform paneli aktivasyon hunisi (yalnız platform bağlamında).
+        services.AddScoped<IPlatformCatalogStats, Infrastructure.PlatformCatalogStats>();
         services.AddScoped<IServiceDeposits, ServiceDeposits>();
         services.AddScoped<IServiceDirectory, ServiceDirectory>();
         services.AddIntegrationEventHandler<BranchCreated, CopyBranchPricesOnBranchCreated>();

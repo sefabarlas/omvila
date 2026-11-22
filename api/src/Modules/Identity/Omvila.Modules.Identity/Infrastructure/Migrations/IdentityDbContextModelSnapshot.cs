@@ -80,7 +80,7 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
 
                     b.ToTable("otp_challenges", "identity", t =>
                         {
-                            t.HasCheckConstraint("ck_otp_challenges_purpose", "purpose IN ('ManageLogin', 'ManageSignup', 'CustomerLogin', 'PublicBooking', 'AccountDeletion')");
+                            t.HasCheckConstraint("ck_otp_challenges_purpose", "purpose IN ('ManageLogin', 'ManageSignup', 'CustomerLogin', 'PublicBooking', 'AccountDeletion', 'AdminLogin')");
                         });
                 });
 
@@ -159,7 +159,7 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
 
                     b.ToTable("refresh_tokens", "identity", t =>
                         {
-                            t.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me')");
+                            t.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me', 'admin')");
 
                             t.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')");
                         });
@@ -291,6 +291,11 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
                         .HasColumnType("character varying(16)")
                         .HasColumnName("phone_e164");
 
+                    b.Property<string>("PlatformRole")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("platform_role");
+
                     b.HasKey("Id")
                         .HasName("pk_users");
 
@@ -298,7 +303,10 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_users_phone_e164");
 
-                    b.ToTable("users", "identity");
+                    b.ToTable("users", "identity", t =>
+                        {
+                            t.HasCheckConstraint("ck_users_platform_role", "platform_role IS NULL OR platform_role IN ('PlatformAdmin', 'PlatformSupport', 'PlatformFinance')");
+                        });
                 });
 
             modelBuilder.Entity("Omvila.Modules.Identity.Domain.UserMembership", b =>

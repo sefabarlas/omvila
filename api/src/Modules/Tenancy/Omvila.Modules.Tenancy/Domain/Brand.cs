@@ -1,4 +1,5 @@
 using NodaTime;
+using Omvila.SharedKernel;
 
 namespace Omvila.Modules.Tenancy.Domain;
 
@@ -85,10 +86,26 @@ internal sealed class Brand
         return true;
     }
 
-    /// <summary>Kayıtta: durum Onboarding; kurulum adımları bitince Active (dilim-01).</summary>
+    /// <summary>
+    /// Platformun askıya alması veya yeniden açması (durum-makinesi.md § 10: Active ↔ Suspended; sözleşme adminChangeBrandStatus).
+    /// Onboarding veya Archived markada ya da durum zaten istenen değerdeyse 409 invalid_state_transition.
+    /// </summary>
+    public Result ChangeStatusByPlatform(BrandStatus target)
+    {
+        var allowed = (Status, target) is (BrandStatus.Active, BrandStatus.Suspended) or (BrandStatus.Suspended, BrandStatus.Active);
+        if (!allowed)
+        {
+            return Error.Conflict(ErrorCodes.InvalidStateTransition);
+        }
+
+        Status = target;
+        return Result.Success();
+    }
+
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }
 
+    /// <summary>Kayıtta: durum Onboarding; kurulum adımları bitince Active (dilim-01).</summary>
     public static Brand Register(Guid id, string name, Slug slug, string industryCode, string currencyCode, Instant now) => new()
     {
         Id = id,

@@ -29,6 +29,8 @@ public static class CustomersModule
     {
         services.AddModuleDbContext<CustomersDbContext>(CustomersDbContext.Schema);
         services.AddScoped<CustomerRegistry>();
+        // Platform paneli marka detayı müşteri sayısı (yalnız platform bağlamında).
+        services.AddScoped<IPlatformCustomerStats, Infrastructure.PlatformCustomerStats>();
         services.AddScoped<CustomerReader>();
         services.AddScoped<CustomerWriter>();
         services.AddScoped<ICustomerDirectory, CustomerDirectory>();

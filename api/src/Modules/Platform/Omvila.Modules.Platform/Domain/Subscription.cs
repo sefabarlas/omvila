@@ -42,6 +42,16 @@ internal sealed class Subscription
 
     public Instant CreatedUtc { get; private set; }
 
+    /// <summary>
+    /// Plan değişikliği (sözleşme adminChangePlan): hemen geçerlidir, yeni fiyat bir sonraki faturadan uygulanır. Sınır denetimi
+    /// (personel, şube) çağıranda yapılır; etkin olmayan plan verilmez.
+    /// </summary>
+    public void ChangePlan(Guid planId, BillingCycle billingCycle)
+    {
+        PlanId = planId;
+        BillingCycle = billingCycle;
+    }
+
     /// <summary>Deneme: bugün başlar, bugün + trialDays'te biter; bir şube, bir personel (sahip).</summary>
     public static Subscription StartTrial(Guid id, Guid brandId, Guid planId, LocalDate today, int trialDays, Instant now)
     {

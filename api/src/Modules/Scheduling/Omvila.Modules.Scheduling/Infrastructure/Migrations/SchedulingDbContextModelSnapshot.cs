@@ -581,6 +581,41 @@ namespace Omvila.Modules.Scheduling.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.BranchDailySummary", b =>
+                {
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("branch_id");
+
+                    b.Property<LocalDate>("BusinessDate")
+                        .HasColumnType("date")
+                        .HasColumnName("business_date");
+
+                    b.Property<long>("CollectedMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("collected_minor");
+
+                    b.Property<int>("CompletedCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("completed_count");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.HasKey("BrandId", "BranchId", "BusinessDate")
+                        .HasName("pk_branch_daily_summaries");
+
+                    b.ToTable("branch_daily_summaries", "scheduling", t =>
+                        {
+                            t.HasCheckConstraint("ck_branch_daily_summaries_completed_count", "completed_count >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Scheduling.Domain.BranchQueueCounter", b =>
                 {
                     b.Property<Guid>("BrandId")

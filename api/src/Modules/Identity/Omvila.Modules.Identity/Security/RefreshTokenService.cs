@@ -105,6 +105,29 @@ internal sealed class RefreshTokenService(
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
     }
 
+    /// <summary>Platform çıkışı (adminLogout): jeton bu kullanıcının admin jetonuysa ailesini, jeton yoksa bütün admin oturumlarını iptal eder.</summary>
+    public async Task RevokeAdminAsync(string? token, Guid userId, CancellationToken ct)
+    {
+        var sessions = db.RefreshTokens.Where(t => t.UserId == userId && t.Audience == RefreshToken.AdminAudience && t.RevokedUtc == null);
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            var hash = Hash(token);
+            var familyId = await db.RefreshTokens
+                .Where(t => t.TokenHash == hash && t.Audience == RefreshToken.AdminAudience && t.UserId == userId)
+                .Select(t => (Guid?)t.FamilyId)
+                .SingleOrDefaultAsync(ct);
+            if (familyId is null)
+            {
+                return;
+            }
+
+            sessions = sessions.Where(t => t.FamilyId == familyId);
+        }
+
+        var now = clock.GetCurrentInstant();
+        await sessions.ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
+    }
+
     /// <summary>Müşterinin bütün geçerli uygulama (me) jetonlarını iptal eder (jetonsuz meLogout).</summary>
     public async Task RevokeCustomerSessionsAsync(Guid customerId, CancellationToken ct)
     {

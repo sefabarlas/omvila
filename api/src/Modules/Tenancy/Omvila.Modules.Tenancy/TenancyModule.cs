@@ -44,6 +44,8 @@ public static class TenancyModule
         services.AddScoped<PublicBookingQueries>();
         services.AddScoped<IPublicBookingQueries>(sp => sp.GetRequiredService<PublicBookingQueries>());
         services.AddScoped<ICustomerBrandDirectory, CustomerBrandDirectory>();
+        // Platform paneli (admin yüzeyi): marka okuma ve durum yazımı (K4).
+        services.AddScoped<IPlatformBrandDirectory, PlatformBrandDirectory>();
         services.AddScoped<OnboardingService>();
         services.AddScoped<StaffReader>();
         services.AddScoped<StaffWriter>();

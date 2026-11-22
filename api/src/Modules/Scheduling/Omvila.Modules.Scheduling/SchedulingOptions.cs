@@ -20,7 +20,10 @@ public sealed class SchedulingOptions
     /// <summary>ExpireWaitlistEntries turu (istenen günleri geçen bekleme kayıtları; T-90).</summary>
     public int ExpireWaitlistEntriesIntervalMinutes { get; set; }
 
+    /// <summary>SendDailySummaries turu; gün sonu özeti şubenin yerel 20:00'sinden en fazla bu kadar sonra yazılır (T-120).</summary>
+    public int SendDailySummariesIntervalSeconds { get; set; }
+
     internal bool IsValid() =>
         ExpireAppointmentHoldsIntervalSeconds > 0 && MarkNoShowsIntervalSeconds > 0 && ExtendRecurringSeriesIntervalMinutes > 0
-        && ExpireWaitlistOffersIntervalSeconds > 0 && ExpireWaitlistEntriesIntervalMinutes > 0;
+        && ExpireWaitlistOffersIntervalSeconds > 0 && ExpireWaitlistEntriesIntervalMinutes > 0 && SendDailySummariesIntervalSeconds > 0;
 }

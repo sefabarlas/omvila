@@ -135,6 +135,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Integrations:Calendar:SyncWindowDays"] = "60",
         ["Integrations:Calendar:SyncIntervalSeconds"] = "300",
         ["Integrations:Calendar:RefreshAheadMinutes"] = "10",
+        ["Scheduling:SendDailySummariesIntervalSeconds"] = "300",
         ["Sms:Provider"] = "Fake",
         ["Push:Provider"] = "Fake",
         ["Sms:DefaultSender"] = "OMVILA",
