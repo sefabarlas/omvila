@@ -10,7 +10,7 @@ internal sealed class OtpChallengeConfiguration : IEntityTypeConfiguration<OtpCh
     {
         builder.ToTable("otp_challenges", table => table.HasCheckConstraint(
             "ck_otp_challenges_purpose",
-            "purpose IN ('ManageLogin', 'ManageSignup', 'CustomerLogin', 'PublicBooking', 'AccountDeletion')"));
+            "purpose IN ('ManageLogin', 'ManageSignup', 'CustomerLogin', 'PublicBooking', 'AccountDeletion', 'AdminLogin')"));
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.PhoneE164).HasMaxLength(16);

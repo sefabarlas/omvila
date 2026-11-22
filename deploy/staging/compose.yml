@@ -29,6 +29,8 @@ x-api-env: &api-env
   Tenancy__BookingPageBaseUrl: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}/
   Cors__Surfaces__Manage__Origins__0: ${SALON_URL:-https://salon.test.omvila.com.tr}
   Cors__Surfaces__Public__Origins__0: ${RANDEVU_URL:-https://randevu.test.omvila.com.tr}
+  # Platform paneli kökeni (admin yüzeyi; T-119). Panelin dağıtımı ayrı PR'da; köken şimdiden tanımlı.
+  Cors__Surfaces__Admin__Origins__0: ${ADMIN_URL:-https://admin.test.omvila.com.tr}
   # İstemci IP'si ve şeması Caddy'nin X-Forwarded-For/-Proto başlıklarından (OTP IP sınırı, T-07). Yalnız iç ağdan
   # gelen başlığa güvenilir; ağ aşağıda sabit alt ağla tanımlıdır (T-76).
   ForwardedHeaders__KnownNetworks__0: ${STAGING_SUBNET:-172.30.0.0/24}

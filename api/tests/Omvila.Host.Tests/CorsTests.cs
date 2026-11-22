@@ -143,6 +143,7 @@ public sealed class CorsTests(WebApplicationFactory<Program> factory) : IClassFi
 
             var path = endpoint.RoutePattern.RawText!;
             var expected = path.StartsWith("/api/v1/manage", StringComparison.Ordinal) ? "cors:manage"
+                : path.StartsWith("/api/v1/admin/", StringComparison.Ordinal) ? "cors:admin"
                 : path.StartsWith("/api/v1/me/", StringComparison.Ordinal) ? "cors:me"
                 : "cors:public";
             var cors = endpoint.Metadata.GetMetadata<IEnableCorsAttribute>();

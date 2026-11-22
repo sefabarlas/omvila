@@ -25,7 +25,8 @@ internal sealed class ManageSignInService(
     public async Task<SignInOutcome> SignInAsync(string phoneE164, RefreshClientType clientType, bool rememberDevice, CancellationToken ct)
     {
         await session.SetTenantAsync(TenantScope.Platform, ct);
-        var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == phoneE164 && u.IsActive, ct);
+        // Platform kullanıcısı salon paneline giremez (alan-modeli.md § User.PlatformRole): numara kayıtsız gibi işlenir, kayıt da reddedilir.
+        var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == phoneE164 && u.IsActive && u.PlatformRole == null, ct);
         var membership = user is null
             ? null
             : await db.Memberships.SingleOrDefaultAsync(m => m.UserId == user.Id && m.Status != MembershipStatus.Disabled, ct);

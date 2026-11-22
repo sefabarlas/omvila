@@ -34,6 +34,10 @@
 - Global `customers.customers` tablosunda `brand_id` yoktur. Marka bağlamı bu tabloyu yalnız `brand_customers` üzerinden bağlı satırlar için okur (politika `EXISTS`). Bir marka, telefonla arama yaparken başka markanın müşterisinin varlığını öğrenemez: arama `brand_customers` üzerinden yapılır; yeni müşteri eklerken global kayıt sunucuda bulunur veya oluşturulur ve yanıtta yalnız markanın kendi görünümü döner.
 - Kapsam dışı kayıt → `404`.
 
+**Ek (2026-11-22, K4; T-119): platform paneli**
+- Admin isteği platform bağlamında açılır (`TenantScope.Platform`). Platform modülü başka modülün verisini doğrudan okumaz; her modül Contracts'ta işaretli bir platform okuma servisi sunar (ör. `IPlatformBrandDirectory`, `IPlatformCredits`) ve servis platform bağlamı dışında çağrılırsa istisna atar. Yalnız sayı ve platform ekranının gösterdiği alanlar döner; telefon maskelenir.
+- Platform marka verisini değiştirmez. Platform kavramlarına yazım (kontör ekleme, marka durumu, SMS adı onayı) ilgili modülün Contracts arayüzüyle, o modülün aggregate kurallarıyla yapılır; her yazım denetime yazılır.
+
 ## Sonuçlar
 - Her yeni tablo için RLS politikası migration'da zorunludur. `Omvila.ArchitectureTests` içindeki veritabanı testi, `brand_id` sütunu olan ve politikası olmayan tablo bulursa başarısız olur.
 - Kiracı izolasyon testi: iki marka oluştur, A bağlamında B'nin her uç noktasını çağır → hepsi 404 (`Omvila.Api.TenantIsolationTests`).

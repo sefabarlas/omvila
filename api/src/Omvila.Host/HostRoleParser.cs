@@ -9,6 +9,7 @@ internal static class HostRoleParser
         "worker" => HostRole.Worker,
         "migrate" => HostRole.Migrate,
         "seed" => HostRole.Seed,
-        _ => throw new ArgumentException($"Geçersiz rol: '{value}'. Kullanım: --role=api|worker|all|migrate|seed", nameof(value)),
+        "platform-user" => HostRole.PlatformUser,
+        _ => throw new ArgumentException($"Geçersiz rol: '{value}'. Kullanım: --role=api|worker|all|migrate|seed|platform-user", nameof(value)),
     };
 }
