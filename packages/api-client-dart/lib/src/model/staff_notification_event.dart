@@ -29,6 +29,12 @@ enum StaffNotificationEvent {
   ownerPeriodSubscriptionPaymentFailed(r'owner.subscription_payment_failed'),
   @JsonValue(r'owner.trial_ending')
   ownerPeriodTrialEnding(r'owner.trial_ending'),
+  @JsonValue(r'owner.payment_notice_matched')
+  ownerPeriodPaymentNoticeMatched(r'owner.payment_notice_matched'),
+  @JsonValue(r'owner.payment_notice_not_found')
+  ownerPeriodPaymentNoticeNotFound(r'owner.payment_notice_not_found'),
+  @JsonValue(r'owner.payment_notice_rejected')
+  ownerPeriodPaymentNoticeRejected(r'owner.payment_notice_rejected'),
   @JsonValue(r'unknown_default_open_api')
   unknownDefaultOpenApi(r'unknown_default_open_api');
 

@@ -215,5 +215,10 @@ const _$ErrorCodeEnumMap = {
   ErrorCode.otpResendTooSoon: 'otp_resend_too_soon',
   ErrorCode.rateLimited: 'rate_limited',
   ErrorCode.tryAgain: 'try_again',
+  ErrorCode.paymentNoticeAlreadyPending: 'payment_notice_already_pending',
+  ErrorCode.bankTransactionAlreadyMatched: 'bank_transaction_already_matched',
+  ErrorCode.bankTransactionDuplicate: 'bank_transaction_duplicate',
+  ErrorCode.lastOwnerRequired: 'last_owner_required',
+  ErrorCode.planLimitExceeded: 'plan_limit_exceeded',
   ErrorCode.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

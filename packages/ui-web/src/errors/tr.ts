@@ -42,6 +42,12 @@ export const errorMessages: Record<ErrorCode, string> = {
   otp_resend_too_soon: 'Yeni kod için biraz bekleyin.',
   rate_limited: 'Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin.',
   try_again: 'Bir sorun oluştu. Tekrar deneyin.',
+  payment_notice_already_pending: 'Bu ödeme için bildiriminiz zaten inceleniyor.',
+  bank_transaction_already_matched:
+    'Bu banka hareketi başka bir bildirimle eşleştirildi. Sayfayı yenileyin.',
+  bank_transaction_duplicate: 'Bu banka referansıyla kayıtlı bir hareket var.',
+  last_owner_required: 'İşletmede en az bir işletme sahibi kalmalı.',
+  plan_limit_exceeded: 'Markanın personel veya şube sayısı bu planın sınırını aşıyor.',
 };
 
 /** Bilinmeyen kod (yeni sunucu, eski istemci) için genel mesaj. */

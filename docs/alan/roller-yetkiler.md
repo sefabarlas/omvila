@@ -76,17 +76,20 @@ Yetki kontrolü **izin tabanlıdır**: uç nokta bir izin kodu ister (`.RequireP
 
 ## Platform rolleri (iç ekip)
 
-| İzin | PlatformAdmin | PlatformSupport | PlatformFinance |
-|---|---|---|---|
-| Marka listesi, detay görüntüleme (her açılış denetime yazılır) | ✔ | ✔ | ✔ |
-| Havale bildirimi eşleştirme (abonelik, kontör) | ✔ | ✔ | ✔ |
-| SMS gönderen adı onay/ret | ✔ | ✔ | — |
-| Kontör ekleme (hediye, düzeltme) | ✔ | — | — |
-| Plan değiştirme, marka durumu (askıya alma, salt okunur) | ✔ | — | — |
-| Plan ve fiyat tanımları | ✔ | — | ✔ |
-| Fatura işlemleri, banka hareketi içe aktarma | ✔ | — | ✔ |
-| Denetim kaydı görüntüleme | ✔ | ✔ | ✔ |
-| Denetim kaydı dışa aktarma | ✔ | — | — |
+| İzin | Kod (`AdminPermission`) | PlatformAdmin (Yönetici) | PlatformSupport (Destek) | PlatformFinance (Finans) |
+|---|---|---|---|---|
+| Marka listesi, detay görüntüleme (her açılış denetime yazılır), abonelikler, genel bakış | `platform.brands.view` | ✔ | ✔ | ✔ |
+| Havale bildirimi eşleştirme (abonelik, kontör), banka hareketlerinde arama | `platform.payments.match` | ✔ | ✔ | ✔ |
+| SMS gönderen adı onay/ret | `platform.sms-senders.decide` | ✔ | ✔ | — |
+| Kontör ekleme (hediye, düzeltme) | `platform.credits.grant` | ✔ | — | — |
+| Plan değiştirme, marka durumu (askıya alma / yeniden açma) | `platform.brands.manage` | ✔ | — | — |
+| Plan ve fiyat tanımlarını görme | `platform.plans.view` | ✔ | ✔ | ✔ |
+| Plan ve fiyat tanımlarını değiştirme | `platform.plans.manage` | ✔ | — | ✔ |
+| Fatura işlemleri, banka hareketi içe aktarma ve elle ekleme | `platform.billing.manage` | ✔ | — | ✔ |
+| Denetim kaydı görüntüleme | `platform.audit.view` | ✔ | ✔ | ✔ |
+| Denetim kaydı dışa aktarma | `platform.audit.export` | ✔ | — | — |
+
+İzni olmayan rol ilgili uçtan `403 forbidden` alır; arayüz butonu kilitli gösterir (PMarkaDetay "Kontör ekle", "Planı değiştir"). Salt okunur abonelik platform işlemi değil, durum makinesinin sonucudur (`AdvanceSubscriptionStatuses`).
 
 - Platform kullanıcısı marka verisini **değiştiremez**. Randevu, müşteri ve hizmet gibi kayıtları yalnız görüntüler. Değişiklik yalnız platform kavramlarında yapılır: plan, kontör, durum, eşleştirme.
 - Platform ekranlarında müşteri telefonu her zaman maskelidir.

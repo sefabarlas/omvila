@@ -1,0 +1,61 @@
+//
+// AUTO-GENERATED FILE, DO NOT MODIFY!
+//
+
+// ignore_for_file: unused_element
+import 'package:copy_with_extension/copy_with_extension.dart';
+import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
+
+part 'admin_refresh_request.g.dart';
+
+
+@CopyWith()
+@JsonSerializable(
+  checked: true,
+  createToJson: true,
+  disallowUnrecognizedKeys: false,
+  explicitToJson: true,
+)
+class AdminRefreshRequest {
+  /// Returns a new [AdminRefreshRequest] instance.
+  AdminRefreshRequest({
+
+    required  this.refreshToken,
+  });
+
+      /// Saklanan yenileme jetonu
+  @JsonKey(
+    
+    name: r'refreshToken',
+    required: true,
+    includeIfNull: false,
+  )
+
+
+  final String refreshToken;
+
+
+
+
+
+    @override
+    bool operator ==(Object other) => identical(this, other) || other is AdminRefreshRequest &&
+      other.refreshToken == refreshToken;
+
+    @override
+    int get hashCode =>
+        refreshToken.hashCode;
+
+  factory AdminRefreshRequest.fromJson(Map<String, dynamic> json) => _$AdminRefreshRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AdminRefreshRequestToJson(this);
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+
+}
+
