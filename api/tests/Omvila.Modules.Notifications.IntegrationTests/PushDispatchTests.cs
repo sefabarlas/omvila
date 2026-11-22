@@ -35,7 +35,7 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
     {
         await using var connection = await db.OpenMigratorConnectionAsync(Ct);
         await using var command = new NpgsqlCommand("""
-            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.devices, notifications.notification_preferences,
+            TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.devices, notifications.customer_notifications, notifications.notification_preferences,
               infra.dev_sms_log, infra.job_runs, infra.outbox_events CASCADE
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);
@@ -116,7 +116,7 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
     {
         var push = new RecordingPushSender();
         await using var services = Services(push);
-        await AddDeviceAsync(services, BrandA, Device.CustomerOwner, CustomerId, "token-c-0123456789abcdef");
+        await AddCustomerDeviceAsync(services, CustomerId, "token-c-0123456789abcdef");
         await EnqueueSmsAsync(services, Reminder(CustomerId));
 
         await DispatchAsync(services);
@@ -145,7 +145,7 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
     {
         await using var services = Services(new RecordingPushSender { Result = PushSendStatus.InvalidToken });
         await GrantAsync(services, 10);
-        await AddDeviceAsync(services, BrandA, Device.CustomerOwner, CustomerId, "token-c-0123456789abcdef");
+        await AddCustomerDeviceAsync(services, CustomerId, "token-c-0123456789abcdef");
         await EnqueueSmsAsync(services, Reminder(CustomerId));
 
         await DispatchAsync(services);
@@ -159,7 +159,7 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
     {
         await using var services = Services(new RecordingPushSender { Result = PushSendStatus.Failed });
         await GrantAsync(services, 10);
-        await AddDeviceAsync(services, BrandA, Device.CustomerOwner, CustomerId, "token-c-0123456789abcdef");
+        await AddCustomerDeviceAsync(services, CustomerId, "token-c-0123456789abcdef");
         await EnqueueSmsAsync(services, Reminder(CustomerId));
 
         await DispatchAsync(services);
@@ -174,6 +174,69 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
         await using var services = Services(new RecordingPushSender());
         await EnqueueSmsAsync(services, new SmsNotification(
             NotificationEvents.OtpCode, Phone, new Dictionary<string, string>(StringComparer.Ordinal) { ["kod"] = "482193" }, CustomerId: CustomerId));
+
+        (await ScalarAsync<string>("SELECT recipient_type || ':' || array_to_string(channel_plan, '>') FROM notifications.notification_outbox"))
+            .ShouldBe("Phone:Sms");
+    }
+
+    [Fact]
+    public async Task CustomerMessage_IsListedOnceForTheCustomer_EvenWhenRetried()
+    {
+        // T-103: müşteri bildirim listesi teslimden bağımsız, outbox satırı başına bir kez.
+        await using var services = Services(new RecordingPushSender { Result = PushSendStatus.Failed });
+        await AddCustomerDeviceAsync(services, CustomerId, "token-c-0123456789abcdef");
+        await EnqueueSmsAsync(services, Reminder(CustomerId));
+
+        await DispatchAsync(services);
+        (await ScalarAsync<string>("SELECT status || ':' || failure_reason FROM notifications.notification_outbox")).ShouldBe("Skipped:insufficient_credits");
+
+        // Satır yeniden denenirse (geri çekilmeli tekrar) listeye ikinci kez yazılmaz.
+        await ScalarAsync<int>("WITH u AS (UPDATE notifications.notification_outbox SET status = 'Pending' RETURNING 1) SELECT count(*)::int FROM u");
+        await DispatchAsync(services);
+
+        (await ScalarAsync<string>(
+            "SELECT event_code || '|' || title || '|' || target_type || '|' || target_appointment_id || '|' || (brand_id = '" + BrandA + "') FROM notifications.customer_notifications"))
+            .ShouldBe($"appointment.reminder|Bugün 14:30 Kuaför Elif|Appointment|{AppointmentId}|true");
+    }
+
+    [Fact]
+    public async Task WaitlistOffer_IsListedWithTheOfferCode()
+    {
+        await using var services = Services(new RecordingPushSender());
+        await AddCustomerDeviceAsync(services, CustomerId, "token-c-0123456789abcdef");
+        await EnqueueSmsAsync(services, new SmsNotification(
+            NotificationEvents.WaitlistOffer,
+            Phone,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["salon"] = "Spa Moda",
+                ["tarih"] = "Cum 27 Kas",
+                ["saat"] = "16:00",
+                ["dakika"] = "15",
+                ["b bağlantısı"] = "omvila.com/b/Wq7Lm2Xa",
+            },
+            BrandA,
+            NotificationReference.ForWaitlistOffer(AppointmentId),
+            CustomerId: CustomerId));
+
+        await DispatchAsync(services);
+
+        (await ScalarAsync<string>("SELECT target_type || '|' || target_access_code || '|' || (target_appointment_id IS NULL) FROM notifications.customer_notifications"))
+            .ShouldBe("WaitlistOffer|Wq7Lm2Xa|true");
+    }
+
+    [Fact]
+    public async Task DepositMessage_WithCustomer_IsAlwaysSmsOnly_AndNotListed()
+    {
+        // Kural: bildirimler.md deposit.* (V3) — kapora mesajları her zaman SMS.
+        await using var services = Services(new RecordingPushSender());
+        await EnqueueSmsAsync(services, new SmsNotification(
+            NotificationEvents.DepositReceived,
+            Phone,
+            new Dictionary<string, string>(StringComparer.Ordinal) { ["salon"] = "Kuaför Elif", ["tutar"] = "150", ["tarih"] = "Çar 2 Ara", ["saat"] = "14:30", ["bağlantı"] = "omvila.com/r/AbCdEfGh12" },
+            BrandA,
+            NotificationReference.ForAppointment(AppointmentId),
+            CustomerId: CustomerId));
 
         (await ScalarAsync<string>("SELECT recipient_type || ':' || array_to_string(channel_plan, '>') FROM notifications.notification_outbox"))
             .ShouldBe("Phone:Sms");
@@ -228,6 +291,20 @@ public sealed class PushDispatchTests(PostgresFixture db) : IAsyncLifetime
             context.Entry(device).Property(d => d.OwnerType).CurrentValue = ownerType;
             await context.SaveChangesAsync(Ct);
         });
+
+    // Müşteri cihazı markasızdır ve müşterinin kendi bağlamında kaydedilir (T-103).
+    private static async Task AddCustomerDeviceAsync(IServiceProvider services, Guid customerId, string token)
+    {
+        await using var scope = services.CreateAsyncScope();
+        var session = scope.ServiceProvider.GetRequiredService<IDbSession>();
+        await session.SetTenantAsync(TenantScope.ForCustomer(customerId), Ct);
+        await session.BeginAsync(Ct);
+        var context = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+        context.Devices.Add(Device.RegisterForCustomer(
+            scope.ServiceProvider.GetRequiredService<IIdGenerator>().New(), customerId, DevicePlatform.Android, token, "1.0.0", TestClock.Start));
+        await context.SaveChangesAsync(Ct);
+        await session.CommitAsync(Ct);
+    }
 
     private static Task GrantAsync(IServiceProvider services, int credits) =>
         InBrandAsync(services, BrandA, sp => sp.GetRequiredService<ICreditLedger>().GrantAsync(BrandA, credits, "Test", null, Ct));

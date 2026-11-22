@@ -8,7 +8,11 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.ToTable("refresh_tokens", table => table.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')"));
+        builder.ToTable("refresh_tokens", table =>
+        {
+            table.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')");
+            table.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me')");
+        });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.TokenHash).HasMaxLength(64);
@@ -16,5 +20,6 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
         builder.HasIndex(x => x.FamilyId);
         builder.Property(x => x.ClientType).HasConversion<string>().HasMaxLength(10);
         builder.Property(x => x.RevokedReason).HasMaxLength(30);
+        builder.Property(x => x.Audience).HasMaxLength(10).HasDefaultValue(RefreshToken.ManageAudience);
     }
 }

@@ -55,6 +55,9 @@ internal sealed class CustomerRegistry(CustomersDbContext db, IIdGenerator ids, 
             customer.MarkVerified();
         }
 
+        // Uygulamaya randevusuz giren kişinin adı yoktur; ilk randevuda verilen ad yazılır (T-101 (2)).
+        customer.FillNameIfMissing(fullName);
+
         return customer;
     }
 

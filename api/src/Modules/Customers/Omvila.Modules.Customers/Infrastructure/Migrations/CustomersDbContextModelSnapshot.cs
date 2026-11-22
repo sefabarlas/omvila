@@ -224,11 +224,20 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_utc");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("email");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
                         .HasColumnName("full_name");
+
+                    b.Property<bool>("HasAppAccount")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_app_account");
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("boolean")
@@ -244,6 +253,12 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_e164");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_customers");
@@ -348,6 +363,46 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                     b.ToTable("customer_imports", "customers", t =>
                         {
                             t.HasCheckConstraint("ck_customer_imports_status", "status IN ('Previewed', 'Committed', 'Failed')");
+                        });
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Customers.Domain.CustomerSavedBrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Instant>("AddedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("added_utc");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("source");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_saved_brands");
+
+                    b.HasIndex("BrandId")
+                        .HasDatabaseName("ix_customer_saved_brands_brand_id");
+
+                    b.HasIndex("CustomerId", "BrandId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_customer_saved_brands_customer_id_brand_id");
+
+                    b.ToTable("customer_saved_brands", "customers", t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_saved_brands_source", "source IN ('Qr', 'Link', 'Booking')");
                         });
                 });
 

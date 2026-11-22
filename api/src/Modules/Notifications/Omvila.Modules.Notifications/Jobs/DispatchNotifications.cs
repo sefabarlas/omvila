@@ -155,9 +155,10 @@ internal sealed partial class DispatchNotifications(
     {
         string title;
         string body;
+        Dictionary<string, string> values;
         try
         {
-            var values = JsonSerializer.Deserialize<Dictionary<string, string>>(message.Payload) ?? [];
+            values = JsonSerializer.Deserialize<Dictionary<string, string>>(message.Payload) ?? [];
             if (!PushTemplates.TryRender(message.EventCode, values, message.TemplateVariant, out title, out body))
             {
                 return PushSendStatus.Disabled;
@@ -170,6 +171,8 @@ internal sealed partial class DispatchNotifications(
             return null;
         }
 
+        await RecordForCustomerAsync(message, values, title, body, now, ct);
+
         // İşletme cihazı marka bağlamında kayıtlıdır: yalnız o markanın cihazları (kullanıcı başka markada da üye olabilir).
         var userOwner = string.Equals(message.RecipientType, Device.UserOwner, StringComparison.Ordinal);
         var devices = await db.Devices
@@ -177,12 +180,7 @@ internal sealed partial class DispatchNotifications(
                 && (!userOwner || d.BrandId == message.BrandId))
             .OrderBy(d => d.Id)
             .ToListAsync(ct);
-        var data = new Dictionary<string, string>(StringComparer.Ordinal) { ["eventCode"] = message.EventCode, ["notificationId"] = message.Id.ToString() };
-        if (message.ReferenceType is { } referenceType && message.ReferenceId is { } referenceId)
-        {
-            data["referenceType"] = referenceType;
-            data["referenceId"] = referenceId.ToString();
-        }
+        var data = PushData(message);
 
         var outcome = PushSendStatus.Disabled;
         string? providerMessageId = null;
@@ -212,6 +210,45 @@ internal sealed partial class DispatchNotifications(
         }
 
         return outcome;
+    }
+
+    /// <summary>
+    /// Müşteri bildirim listesi (meListNotifications; T-103): push metni olan müşteri mesajı gönderime alındığında cihazdan ve
+    /// teslimden bağımsız bir kez yazılır (kimlik = outbox satırı; tekrar denemede yeniden yazılmaz). Zamanlanmış hatırlatma
+    /// zamanı gelince listeye girer, iptal edilen hatırlatma hiç girmez.
+    /// </summary>
+    private async Task RecordForCustomerAsync(
+        NotificationMessage message, Dictionary<string, string> values, string title, string body, Instant now, CancellationToken ct)
+    {
+        if (!string.Equals(message.RecipientType, Device.CustomerOwner, StringComparison.Ordinal)
+            || message.RecipientId is not { } customerId
+            || !CustomerNotificationTargets.TryGetTarget(message.EventCode, out var targetType)
+            || await db.CustomerNotifications.AnyAsync(n => n.Id == message.Id, ct))
+        {
+            return;
+        }
+
+        var appointmentId = string.Equals(message.ReferenceType, NotificationReference.Appointment, StringComparison.Ordinal)
+            && !string.Equals(targetType, CustomerNotification.BookingTarget, StringComparison.Ordinal)
+                ? message.ReferenceId
+                : null;
+        var accessCode = string.Equals(targetType, CustomerNotification.WaitlistOfferTarget, StringComparison.Ordinal)
+            ? CustomerNotificationTargets.AccessCodeFromLink(values.GetValueOrDefault(CustomerNotificationTargets.WaitlistLinkValue))
+            : null;
+        db.CustomerNotifications.Add(CustomerNotification.Create(
+            message.Id, customerId, message.BrandId, message.EventCode, title, body, targetType, appointmentId, accessCode, now));
+    }
+
+    private static Dictionary<string, string> PushData(NotificationMessage message)
+    {
+        var data = new Dictionary<string, string>(StringComparer.Ordinal) { ["eventCode"] = message.EventCode, ["notificationId"] = message.Id.ToString() };
+        if (message.ReferenceType is { } referenceType && message.ReferenceId is { } referenceId)
+        {
+            data["referenceType"] = referenceType;
+            data["referenceId"] = referenceId.ToString();
+        }
+
+        return data;
     }
 
     private async Task<PushSendResult> PushAsync(PushMessage message, CancellationToken ct)

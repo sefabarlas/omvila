@@ -28,21 +28,25 @@ internal sealed class RefreshTokenService(
     public const string LogoutReason = "logout";
 
     public async Task<IssuedRefreshToken> IssueAsync(
-        Guid userId, Guid? membershipId, RefreshClientType clientType, bool rememberDevice, CancellationToken ct)
+        Guid userId, Guid? membershipId, RefreshClientType clientType, bool rememberDevice, CancellationToken ct,
+        string audience = RefreshToken.ManageAudience)
     {
-        var issued = Add(userId, membershipId, ids.New(), clientType, rememberDevice);
+        var issued = Add(userId, membershipId, ids.New(), clientType, rememberDevice, audience);
         await db.SaveChangesAsync(ct);
         return issued;
     }
 
-    /// <summary>Jetonu kullanır ve aynı ailede yenisini verir. Geçersiz, süresi dolmuş veya iptal edilmişse 401.</summary>
-    public async Task<Result<IssuedRefreshToken>> RotateAsync(string token, CancellationToken ct)
+    /// <summary>
+    /// Jetonu kullanır ve aynı ailede yenisini verir. Geçersiz, süresi dolmuş, iptal edilmiş veya başka yüzeyin jetonuysa 401
+    /// (başka yüzeyin jetonu kullanılmış sayılmaz).
+    /// </summary>
+    public async Task<Result<IssuedRefreshToken>> RotateAsync(string token, CancellationToken ct, string audience = RefreshToken.ManageAudience)
     {
         var hash = Hash(token);
         var current = await db.RefreshTokens
             .FromSql($"SELECT * FROM identity.refresh_tokens WHERE token_hash = {hash} FOR UPDATE")
             .SingleOrDefaultAsync(ct);
-        if (current is null)
+        if (current is null || !string.Equals(current.Audience, audience, StringComparison.Ordinal))
         {
             return Error.Unauthorized();
         }
@@ -61,7 +65,7 @@ internal sealed class RefreshTokenService(
         }
 
         current.MarkUsed(now);
-        var next = Add(current.UserId, current.MembershipId, current.FamilyId, current.ClientType, current.RememberDevice);
+        var next = Add(current.UserId, current.MembershipId, current.FamilyId, current.ClientType, current.RememberDevice, current.Audience);
         await db.SaveChangesAsync(ct);
         return next;
     }
@@ -82,6 +86,34 @@ internal sealed class RefreshTokenService(
             .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
     }
 
+    /// <summary>Müşteri çıkışı (meLogout): jeton bu müşterinin me jetonuysa ailesini iptal eder; değilse sessizce yok sayar.</summary>
+    public async Task RevokeCustomerFamilyAsync(string token, Guid customerId, CancellationToken ct)
+    {
+        var hash = Hash(token);
+        var familyId = await db.RefreshTokens
+            .Where(t => t.TokenHash == hash && t.Audience == RefreshToken.MeAudience && t.UserId == customerId)
+            .Select(t => (Guid?)t.FamilyId)
+            .SingleOrDefaultAsync(ct);
+        if (familyId is null)
+        {
+            return;
+        }
+
+        var now = clock.GetCurrentInstant();
+        await db.RefreshTokens
+            .Where(t => t.FamilyId == familyId && t.RevokedUtc == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
+    }
+
+    /// <summary>Müşterinin bütün geçerli uygulama (me) jetonlarını iptal eder (jetonsuz meLogout).</summary>
+    public async Task RevokeCustomerSessionsAsync(Guid customerId, CancellationToken ct)
+    {
+        var now = clock.GetCurrentInstant();
+        await db.RefreshTokens
+            .Where(t => t.UserId == customerId && t.Audience == RefreshToken.MeAudience && t.RevokedUtc == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(t => t.RevokedUtc, now).SetProperty(t => t.RevokedReason, LogoutReason), ct);
+    }
+
     /// <summary>Üyeliğin belirtilen istemci türündeki bütün geçerli jetonlarını iptal eder (mobil çıkış).</summary>
     public async Task RevokeMembershipAsync(Guid membershipId, RefreshClientType clientType, CancellationToken ct)
     {
@@ -94,7 +126,7 @@ internal sealed class RefreshTokenService(
     internal static string Hash(string token) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 
-    private IssuedRefreshToken Add(Guid userId, Guid? membershipId, Guid familyId, RefreshClientType clientType, bool rememberDevice)
+    private IssuedRefreshToken Add(Guid userId, Guid? membershipId, Guid familyId, RefreshClientType clientType, bool rememberDevice, string audience)
     {
         var settings = options.Value;
         var days = clientType == RefreshClientType.Mobile || rememberDevice
@@ -102,7 +134,7 @@ internal sealed class RefreshTokenService(
             : settings.RefreshTokenDaysSession;
         var token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
         var entity = RefreshToken.Create(
-            ids.New(), userId, membershipId, familyId, Hash(token), clientType, rememberDevice, clock.GetCurrentInstant(), Duration.FromDays(days));
+            ids.New(), userId, membershipId, familyId, Hash(token), clientType, rememberDevice, clock.GetCurrentInstant(), Duration.FromDays(days), audience);
         db.RefreshTokens.Add(entity);
         return new IssuedRefreshToken(token, entity.ExpiresUtc, userId, membershipId, rememberDevice);
     }

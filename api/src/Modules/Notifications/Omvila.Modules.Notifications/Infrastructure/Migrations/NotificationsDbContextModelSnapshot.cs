@@ -126,6 +126,81 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Notifications.Domain.CustomerNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("body");
+
+                    b.Property<Guid?>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("customer_id");
+
+                    b.Property<string>("EventCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("event_code");
+
+                    b.Property<Instant?>("ReadUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_utc");
+
+                    b.Property<string>("TargetAccessCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_access_code");
+
+                    b.Property<Guid?>("TargetAppointmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_appointment_id");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_type");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_customer_notifications");
+
+                    b.HasIndex("BrandId")
+                        .HasDatabaseName("ix_customer_notifications_brand_id");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_customer_notifications_unread")
+                        .HasFilter("read_utc IS NULL");
+
+                    b.HasIndex("CustomerId", "CreatedUtc", "Id")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_customer_notifications_customer_id_created_utc_id");
+
+                    b.ToTable("customer_notifications", "notifications", t =>
+                        {
+                            t.HasCheckConstraint("ck_customer_notifications_target_type", "target_type IN ('Appointment', 'WaitlistOffer', 'Review', 'Booking')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Notifications.Domain.Device", b =>
                 {
                     b.Property<Guid>("Id")
@@ -144,7 +219,7 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("app_version");
 
-                    b.Property<Guid>("BrandId")
+                    b.Property<Guid?>("BrandId")
                         .HasColumnType("uuid")
                         .HasColumnName("brand_id");
 
@@ -198,9 +273,20 @@ namespace Omvila.Modules.Notifications.Infrastructure.Migrations
                         .HasDatabaseName("ix_devices_brand_id_owner_type_owner_id")
                         .HasFilter("is_active");
 
+                    b.HasIndex(new[] { "OwnerId" }, "ix_devices_customer_owner")
+                        .HasDatabaseName("ix_devices_customer_owner")
+                        .HasFilter("is_active AND brand_id IS NULL");
+
+                    b.HasIndex(new[] { "PushToken" }, "ix_devices_customer_push_token")
+                        .IsUnique()
+                        .HasDatabaseName("ix_devices_customer_push_token")
+                        .HasFilter("brand_id IS NULL");
+
                     b.ToTable("devices", "notifications", t =>
                         {
                             t.HasCheckConstraint("ck_devices_app", "app IN ('Business', 'Customer')");
+
+                            t.HasCheckConstraint("ck_devices_owner_brand", "(owner_type = 'User' AND app = 'Business' AND brand_id IS NOT NULL) OR (owner_type = 'Customer' AND app = 'Customer' AND brand_id IS NULL)");
 
                             t.HasCheckConstraint("ck_devices_owner_type", "owner_type IN ('User', 'Customer')");
 

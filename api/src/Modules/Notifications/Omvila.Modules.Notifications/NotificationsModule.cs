@@ -39,6 +39,7 @@ public static class NotificationsModule
         services.AddScoped<AppointmentSms>();
         services.AddScoped<DepositSms>();
         services.AddScoped<InAppNotifier>();
+        services.AddScoped<ICustomerDevices, CustomerDevices>();
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
         services.AddBrandDataEraser<NotificationsDbContext>();
@@ -72,8 +73,10 @@ public static class NotificationsModule
     {
         SmsDeliveryReportEndpoints.Map(app);
         DeviceEndpoints.Map(app);
+        MeDeviceEndpoints.Map(app);
         InAppNotificationEndpoints.Map(app);
         NotificationPreferenceEndpoints.Map(app);
+        MeNotificationEndpoints.Map(app);
         SmsEndpoints.Map(app);
         return app;
     }
