@@ -100,7 +100,10 @@ SlotSearchRequest _$SlotSearchRequestFromJson(Map<String, dynamic> json) =>
           'sameStaffForAll',
           (v) => v as bool? ?? true,
         ),
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
       );
       return val;
     });
@@ -109,5 +112,5 @@ Map<String, dynamic> _$SlotSearchRequestToJson(SlotSearchRequest instance) =>
     <String, dynamic>{
       'items': instance.items.map((e) => e.toJson()).toList(),
       'sameStaffForAll': ?instance.sameStaffForAll,
-      'date': instance.date.toIso8601String(),
+      'date': const DateOnlyConverter().toJson(instance.date),
     };

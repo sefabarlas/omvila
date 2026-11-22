@@ -7,6 +7,8 @@ import 'package:omvila_api/src/model/commission_entry_status.dart';
 import 'package:omvila_api/src/model/commission_entry_type.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'my_commission_entry.g.dart';
 

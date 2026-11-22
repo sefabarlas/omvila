@@ -110,15 +110,24 @@ SubscriptionBanner _$SubscriptionBannerFromJson(Map<String, dynamic> json) =>
         ),
         trialEndsOn: $checkedConvert(
           'trialEndsOn',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         pastDueSince: $checkedConvert(
           'pastDueSince',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         readOnlyOn: $checkedConvert(
           'readOnlyOn',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
       );
       return val;
@@ -127,9 +136,18 @@ SubscriptionBanner _$SubscriptionBannerFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SubscriptionBannerToJson(SubscriptionBanner instance) =>
     <String, dynamic>{
       'status': _$SubscriptionBannerStatusEnumEnumMap[instance.status]!,
-      'trialEndsOn': ?instance.trialEndsOn?.toIso8601String(),
-      'pastDueSince': ?instance.pastDueSince?.toIso8601String(),
-      'readOnlyOn': ?instance.readOnlyOn?.toIso8601String(),
+      'trialEndsOn': ?_$JsonConverterToJson<String, DateTime>(
+        instance.trialEndsOn,
+        const DateOnlyConverter().toJson,
+      ),
+      'pastDueSince': ?_$JsonConverterToJson<String, DateTime>(
+        instance.pastDueSince,
+        const DateOnlyConverter().toJson,
+      ),
+      'readOnlyOn': ?_$JsonConverterToJson<String, DateTime>(
+        instance.readOnlyOn,
+        const DateOnlyConverter().toJson,
+      ),
     };
 
 const _$SubscriptionBannerStatusEnumEnumMap = {
@@ -141,3 +159,13 @@ const _$SubscriptionBannerStatusEnumEnumMap = {
   SubscriptionBannerStatusEnum.unknownDefaultOpenApi:
       'unknown_default_open_api',
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

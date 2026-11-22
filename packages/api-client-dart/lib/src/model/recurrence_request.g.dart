@@ -109,7 +109,10 @@ RecurrenceRequest _$RecurrenceRequestFromJson(Map<String, dynamic> json) =>
         ),
         endsOn: $checkedConvert(
           'endsOn',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
       );
       return val;
@@ -120,7 +123,10 @@ Map<String, dynamic> _$RecurrenceRequestToJson(RecurrenceRequest instance) =>
       'frequency': _$RecurrenceRequestFrequencyEnumEnumMap[instance.frequency]!,
       'intervalWeeks':
           _$RecurrenceRequestIntervalWeeksEnumEnumMap[instance.intervalWeeks]!,
-      'endsOn': ?instance.endsOn?.toIso8601String(),
+      'endsOn': ?_$JsonConverterToJson<String, DateTime>(
+        instance.endsOn,
+        const DateOnlyConverter().toJson,
+      ),
     };
 
 const _$RecurrenceRequestFrequencyEnumEnumMap = {
@@ -135,3 +141,13 @@ const _$RecurrenceRequestIntervalWeeksEnumEnumMap = {
   RecurrenceRequestIntervalWeeksEnum.number4: 4,
   RecurrenceRequestIntervalWeeksEnum.unknownDefaultOpenApi: 11184809,
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

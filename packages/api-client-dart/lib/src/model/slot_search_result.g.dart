@@ -100,7 +100,10 @@ SlotSearchResult _$SlotSearchResultFromJson(Map<String, dynamic> json) =>
       );
       final val = SlotSearchResult(
         timeZone: $checkedConvert('timeZone', (v) => v as String),
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         slots: $checkedConvert(
           'slots',
           (v) => (v as List<dynamic>)
@@ -118,7 +121,7 @@ SlotSearchResult _$SlotSearchResultFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SlotSearchResultToJson(SlotSearchResult instance) =>
     <String, dynamic>{
       'timeZone': instance.timeZone,
-      'date': instance.date.toIso8601String(),
+      'date': const DateOnlyConverter().toJson(instance.date),
       'slots': instance.slots.map((e) => e.toJson()).toList(),
       'unavailableTimes': instance.unavailableTimes,
     };

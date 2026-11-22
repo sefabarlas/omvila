@@ -6,6 +6,8 @@ import 'dart:async';
 
 // ignore: unused_import
 import 'dart:convert';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 import 'package:omvila_api/src/deserialize.dart';
 import 'package:dio/dio.dart';
 
@@ -728,9 +730,9 @@ _responseData = rawData == null ? null : deserialize<AppointmentDetail, Appointm
 
     final _queryParameters = <String, dynamic>{
       r'branchId': branchId,
-      r'from': from,
-      r'to': to,
-      if (staffIds != null) r'staffIds': staffIds,
+      r'from': formatDateOnly(from),
+      r'to': formatDateOnly(to),
+      if (staffIds != null) r'staffIds': ListParam(staffIds, ListFormat.csv),
     };
 
     final _response = await _dio.request<Object>(

@@ -115,7 +115,10 @@ CalendarViewDaysInner _$CalendarViewDaysInnerFromJson(
 ) => $checkedCreate('CalendarViewDaysInner', json, ($checkedConvert) {
   $checkKeys(json, requiredKeys: const ['date', 'isClosed', 'staffHours']);
   final val = CalendarViewDaysInner(
-    date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+    date: $checkedConvert(
+      'date',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     isClosed: $checkedConvert('isClosed', (v) => v as bool),
     closureNote: $checkedConvert('closureNote', (v) => v as String?),
     branchIntervals: $checkedConvert(
@@ -141,7 +144,7 @@ CalendarViewDaysInner _$CalendarViewDaysInnerFromJson(
 Map<String, dynamic> _$CalendarViewDaysInnerToJson(
   CalendarViewDaysInner instance,
 ) => <String, dynamic>{
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'isClosed': instance.isClosed,
   'closureNote': ?instance.closureNote,
   'branchIntervals': ?instance.branchIntervals?.map((e) => e.toJson()).toList(),

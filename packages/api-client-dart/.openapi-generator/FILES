@@ -32,6 +32,7 @@ lib/src/auth/auth.dart
 lib/src/auth/basic_auth.dart
 lib/src/auth/bearer_auth.dart
 lib/src/auth/oauth.dart
+lib/src/date_only.dart
 lib/src/deserialize.dart
 lib/src/model/appointment_channel.dart
 lib/src/model/appointment_created.dart

@@ -311,7 +311,10 @@ CustomerPackage _$CustomerPackageFromJson(
       'purchasedUtc',
       (v) => DateTime.parse(v as String),
     ),
-    expiresOn: $checkedConvert('expiresOn', (v) => DateTime.parse(v as String)),
+    expiresOn: $checkedConvert(
+      'expiresOn',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     soldByStaffId: $checkedConvert('soldByStaffId', (v) => v as String?),
     soldByStaffName: $checkedConvert('soldByStaffName', (v) => v as String?),
     status: $checkedConvert(
@@ -366,7 +369,7 @@ Map<String, dynamic> _$CustomerPackageToJson(CustomerPackage instance) =>
       'isAvailableAllBranches': instance.isAvailableAllBranches,
       'price': instance.price.toJson(),
       'purchasedUtc': instance.purchasedUtc.toIso8601String(),
-      'expiresOn': instance.expiresOn.toIso8601String(),
+      'expiresOn': const DateOnlyConverter().toJson(instance.expiresOn),
       'soldByStaffId': ?instance.soldByStaffId,
       'soldByStaffName': ?instance.soldByStaffName,
       'status': _$CustomerPackageStatusEnumMap[instance.status]!,

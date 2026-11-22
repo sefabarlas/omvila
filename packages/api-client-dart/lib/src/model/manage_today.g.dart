@@ -206,7 +206,10 @@ ManageToday _$ManageTodayFromJson(Map<String, dynamic> json) =>
         branchId: $checkedConvert('branchId', (v) => v as String),
         branchName: $checkedConvert('branchName', (v) => v as String),
         timeZone: $checkedConvert('timeZone', (v) => v as String),
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         generatedUtc: $checkedConvert(
           'generatedUtc',
           (v) => DateTime.parse(v as String),
@@ -253,7 +256,7 @@ Map<String, dynamic> _$ManageTodayToJson(ManageToday instance) =>
       'branchId': instance.branchId,
       'branchName': instance.branchName,
       'timeZone': instance.timeZone,
-      'date': instance.date.toIso8601String(),
+      'date': const DateOnlyConverter().toJson(instance.date),
       'generatedUtc': instance.generatedUtc.toIso8601String(),
       'next': instance.next?.toJson(),
       'pendingApprovalCount': instance.pendingApprovalCount,

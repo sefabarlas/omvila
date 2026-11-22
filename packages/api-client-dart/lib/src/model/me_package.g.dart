@@ -194,70 +194,79 @@ extension $MePackageCopyWith on MePackage {
 // JsonSerializableGenerator
 // **************************************************************************
 
-MePackage _$MePackageFromJson(
-  Map<String, dynamic> json,
-) => $checkedCreate('MePackage', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    requiredKeys: const [
-      'id',
-      'brand',
-      'branchName',
-      'isAvailableAllBranches',
-      'packageName',
-      'status',
-      'items',
-      'totalSessions',
-      'remainingSessions',
-      'expiresOn',
-      'isUsable',
-      'isRunningLow',
-      'finishedOn',
-    ],
-  );
-  final val = MePackage(
-    id: $checkedConvert('id', (v) => v as String),
-    brand: $checkedConvert(
-      'brand',
-      (v) => MeBrandRef.fromJson(v as Map<String, dynamic>),
-    ),
-    branchName: $checkedConvert('branchName', (v) => v as String?),
-    isAvailableAllBranches: $checkedConvert(
-      'isAvailableAllBranches',
-      (v) => v as bool,
-    ),
-    packageName: $checkedConvert('packageName', (v) => v as String),
-    status: $checkedConvert(
-      'status',
-      (v) => $enumDecode(
-        _$CustomerPackageStatusEnumMap,
-        v,
-        unknownValue: CustomerPackageStatus.unknownDefaultOpenApi,
-      ),
-    ),
-    items: $checkedConvert(
-      'items',
-      (v) => (v as List<dynamic>)
-          .map(
-            (e) => CustomerPackageItemView.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-    ),
-    totalSessions: $checkedConvert('totalSessions', (v) => (v as num).toInt()),
-    remainingSessions: $checkedConvert(
-      'remainingSessions',
-      (v) => (v as num).toInt(),
-    ),
-    expiresOn: $checkedConvert('expiresOn', (v) => DateTime.parse(v as String)),
-    isUsable: $checkedConvert('isUsable', (v) => v as bool),
-    isRunningLow: $checkedConvert('isRunningLow', (v) => v as bool),
-    finishedOn: $checkedConvert(
-      'finishedOn',
-      (v) => v == null ? null : DateTime.parse(v as String),
-    ),
-  );
-  return val;
-});
+MePackage _$MePackageFromJson(Map<String, dynamic> json) =>
+    $checkedCreate('MePackage', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        requiredKeys: const [
+          'id',
+          'brand',
+          'branchName',
+          'isAvailableAllBranches',
+          'packageName',
+          'status',
+          'items',
+          'totalSessions',
+          'remainingSessions',
+          'expiresOn',
+          'isUsable',
+          'isRunningLow',
+          'finishedOn',
+        ],
+      );
+      final val = MePackage(
+        id: $checkedConvert('id', (v) => v as String),
+        brand: $checkedConvert(
+          'brand',
+          (v) => MeBrandRef.fromJson(v as Map<String, dynamic>),
+        ),
+        branchName: $checkedConvert('branchName', (v) => v as String?),
+        isAvailableAllBranches: $checkedConvert(
+          'isAvailableAllBranches',
+          (v) => v as bool,
+        ),
+        packageName: $checkedConvert('packageName', (v) => v as String),
+        status: $checkedConvert(
+          'status',
+          (v) => $enumDecode(
+            _$CustomerPackageStatusEnumMap,
+            v,
+            unknownValue: CustomerPackageStatus.unknownDefaultOpenApi,
+          ),
+        ),
+        items: $checkedConvert(
+          'items',
+          (v) => (v as List<dynamic>)
+              .map(
+                (e) =>
+                    CustomerPackageItemView.fromJson(e as Map<String, dynamic>),
+              )
+              .toList(),
+        ),
+        totalSessions: $checkedConvert(
+          'totalSessions',
+          (v) => (v as num).toInt(),
+        ),
+        remainingSessions: $checkedConvert(
+          'remainingSessions',
+          (v) => (v as num).toInt(),
+        ),
+        expiresOn: $checkedConvert(
+          'expiresOn',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
+        isUsable: $checkedConvert('isUsable', (v) => v as bool),
+        isRunningLow: $checkedConvert('isRunningLow', (v) => v as bool),
+        finishedOn: $checkedConvert(
+          'finishedOn',
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
+        ),
+      );
+      return val;
+    });
 
 Map<String, dynamic> _$MePackageToJson(MePackage instance) => <String, dynamic>{
   'id': instance.id,
@@ -269,10 +278,13 @@ Map<String, dynamic> _$MePackageToJson(MePackage instance) => <String, dynamic>{
   'items': instance.items.map((e) => e.toJson()).toList(),
   'totalSessions': instance.totalSessions,
   'remainingSessions': instance.remainingSessions,
-  'expiresOn': instance.expiresOn.toIso8601String(),
+  'expiresOn': const DateOnlyConverter().toJson(instance.expiresOn),
   'isUsable': instance.isUsable,
   'isRunningLow': instance.isRunningLow,
-  'finishedOn': instance.finishedOn?.toIso8601String(),
+  'finishedOn': _$JsonConverterToJson<String, DateTime>(
+    instance.finishedOn,
+    const DateOnlyConverter().toJson,
+  ),
 };
 
 const _$CustomerPackageStatusEnumMap = {
@@ -282,3 +294,13 @@ const _$CustomerPackageStatusEnumMap = {
   CustomerPackageStatus.transferred: 'Transferred',
   CustomerPackageStatus.unknownDefaultOpenApi: 'unknown_default_open_api',
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

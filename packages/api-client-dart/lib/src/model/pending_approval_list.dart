@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/pending_approval_item.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'pending_approval_list.g.dart';
 

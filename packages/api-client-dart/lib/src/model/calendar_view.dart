@@ -9,6 +9,8 @@ import 'package:omvila_api/src/model/calendar_view_days_inner.dart';
 import 'package:omvila_api/src/model/time_off.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'calendar_view.g.dart';
 
@@ -72,6 +74,7 @@ class CalendarView {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime from;
@@ -84,6 +87,7 @@ class CalendarView {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime to;

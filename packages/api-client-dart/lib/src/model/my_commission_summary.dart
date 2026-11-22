@@ -9,6 +9,8 @@ import 'package:omvila_api/src/model/my_commission_summary_next_accrual.dart';
 import 'package:omvila_api/src/model/commission_day_amount.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'my_commission_summary.g.dart';
 
@@ -115,6 +117,7 @@ class MyCommissionSummary {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime from;
@@ -128,6 +131,7 @@ class MyCommissionSummary {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime to;

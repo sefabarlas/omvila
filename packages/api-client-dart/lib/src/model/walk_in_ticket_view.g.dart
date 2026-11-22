@@ -251,7 +251,10 @@ WalkInTicketView _$WalkInTicketViewFromJson(
   final val = WalkInTicketView(
     id: $checkedConvert('id', (v) => v as String),
     branchId: $checkedConvert('branchId', (v) => v as String),
-    queueDate: $checkedConvert('queueDate', (v) => DateTime.parse(v as String)),
+    queueDate: $checkedConvert(
+      'queueDate',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     queueNumber: $checkedConvert('queueNumber', (v) => (v as num).toInt()),
     status: $checkedConvert(
       'status',
@@ -286,7 +289,7 @@ Map<String, dynamic> _$WalkInTicketViewToJson(WalkInTicketView instance) =>
     <String, dynamic>{
       'id': instance.id,
       'branchId': instance.branchId,
-      'queueDate': instance.queueDate.toIso8601String(),
+      'queueDate': const DateOnlyConverter().toJson(instance.queueDate),
       'queueNumber': instance.queueNumber,
       'status': _$WalkInTicketStatusEnumMap[instance.status]!,
       'customerName': instance.customerName,

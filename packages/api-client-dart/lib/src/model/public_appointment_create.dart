@@ -7,6 +7,8 @@ import 'package:omvila_api/src/model/appointment_item_request.dart';
 import 'package:omvila_api/src/model/public_appointment_create_use_package_items_inner.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'public_appointment_create.g.dart';
 

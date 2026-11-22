@@ -7,6 +7,8 @@ import 'package:omvila_api/src/model/notification_target.dart';
 import 'package:omvila_api/src/model/staff_notification_event.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'in_app_notification.g.dart';
 

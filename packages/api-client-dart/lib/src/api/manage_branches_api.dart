@@ -6,6 +6,8 @@ import 'dart:async';
 
 // ignore: unused_import
 import 'dart:convert';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 import 'package:omvila_api/src/deserialize.dart';
 import 'package:dio/dio.dart';
 
@@ -482,8 +484,8 @@ _responseData = rawData == null ? null : deserialize<WeeklyHours, WeeklyHours>(r
     );
 
     final _queryParameters = <String, dynamic>{
-      if (from != null) r'from': from,
-      if (to != null) r'to': to,
+      if (from != null) r'from': formatDateOnly(from),
+      if (to != null) r'to': formatDateOnly(to),
     };
 
     final _response = await _dio.request<Object>(

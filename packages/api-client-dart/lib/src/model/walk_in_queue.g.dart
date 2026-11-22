@@ -182,7 +182,10 @@ WalkInQueue _$WalkInQueueFromJson(Map<String, dynamic> json) => $checkedCreate(
     );
     final val = WalkInQueue(
       branchId: $checkedConvert('branchId', (v) => v as String),
-      date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+      date: $checkedConvert(
+        'date',
+        (v) => const DateOnlyConverter().fromJson(v as String),
+      ),
       timeZone: $checkedConvert('timeZone', (v) => v as String),
       generatedUtc: $checkedConvert(
         'generatedUtc',
@@ -216,7 +219,7 @@ WalkInQueue _$WalkInQueueFromJson(Map<String, dynamic> json) => $checkedCreate(
 Map<String, dynamic> _$WalkInQueueToJson(WalkInQueue instance) =>
     <String, dynamic>{
       'branchId': instance.branchId,
-      'date': instance.date.toIso8601String(),
+      'date': const DateOnlyConverter().toJson(instance.date),
       'timeZone': instance.timeZone,
       'generatedUtc': instance.generatedUtc.toIso8601String(),
       'items': instance.items.map((e) => e.toJson()).toList(),

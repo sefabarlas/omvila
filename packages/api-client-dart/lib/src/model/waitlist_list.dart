@@ -7,6 +7,8 @@ import 'package:omvila_api/src/model/waitlist_entry_view.dart';
 import 'package:omvila_api/src/model/waitlist_overview.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'waitlist_list.g.dart';
 

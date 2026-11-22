@@ -155,8 +155,14 @@ CalendarView _$CalendarViewFromJson(
   final val = CalendarView(
     branchId: $checkedConvert('branchId', (v) => v as String),
     timeZone: $checkedConvert('timeZone', (v) => v as String),
-    from: $checkedConvert('from', (v) => DateTime.parse(v as String)),
-    to: $checkedConvert('to', (v) => DateTime.parse(v as String)),
+    from: $checkedConvert(
+      'from',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
+    to: $checkedConvert(
+      'to',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     staff: $checkedConvert(
       'staff',
       (v) => (v as List<dynamic>)
@@ -191,8 +197,8 @@ Map<String, dynamic> _$CalendarViewToJson(CalendarView instance) =>
     <String, dynamic>{
       'branchId': instance.branchId,
       'timeZone': instance.timeZone,
-      'from': instance.from.toIso8601String(),
-      'to': instance.to.toIso8601String(),
+      'from': const DateOnlyConverter().toJson(instance.from),
+      'to': const DateOnlyConverter().toJson(instance.to),
       'staff': instance.staff.map((e) => e.toJson()).toList(),
       'days': instance.days.map((e) => e.toJson()).toList(),
       'appointments': instance.appointments.map((e) => e.toJson()).toList(),
