@@ -15,6 +15,7 @@ import 'package:omvila_isletme/features/calendar/data/calendar_repository.dart';
 import 'package:omvila_isletme/features/calendar/presentation/calendar_screen.dart';
 import 'package:omvila_isletme/features/new_appointment/data/booking_repository.dart';
 import 'package:omvila_isletme/features/new_appointment/presentation/new_appointment_screen.dart';
+import 'package:omvila_isletme/features/notifications/data/notification_repository.dart';
 import 'package:omvila_isletme/features/push/data/push_prompt_controller.dart';
 import 'package:omvila_isletme/features/push/data/push_service.dart';
 import 'package:omvila_isletme/features/push/presentation/notification_permission_screen.dart';
@@ -36,11 +37,14 @@ void main() {
   List<Override> todayOverrides(
     Map<String, Object?> json, {
     PushPermission permission = PushPermission.granted,
+    Map<String, Object?> sessionJson = ownerSessionJson,
   }) => [
     clockProvider.overrideWithValue(clock),
     authControllerProvider.overrideWith(
-      () => FixedAuth(session(ownerSessionJson)),
+      () => FixedAuth(session(sessionJson)),
     ),
+    // Sekme çubuğundaki okunmamış rozeti (tasarımda 3).
+    unreadNotificationCountProvider.overrideWith((ref) => 3),
     pushPromptProvider.overrideWith(
       () => FixedPushPrompt(permission: permission),
     ),
@@ -106,12 +110,26 @@ void main() {
     builder: (_) => const AppShell(location: '/bugun', child: TodayScreen()),
   );
 
+  screenGoldenTest(
+    'Bugün salt okunur',
+    fileName: 'bugun_salt_okunur',
+    overrides: todayOverrides(
+      todayJson(),
+      sessionJson: {
+        ...ownerSessionJson,
+        'subscription': {'status': 'ReadOnly'},
+      },
+    ),
+    builder: (_) => const AppShell(location: '/bugun', child: TodayScreen()),
+  );
+
   List<Override> base({Map<String, Object?> sessionJson = ownerSessionJson}) =>
       [
         clockProvider.overrideWithValue(clock),
         authControllerProvider.overrideWith(
           () => FixedAuth(session(sessionJson)),
         ),
+        unreadNotificationCountProvider.overrideWith((ref) => 3),
       ];
 
   List<Override> calendarOverrides(Map<String, Object?> json) => [

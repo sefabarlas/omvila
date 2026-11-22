@@ -9,7 +9,12 @@ String _group(BigInt integer) => integer.toString().replaceAllMapped(
   (_) => '.',
 );
 
-/// "1.250 ₺"; kuruş varsa "85,50 ₺".
+/// Tutar ile sembol arasındaki bölünmez boşluk: "600 ₺" satır sonunda
+/// ikiye bölünmez (packages/ui-web/src/format/money.ts ile aynı).
+const moneySpace = '\u00A0';
+
+/// "1.250 ₺"; kuruş varsa "85,50 ₺". Sembolden önce bölünmez boşluk
+/// ([moneySpace]).
 String formatMoney(int amountMinor, {String currency = 'TRY'}) {
   final minor = BigInt.from(amountMinor);
   final absolute = minor.abs();
@@ -19,7 +24,7 @@ String formatMoney(int amountMinor, {String currency = 'TRY'}) {
       ? _group(lira)
       : '${_group(lira)},${kurus.toString().padLeft(2, '0')}';
   final sign = minor.isNegative ? '-' : '';
-  return '$sign$amount ${_symbols[currency] ?? currency}';
+  return '$sign$amount$moneySpace${_symbols[currency] ?? currency}';
 }
 
 /// Hizmetin fiyat gösterimi (PublicCatalog.priceDisplay).

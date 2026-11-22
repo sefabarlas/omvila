@@ -103,31 +103,35 @@ class _WalkInAddFormState extends ConsumerState<WalkInAddForm> {
           ),
         ),
         const SizedBox(height: OmvilaBosluk.bosluk4),
-        TextField(
-          controller: _name,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Ad',
-            helperText:
-                'Telefon isteğe bağlı; girilirse sıra gelince SMS gider',
-            helperMaxLines: 2,
+        LabeledField(
+          label: 'Ad',
+          child: TextField(
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              helperText:
+                  'Telefon isteğe bağlı; girilirse sıra gelince SMS gider',
+              helperMaxLines: 2,
+            ),
+            onChanged: (_) => setState(() {}),
           ),
-          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: OmvilaBosluk.bosluk3),
-        TextField(
-          controller: _phone,
-          keyboardType: TextInputType.phone,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[\d\s]')),
-          ],
-          decoration: InputDecoration(
-            labelText: 'Telefon (isteğe bağlı)',
-            prefixText: '+90 ',
-            hintText: '532 123 45 67',
-            errorText: _phoneValid ? null : 'Cep telefonu numarası girin',
+        LabeledField(
+          label: 'Telefon (isteğe bağlı)',
+          child: TextField(
+            controller: _phone,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d\s]')),
+            ],
+            decoration: phoneDecoration(
+              context,
+              hintText: '532 123 45 67',
+              errorText: _phoneValid ? null : 'Cep telefonu numarası girin',
+            ),
+            onChanged: (_) => setState(() {}),
           ),
-          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: OmvilaBosluk.bosluk4),
         ServiceStaffChoice(

@@ -151,11 +151,17 @@ class _FormState extends ConsumerState<_Form> {
           controller: _mail,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
-          decoration: InputDecoration(
-            errorText: _mailError,
-            helperText: 'Makbuz ve hatırlatma için',
-          ),
+          decoration: InputDecoration(errorText: _mailError),
         ),
+        // Yardım metni alanın kenarıyla hizalı (tasarım; helperText
+        // içerik boşluğu kadar girintili çiziliyordu).
+        if (_mailError == null) ...[
+          const SizedBox(height: OmvilaBosluk.bosluk1),
+          Text(
+            'Makbuz ve hatırlatma için',
+            style: OmvilaYazi.aciklama.copyWith(color: r.metinIkincil),
+          ),
+        ],
         const SizedBox(height: OmvilaBosluk.bosluk4),
         _Etiket('Telefon', renkler: r),
         Container(
@@ -164,13 +170,17 @@ class _FormState extends ConsumerState<_Form> {
             color: r.zeminIkincil,
             borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
           ),
-          child: Row(
+          // Numara bölünmez; büyük yazıda yardım metni alta geçer.
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: OmvilaBosluk.bosluk3,
+            runSpacing: OmvilaBosluk.bosluk1,
             children: [
-              Expanded(
-                child: Text(
-                  formatPhone(widget.profil.phone),
-                  style: OmvilaYazi.govdeGuclu.copyWith(color: r.metin),
-                ),
+              Text(
+                formatPhone(widget.profil.phone),
+                softWrap: false,
+                style: OmvilaYazi.govdeGuclu.copyWith(color: r.metin),
               ),
               Text(
                 'Değiştirmek için destek',

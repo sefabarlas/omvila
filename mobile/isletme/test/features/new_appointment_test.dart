@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
+import 'package:omvila_isletme/features/today/presentation/today_screen.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import '../helpers/appointment_fixtures.dart';
@@ -23,6 +26,7 @@ void main() {
     Map<String, Object?>? session,
     FutureOr<FakeResponse> Function()? services,
     bool settle = true,
+    bool viaRoute = false,
   }) async {
     final h = Harness()..signIn(session: session);
     h.api
@@ -41,7 +45,16 @@ void main() {
         return FakeResponse(200, slotsJson(staffId: staffId ?? elifId));
       });
     await h.pumpApp(tester);
-    await tester.tap(find.text('Randevu'));
+    if (viaRoute) {
+      // Salt okunurda Bugün'deki "+ Randevu" pasif; form adresle açılır.
+      unawaited(
+        GoRouter.of(
+          tester.element(find.byType(TodayScreen)),
+        ).push(Routes.newAppointment),
+      );
+    } else {
+      await tester.tap(find.text('Randevu'));
+    }
     if (settle) {
       await tester.pumpAndSettle();
     } else {
@@ -148,7 +161,7 @@ void main() {
     final taken = tester.widget<Text>(find.text('11:30', skipOffstage: false));
     expect(taken.style?.decoration, TextDecoration.lineThrough);
     expect(find.text('Per 26 Kas · 14:00'), findsOneWidget);
-    expect(find.text('Saç kesimi · Elif · 450 ₺'), findsOneWidget);
+    expect(find.text('Saç kesimi · Elif · 450\u00a0₺'), findsOneWidget);
 
     await tapCentered(tester, find.text('Her hafta'));
     await tester.pump();
@@ -267,6 +280,7 @@ void main() {
         ...ownerSessionJson,
         'subscription': {'status': 'ReadOnly'},
       },
+      viaRoute: true,
     );
     expect(find.text(errorMessage('subscription_read_only')), findsOneWidget);
     await fill(tester);

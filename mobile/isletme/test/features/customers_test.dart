@@ -233,7 +233,9 @@ void main() {
     expect(find.text('12'), findsOneWidget);
     expect(find.text(formatMoney(1486000)), findsOneWidget);
     expect(find.text('Ürün tercihi var'), findsOneWidget);
-    expect(find.text('0532 123 45 21'), findsOneWidget);
+    // Kart başlığında sahipte de tam numara yazılmaz, yalnız maskeli.
+    expect(find.text('0532 *** ** 21'), findsOneWidget);
+    expect(find.text('0532 123 45 21'), findsNothing);
     expect(find.text('Fön paketi'), findsOneWidget);
     expect(find.text(' / 5 seans kaldı', findRichText: true), findsNothing);
     expect(

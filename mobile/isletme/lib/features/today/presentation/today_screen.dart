@@ -50,6 +50,9 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
     final today = ref.watch(todayProvider);
     final showBanner = ref.watch(pushPromptProvider).value?.showBanner ?? false;
     final canCreate = session?.can('appointment.create') ?? false;
+    // Salt okunur abonelik (MainSaltOkunur): şerit, "+ Randevu" pasif.
+    final readOnly =
+        session?.subscription.status == SubscriptionBannerStatusEnum.readOnly;
     final snapshot = today.value;
 
     final Widget body;
@@ -97,8 +100,13 @@ class _TodayScreenState extends ConsumerState<TodayScreen> {
               onNewAppointment: canCreate
                   ? () => context.push(Routes.newAppointment)
                   : null,
+              newAppointmentEnabled: !readOnly,
             ),
             const SizedBox(height: OmvilaBosluk.bosluk4),
+            if (readOnly) ...[
+              const ReadOnlyBanner(),
+              const SizedBox(height: OmvilaBosluk.bosluk3),
+            ],
             if (showBanner) ...[
               NotificationsOffBanner(
                 canApprove: session?.can('appointment.approve') ?? false,

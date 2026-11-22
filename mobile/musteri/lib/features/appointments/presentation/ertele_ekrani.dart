@@ -259,7 +259,9 @@ class _SuAnki extends StatelessWidget {
               child: Icon(LucideIcons.calendarClock, size: 20, color: r.metin),
             ),
             const SizedBox(width: OmvilaBosluk.bosluk3),
+            // Tarih sütunu geniş: "29 Kas Cmt · 14:30" 1× yazıda kırılmaz.
             Expanded(
+              flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -281,7 +283,9 @@ class _SuAnki extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: OmvilaBosluk.bosluk2),
             Flexible(
+              flex: 2,
               child: Text(
                 [
                   a.brand.name,

@@ -33,6 +33,7 @@ const textPairs: [string, string][] = [
   ['vurgu-ustu', 'vurgu'],
   ['metin-ters', 'zemin-marka'],
   ['blok-kum-metin', 'blok-kum'],
+  ['blok-marka-hap-metin', 'blok-marka-hap'],
   ['blok-vurgu-metin', 'blok-vurgu'],
   ...['onay', 'kapora', 'onaylandi', 'geldi', 'tamamlandi', 'gelmedi', 'iptal'].map(
     (s): [string, string] => [`durum-${s}-metin`, `durum-${s}-zemin`],

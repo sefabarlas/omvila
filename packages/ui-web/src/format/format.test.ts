@@ -38,14 +38,21 @@ describe('parseMoneyInput', () => {
 
 describe('formatMoney', () => {
   it.each([
-    [125000, '1.250 ₺'],
-    [8550, '85,50 ₺'],
-    [45000, '450 ₺'],
-    [0, '0 ₺'],
-    [123456789, '1.234.567,89 ₺'],
-    [5, '0,05 ₺'],
+    [125000, '1.250\u00a0₺'],
+    [8550, '85,50\u00a0₺'],
+    [45000, '450\u00a0₺'],
+    [0, '0\u00a0₺'],
+    [123456789, '1.234.567,89\u00a0₺'],
+    [5, '0,05\u00a0₺'],
   ])('%i kuruş → %s', (amountMinor, expected) => {
     expect(formatMoney({ amountMinor, currency: 'TRY' })).toBe(expected);
+  });
+
+  // "600 ₺" satır sonunda bölünmez (omvila_ui format_test.dart ile aynı kural).
+  it('tutar ile sembol arasında bölünmez boşluk', () => {
+    expect(formatMoney({ amountMinor: 60000, currency: 'TRY' })).toBe('600\u00a0₺');
+    expect(formatMoney({ amountMinor: 60000, currency: 'TRY' })).not.toContain(' ');
+    expect(moneyInputValue(60000)).toBe('600');
   });
 
   it('kuruş tamsayı değilse hata', () => {

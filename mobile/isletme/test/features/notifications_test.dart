@@ -77,6 +77,8 @@ void main() {
     expect(find.text('Yeni bildirim yok'), findsOneWidget);
     expect(find.text('Kadıköy'), findsOneWidget);
     expect(find.text('Okundu say'), findsNothing);
+    // BildirimlerBos'ta segment kontrolü yok.
+    expect(find.text('Onay bekleyen'), findsNothing);
     await tester.tap(find.text('Bildirim ayarları'));
     await tester.pumpAndSettle();
     expect(find.text('Yeni online randevu'), findsOneWidget);
@@ -101,6 +103,31 @@ void main() {
     expect(find.text('Onayla'), findsOneWidget);
     expect(find.text('Reddet'), findsOneWidget);
     expect(find.bySemanticsLabel(RegExp('Okunmadı')), findsNWidgets(3));
+  });
+
+  // Sekme rozeti sunucunun unreadCount'u (limit=1); okundu sayınca yeniden
+  // okunur, 0 ise rozet yok (sahte sayı yok).
+  testWidgets('sekme rozeti okunmamış sayısı; okundu sayınca kalkar', (
+    tester,
+  ) async {
+    var unread = 3;
+    final h = await open(
+      tester,
+      list: (r) => FakeResponse(200, {
+        ...notificationsJson(),
+        'unreadCount': unread,
+      }),
+    );
+    expect(find.bySemanticsLabel('Bildirimler, 3 okunmamış'), findsOneWidget);
+    expect(
+      h.api.to('GET', path).any((r) => r.options.queryParameters['limit'] == 1),
+      isTrue,
+    );
+    unread = 0;
+    await tester.tap(find.text('Okundu say'));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Bildirimler'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('okunmamış')), findsNothing);
   });
 
   testWidgets('Okundu say: hepsini okundu sayar', (tester) async {
@@ -199,7 +226,7 @@ void main() {
       ..reply('GET', '/api/v1/manage/today', todayJson())
       ..reply('GET', path, notificationsJson());
     await h.pumpApp(tester);
-    await tester.tap(find.bySemanticsLabel('Bildirimler'));
+    await tester.tap(find.bySemanticsLabel(RegExp('^Bildirimler')));
     await tester.pumpAndSettle();
     expect(find.text('Yeni online randevu'), findsOneWidget);
     expect(find.text('Onayla'), findsNothing);

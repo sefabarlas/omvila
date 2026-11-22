@@ -6,24 +6,32 @@ import 'package:omvila_ui/format.dart';
 void main() {
   group('formatMoney', () {
     for (final (minor, expected) in [
-      (125000, '1.250 ₺'),
-      (8550, '85,50 ₺'),
-      (45000, '450 ₺'),
-      (0, '0 ₺'),
-      (123456789, '1.234.567,89 ₺'),
-      (5, '0,05 ₺'),
-      (-8550, '-85,50 ₺'),
+      (125000, '1.250\u00a0₺'),
+      (8550, '85,50\u00a0₺'),
+      (45000, '450\u00a0₺'),
+      (0, '0\u00a0₺'),
+      (123456789, '1.234.567,89\u00a0₺'),
+      (5, '0,05\u00a0₺'),
+      (-8550, '-85,50\u00a0₺'),
     ]) {
       test('$minor kuruş → $expected', () {
         expect(formatMoney(minor), expected);
       });
     }
 
+    // "600 ₺" satır sonunda bölünmez (Dilim 5 Geçmiş; ui-web ile aynı kural).
+    test('tutar ile sembol arasında bölünmez boşluk', () {
+      expect(formatMoney(60000), '600\u00a0₺');
+      expect(formatMoney(60000), isNot(contains(' ')));
+      expect(moneyInputValue(60000), '600');
+      expect(parseMoneyInput(formatMoney(8550)), 8550);
+    });
+
     test('fiyat gösterimi', () {
-      expect(formatPrice(45000), '450 ₺');
+      expect(formatPrice(45000), '450\u00a0₺');
       expect(
         formatPrice(280000, display: PriceDisplay.startingFrom),
-        "2.800 ₺'den",
+        "2.800\u00a0₺'den",
       );
     });
   });
@@ -33,7 +41,7 @@ void main() {
       ('450', 45000),
       ('1.250', 125000),
       ('85,50', 8550),
-      ('1.250,5 ₺', 125050),
+      ('1.250,5\u00a0₺', 125050),
       ('2800', 280000),
       ('0', 0),
     ]) {

@@ -1,7 +1,10 @@
-// Tutar: binlik nokta, kuruş virgül, sembol sonda, araya boşluk (urun-kurallari.md § Biçimler): 1.250 ₺, 85,50 ₺.
+// Tutar: binlik nokta, kuruş virgül, sembol sonda, araya bölünmez boşluk (urun-kurallari.md § Biçimler): 1.250 ₺, 85,50 ₺.
 // Para kuruş cinsinden tamsayıdır; ondalıklı sayıyla hesap yapılmaz.
 
 const symbols: Record<string, string> = { TRY: '₺' };
+
+/** Tutar ile sembol arasındaki bölünmez boşluk: "600 ₺" satır sonunda ikiye bölünmez (omvila_ui format.dart ile aynı). */
+export const MONEY_SPACE = '\u00A0';
 
 export interface MoneyValue {
   amountMinor: number;
@@ -24,7 +27,7 @@ export function formatMoney(value: MoneyValue): string {
   const lira = absolute / 100n;
   const kurus = absolute % 100n;
   const amount = kurus === 0n ? group(lira) : `${group(lira)},${kurus.toString().padStart(2, '0')}`;
-  return `${negative ? '-' : ''}${amount} ${symbols[value.currency] ?? value.currency}`;
+  return `${negative ? '-' : ''}${amount}${MONEY_SPACE}${symbols[value.currency] ?? value.currency}`;
 }
 
 /**

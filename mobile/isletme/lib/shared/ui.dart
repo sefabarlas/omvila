@@ -305,7 +305,7 @@ String initialsOf(String fullName) {
   return toUpperTr(letters.join());
 }
 
-/// Baş harf avatarı.
+/// Baş harf avatarı; ton addan türetilir (`OmvilaAvatar`, web ile aynı).
 class InitialsAvatar extends StatelessWidget {
   /// Avatar.
   const InitialsAvatar({required this.name, this.size = 40, super.key});
@@ -317,24 +317,7 @@ class InitialsAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final r = context.omvilaRenkler;
-    return ExcludeSemantics(
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: r.avatar1Zemin,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          initialsOf(name),
-          style: OmvilaYazi.etiket.copyWith(color: r.avatar1Metin),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => OmvilaAvatar(ad: name, boyut: size);
 }
 
 /// Sunucudan gelen personel takvim rengi ("#0F6E5C"; veri, sabit renk
@@ -426,3 +409,56 @@ class FullBleed extends StatelessWidget {
     );
   }
 }
+
+/// Alanın üstünde etiket (components/TextField, PhoneField): etiket alanın
+/// içinde yüzmez, her zaman görünür.
+class LabeledField extends StatelessWidget {
+  /// Etiketli alan.
+  const LabeledField({required this.label, required this.child, super.key});
+
+  /// "Cep telefonu".
+  final String label;
+
+  /// Alan.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: OmvilaYazi.etiketKucuk.copyWith(
+          color: context.omvilaRenkler.metin,
+        ),
+      ),
+      const SizedBox(height: OmvilaBosluk.bosluk2),
+      child,
+    ],
+  );
+}
+
+/// Telefon alanının "+90" öneki; alan boşken de görünür (PhoneField).
+InputDecoration phoneDecoration(
+  BuildContext context, {
+  String? hintText,
+  String? errorText,
+}) => InputDecoration(
+  prefixIcon: Padding(
+    padding: const EdgeInsets.only(
+      left: OmvilaBosluk.bosluk4,
+      right: OmvilaBosluk.bosluk2,
+    ),
+    child: Text(
+      '+90',
+      style: OmvilaYazi.govdeGuclu.copyWith(
+        color: context.omvilaRenkler.metin,
+      ),
+    ),
+  ),
+  prefixIconConstraints: const BoxConstraints(),
+  hintText: hintText,
+  errorText: errorText,
+  errorMaxLines: 3,
+);
