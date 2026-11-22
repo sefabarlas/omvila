@@ -15,4 +15,5 @@ export 'widgets/buton.dart';
 export 'widgets/durum_rozeti.dart';
 export 'widgets/otp_girisi.dart';
 export 'widgets/randevu_karti.dart';
+export 'widgets/randevu_satiri.dart';
 export 'widgets/yuzen_sekme_cubugu.dart';
