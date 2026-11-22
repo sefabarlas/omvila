@@ -177,7 +177,7 @@ Map<String, dynamic> _$PackageWriteToJson(PackageWrite instance) =>
       'price': instance.price.toJson(),
       'items': instance.items.map((e) => e.toJson()).toList(),
       'validityDays': instance.validityDays,
-      'saleCommissionPercent': ?instance.saleCommissionPercent,
+      'saleCommissionPercent': instance.saleCommissionPercent,
       'isAvailableAllBranches': instance.isAvailableAllBranches,
       'isActive': instance.isActive,
     };

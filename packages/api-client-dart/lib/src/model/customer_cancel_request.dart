@@ -45,7 +45,7 @@ class CustomerCancelRequest {
     
     name: r'note',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

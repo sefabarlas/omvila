@@ -226,7 +226,7 @@ Map<String, dynamic> _$PublicAppointmentCreateToJson(
   'sameStaffForAll': ?instance.sameStaffForAll,
   'startUtc': instance.startUtc.toIso8601String(),
   'fullName': instance.fullName,
-  'customerNote': ?instance.customerNote,
+  'customerNote': instance.customerNote,
   'usePackageItems': ?instance.usePackageItems?.map((e) => e.toJson()).toList(),
   'privacyNoticeAcknowledged': instance.privacyNoticeAcknowledged,
   'privacyNoticeVersion': instance.privacyNoticeVersion,

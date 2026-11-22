@@ -64,7 +64,7 @@ class CustomerCreate {
     
     name: r'birthYear',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -77,7 +77,7 @@ class CustomerCreate {
     
     name: r'notes',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

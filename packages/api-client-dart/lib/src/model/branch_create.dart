@@ -89,7 +89,7 @@ class BranchCreate {
     
     name: r'phone',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -102,7 +102,7 @@ class BranchCreate {
     
     name: r'copyWorkingHoursFromBranchId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -115,7 +115,7 @@ class BranchCreate {
     
     name: r'copyServicePricesFromBranchId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

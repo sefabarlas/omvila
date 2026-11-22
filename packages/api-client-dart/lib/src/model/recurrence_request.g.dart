@@ -123,7 +123,7 @@ Map<String, dynamic> _$RecurrenceRequestToJson(RecurrenceRequest instance) =>
       'frequency': _$RecurrenceRequestFrequencyEnumEnumMap[instance.frequency]!,
       'intervalWeeks':
           _$RecurrenceRequestIntervalWeeksEnumEnumMap[instance.intervalWeeks]!,
-      'endsOn': ?_$JsonConverterToJson<String, DateTime>(
+      'endsOn': _$JsonConverterToJson<String, DateTime>(
         instance.endsOn,
         const DateOnlyConverter().toJson,
       ),

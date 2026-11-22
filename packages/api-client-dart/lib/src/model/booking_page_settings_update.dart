@@ -86,7 +86,7 @@ class BookingPageSettingsUpdate {
     
     name: r'preAppointmentNote',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

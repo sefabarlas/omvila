@@ -205,13 +205,13 @@ Map<String, dynamic> _$BranchUpdateToJson(BranchUpdate instance) =>
       'addressLine': ?instance.addressLine,
       'district': ?instance.district,
       'city': ?instance.city,
-      'postalCode': ?instance.postalCode,
-      'latitude': ?instance.latitude,
-      'longitude': ?instance.longitude,
-      'phone': ?instance.phone,
-      'email': ?instance.email,
+      'postalCode': instance.postalCode,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
+      'phone': instance.phone,
+      'email': instance.email,
       'slotIntervalMinutes':
-          ?_$BranchUpdateSlotIntervalMinutesEnumEnumMap[instance
+          _$BranchUpdateSlotIntervalMinutesEnumEnumMap[instance
               .slotIntervalMinutes],
       'isActive': ?instance.isActive,
     };

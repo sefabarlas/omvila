@@ -129,7 +129,7 @@ Map<String, dynamic> _$StaffServiceAssignmentToJson(
   StaffServiceAssignment instance,
 ) => <String, dynamic>{
   'serviceId': instance.serviceId,
-  'durationOverrideMinutes': ?instance.durationOverrideMinutes,
+  'durationOverrideMinutes': instance.durationOverrideMinutes,
   'surcharge': ?instance.surcharge?.toJson(),
-  'commissionPercentOverride': ?instance.commissionPercentOverride,
+  'commissionPercentOverride': instance.commissionPercentOverride,
 };

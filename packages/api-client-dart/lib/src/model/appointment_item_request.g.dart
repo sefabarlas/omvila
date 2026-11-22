@@ -84,5 +84,5 @@ Map<String, dynamic> _$AppointmentItemRequestToJson(
   AppointmentItemRequest instance,
 ) => <String, dynamic>{
   'serviceId': instance.serviceId,
-  'staffId': ?instance.staffId,
+  'staffId': instance.staffId,
 };

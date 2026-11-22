@@ -59,7 +59,7 @@ class RecurrenceRequest {
     
     name: r'endsOn',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
   @DateOnlyConverter()
 

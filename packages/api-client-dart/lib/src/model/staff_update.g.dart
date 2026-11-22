@@ -215,9 +215,9 @@ StaffUpdate _$StaffUpdateFromJson(Map<String, dynamic> json) => $checkedCreate(
 Map<String, dynamic> _$StaffUpdateToJson(StaffUpdate instance) =>
     <String, dynamic>{
       'fullName': ?instance.fullName,
-      'displayName': ?instance.displayName,
-      'title': ?instance.title,
-      'bio': ?instance.bio,
+      'displayName': instance.displayName,
+      'title': instance.title,
+      'bio': instance.bio,
       'role': ?_$StaffUpdateRoleEnumEnumMap[instance.role],
       'calendarColor': ?instance.calendarColor,
       'branchIds': ?instance.branchIds,

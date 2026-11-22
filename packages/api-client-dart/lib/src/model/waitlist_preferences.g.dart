@@ -154,7 +154,7 @@ Map<String, dynamic> _$WaitlistPreferencesToJson(
   WaitlistPreferences instance,
 ) => <String, dynamic>{
   'serviceIds': instance.serviceIds,
-  'preferredStaffId': ?instance.preferredStaffId,
+  'preferredStaffId': instance.preferredStaffId,
   'acceptOtherStaff': instance.acceptOtherStaff,
   'dates': instance.dates.map(const DateOnlyConverter().toJson).toList(),
   'timeWindows': instance.timeWindows

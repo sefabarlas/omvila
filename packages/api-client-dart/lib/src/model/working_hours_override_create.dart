@@ -104,7 +104,7 @@ class WorkingHoursOverrideCreate {
     
     name: r'note',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

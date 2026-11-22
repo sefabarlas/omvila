@@ -61,7 +61,7 @@ class StaffUpdate {
     
     name: r'displayName',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -73,7 +73,7 @@ class StaffUpdate {
     
     name: r'title',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -85,7 +85,7 @@ class StaffUpdate {
     
     name: r'bio',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

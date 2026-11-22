@@ -48,7 +48,7 @@ class MeProfileUpdate {
     
     name: r'email',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

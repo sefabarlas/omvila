@@ -156,6 +156,7 @@ void main() {
       'branchId': branchId,
       'fullName': 'Burak',
       'serviceId': kesimId,
+      'preferredStaffId': null,
     });
     expect(find.text('Burak sıraya eklendi · No 11'), findsOneWidget);
   });

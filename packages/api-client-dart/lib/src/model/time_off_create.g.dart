@@ -178,7 +178,7 @@ Map<String, dynamic> _$TimeOffCreateToJson(TimeOffCreate instance) =>
       ),
       'startUtc': ?instance.startUtc?.toIso8601String(),
       'endUtc': ?instance.endUtc?.toIso8601String(),
-      'note': ?instance.note,
+      'note': instance.note,
     };
 
 const _$TimeOffCreateTypeEnumEnumMap = {

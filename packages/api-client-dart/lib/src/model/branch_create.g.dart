@@ -165,7 +165,7 @@ Map<String, dynamic> _$BranchCreateToJson(BranchCreate instance) =>
       'addressLine': instance.addressLine,
       'district': instance.district,
       'city': instance.city,
-      'phone': ?instance.phone,
-      'copyWorkingHoursFromBranchId': ?instance.copyWorkingHoursFromBranchId,
-      'copyServicePricesFromBranchId': ?instance.copyServicePricesFromBranchId,
+      'phone': instance.phone,
+      'copyWorkingHoursFromBranchId': instance.copyWorkingHoursFromBranchId,
+      'copyServicePricesFromBranchId': instance.copyServicePricesFromBranchId,
     };

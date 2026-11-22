@@ -7,9 +7,11 @@ import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_ui/format.dart';
 
 // Üretilmiş Dart istemcisinin (packages/api-client-dart) tarih ve dizi sorgu
-// parametresi biçimi. Şablonlar: contracts/templates/dart-dio (T-110).
-// Sözleşme: `format: date` "yyyy-MM-dd"; `staffIds` style: form,
-// explode: false.
+// parametresi biçimi ve boşaltılabilir alanlar. Şablonlar:
+// contracts/templates/dart-dio (T-110, T-113). Sözleşme: `format: date`
+// "yyyy-MM-dd"; `staffIds` style: form, explode: false; istek gövdesinde
+// isteğe bağlı ve null alabilen alan null olarak gider, null alamayan
+// isteğe bağlı alan yazılmaz.
 class _RecordingAdapter implements HttpClientAdapter {
   final requests = <RequestOptions>[];
 
@@ -143,6 +145,40 @@ void main() {
       expect(uri.query, contains('staffIds=a,b'));
       expect(uri.queryParameters['from'], '2026-11-25');
       expect(uri.queryParameters['to'], '2026-11-26');
+    });
+  });
+
+  group('boşaltılabilir istek alanları', () {
+    test('null alabilen alan null olarak yazılır, diğer boş alan yazılmaz', () {
+      final body = MeProfileUpdate(
+        fullName: 'Selin Öztürk',
+        // Açık null bu testin konusu.
+        // ignore: avoid_redundant_argument_values
+        email: null,
+      ).toJson();
+
+      expect(body.containsKey('email'), isTrue);
+      expect(body['email'], isNull);
+      expect(body['fullName'], 'Selin Öztürk');
+      expect(body.containsKey('language'), isFalse);
+    });
+
+    test('null alamayan isteğe bağlı alan verilmezse gönderilmez', () {
+      final body = MeProfileUpdate(email: 'selin@ornek.test').toJson();
+
+      expect(body, {'email': 'selin@ornek.test'});
+    });
+
+    test('istek gövdesinde "email": null gider', () async {
+      await send(
+        () => api.getMeProfileApi().meUpdateProfile(
+          ifMatch: '"1"',
+          meProfileUpdate: MeProfileUpdate(fullName: 'Selin Öztürk'),
+        ),
+      );
+
+      final sent = jsonDecode(adapter.requests.single.data as String) as Map;
+      expect(sent, {'fullName': 'Selin Öztürk', 'email': null});
     });
   });
 }

@@ -123,7 +123,7 @@ Map<String, dynamic> _$CustomerCreateToJson(CustomerCreate instance) =>
     <String, dynamic>{
       'fullName': instance.fullName,
       'phone': instance.phone,
-      'birthYear': ?instance.birthYear,
-      'notes': ?instance.notes,
+      'birthYear': instance.birthYear,
+      'notes': instance.notes,
       'sendAppointmentSms': ?instance.sendAppointmentSms,
     };

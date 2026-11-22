@@ -98,7 +98,7 @@ class PackageWrite {
     
     name: r'saleCommissionPercent',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
