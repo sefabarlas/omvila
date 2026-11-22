@@ -59,33 +59,42 @@ internal sealed class SubscriptionAccount(
 
     public async Task<Result<SubscriptionInvoicePage>> ListInvoicesAsync(Guid brandId, int? limit, string? cursor, CancellationToken ct)
     {
-        if (limit is < 1 or > MaxLimit)
+        if (!TryPaging(limit, cursor, out var take, out var after, out var error))
         {
-            return Error.Validation("limit", "out_of_range");
-        }
-
-        (Instant IssuedUtc, Guid Id)? after = null;
-        if (cursor is not null)
-        {
-            if (!TryDecode(cursor, out var decoded))
-            {
-                return Error.Validation("cursor", "invalid_format");
-            }
-
-            after = decoded;
+            return error;
         }
 
         var query = db.Invoices.AsNoTracking().Where(i => i.BrandId == brandId);
         if (after is { } a)
         {
-            query = query.Where(i => i.IssuedUtc < a.IssuedUtc || (i.IssuedUtc == a.IssuedUtc && i.Id.CompareTo(a.Id) < 0));
+            query = query.Where(i => i.IssuedUtc < a.At || (i.IssuedUtc == a.At && i.Id.CompareTo(a.Id) < 0));
         }
 
-        var take = limit ?? DefaultLimit;
         var rows = await query.OrderByDescending(i => i.IssuedUtc).ThenByDescending(i => i.Id).Take(take + 1).ToListAsync(ct);
         var page = rows.Take(take).ToList();
-        var next = rows.Count > take ? Encode(page[^1]) : null;
+        var next = rows.Count > take ? Encode(page[^1].IssuedUtc, page[^1].Id) : null;
         return new SubscriptionInvoicePage([.. page.Select(SubscriptionInvoiceView.From)], next);
+    }
+
+    /// <summary>Markanın havale bildirimleri, yeniden eskiye (platform paneli marka detayı "Ödemeler"; sözleşme AdminPaymentNoticePage).</summary>
+    public async Task<Result<(IReadOnlyList<PaymentNoticeSummary> Items, string? NextCursor)>> ListPaymentNoticesAsync(
+        Guid brandId, int? limit, string? cursor, CancellationToken ct)
+    {
+        if (!TryPaging(limit, cursor, out var take, out var after, out var error))
+        {
+            return error;
+        }
+
+        var query = db.PaymentNotices.AsNoTracking().Where(n => n.BrandId == brandId);
+        if (after is { } a)
+        {
+            query = query.Where(n => n.NotifiedUtc < a.At || (n.NotifiedUtc == a.At && n.Id.CompareTo(a.Id) < 0));
+        }
+
+        var rows = await query.OrderByDescending(n => n.NotifiedUtc).ThenByDescending(n => n.Id).Take(take + 1).ToListAsync(ct);
+        var page = rows.Take(take).ToList();
+        var next = rows.Count > take ? Encode(page[^1].NotifiedUtc, page[^1].Id) : null;
+        return ([.. page.Select(PaymentNoticeSummary.From)], next);
     }
 
     /// <summary>Bilgi amaçlı fatura PDF'i (e-Arşiv değil); fatura markada yoksa null.</summary>
@@ -177,9 +186,33 @@ internal sealed class SubscriptionAccount(
         _ => "Ödeme bekleniyor",
     };
 
-    private static string Encode(SubscriptionInvoice last) =>
-        Base64Url.EncodeToString(Encoding.UTF8.GetBytes(
-            string.Create(CultureInfo.InvariantCulture, $"{last.IssuedUtc.ToUnixTimeTicks()}|{last.Id}")));
+    private static bool TryPaging(int? limit, string? cursor, out int take, out (Instant At, Guid Id)? after, out Error error)
+    {
+        take = limit ?? DefaultLimit;
+        after = null;
+        error = null!;
+        if (limit is < 1 or > MaxLimit)
+        {
+            error = Error.Validation("limit", "out_of_range");
+            return false;
+        }
+
+        if (cursor is not null)
+        {
+            if (!TryDecode(cursor, out var decoded))
+            {
+                error = Error.Validation("cursor", "invalid_format");
+                return false;
+            }
+
+            after = decoded;
+        }
+
+        return true;
+    }
+
+    private static string Encode(Instant at, Guid id) =>
+        Base64Url.EncodeToString(Encoding.UTF8.GetBytes(string.Create(CultureInfo.InvariantCulture, $"{at.ToUnixTimeTicks()}|{id}")));
 
     private static bool TryDecode(string cursor, out (Instant IssuedUtc, Guid Id) value)
     {
