@@ -1,0 +1,63 @@
+.footer {
+  padding-block: var(--bosluk-12) var(--bosluk-10);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr;
+  gap: var(--bosluk-8);
+  padding-bottom: var(--bosluk-10);
+}
+
+.about {
+  display: grid;
+  align-content: start;
+  gap: var(--bosluk-4);
+}
+
+.muted {
+  max-width: 320px;
+  color: color-mix(in srgb, var(--metin-ters) 80%, transparent);
+  font-size: var(--yazi-govde-kucuk-boyut);
+  line-height: var(--yazi-govde-kucuk-satir);
+}
+
+.column {
+  display: grid;
+  align-content: start;
+  gap: var(--bosluk-3);
+  font-size: var(--yazi-govde-kucuk-boyut);
+}
+
+.column a {
+  color: color-mix(in srgb, var(--metin-ters) 80%, transparent);
+  text-decoration: none;
+}
+
+.column a:hover {
+  color: var(--metin-ters);
+}
+
+.heading {
+  margin-bottom: var(--bosluk-1);
+  font-size: var(--yazi-etiket-boyut);
+  font-weight: var(--yazi-etiket-agirlik);
+  line-height: var(--yazi-etiket-satir);
+}
+
+.copyright {
+  padding-top: var(--bosluk-6);
+  border-top: 1px solid color-mix(in srgb, var(--metin-ters) 16%, transparent);
+  color: color-mix(in srgb, var(--metin-ters) 75%, transparent);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+@media (width < 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--bosluk-6);
+  }
+}

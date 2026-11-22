@@ -1,0 +1,22 @@
+.frame {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--cizgi);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-lg);
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.panel {
+  border-radius: var(--kose-lg);
+}
+
+.phone {
+  border: 6px solid var(--zemin-marka);
+  border-radius: 36px;
+}

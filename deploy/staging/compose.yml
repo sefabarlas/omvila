@@ -142,6 +142,18 @@ services:
       ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
     restart: unless-stopped
 
+  # Tanıtım sitesi: statik dosyalar + Caddy (web/tanitim/Dockerfile). Test ortamında arama motorlarına kapalı.
+  tanitim:
+    image: ghcr.io/sefabarlas/omvila-tanitim:${TAG:-latest}
+    build:
+      context: ../..
+      dockerfile: web/tanitim/Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${WWW_URL:-https://www.test.omvila.com.tr}
+        NEXT_PUBLIC_PANEL_URL: ${SALON_URL:-https://salon.test.omvila.com.tr}
+        NEXT_PUBLIC_NOINDEX: ${SITE_NOINDEX:-true}
+    restart: unless-stopped
+
   mailpit:
     image: axllent/mailpit:v1.27.4
     restart: unless-stopped
@@ -163,6 +175,7 @@ services:
       RANDEVU_HOST: ${RANDEVU_HOST:-randevu.test.omvila.com.tr}
       SMS_HOST: ${SMS_HOST:-sms.test.omvila.com.tr}
       POSTA_HOST: ${POSTA_HOST:-posta.test.omvila.com.tr}
+      WWW_HOST: ${WWW_HOST:-www.test.omvila.com.tr}
       SMS_LOG_PATH: ${SMS_LOG_PATH:-/dev/sms}
       BASIC_AUTH_USER: ${BASIC_AUTH_USER:?BASIC_AUTH_USER}
       BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:?BASIC_AUTH_HASH}
@@ -180,6 +193,7 @@ services:
       - salon-panel
       - platform-panel
       - rezervasyon
+      - tanitim
       - mailpit
 
 # Sabit alt ağ: API yalnız bu ağdan gelen yönlendirme başlıklarına güvenir. Sunucuda çakışırsa STAGING_SUBNET değişir.

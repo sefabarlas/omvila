@@ -133,7 +133,7 @@ jobs:
         run: pnpm --filter @omvila/design-tokens test
 
   # Salon paneli, platform paneli ve rezervasyon sayfası uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md
-  # kritik akışlar 1, 2, 6, 7 ve ekran görüntüleri). Zorunlu denetimlere eklenmedi; dal koruması ayrıca karar verilir.
+  # kritik akışlar 1, 2, 6, 7 ve ekran görüntüleri) ve tanıtım sitesinin gezinme ve ekran görüntüleri. Zorunlu denetimlere eklenmedi; dal koruması ayrıca karar verilir.
   e2e:
     needs: changes
     runs-on: ubuntu-latest
@@ -165,6 +165,11 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: '1'
         run: pnpm --filter @omvila/rezervasyon e2e
+      - name: Uçtan uca testler (tanıtım sitesi)
+        if: env.RUN == 'true' && always()
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm --filter @omvila/tanitim e2e
       - name: Rapor ve ekran görüntüleri (salon paneli)
         if: env.RUN == 'true' && always()
         uses: actions/upload-artifact@v4
@@ -192,8 +197,17 @@ jobs:
             web/rezervasyon/e2e-report/
             web/rezervasyon/e2e-results/
           retention-days: 7
+      - name: Rapor ve ekran görüntüleri (tanıtım sitesi)
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tanitim-e2e
+          path: |
+            web/tanitim/e2e-report/
+            web/tanitim/e2e-results/
+          retention-days: 7
 
-  # Rezervasyon sayfası performans bütçesi (Lighthouse CI, Prism mock'a karşı `next start`;
+  # Rezervasyon sayfası ve tanıtım sitesi performans bütçesi (Lighthouse CI, Prism mock'a karşı `next start`;
   # web/rezervasyon/AGENTS.md § Performans). e2e gibi zorunlu denetimlere eklenmedi.
   lighthouse:
     needs: changes
@@ -215,7 +229,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Derleme
         if: env.RUN == 'true'
-        run: pnpm turbo run build --filter=@omvila/rezervasyon
+        run: pnpm turbo run build --filter=@omvila/rezervasyon --filter=@omvila/tanitim
       - name: Prism mock
         if: env.RUN == 'true'
         run: |
@@ -236,6 +250,18 @@ jobs:
         with:
           name: rezervasyon-lighthouse
           path: web/rezervasyon/.lighthouseci/
+          retention-days: 7
+      # Statik çıktı (out/) web/tanitim/scripts/serve.mjs ile sunulur; API gerekmez (web/tanitim/lighthouserc.cjs).
+      - name: Lighthouse (tanıtım sitesi)
+        if: env.RUN == 'true' && always()
+        working-directory: web/tanitim
+        run: pnpm lighthouse
+      - name: Lighthouse raporları (tanıtım sitesi)
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tanitim-lighthouse
+          path: web/tanitim/.lighthouseci/
           retention-days: 7
 
   flutter:

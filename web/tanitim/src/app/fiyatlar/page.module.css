@@ -1,0 +1,205 @@
+.intro {
+  display: grid;
+  justify-items: center;
+  gap: var(--bosluk-4);
+  padding-block: var(--bosluk-12) var(--bosluk-10);
+  text-align: center;
+}
+
+.title {
+  font-size: var(--yazi-display-boyut);
+  font-weight: var(--yazi-display-agirlik);
+  line-height: var(--yazi-display-satir);
+  letter-spacing: var(--yazi-display-harf);
+}
+
+.introText {
+  max-width: 560px;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--bosluk-4);
+  padding: 0;
+  list-style: none;
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+}
+
+.recommended {
+  border-color: var(--zemin-marka);
+  background: var(--zemin-marka);
+  color: var(--metin-ters);
+}
+
+.planHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+}
+
+.planName {
+  font-size: var(--yazi-baslik-3-boyut);
+  font-weight: var(--yazi-baslik-3-agirlik);
+  line-height: var(--yazi-baslik-3-satir);
+}
+
+.badge {
+  padding: var(--bosluk-1) var(--bosluk-3);
+  border-radius: var(--kose-tam);
+  background: var(--vurgu);
+  color: var(--vurgu-ustu);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.audience {
+  margin-top: calc(-1 * var(--bosluk-4));
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-govde-kucuk-boyut);
+  line-height: var(--yazi-govde-kucuk-satir);
+}
+
+.price {
+  display: grid;
+  align-content: center;
+  min-height: 64px;
+}
+
+.priceValue {
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: var(--yazi-baslik-1-agirlik);
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.pricePending {
+  font-size: var(--yazi-baslik-4-boyut);
+  font-weight: var(--yazi-baslik-4-agirlik);
+  line-height: var(--yazi-baslik-4-satir);
+}
+
+.priceNote {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.recommended .audience,
+.recommended .priceNote {
+  color: color-mix(in srgb, var(--metin-ters) 80%, transparent);
+}
+
+.planFeatures {
+  font-size: var(--yazi-govde-kucuk-boyut);
+  line-height: var(--yazi-govde-kucuk-satir);
+}
+
+.planFeatures svg {
+  margin-top: var(--bosluk-1);
+}
+
+.creditsWrap {
+  padding-block: var(--bosluk-16) var(--bosluk-8);
+}
+
+.credits {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: var(--bosluk-10);
+}
+
+.creditsText {
+  display: grid;
+  gap: var(--bosluk-3);
+}
+
+.creditsTitle {
+  font-size: var(--yazi-baslik-2-boyut);
+  font-weight: var(--yazi-baslik-2-agirlik);
+  line-height: var(--yazi-baslik-2-satir);
+  letter-spacing: var(--yazi-baslik-2-harf);
+}
+
+.muted {
+  color: var(--metin-ikincil);
+}
+
+.packages {
+  margin: 0;
+}
+
+.package {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bosluk-4);
+  padding-block: var(--bosluk-4);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.package:last-child {
+  border-bottom: 0;
+}
+
+.package dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.faq {
+  box-sizing: border-box;
+  max-width: 884px;
+  padding-block: var(--bosluk-12) var(--bosluk-16);
+}
+
+.faqTitle {
+  padding-bottom: var(--bosluk-5);
+  border-bottom: 1px solid var(--cizgi);
+  font-size: var(--yazi-baslik-1-boyut);
+  font-weight: var(--yazi-baslik-1-agirlik);
+  line-height: var(--yazi-baslik-1-satir);
+  letter-spacing: var(--yazi-baslik-1-harf);
+}
+
+.faqItem {
+  display: grid;
+  gap: var(--bosluk-3);
+  padding-block: var(--bosluk-6);
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.question {
+  font-size: var(--yazi-govde-buyuk-boyut);
+  font-weight: 600;
+  line-height: var(--yazi-govde-buyuk-satir);
+}
+
+@media (width < 900px) {
+  .title {
+    font-size: var(--yazi-baslik-1-boyut);
+    line-height: var(--yazi-baslik-1-satir);
+  }
+
+  .plans,
+  .credits {
+    grid-template-columns: 1fr;
+  }
+
+  .credits {
+    gap: var(--bosluk-6);
+  }
+
+  .faqTitle {
+    font-size: var(--yazi-baslik-2-boyut);
+    line-height: var(--yazi-baslik-2-satir);
+  }
+}

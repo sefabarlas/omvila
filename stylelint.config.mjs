@@ -15,6 +15,7 @@ export default {
     '**/node_modules/**',
     '**/dist/**',
     '**/.next/**',
+    '**/out/**',
     '**/coverage/**',
     'design/**',
     'packages/design-tokens/**',

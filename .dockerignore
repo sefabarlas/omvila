@@ -1,4 +1,4 @@
-# Kök bağlam yalnız web imajları içindir (web/salon-panel/Dockerfile, web/rezervasyon/Dockerfile).
+# Kök bağlam yalnız web imajları içindir (web/salon-panel, web/rezervasyon, web/tanitim Dockerfile).
 # İzin listesi: her şey dışarıda, yalnız pnpm çalışma alanının gereken parçaları içeride.
 # api/ kendi bağlamını ve .dockerignore'unu kullanır (api/Dockerfile).
 *
@@ -11,6 +11,7 @@
 !packages/ui-web/
 !web/salon-panel/
 !web/rezervasyon/
+!web/tanitim/
 
 # İzin verilen klasörlerin içindeki üretilmiş ve yerel dosyalar.
 **/node_modules/
@@ -24,6 +25,7 @@
 **/.lighthouseci/
 **/next-env.d.ts
 web/*/dist/
+web/*/out/
 **/Dockerfile
 **/*.log
 **/.env
