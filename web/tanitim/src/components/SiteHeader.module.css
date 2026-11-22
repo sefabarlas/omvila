@@ -1,0 +1,100 @@
+.header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--bosluk-6);
+  min-height: 76px;
+}
+
+.brand {
+  display: flex;
+  flex: none;
+}
+
+.nav {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: var(--bosluk-6);
+}
+
+.navLink {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-govde-kucuk-boyut);
+  font-weight: 500;
+  line-height: var(--yazi-govde-kucuk-satir);
+  text-decoration: none;
+}
+
+.navLink:hover {
+  color: var(--metin);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--bosluk-2);
+}
+
+.mobile {
+  display: none;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--kose-md);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.panel {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: var(--bosluk-5);
+  left: var(--bosluk-5);
+  display: grid;
+  padding: var(--bosluk-2);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-lg);
+}
+
+.panelLink {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--bosluk-3);
+  border-radius: var(--kose-sm);
+  color: var(--metin);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.panelLink:hover {
+  background: var(--zemin-ikincil);
+}
+
+@media (width < 900px) {
+  .header {
+    justify-content: space-between;
+    min-height: 76px;
+  }
+
+  .nav,
+  .signIn {
+    display: none;
+  }
+
+  .mobile {
+    display: block;
+  }
+}

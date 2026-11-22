@@ -31,6 +31,10 @@ public sealed class PushTemplatesTests
         [(NotificationEvents.StaffDailySummary, null)] = Values(("n", "120"), ("tutar", "45.000 TL")),
         [(NotificationEvents.OwnerCreditsLow, null)] = Values(("kalan", "199"), ("gün", "1.000")),
         [(NotificationEvents.OwnerCreditsLow, PushTemplates.WithoutEstimateVariant)] = Values(("kalan", "199")),
+        [(NotificationEvents.OwnerPaymentNoticeMatched, PushTemplates.SubscriptionVariant)] = Values(),
+        [(NotificationEvents.OwnerPaymentNoticeMatched, PushTemplates.CreditsVariant)] = Values(("kontör", "20.000")),
+        [(NotificationEvents.OwnerPaymentNoticeNotFound, null)] = Values(),
+        [(NotificationEvents.OwnerPaymentNoticeRejected, null)] = Values(),
     };
 
     [Fact]

@@ -72,6 +72,8 @@ public sealed class DevSmsLogMappingTests
             builder.UseSetting("Auth:SigningKeys:0:Kid", TestSigningKey.Kid);
             builder.UseSetting("Auth:SigningKeys:0:PrivateKeyPem", TestSigningKey.PrivateKeyPem);
             builder.UseSetting("Tenancy:IbanEncryptionKey", TestSigningKey.IbanEncryptionKey);
+            builder.UseSetting("Customers:DataExport:LinkSigningKey", TestSigningKey.DataExportLinkKey);
+            builder.UseSetting("Integrations:Calendar:TokenEncryptionKey", TestSigningKey.CalendarTokenKey);
             if (allowFake is not null)
             {
                 builder.UseSetting("Staging:AllowFakeProviders", allowFake);

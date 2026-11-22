@@ -18,6 +18,7 @@
 | `https://salon.test.omvila.com.tr` | Salon paneli | Basic auth, ardından telefon + SMS kodu |
 | `https://admin.test.omvila.com.tr` | Platform paneli (iç ekip) | Basic auth, ardından platform kullanıcısının telefonu + SMS kodu ([Platform kullanıcısı](#platform-kullanıcısı)) |
 | `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth |
+| `https://www.test.omvila.com.tr` | Tanıtım sitesi (statik; robots.txt ve meta robots ile de kapalı) | Basic auth |
 | `https://api.test.omvila.com.tr` | API | Açık (tarayıcı çapraz köken isteğinde basic auth göndermez); SMS günlüğü yolu bu adreste 404 |
 | `https://sms.test.omvila.com.tr` | Sahte SMS günlüğü (giriş kodları burada) | Basic auth |
 | `https://posta.test.omvila.com.tr` | Mailpit (e-posta altyapısı gelince) | Basic auth |
@@ -32,6 +33,7 @@ flowchart LR
   C --> SP[salon-panel<br/>statik, :8080]
   C --> PP[platform-panel<br/>statik, :8080]
   C --> RZ[rezervasyon<br/>Next.js, :3000]
+  C --> TN[tanitim<br/>statik, :8080]
   C --> API[api<br/>--role=api, :8080]
   C --> MP[mailpit<br/>:8025]
   RZ -->|SSR, iç ağ| C
@@ -44,7 +46,7 @@ flowchart LR
 - Dışarı yalnız Caddy açılır (80, 443/tcp, 443/udp). Postgres, API, worker ve Mailpit yalnız compose iç ağındadır.
 - İç ağın alt ağı sabittir (`STAGING_SUBNET`, varsayılan `172.30.0.0/24`). API, `X-Forwarded-For` ve `X-Forwarded-Proto` başlıklarına yalnız bu ağdan gelirse güvenir; OTP'nin IP başına sınırı böylece ziyaretçinin gerçek IP'sini görür.
 - api, worker, migrate ve seed aynı imajdır; yalnız `--role` değişir. `migrate` her açılışta önce çalışır ve çıkar; api ve worker onu bekler.
-- İmajlar: `ghcr.io/sefabarlas/omvila-<api|salon-panel|platform-panel|rezervasyon>:<TAG>`. API ve site adresleri web imajlarına derlemede gömülür; adres değişirse web imajları yeniden derlenir.
+- İmajlar: `ghcr.io/sefabarlas/omvila-<api|salon-panel|platform-panel|rezervasyon|tanitim>:<TAG>`. API ve site adresleri web imajlarına derlemede gömülür; adres değişirse web imajları yeniden derlenir.
 
 ## Sunucu
 

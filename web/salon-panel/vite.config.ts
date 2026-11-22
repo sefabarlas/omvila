@@ -4,9 +4,14 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 // Dosya tabanlı rotalar src/routes altında; üretilen ağaç src/routeTree.gen.ts (commit edilir, elle düzenlenmez).
+// Testte rota bölme kapalı: her test dosyasının ilk ekranı rota bileşenini dinamik içe aktarıp o anda dönüştürüyordu;
+// yoğun CI'da bu ilk findBy* beklemesini 5 sn'nin üstüne taşıyordu (deposits, customer-records ilk testleri).
+// Rotalar ağaçla birlikte baştan yüklenir; derleme (üretim paketi) bölmeye devam eder.
+const splitRoutes = !process.env.VITEST;
+
 export default defineConfig({
   plugins: [
-    tanstackRouter({ target: 'react', autoCodeSplitting: true, quoteStyle: 'single' }),
+    tanstackRouter({ target: 'react', autoCodeSplitting: splitRoutes, quoteStyle: 'single' }),
     react(),
   ],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },

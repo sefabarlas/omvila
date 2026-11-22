@@ -17,6 +17,7 @@ internal sealed class UserMembershipConfiguration : IEntityTypeConfiguration<Use
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Role).HasMaxLength(20);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(x => x.Version).IsRowVersion();
         // RLS performansı: brand_id ilk sütun. v1'de kullanıcı tek markaya üye (S-16).
         builder.HasIndex(x => new { x.BrandId, x.UserId }).IsUnique();
         builder.HasIndex(x => x.UserId).IsUnique();

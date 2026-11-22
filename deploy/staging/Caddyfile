@@ -1,6 +1,6 @@
 # Test ortamının kenar sunucusu: otomatik HTTPS (Let's Encrypt), alan adına göre yönlendirme.
 # Alan adları ve portlar ortamdan gelir (varsayılanlar test ortamı); yerel deneme: deploy/staging/compose.local.yml.
-# Basic auth: salon, admin, randevu, sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
+# Basic auth: salon, admin, randevu, www, sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
 # (credentials: 'include' dahil) Authorization başlığını kendiliğinden göndermez, istekler 401 alırdı.
 {
 	http_port {$CADDY_HTTP_PORT:80}
@@ -45,6 +45,13 @@
 	import common
 	import protected
 	reverse_proxy rezervasyon:3000
+}
+
+# Tanıtım sitesi (statik). Test ortamında diğer web yüzeyleri gibi basic auth ve noindex.
+{$WWW_HOST:www.test.omvila.com.tr} {
+	import common
+	import protected
+	reverse_proxy tanitim:8080
 }
 
 # SMS günlüğü sayfası API kapsayıcısında sunulur (sahte sağlayıcının infra.dev_sms_log kayıtları).
