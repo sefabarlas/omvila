@@ -26,7 +26,9 @@ import 'package:omvila_api/src/model/data_deletion_request_view.dart';
 import 'package:omvila_api/src/model/manage_list_customer_appointments200_response.dart';
 import 'package:omvila_api/src/model/manage_list_customers200_response.dart';
 import 'package:omvila_api/src/model/package_sale_request.dart';
+import 'package:omvila_api/src/model/phone_reveal_request.dart';
 import 'package:omvila_api/src/model/problem.dart';
+import 'package:omvila_api/src/model/revealed_phone.dart';
 
 class ManageCustomersApi {
 
@@ -1294,6 +1296,105 @@ _responseData = rawData == null ? null : deserialize<DataDeletionRequestView, Da
     }
 
     return Response<DataDeletionRequestView>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// Maskeli numarayı arama anında aç (\&quot;Ara\&quot;, \&quot;SMS\&quot;)
+  /// İşletme uygulaması müşteri kartı ve randevu detayındaki \&quot;Ara\&quot; / \&quot;SMS\&quot; butonları. Personel rolünde MaskCustomerPhoneFromStaff açıkken listeler yalnız phoneMasked döner; uygulama butona basılınca bu ucu çağırır, dönen numarayla tel: / sms: bağlantısını hemen açar ve numarayı ekranda göstermez, saklamaz. Her çağrı denetime yazılır (AuditLog: kullanıcı, müşteri kaydı, amaç, an; numara günlüğe yazılmaz). Yanıt önbelleğe alınmaz (Cache-Control: no-store). İzin customer.view; customer.phone.view izni olan kullanıcı da çağırabilir (aynı denetim kaydı). Başka markanın veya kapsam dışı kaydın kimliği ve telefonsuz müşteri kaydı (kapıda sıra, T-86) 404 not_found. Hız sınırı 429 rate_limited. 
+  ///
+  /// Parameters:
+  /// * [brandCustomerId] 
+  /// * [phoneRevealRequest] 
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [RevealedPhone] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<RevealedPhone>> manageRevealCustomerPhone({ 
+    required String brandCustomerId,
+    required PhoneRevealRequest phoneRevealRequest,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/customers/{brandCustomerId}/reveal-phone'.replaceAll('{' r'brandCustomerId' '}', brandCustomerId.toString());
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      _bodyData = jsonEncode(phoneRevealRequest);
+
+    } catch(error, stackTrace) {
+      throw DioException(
+         requestOptions: _options.compose(
+          _dio.options,
+          _path,
+        ),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    RevealedPhone? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<RevealedPhone, RevealedPhone>(rawData, 'RevealedPhone', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<RevealedPhone>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

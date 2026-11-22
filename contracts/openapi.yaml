@@ -58,6 +58,8 @@ tags:
     description: Kapıda sıra
   - name: manage-notifications
     description: Bildirim paneli, bildirim ve SMS ayarları, gönderen adı, cihaz kaydı, kişisel bildirim tercihleri
+  - name: manage-today
+    description: İşletme uygulaması "Bugün" ekranı ve kişisel prim özeti ("Primim")
   - name: public-booking
     description: Rezervasyon sayfası (üyeliksiz randevu)
   - name: public-appointment-link
@@ -66,6 +68,18 @@ tags:
     description: Bekleme listesine katılma ve bekleme teklifi bağlantısı (omvila.com/b/{code})
   - name: public-review
     description: Değerlendirme bağlantısı (omvila.com/d/{code})
+  - name: me-auth
+    description: Müşteri uygulaması girişi (telefon + SMS kodu), jeton yenileme, çıkış
+  - name: me-profile
+    description: Müşteri profili, kampanya izinleri (KVKK), hesap silme
+  - name: me-appointments
+    description: Müşterinin randevuları, iptal, saat değişikliği, havale bildirimi, değerlendirme
+  - name: me-brands
+    description: Salonlarım (randevu alınan ve QR / bağlantıyla kaydedilen salonlar)
+  - name: me-wallet
+    description: Paketlerim ve Ödemelerim (salt okunur)
+  - name: me-notifications
+    description: Müşteri uygulaması cihaz kaydı ve bildirimleri
   - name: webhooks
     description: Dış sağlayıcıların geri çağrıları (JWT yok; sağlayıcı imzasıyla doğrulanır)
 
@@ -1568,6 +1582,50 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
 
+  /api/v1/manage/customers/{brandCustomerId}/reveal-phone:
+    parameters:
+      - name: brandCustomerId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [manage-customers]
+      operationId: manageRevealCustomerPhone
+      summary: Maskeli numarayı arama anında aç ("Ara", "SMS")
+      description: |
+        İşletme uygulaması müşteri kartı ve randevu detayındaki "Ara" / "SMS" butonları. Personel rolünde MaskCustomerPhoneFromStaff açıkken listeler
+        yalnız phoneMasked döner; uygulama butona basılınca bu ucu çağırır, dönen numarayla tel: / sms: bağlantısını hemen açar ve numarayı ekranda
+        göstermez, saklamaz. Her çağrı denetime yazılır (AuditLog: kullanıcı, müşteri kaydı, amaç, an; numara günlüğe yazılmaz). Yanıt önbelleğe alınmaz
+        (Cache-Control: no-store). İzin customer.view; customer.phone.view izni olan kullanıcı da çağırabilir (aynı denetim kaydı). Başka markanın veya
+        kapsam dışı kaydın kimliği ve telefonsuz müşteri kaydı (kapıda sıra, T-86) 404 not_found. Hız sınırı 429 rate_limited.
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneRevealRequest'
+            example:
+              purpose: Call
+      responses:
+        '200':
+          description: Maskesiz numara
+          headers:
+            Cache-Control:
+              description: no-store
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealedPhone'
+              example:
+                phone: '+905321234521'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
   /api/v1/manage/customer-deletion-requests:
     get:
       tags: [manage-customers]
@@ -2585,6 +2643,9 @@ paths:
         "Yalnızca sizin telefonunuza gelenler." Tercihler yalnız push'u etkiler; bildirim paneli kaydı her durumda tutulur.
         Sahip ve yönetici olayları (owner.credits_low, owner.subscription_payment_failed, staff.deposit_reported) kapatılamaz.
         Sessiz saat aralığı platform varsayılanıdır (22:00–08:00, kullanıcının şubesinin saat diliminde); v1'de yalnız açılıp kapatılır.
+        İşletme push'ları gönderilmeden önce alıcının bu tercihleriyle süzülür (anahtar → olay eşlemesi MyNotificationPreferences açıklamasında);
+        kapalı anahtarın olayı push olarak gitmez ama bildirim panelinde (manageListInAppNotifications) görünür. Kaydı olmayan kullanıcı için
+        varsayılanlar döner (gün sonu özeti kapalı, bildirimler.md; diğer anahtarlar ve sessiz saatler açık).
       security: [ { manageBearer: [] } ]
       responses:
         '200':
@@ -2612,7 +2673,9 @@ paths:
       tags: [manage-notifications]
       operationId: manageUpdateMyNotificationPreferences
       summary: Kendi bildirim tercihlerimi kaydet
-      description: Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır).
+      description: |
+        "Bildirim ayarları" (BildirimAyar) anahtarları. Anahtarların hepsi tam gönderilir (salt okunur saat alanları yok sayılır). Değişiklik
+        sonraki push'tan itibaren uygulanır; sessiz saatte ertelenmiş push'lar gönderim anındaki tercihe göre süzülür.
       security: [ { manageBearer: [] } ]
       parameters:
         - $ref: '#/components/parameters/IfMatch'
@@ -3286,6 +3349,148 @@ paths:
         '409': { $ref: '#/components/responses/Conflict' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
 
+  # ───────────────────────────── manage-today (işletme uygulaması) ─────────────────────────────
+  /api/v1/manage/today:
+    get:
+      tags: [manage-today]
+      operationId: manageGetToday
+      summary: Bugün (işletme uygulaması ana ekranı)
+      description: |
+        OMVILA İşletme "Bugün" (Main, MainBos). Tek çağrıda: "Sıradaki" kartı, "Onay bekliyor" sayısı, "Sırada · ~35 dk bekleme", kişisel prim kartı ("KASIM PRİMİ")
+        ve "Gün akışı" ("4/12 bitti"). Gün, şubenin saat dilimindeki bugündür; kalan süreler ("50 dk sonra") generatedUtc'ye göre sayılır, cihaz saati kullanılmaz.
+        branchId verilmezse kullanıcının birincil şubesi. Kapsam: Staff rolü (calendar.view K) yalnız kendi kalemlerinin randevularını görür (KK10); telefon bu
+        yanıtta hiç dönmez. Yetkiye bağlı kartlar: pendingApprovalCount yalnız appointment.approve izninde, walkIns yalnız walkin.manage izninde, commission yalnız
+        commission.view izninde ve kullanıcının bu markada personel kaydı varsa dolu; aksi hâlde null (kart gösterilmez). Gün akışında iptal edilen randevular yoktur.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+      responses:
+        '200':
+          description: Bugün
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageToday'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                branchName: Kadıköy
+                timeZone: Europe/Istanbul
+                date: '2026-11-25'
+                generatedUtc: '2026-11-25T09:10:00Z'
+                next:
+                  appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d01
+                  startUtc: '2026-11-25T10:00:00Z'
+                  endUtc: '2026-11-25T10:45:00Z'
+                  status: Confirmed
+                  displayStatus: Confirmed
+                  customerName: Derya Şahin
+                  isNewCustomer: false
+                  serviceSummary: Saç kesimi
+                  staffNames: [Elif Kaya]
+                pendingApprovalCount: 2
+                walkIns: { waitingCount: 3, estimatedWaitMinutesForNew: 35 }
+                commission:
+                  month: '2026-11'
+                  totalMinor: 684000
+                  currency: TRY
+                  daily:
+                    - { date: '2026-11-24', amountMinor: 42000 }
+                    - { date: '2026-11-25', amountMinor: 9000 }
+                completedCount: 4
+                totalCount: 12
+                items:
+                  - appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d02
+                    startUtc: '2026-11-25T07:30:00Z'
+                    endUtc: '2026-11-25T09:00:00Z'
+                    status: CheckedIn
+                    displayStatus: CheckedIn
+                    customerName: Selin Öztürk
+                    isNewCustomer: false
+                    serviceSummary: Boya ve fön
+                    staffNames: [Elif Kaya]
+                  - appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a62
+                    startUtc: '2026-11-25T09:00:00Z'
+                    endUtc: '2026-11-25T09:45:00Z'
+                    status: PendingApproval
+                    displayStatus: PendingApproval
+                    customerName: Deniz Acar
+                    isNewCustomer: true
+                    serviceSummary: Saç kesimi
+                    staffNames: [Can Yücel]
+                    holdExpiresUtc: '2026-11-25T11:10:00Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/me/commission-summary:
+    get:
+      tags: [manage-today]
+      operationId: manageGetMyCommissionSummary
+      summary: Primim (kişisel prim özeti)
+      description: |
+        İşletme uygulaması Profil ("KASIM PRİMİM 6.840 ₺", "Bu hafta", "Son primler"). Yalnız oturumdaki kullanıcının kendi personel kaydının primleri (KK10, K2);
+        rolü ne olursa olsun başka personelin primi bu uçtan görülmez (salon geneli rapor manageGetCommissionReport, Dilim 6). İzin commission.view;
+        kullanıcının bu markada personel kaydı yoksa 404 not_found.
+        Ay (PeriodYearMonth) şubenin yerel takvimidir; month verilmezse bu ay. Toplam = ay içindeki bütün kayıtlar (Accrued, Approved, Paid) + ters kayıtlar (Reversed, eksi);
+        ters kayıt yüzünden eksi olabileceği için tamsayı totalMinor ile döner. serviceRevenueMinor "Hizmet geliri" (hizmet primi tabanları toplamı).
+        appointmentCount ayda tamamlanan randevu sayısı, noShowPercent ayın sonuçlanan randevularında Gelmedi oranı, averageRating son 90 günün ortalaması.
+        "Prim randevu tamamlandığında hak edilir. Selin Öztürk randevusu bitince eklenecek." metni nextAccrual'dan (bugün Geldi olup tamamlanmamış ilk randevu) üretilir.
+        Ödeme günü ("ödeme ayın 1'inde") sözleşmede yoktur (ayar değil; docs/acik-sorular.md T-101).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - name: month
+          in: query
+          required: false
+          description: Yıl-ay (YYYY-MM), şubenin yerel takvimi
+          schema: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', example: '2026-11' }
+      responses:
+        '200':
+          description: Kişisel prim özeti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyCommissionSummary'
+              example:
+                staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                staffName: Elif Kaya
+                timeZone: Europe/Istanbul
+                month: '2026-11'
+                from: '2026-11-01'
+                to: '2026-11-25'
+                totalMinor: 684000
+                serviceRevenueMinor: 2850000
+                currency: TRY
+                appointmentCount: 94
+                noShowPercent: 4
+                averageRating: 4.9
+                daily:
+                  - { date: '2026-11-24', amountMinor: 42000 }
+                  - { date: '2026-11-25', amountMinor: 9000 }
+                thisWeek:
+                  - { date: '2026-11-24', amountMinor: 42000, appointmentCount: 6 }
+                  - { date: '2026-11-25', amountMinor: 9000, appointmentCount: 9 }
+                entries:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d10
+                    type: Service
+                    amountMinor: 9000
+                    status: Accrued
+                    occurredUtc: '2026-11-25T06:30:00Z'
+                    customerName: Ayşe Yılmaz
+                    description: Saç kesimi
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d03
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d11
+                    type: Service
+                    amountMinor: 42000
+                    status: Accrued
+                    occurredUtc: '2026-11-24T14:00:00Z'
+                    customerName: Buse Kaya
+                    description: Keratin
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d04
+                nextAccrual: { appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6d02, customerName: Selin Öztürk }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   # ───────────────────────────── public-booking ─────────────────────────────
   /api/v1/public/brands/{brandSlug}:
     get:
@@ -3465,6 +3670,9 @@ paths:
         Onay veya kapora gerekiyorsa randevu PendingApproval oluşur ve holdExpiresUtc döner.
         Kapora gerekiyorsa yanıtta depositInstructions (alıcı, IBAN, tutar, açıklama kodu, son zaman) bulunur.
         Saat dolmuşsa 409 slot_taken + meta.alternatives.
+        Müşteri uygulaması (YROnay) aynı ucu müşteri jetonuyla (meBearer, X-Client customer-app) çağırır: telefon jetondan gelir, kod adımı yoktur;
+        fullName profildeki adla doldurulur (profilde ad yoksa bu istekle profile de yazılır). Markada müşteri kaydı yoksa açılır ve marka "Salonlarım"a
+        (CustomerSavedBrand, Source Booking) eklenir. Oluşan randevu meListAppointments ve meGetAppointment'ta görünür.
       security: [ { publicBookingBearer: [] }, { meBearer: [] } ]
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -3899,6 +4107,950 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ───────────────────────────── me-auth (müşteri uygulaması) ─────────────────────────────
+  /api/v1/me/auth/otp/request:
+    post:
+      tags: [me-auth]
+      operationId: meRequestOtp
+      summary: SMS kodu iste (müşteri uygulaması girişi)
+      description: |
+        Müşteri uygulaması "Giriş" ekranındaki "Kod gönder". Kod her zaman OMVILA adıyla SMS'tir (otp.code, OtpChallenge.Purpose CustomerLogin).
+        Numaranın kayıtlı olup olmadığı yanıtta açık edilmez (her durumda 202). Yeniden gönderim ve deneme sınırları salon girişiyle aynıdır
+        (429 otp_resend_too_soon, otp_attempts_exceeded).
+      parameters:
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeOtpRequest'
+            example:
+              phone: '0532 611 24 67'
+      responses:
+        '202':
+          description: Kod gönderildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+              example:
+                otpId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c01
+                expiresInSeconds: 180
+                resendAfterSeconds: 60
+                phoneMasked: '0532 *** ** 67'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/me/auth/otp/verify:
+    post:
+      tags: [me-auth]
+      operationId: meVerifyOtp
+      summary: SMS kodunu doğrula, oturum aç ("GirisKod")
+      description: |
+        Kod doğruysa müşteri oturumu açılır (CustomerSession). Numaraya ait global Customer kaydı yoksa açılır; kayıt IsVerified ve HasAppAccount olur.
+        Bu işlem hiçbir markada BrandCustomer açmaz. Jetonlar gövdede döner (yalnız mobil istemci); uygulama yenileme jetonunu
+        flutter_secure_storage'da saklar. rememberDevice alanı bu uçta yok sayılır. Kod hatalıysa 422 otp_invalid (meta.attemptsLeft),
+        süresi dolmuşsa 422 otp_expired.
+      parameters:
+        - $ref: '#/components/parameters/ClientHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: Oturum açıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAuthResult'
+              example:
+                accessToken: ornek-erisim-jetonu
+                expiresInSeconds: 900
+                refreshToken: ornek-yenileme-jetonu
+                isNewAccount: false
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/me/auth/refresh:
+    post:
+      tags: [me-auth]
+      operationId: meRefreshToken
+      summary: Erişim jetonunu yenile (müşteri)
+      description: |
+        Yenileme jetonu gövdede gönderilir ve her kullanımda döndürülür (rotation): yanıttaki yeni refreshToken saklanır, eskisi geçersizdir.
+        Kullanılmış bir jeton yeniden gelirse o zincirdeki bütün jetonlar iptal edilir ve 401 unauthorized döner (uygulama girişe döner).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeRefreshRequest'
+      responses:
+        '200':
+          description: Yeni jetonlar (refreshToken her zaman dolu)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+              example:
+                accessToken: ornek-erisim-jetonu
+                expiresInSeconds: 900
+                refreshToken: ornek-yeni-yenileme-jetonu
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/me/auth/logout:
+    post:
+      tags: [me-auth]
+      operationId: meLogout
+      summary: Oturumu kapat ("Çıkış yap")
+      description: |
+        Gönderilen yenileme jetonunun zinciri iptal edilir. pushToken gönderilirse o cihaz kaydı pasifleşir (çıkış yapan telefona push gitmez).
+        Uygulama jetonları yerelde de siler. İstek kendiliğinden idempotenttir.
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeLogoutRequest'
+      responses:
+        '204': { description: Kapatıldı }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────────── me-profile ─────────────────────────────
+  /api/v1/me/profile:
+    get:
+      tags: [me-profile]
+      operationId: meGetProfile
+      summary: Profil ("Profil", "Profil bilgilerim")
+      description: |
+        Global Customer kaydının müşteriye görünen alanları. Markalar bu kaydın tamamını görmez (ürün kuralı 5). Telefon giriş anahtarıdır, salt okunurdur
+        ("Değiştirmek için destek"). fullName, müşteri henüz ad vermediyse (ilk girişte, randevusuz) null'dır; uygulama selamlamayı adsız gösterir ve
+        randevu alırken adı ister. Profilde "Salonlarım" meListBrands'ten gelir.
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Profil
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeProfile'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c10
+                fullName: Merve Yıldız
+                reviewerDisplayName: Merve Y.
+                phone: '+905326112467'
+                email: merve.yildiz@example.com
+                language: tr
+                version: 'W/"5120"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    patch:
+      tags: [me-profile]
+      operationId: meUpdateProfile
+      summary: Profil bilgilerini kaydet ("Kaydet")
+      description: |
+        Gönderilmeyen alan değişmez; email için açıkça null gönderilirse e-posta silinir. Telefon bu uçla değişmez.
+        Dil v1'de yalnız tr'dir (uygulama arayüzü ve bildirim metinleri Türkçe; English seçeneği docs/acik-sorular.md T-101'de açık).
+        Biçim hatası 400 validation_failed (fullName too_short / too_long, email invalid_format).
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeProfileUpdate'
+            example:
+              fullName: Merve Yıldız
+              email: merve.yildiz@example.com
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeProfile'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/me/consents:
+    get:
+      tags: [me-profile]
+      operationId: meListConsents
+      summary: İzinlerim (salon bazında kampanya izni)
+      description: |
+        "İzinlerim (KVKK)" ekranı. Randevu mesajları işlem mesajıdır, rızaya bağlı değildir ve kapatılamaz (ekrandaki açıklama metni; listede satırı yoktur).
+        Liste, müşterinin müşteri kaydı (BrandCustomer) olan markalardır; yalnız kaydedilen (randevu alınmamış) salon listede yoktur.
+        marketingGranted, o markadaki son Marketing* rıza kaydıdır (ConsentRecord; kayıt yoksa false). İYS'ye bildirim v1'de yapılmaz, rıza yalnız toplanır (T-09).
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Kampanya izinleri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeConsentList'
+              example:
+                items:
+                  - brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    marketingGranted: true
+                    updatedUtc: '2026-10-21T09:12:00Z'
+                  - brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21, name: Nail Studio Moda, slug: nail-studio-moda, logoUrl: null }
+                    marketingGranted: false
+                    updatedUtc: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [me-profile]
+      operationId: meUpdateMarketingConsent
+      summary: Bir salonun kampanya iznini aç veya kapat
+      description: |
+        Anahtar tek bir "Kampanya ve indirim mesajları" iznidir: sunucu o marka için MarketingSms, MarketingEmail ve MarketingPush rıza kayıtlarını
+        (ConsentRecord, Channel CustomerApp) aynı değerle ekler. Rıza defteri yalnız eklenir, güncellenmez; değer zaten aynıysa yeni satır yazılmaz.
+        Bu yüzden istek kendiliğinden idempotenttir ve If-Match almaz (son yazılan geçerlidir). Müşteri kaydı olmayan marka 404 not_found.
+        Yanıt güncel listedir.
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeMarketingConsentUpdate'
+            example:
+              brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21
+              granted: true
+      responses:
+        '200':
+          description: Kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeConsentList'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/me/account/deletion/otp:
+    post:
+      tags: [me-profile]
+      operationId: meRequestAccountDeletionOtp
+      summary: Hesap silme için SMS kodu iste ("SMS koduyla onayla ve sil", 1. adım)
+      description: |
+        HesapSil ekranı. Oturumdaki müşterinin kendi numarasına kod gönderir (OtpChallenge.Purpose AccountDeletion, OMVILA adıyla SMS).
+        Ekrandaki önizleme ("2 yaklaşan randevunuz iptal edilecek", "Kalan paket seansları") ayrı uçtan gelmez: uygulama meListAppointments(scope = Upcoming)
+        ve meListPackages yanıtlarından üretir. Sınırlar giriş koduyla aynıdır (429).
+      security: [ { meBearer: [] } ]
+      responses:
+        '202':
+          description: Kod gönderildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/me/account/deletion:
+    post:
+      tags: [me-profile]
+      operationId: meRequestAccountDeletion
+      summary: Hesabı ve verileri sil (SMS koduyla onay, 2. adım)
+      description: |
+        Kod doğruysa silme hemen uygulanır (KK9, docs/acik-sorular.md W7): yaklaşan randevular iptal edilir (CancellationReason AccountDeleted; salonlara
+        staff.appointment_changed bildirimi gider, seanslar geri döner), global kayıt ve bütün markalardaki müşteri kayıtları anonimleşir (ad, telefon,
+        e-posta, notlar), rıza kayıtları ve cihazlar pasifleşir, bütün oturumlar kapanır. Randevu, ödeme ve prim kayıtları salonlarda anonim olarak kalır
+        ("Salonlarda kalanlar"); kalan paket seansları kullanılamaz hâle gelir. DataDeletionRequest (BrandId boş, RequestedVia CustomerApp, Completed) yazılır.
+        Yanıttan sonra jetonlar geçersizdir; uygulama HesapSilindi ekranını gösterir. Kod hatalıysa 422 otp_invalid, süresi dolmuşsa 422 otp_expired.
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeAccountDeletionConfirm'
+      responses:
+        '200':
+          description: Hesap silindi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAccountDeletionResult'
+              example:
+                deletedUtc: '2026-11-25T10:05:00Z'
+                cancelledAppointmentCount: 2
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  # ───────────────────────────── me-appointments ─────────────────────────────
+  /api/v1/me/appointments:
+    get:
+      tags: [me-appointments]
+      operationId: meListAppointments
+      summary: Randevularım (yaklaşan) ve Geçmiş
+      description: |
+        Müşterinin bütün markalardaki randevuları (her markada yalnız kendi müşteri kaydının randevuları).
+        scope = Upcoming: PendingApproval, Confirmed veya CheckedIn olup bitişi gelmemiş randevular, başlangıca göre artan (Main: ilk kayıt büyük kart, kalanı "Yaklaşan").
+        scope = Past: geri kalanlar (Completed, Cancelled, NoShow ve bitişi geçmiş olanlar), başlangıca göre azalan (Gecmis; ay başlıkları istemcide şubenin saat diliminden).
+        notReviewed = true yalnız scope = Past ile kullanılır ve canReview = true olanları döndürür ("Değerlendirilmedi" sekmesi); Upcoming ile 400 validation_failed.
+        "Aynısını tekrar al" (MainYaklasanYok, KK2): Upcoming boşsa uygulama scope = Past, limit = 1 ister; satırdaki branch, items (serviceId, staffId) ve canRebook
+        rezervasyon akışını doldurur (publicSearchDays / publicSearchSlots). "Son randevunuz 12 Kasım'da Kuaför Elif'teydi" aynı satırdan üretilir.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - name: scope
+          in: query
+          required: true
+          description: Upcoming = yaklaşan, Past = geçmiş
+          schema: { type: string, enum: [Upcoming, Past] }
+        - name: notReviewed
+          in: query
+          required: false
+          description: Yalnız değerlendirilebilir, değerlendirilmemiş geçmiş randevular ("Değerlendirilmedi")
+          schema: { type: boolean }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Randevular
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAppointmentPage'
+              example:
+                nextCursor: null
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    branch: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01, name: Kadıköy, district: Kadıköy }
+                    timeZone: Europe/Istanbul
+                    startUtc: '2026-11-12T11:00:00Z'
+                    endUtc: '2026-11-12T13:15:00Z'
+                    status: Completed
+                    displayStatus: Completed
+                    items:
+                      - serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d31
+                        serviceName: Boya ve fön
+                        staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                        staffName: Elif Kaya
+                        startUtc: '2026-11-12T11:00:00Z'
+                        endUtc: '2026-11-12T13:15:00Z'
+                        price: { amountMinor: 144000, currency: TRY }
+                        paidFromPackage: false
+                    total: { amountMinor: 144000, currency: TRY }
+                    amountDue: { amountMinor: 0, currency: TRY }
+                    review: null
+                    canReview: true
+                    canRebook: true
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c31
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c21, name: Nail Studio Moda, slug: nail-studio-moda, logoUrl: null }
+                    branch: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c51, name: Kadıköy, district: Kadıköy }
+                    timeZone: Europe/Istanbul
+                    startUtc: '2026-11-04T08:00:00Z'
+                    endUtc: '2026-11-04T08:40:00Z'
+                    status: Completed
+                    displayStatus: Completed
+                    items:
+                      - serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c61
+                        serviceName: Manikür
+                        staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c62
+                        staffName: Gizem Er
+                        startUtc: '2026-11-04T08:00:00Z'
+                        endUtc: '2026-11-04T08:40:00Z'
+                        price: { amountMinor: 35000, currency: TRY }
+                        paidFromPackage: false
+                    total: { amountMinor: 35000, currency: TRY }
+                    amountDue: { amountMinor: 0, currency: TRY }
+                    review: { rating: 5, createdUtc: '2026-11-04T12:10:00Z' }
+                    canReview: false
+                    canRebook: true
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/me/appointments/{appointmentId}:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    get:
+      tags: [me-appointments]
+      operationId: meGetAppointment
+      summary: Randevu detayı ("RandevuDetay")
+      description: |
+        Başka müşterinin randevusu 404 not_found döner. Kapora isteniyorsa deposit.instructions havale bilgisini taşır (YRHavale).
+        canCancel / canReschedule ve son süreler ErteleKapali ve "Salonu ara" gösterimini belirler; "İptal 24 saat, saat değişikliği 12 saat öncesine kadar"
+        metni son sürelerin başlangıca farkından üretilir. Degerlendir ekranı başlığı (salon, hizmet, personel, tarih) ve "Merve Y." (meGetProfile.reviewerDisplayName)
+        bu yanıttan gelir.
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Randevu
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAppointment'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32
+                reference: A-20512
+                brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                branch:
+                  id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                  name: Kadıköy
+                  addressLine: Moda Cad. 42
+                  district: Kadıköy
+                  phone: '+902163450012'
+                  latitude: 40.9871
+                  longitude: 29.0262
+                timeZone: Europe/Istanbul
+                startUtc: '2026-11-26T11:30:00Z'
+                endUtc: '2026-11-26T12:45:00Z'
+                status: Confirmed
+                displayStatus: Confirmed
+                holdExpiresUtc: null
+                items:
+                  - serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d32
+                    serviceName: Saç kesimi
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                    staffName: Elif Kaya
+                    startUtc: '2026-11-26T11:30:00Z'
+                    endUtc: '2026-11-26T12:15:00Z'
+                    price: { amountMinor: 45000, currency: TRY }
+                    paidFromPackage: false
+                  - serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33
+                    serviceName: Fön
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                    staffName: Elif Kaya
+                    startUtc: '2026-11-26T12:15:00Z'
+                    endUtc: '2026-11-26T12:45:00Z'
+                    price: { amountMinor: 25000, currency: TRY }
+                    paidFromPackage: false
+                total: { amountMinor: 70000, currency: TRY }
+                amountDue: { amountMinor: 50000, currency: TRY }
+                deposit:
+                  required: { amountMinor: 20000, currency: TRY }
+                  status: Received
+                  transferCode: OMV-4H8M
+                  customerReportedUtc: '2026-11-24T18:02:00Z'
+                  receivedUtc: '2026-11-24T19:30:00Z'
+                canCancel: true
+                cancelDeadlineUtc: '2026-11-25T11:30:00Z'
+                canReschedule: true
+                rescheduleDeadlineUtc: '2026-11-25T23:30:00Z'
+                canReview: false
+                canRebook: true
+                review: null
+                preAppointmentNote: null
+                customerNote: null
+                cancellation: null
+                version: 'W/"9012"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/me/appointments/{appointmentId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [me-appointments]
+      operationId: meCancelAppointment
+      summary: Randevuyu iptal et ("Iptal", neden zorunlu)
+      description: |
+        SMS bağlantısındaki iptal (publicCancelAppointment) ile aynı kurallar (A6): neden zorunlu, son süre geçtiyse 409 cutoff_passed ("Salonu ara").
+        Neden çipleri: PlanChanged "Planım değişti", Sick "Rahatsızlandım" (tasarımdaki "Hastayım" yerine; sağlık bilgisi izlenimi vermemek için), WantsDifferentTime
+        "Başka saat istiyorum", Other (not zorunlu). Alınmış kapora için "iadesi salonun iade koşullarına bağlıdır" uyarısı istemcidedir; OMVILA iade yapmaz.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCancelRequest'
+            example:
+              reason: PlanChanged
+      responses:
+        '200':
+          description: İptal edildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAppointment'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/me/appointments/{appointmentId}/availability/slots:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [me-appointments]
+      operationId: meSearchRescheduleSlots
+      summary: Saat değişikliği için boş saatler ("RandevuErtele")
+      description: |
+        Aynı hizmetler ve aynı personelle bir günün boş saatleri; randevunun kendi süresi meşgul sayılmaz. Gün şeridindeki noktalar için uygulama
+        publicSearchDays'i randevunun kalemleriyle (items[].serviceId, staffId) çağırır. Son süre geçtiyse 409 cutoff_passed (ErteleKapali).
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeRescheduleSlotSearch'
+            example:
+              date: '2026-11-28'
+      responses:
+        '200':
+          description: Saatler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotSearchResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/me/appointments/{appointmentId}/reschedule:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [me-appointments]
+      operationId: meRescheduleAppointment
+      summary: Saati değiştir (müşteri)
+      description: |
+        publicRescheduleAppointment ile aynı kurallar (A14): erteleme son süresi geçtiyse 409 cutoff_passed, saat dolduysa 409 slot_taken + meta.alternatives.
+        Salon onaylı çalışıyorsa randevu yeniden PendingApproval olur ("Salon onaylı çalışıyorsa yeni saat onaya düşer"); alınmış kapora yeni saate aktarılır.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeRescheduleRequest'
+            example:
+              startUtc: '2026-11-28T12:15:00Z'
+      responses:
+        '200':
+          description: Değiştirildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAppointment'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/me/appointments/{appointmentId}/deposit/report:
+    parameters:
+      - $ref: '#/components/parameters/AppointmentIdPath'
+    post:
+      tags: [me-appointments]
+      operationId: meReportDepositTransfer
+      summary: Havaleyi bildir ("Havaleyi yaptım, salona bildir", YRHavale)
+      description: |
+        publicReportDepositTransfer ile aynı davranış: deposit.status CustomerReported olur, salona staff.deposit_reported gider, randevu durumu değişmez
+        ("Salon onayı bekleniyor"). Kendiliğinden idempotenttir (Idempotency-Key ve If-Match almaz). Kapora beklenmiyorsa 409 invalid_state_transition,
+        tutma süresi dolmuşsa 409 hold_expired. Uygulamada oluşturulan randevuda kimlik publicCreateAppointment yanıtındaki id'dir.
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Bildirildi (veya zaten bildirilmişti)
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeAppointment'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+
+  /api/v1/me/reviews:
+    post:
+      tags: [me-appointments]
+      operationId: meCreateReview
+      summary: Değerlendirmeyi gönder ("Degerlendir")
+      description: |
+        publicCreateReview ile aynı kurallar (KK8): yalnız Completed randevu ve bir kez; değerlendirilmişse 409 already_reviewed, Completed değilse
+        409 invalid_state_transition, başka müşterinin randevusu 404 not_found. Etiket yok; puan, isteğe bağlı yorum. Yorumda "Merve Y." görünür.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeReviewCreate'
+            example:
+              appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30
+              rating: 4
+              comment: Boya tam istediğim gibi oldu.
+      responses:
+        '201':
+          description: Değerlendirme kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeReview'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c40
+                appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30
+                rating: 4
+                comment: Boya tam istediğim gibi oldu.
+                createdUtc: '2026-11-12T15:20:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ───────────────────────────── me-brands ─────────────────────────────
+  /api/v1/me/brands:
+    get:
+      tags: [me-brands]
+      operationId: meListBrands
+      summary: Salonlarım (randevu alınan + kaydedilen)
+      description: |
+        YRSalon ("Hangi salon?") ve Profil "Salonlarım". Randevu alınan markalar (müşteri kaydı, BrandCustomer) ile QR veya bağlantıyla kaydedilenler
+        (CustomerSavedBrand) birlikte; son ziyarete göre azalan, ziyareti olmayanlar kaydedilme anına göre sonda. Sayfalanmaz (kısa liste). Boşsa YRSalonBos / MainBos.
+        activePackages "Fön paketiniz var" rozetini besler (Active ve kalan seansı olan paketler).
+        Uygulamadan randevu akışı (YR*) public uçlarla, müşteri jetonuyla yapılır: publicGetBrand(slug) → publicGetBranchCatalog (YRHizmet, YRPersonel) →
+        publicSearchDays / publicSearchSlots (YRSaat) → publicListMyPackages ("paketinizden düşülsün") → publicCreateAppointment (YROnay; Authorization meBearer,
+        X-Client customer-app, kod adımı yok) → kapora varsa meReportDepositTransfer (YRHavale). Bekleme listesi publicJoinWaitlist (meBearer).
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Salonlar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeBrandList'
+              example:
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20
+                    name: Kuaför Elif
+                    slug: kuafor-elif
+                    logoUrl: null
+                    coverColor: kum
+                    bookingEnabled: true
+                    hasBooked: true
+                    savedUtc: null
+                    lastVisitOn: '2026-11-12'
+                    branches:
+                      - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01, name: Kadıköy, district: Kadıköy }
+                    activePackages:
+                      - { customerPackageId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c70, packageName: Fön paketi, remainingSessions: 2 }
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c22
+                    name: Diyetisyen Ece Arslan
+                    slug: dyt-ece-arslan
+                    logoUrl: null
+                    coverColor: mercan
+                    bookingEnabled: true
+                    hasBooked: true
+                    savedUtc: '2026-09-01T07:00:00Z'
+                    lastVisitOn: '2026-10-09'
+                    branches:
+                      - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c52, name: Online, district: Online }
+                      - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c53, name: Şişli, district: Şişli }
+                    activePackages: []
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [me-brands]
+      operationId: meSaveBrand
+      summary: Salonu ekle ("QR kodu okut", "Bağlantıyı yapıştır")
+      description: |
+        MainBos ve derin bağlantı (randevu.omvila.com.tr/{brandSlug}, K3). Uygulama QR veya yapıştırılan bağlantıdan brandSlug'ı çıkarır.
+        CustomerSavedBrand yazılır; BrandCustomer **oluşmaz** ve salon bu kişiyi müşteri listesinde görmez (KK1). Müşteri kaydı ilk randevuda açılır.
+        Eski bağlantı adı yönlendirmesi sürüyorsa güncel markaya kaydedilir. Zaten kayıtlı veya randevu alınmış marka için aynı satır 200 ile döner
+        (kendiliğinden idempotent; Idempotency-Key almaz). Bilinmeyen bağlantı 404 not_found ("Bu bağlantıda salon bulunamadı").
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeSaveBrandRequest'
+            example:
+              brandSlug: spa-moda
+              source: Qr
+      responses:
+        '200':
+          description: Kaydedildi (veya zaten listedeydi)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeBrand'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23
+                name: Spa Moda
+                slug: spa-moda
+                logoUrl: null
+                coverColor: petrol
+                bookingEnabled: true
+                hasBooked: false
+                savedUtc: '2026-11-25T09:40:00Z'
+                lastVisitOn: null
+                branches:
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c54, name: Moda, district: Kadıköy }
+                activePackages: []
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── me-wallet (paketler, ödemeler) ─────────────────────────────
+  /api/v1/me/packages:
+    get:
+      tags: [me-wallet]
+      operationId: meListPackages
+      summary: Paketlerim
+      description: |
+        Bütün markalardaki paketler. Önce kullanılabilir paketler (Active ve kalan seansı olan; son kullanım gününe göre artan), sonra "Biten paketler"
+        (seansı biten, süresi geçen, iade edilen; bitişe göre azalan). Başlıktaki "2 aktif paket" activeCount'tur. Boşsa PaketlerBos.
+        Paketler salondan satın alınır; uygulamada satın alma yoktur.
+      security: [ { meBearer: [] } ]
+      responses:
+        '200':
+          description: Paketler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MePackageList'
+              example:
+                activeCount: 1
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c70
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    branchName: Kadıköy
+                    isAvailableAllBranches: false
+                    packageName: Fön paketi
+                    status: Active
+                    items:
+                      - { customerPackageItemId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c72, serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d33, serviceName: Fön, totalSessions: 5, remainingSessions: 2 }
+                    totalSessions: 5
+                    remainingSessions: 2
+                    expiresOn: '2026-12-31'
+                    isUsable: true
+                    isRunningLow: true
+                    finishedOn: null
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c71
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    branchName: null
+                    isAvailableAllBranches: true
+                    packageName: Cilt bakımı
+                    status: Active
+                    items:
+                      - { customerPackageItemId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c73, serviceId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5d34, serviceName: Cilt bakımı, totalSessions: 4, remainingSessions: 0 }
+                    totalSessions: 4
+                    remainingSessions: 0
+                    expiresOn: '2027-01-15'
+                    isUsable: false
+                    isRunningLow: false
+                    finishedOn: '2026-09-18'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/me/payments:
+    get:
+      tags: [me-wallet]
+      operationId: meListPayments
+      summary: Ödemelerim (salt okunur)
+      description: |
+        "Uygulamadan ödeme alınmaz." Kapora havaleleri ve salonda kaydedilen tahsilatlar, yeniden eskiye (ay başlıkları istemcide).
+        Satırlar: kind = Deposit (kapora havalesi), AppointmentPayment (salonda alınan randevu ödemesi), PackagePurchase (paket satın alma).
+        Kapora durumu (Dilim 4 KK9): status AwaitingConfirmation = müşteri "Havaleyi yaptım" dedi, salon henüz "Kapora geldi" demedi ("Salon onayı bekleniyor";
+        satır tahsilat kaydı değil, randevudan gelir, id randevunun kimliğidir); Recorded = "Alındı · 26 Kasım randevusu"; Refunded veya PartiallyRefunded =
+        "Salon iade etti". Bildirilmemiş (Awaiting) kapora, iptal edilmiş (Voided) kayıt ve paketten düşülen kalemlerin 0 TL kaydı listelenmez.
+        Yöntem metni istemcide: Cash "Nakit", Card "Kartla, salonda" (salonun kendi POS'u), Transfer "Havale". Boşsa OdemelerimBos.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Ödemeler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MePaymentPage'
+              example:
+                nextCursor: null
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c34
+                    kind: Deposit
+                    status: AwaitingConfirmation
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23, name: Spa Moda, slug: spa-moda, logoUrl: null }
+                    amount: { amountMinor: 20000, currency: TRY }
+                    method: Transfer
+                    occurredUtc: '2026-11-25T08:52:00Z'
+                    timeZone: Europe/Istanbul
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c34
+                    appointmentStartUtc: '2026-11-28T13:00:00Z'
+                    serviceNames: [Masaj]
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c80
+                    kind: Deposit
+                    status: Recorded
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    amount: { amountMinor: 15000, currency: TRY }
+                    method: Transfer
+                    occurredUtc: '2026-11-24T19:30:00Z'
+                    timeZone: Europe/Istanbul
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32
+                    appointmentStartUtc: '2026-11-26T11:30:00Z'
+                    serviceNames: [Saç kesimi, Fön]
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c81
+                    kind: AppointmentPayment
+                    status: Recorded
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    amount: { amountMinor: 124000, currency: TRY }
+                    method: Card
+                    occurredUtc: '2026-11-12T13:20:00Z'
+                    timeZone: Europe/Istanbul
+                    appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30
+                    appointmentStartUtc: '2026-11-12T11:00:00Z'
+                    serviceNames: [Boya ve fön]
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c82
+                    kind: PackagePurchase
+                    status: Recorded
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    amount: { amountMinor: 100000, currency: TRY }
+                    method: Transfer
+                    occurredUtc: '2026-10-02T10:00:00Z'
+                    timeZone: Europe/Istanbul
+                    packageName: Fön paketi
+                    packageSessionCount: 5
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────────── me-notifications ─────────────────────────────
+  /api/v1/me/devices:
+    post:
+      tags: [me-notifications]
+      operationId: meRegisterDevice
+      summary: Müşteri uygulaması push jetonunu kaydet ("BildirimIzni")
+      description: |
+        Müşteri kendi izin ekranımızda "Bildirimlere izin ver" dedikten sonra, açılışta ve FCM jetonu yenilendiğinde çağrılır (Device: OwnerType Customer, App Customer).
+        manageRegisterDevice ile aynı kurallar: doğal anahtar push jetonudur, aynı jeton güncellenir ve aynı deviceId döner (Idempotency-Key istenmez); jeton başka
+        hesaba kayıtlıysa o kayıt pasifleşir. Aktif cihaz varken müşteri bildirimleri önce push denenir, ulaşmazsa SMS'e düşer. "Şimdi değil" diyen kullanıcıda
+        cihaz kaydı yoktur, hatırlatmalar SMS ile gelir (MainBildirimKapali şeridi istemcidedir).
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '200':
+          description: Kaydedildi veya güncellendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisteredDevice'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/me/notifications:
+    get:
+      tags: [me-notifications]
+      operationId: meListNotifications
+      summary: Bildirimler (müşteri)
+      description: |
+        Müşteriye giden push'lu olayların uygulama içi kaydı, yeniden eskiye (Bildirimler, BildirimlerBos). Kayıt push tercihinden ve teslimden bağımsız
+        yazılır (bildirim izni kapalı olsa da görünür). title ve body olay anındaki push metniyle aynıdır (docs/standartlar/bildirimler.md § Müşteri olayları);
+        kod, IBAN ve not içeriği yazılmaz. Zildeki nokta unreadCount > 0 iken gösterilir (sahte sayı yok). target dokununca açılacak ekrandır.
+      security: [ { meBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: unreadOnly
+          in: query
+          required: false
+          description: Yalnız okunmamışlar
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Bildirimler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeNotificationPage'
+              example:
+                unreadCount: 2
+                nextCursor: null
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c90
+                    event: waitlist.offer
+                    title: Beklediğiniz saat boşaldı
+                    body: Spa Moda · Cuma 16:00. 15 dakika içinde onaylarsanız sizin.
+                    createdUtc: '2026-11-25T09:58:00Z'
+                    readUtc: null
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c23, name: Spa Moda, slug: spa-moda, logoUrl: null }
+                    target: { type: WaitlistOffer, appointmentId: null, accessCode: Wq7Lm2Xa, brandSlug: spa-moda }
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c91
+                    event: appointment.confirmed
+                    title: Randevunuz onaylandı
+                    body: Kuaför Elif · Yarın 14:30. Görüşmek üzere.
+                    createdUtc: '2026-11-25T07:30:00Z'
+                    readUtc: null
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    target: { type: Appointment, appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c32, accessCode: null, brandSlug: kuafor-elif }
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c92
+                    event: review.invite
+                    title: Nasıldı?
+                    body: Kuaför Elif'teki randevunuzu değerlendirin.
+                    createdUtc: '2026-11-12T15:15:00Z'
+                    readUtc: '2026-11-12T16:00:00Z'
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c20, name: Kuaför Elif, slug: kuafor-elif, logoUrl: null }
+                    target: { type: Review, appointmentId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f6c30, accessCode: null, brandSlug: kuafor-elif }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/me/notifications/read:
+    post:
+      tags: [me-notifications]
+      operationId: meMarkNotificationsRead
+      summary: Bildirimleri okundu say
+      description: |
+        manageMarkNotificationsRead ile aynı kurallar: notificationIds (dokunulan bildirim) veya all = true; ikisi birden veya hiçbiri 400 validation_failed.
+        İdempotenttir; başka müşterinin bildirimi sessizce yok sayılır. Yanıt güncel okunmamış sayısıdır.
+      security: [ { meBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkNotificationsReadRequest'
+      responses:
+        '200':
+          description: Okundu sayıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnreadNotificationCount'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   # ───────────────────────────── webhooks ─────────────────────────────
   /api/v1/webhooks/sms/{provider}:
@@ -5454,7 +6606,7 @@ components:
       enum: [iOS, Android]
     DeviceRegistration:
       type: object
-      description: İşletme uygulaması push jetonu kaydı
+      description: Push jetonu kaydı (işletme uygulaması manageRegisterDevice, müşteri uygulaması meRegisterDevice)
       required: [platform, pushToken, appVersion]
       properties:
         platform: { $ref: '#/components/schemas/DevicePlatform' }
@@ -6619,3 +7771,579 @@ components:
           type: array
           items: { $ref: '#/components/schemas/DataDeletionRequestView' }
         nextCursor: { type: [string, 'null'] }
+
+    # ───────── Dilim 5: işletme uygulaması (Bugün, Primim, numara açma) ─────────
+    PhoneRevealRequest:
+      type: object
+      description: '"Ara" / "SMS" butonu; amaç denetim kaydına yazılır'
+      required: [purpose]
+      properties:
+        purpose: { type: string, enum: [Call, Sms], description: 'Call = "Ara"; Sms = "SMS"' }
+    RevealedPhone:
+      type: object
+      description: Maskesiz numara; istemci yalnız tel / sms bağlantısını açmak için kullanır, göstermez ve saklamaz
+      required: [phone]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneE164' }
+    TodayAppointment:
+      type: object
+      description: Bugün ekranındaki randevu satırı ("12:00 · Deniz Acar · Saç kesimi · Can · Onay bekliyor"); işlem butonları istemcide durum ve izinden üretilir
+      required: [appointmentId, startUtc, endUtc, status, displayStatus, customerName, isNewCustomer, serviceSummary, staffNames]
+      properties:
+        appointmentId: { type: string, format: uuid, description: Randevu kimliği (RandevuDetay) }
+        startUtc: { type: string, format: date-time, description: Başlangıç }
+        endUtc: { type: string, format: date-time, description: Bitiş; "45 dk" süre istemcide }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        customerName: { type: string, description: Müşteri adı, example: Derya Şahin }
+        isNewCustomer: { type: boolean, description: İlk randevusu mu }
+        serviceSummary: { type: string, description: 'Hizmet adları; birden çok kalemde "Boya + Fön"', example: Saç kesimi }
+        staffNames:
+          type: array
+          description: Kalemlerin personeli (tekrarsız, kalem sırasıyla)
+          items: { type: string }
+          example: [Can Yücel]
+        holdExpiresUtc: { type: [string, 'null'], format: date-time, description: Yalnız PendingApproval; bu anda yanıtlanmazsa otomatik iptal }
+        depositStatus: { $ref: '#/components/schemas/DepositStatus', description: Yalnız kapora istenmiş randevuda bulunur }
+    TodayWalkInSummary:
+      type: object
+      description: '"Sırada 3 · ~35 dk bekleme" kartı (WalkInQueue özeti)'
+      required: [waitingCount]
+      properties:
+        waitingCount: { type: integer, minimum: 0, description: Sırada bekleyen, example: 3 }
+        estimatedWaitMinutesForNew: { type: [integer, 'null'], description: Yeni gelen için tahmini bekleme; müsait personel yoksa null, example: 35 }
+    CommissionDayAmount:
+      type: object
+      description: Bir günün prim toplamı (grafik noktası)
+      required: [date, amountMinor]
+      properties:
+        date: { type: string, format: date, description: Şubenin yerel günü }
+        amountMinor: { type: integer, format: int64, description: O günün prim toplamı (kuruş; ters kayıt varsa eksi olabilir), example: 42000 }
+    TodayCommission:
+      type: object
+      description: '"KASIM PRİMİ 6.840 ₺" kartı ve çizgi grafiği'
+      required: [month, totalMinor, currency, daily]
+      properties:
+        month: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', description: Yıl-ay (şubenin yerel takvimi), example: '2026-11' }
+        totalMinor: { type: integer, format: int64, description: Ayın kişisel prim toplamı (kuruş; ters kayıtlar düşülmüş), example: 684000 }
+        currency: { type: string, enum: [TRY], description: Para birimi }
+        daily:
+          type: array
+          description: Ayın başından bugüne prim olan günler (grafik istemcide kümülatif çizilir; kaydı olmayan gün listede yoktur)
+          items: { $ref: '#/components/schemas/CommissionDayAmount' }
+    ManageToday:
+      type: object
+      description: İşletme uygulaması "Bugün" verisi
+      required: [branchId, branchName, timeZone, date, generatedUtc, next, pendingApprovalCount, walkIns, commission, completedCount, totalCount, items]
+      properties:
+        branchId: { type: string, format: uuid, description: Şube }
+        branchName: { type: string, description: Başlıktaki şube adı ("Salı 25 Kasım · Kadıköy"), example: Kadıköy }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        date: { type: string, format: date, description: Şubenin yerel bugünü }
+        generatedUtc: { type: string, format: date-time, description: Sunucunun "şimdi"si; "50 dk sonra" buna göre sayılır }
+        next:
+          description: '"Sıradaki": başlangıcı gelmemiş ilk Confirmed veya PendingApproval randevu; yoksa null'
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/TodayAppointment'
+        pendingApprovalCount: { type: [integer, 'null'], minimum: 0, description: '"Onay bekliyor" (şubedeki PendingApproval talepler); appointment.approve izni yoksa null', example: 2 }
+        walkIns:
+          description: Kapıda sıra özeti; walkin.manage izni yoksa null
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/TodayWalkInSummary'
+        commission:
+          description: Kişisel prim kartı; commission.view izni veya personel kaydı yoksa null
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/TodayCommission'
+        completedCount: { type: integer, minimum: 0, description: '"4/12 bitti": tamamlanan', example: 4 }
+        totalCount: { type: integer, minimum: 0, description: '"4/12 bitti": iptal edilmemiş bütün randevular', example: 12 }
+        items:
+          type: array
+          description: Gün akışı, başlangıca göre artan; iptal edilenler yok. Boşsa MainBos
+          items: { $ref: '#/components/schemas/TodayAppointment' }
+    CommissionEntryType:
+      type: string
+      description: Service = hizmet primi (randevu tamamlanınca), Sale = paket satış primi
+      enum: [Service, Sale]
+    CommissionEntryStatus:
+      type: string
+      description: docs/alan/durum-makinesi.md § Prim. Reversed = iptal veya iade ters kaydı (eksi tutar). İstemciler bilinmeyen değeri genel durum olarak gösterir
+      enum: [Accrued, Approved, Paid, Reversed]
+    MyCommissionEntry:
+      type: object
+      description: '"Son primler" satırı ("Ayşe Yılmaz · Bugün 09:30 · Saç kesimi · +90 ₺")'
+      required: [id, type, amountMinor, status, occurredUtc, customerName, description]
+      properties:
+        id: { type: string, format: uuid, description: Prim kaydı }
+        type: { $ref: '#/components/schemas/CommissionEntryType' }
+        amountMinor: { type: integer, format: int64, description: Tutar (kuruş); Reversed kayıtta eksi, example: 9000 }
+        status: { $ref: '#/components/schemas/CommissionEntryStatus' }
+        occurredUtc: { type: string, format: date-time, description: 'Hizmet priminde randevu başlangıcı; satış priminde satış anı' }
+        customerName: { type: string, description: Müşteri adı, example: Ayşe Yılmaz }
+        description: { type: string, description: Hizmet adı veya paket adı, example: Saç kesimi }
+        appointmentId: { type: [string, 'null'], format: uuid, description: Hizmet priminde randevu }
+        customerPackageId: { type: [string, 'null'], format: uuid, description: Satış priminde müşteri paketi }
+    CommissionWeekDay:
+      type: object
+      description: '"Bu hafta" çubuğu'
+      required: [date, amountMinor, appointmentCount]
+      properties:
+        date: { type: string, format: date, description: Şubenin yerel günü }
+        amountMinor: { type: integer, format: int64, description: Günün prim toplamı (kuruş), example: 42000 }
+        appointmentCount: { type: integer, minimum: 0, description: Günün tamamlanan randevu sayısı ("Sal en yoğun"), example: 6 }
+    MyCommissionSummary:
+      type: object
+      description: Kişisel prim özeti (işletme uygulaması Profil, "Primim")
+      required: [staffId, staffName, timeZone, month, from, to, totalMinor, serviceRevenueMinor, currency, appointmentCount, noShowPercent, averageRating, daily, thisWeek, entries, nextAccrual]
+      properties:
+        staffId: { type: string, format: uuid, description: Oturumdaki kullanıcının personel kaydı }
+        staffName: { type: string, example: Elif Kaya }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        month: { type: string, pattern: '^\d{4}-(0[1-9]|1[0-2])$', description: Yıl-ay, example: '2026-11' }
+        from: { type: string, format: date, description: Dönem başı ("1–25 Kasım") }
+        to: { type: string, format: date, description: Dönem sonu; bu ayda bugün }
+        totalMinor: { type: integer, format: int64, description: 'Ayın kişisel prim toplamı (kuruş; ters kayıtlar düşülmüş, eksi olabilir)', example: 684000 }
+        serviceRevenueMinor: { type: integer, format: int64, description: '"Hizmet geliri" (hizmet primi tabanları; ters kayıtlar düşülmüş)', example: 2850000 }
+        currency: { type: string, enum: [TRY], description: Para birimi }
+        appointmentCount: { type: integer, minimum: 0, description: '"Randevu": ayda tamamlanan', example: 94 }
+        noShowPercent: { type: [number, 'null'], description: '"Gelmedi %4": ayın sonuçlanan randevularında Gelmedi oranı; sonuçlanan yoksa null', example: 4 }
+        averageRating: { type: [number, 'null'], description: '"Puan": son 90 gündeki değerlendirmelerin ortalaması; yoksa null', example: 4.9 }
+        daily:
+          type: array
+          description: Ayın prim olan günleri (Bugün kartındaki çizgi)
+          items: { $ref: '#/components/schemas/CommissionDayAmount' }
+        thisWeek:
+          type: array
+          description: Bu haftanın (Pazartesi başlar) bugüne kadarki günleri
+          items: { $ref: '#/components/schemas/CommissionWeekDay' }
+        entries:
+          type: array
+          description: Ayın bütün prim kayıtları, yeniden eskiye ("Son primler" ilk satırları, "Tümü" hepsi)
+          items: { $ref: '#/components/schemas/MyCommissionEntry' }
+        nextAccrual:
+          description: Bugün Geldi olup henüz tamamlanmamış ilk randevu ("Selin Öztürk randevusu bitince eklenecek"); yoksa null
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [appointmentId, customerName]
+              properties:
+                appointmentId: { type: string, format: uuid }
+                customerName: { type: string, example: Selin Öztürk }
+
+    # ───────── Dilim 5: müşteri uygulaması (/me) ─────────
+    MeOtpRequest:
+      type: object
+      description: Müşteri uygulaması giriş kodu isteği
+      required: [phone]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+    MeAuthResult:
+      type: object
+      description: Müşteri oturumu (aud=me). Jetonlar gövdede; uygulama yenileme jetonunu güvenli depoda tutar
+      required: [accessToken, expiresInSeconds, refreshToken, isNewAccount]
+      properties:
+        accessToken: { type: string, description: Erişim jetonu }
+        expiresInSeconds: { type: integer, example: 900 }
+        refreshToken: { type: string, description: Yenileme jetonu (her kullanımda döndürülür) }
+        isNewAccount: { type: boolean, description: Uygulamaya ilk giriş (HasAppAccount bu istekle açıldı); BildirimIzni ve MainBos akışı için }
+    MeRefreshRequest:
+      type: object
+      description: Müşteri jetonu yenileme
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, description: Saklanan yenileme jetonu }
+    MeLogoutRequest:
+      type: object
+      description: Çıkışta iptal edilecek jeton ve pasifleşecek cihaz
+      properties:
+        refreshToken: { type: string, description: Zinciri iptal edilecek yenileme jetonu }
+        pushToken: { type: string, maxLength: 4096, description: Bu telefonun FCM jetonu; cihaz kaydı pasifleşir }
+    MeLanguage:
+      type: string
+      description: Uygulama ve bildirim dili. v1'de yalnız tr (docs/acik-sorular.md T-101); istemciler bilinmeyen değeri tr sayar
+      enum: [tr]
+    MeProfile:
+      type: object
+      description: Müşterinin kendi profili (global Customer)
+      required: [id, fullName, reviewerDisplayName, phone, email, language, version]
+      properties:
+        id: { type: string, format: uuid, description: Customer kimliği }
+        fullName: { type: [string, 'null'], description: Ad soyad; henüz verilmediyse null, example: Merve Yıldız }
+        reviewerDisplayName: { type: [string, 'null'], description: 'Değerlendirmede görünen ad ("Merve Y."); ad yoksa null', example: Merve Y. }
+        phone: { $ref: '#/components/schemas/PhoneE164' }
+        email: { type: [string, 'null'], format: email, description: '"Makbuz ve hatırlatma için" (isteğe bağlı)' }
+        language: { $ref: '#/components/schemas/MeLanguage' }
+        version: { $ref: '#/components/schemas/Version' }
+    MeProfileUpdate:
+      type: object
+      description: '"Profil bilgilerim" kaydı; gönderilmeyen alan değişmez'
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 120, description: Ad soyad }
+        email: { type: [string, 'null'], format: email, maxLength: 160, description: null = e-postayı sil }
+        language: { $ref: '#/components/schemas/MeLanguage' }
+    MeBrandRef:
+      type: object
+      description: Müşteri yüzeyindeki marka özeti (rozette baş harfler istemcide)
+      required: [id, name, slug]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kuaför Elif }
+        slug: { type: string, example: kuafor-elif }
+        logoUrl: { type: [string, 'null'] }
+    MeBranchRef:
+      type: object
+      description: Şube özeti
+      required: [id, name, district]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kadıköy }
+        district: { type: string, example: Kadıköy }
+    MeAppointmentItem:
+      type: object
+      description: Randevu kalemi; serviceId ve staffId "Aynısını tekrar al" ve saat değişikliği gün şeridi için
+      required: [serviceId, serviceName, startUtc, endUtc, price, paidFromPackage]
+      properties:
+        serviceId: { type: string, format: uuid }
+        serviceName: { type: string, example: Saç kesimi }
+        staffId: { type: [string, 'null'], format: uuid }
+        staffName: { type: [string, 'null'], example: Elif Kaya }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        price: { $ref: '#/components/schemas/Money' }
+        paidFromPackage: { type: boolean, description: Paketten düşüldü }
+    MeAppointmentReview:
+      type: object
+      description: Gönderilmiş değerlendirmenin özeti (Geçmiş satırındaki yıldızlar)
+      required: [rating, createdUtc]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5, example: 5 }
+        createdUtc: { type: string, format: date-time }
+    MeAppointmentSummary:
+      type: object
+      description: Randevularım / Geçmiş satırı
+      required: [id, brand, branch, timeZone, startUtc, endUtc, status, displayStatus, items, total, amountDue, review, canReview, canRebook]
+      properties:
+        id: { type: string, format: uuid }
+        brand: { $ref: '#/components/schemas/MeBrandRef' }
+        branch: { $ref: '#/components/schemas/MeBranchRef' }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        holdExpiresUtc: { type: [string, 'null'], format: date-time, description: Yalnız PendingApproval }
+        depositStatus: { $ref: '#/components/schemas/DepositStatus', description: Yalnız kapora istenmiş randevuda bulunur }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeAppointmentItem' }
+        total: { $ref: '#/components/schemas/Money' }
+        amountDue: { $ref: '#/components/schemas/Money', description: '"350 ₺ salonda"' }
+        review:
+          description: Gönderilmiş değerlendirme; yoksa null
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/MeAppointmentReview'
+        canReview: { type: boolean, description: Completed ve değerlendirilmemiş ("Değerlendir") }
+        canRebook: { type: boolean, description: '"Aynısını tekrar al": salon online randevu alıyor ve kalemlerin hizmetleri şubede online açık' }
+    MeAppointmentPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeAppointmentSummary' }
+        nextCursor: { type: [string, 'null'] }
+    MeAppointment:
+      type: object
+      description: Müşterinin randevu detayı (RandevuDetay, Iptal, RandevuErtele, YRHavale)
+      required: [id, brand, branch, timeZone, startUtc, endUtc, status, displayStatus, items, total, amountDue, deposit, canCancel, cancelDeadlineUtc, canReschedule, rescheduleDeadlineUtc, canReview, canRebook, review, cancellation, version]
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string, description: Kısa görünen numara, example: A-20512 }
+        brand: { $ref: '#/components/schemas/MeBrandRef' }
+        branch:
+          type: object
+          required: [id, name, addressLine, district]
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string, example: Kadıköy }
+            addressLine: { type: string, example: Moda Cad. 42 }
+            district: { type: string, example: Kadıköy }
+            phone: { type: [string, 'null'], description: '"Ara"' }
+            latitude: { type: [number, 'null'], description: '"Yol tarifi"' }
+            longitude: { type: [number, 'null'] }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        startUtc: { type: string, format: date-time }
+        endUtc: { type: string, format: date-time }
+        status: { $ref: '#/components/schemas/AppointmentStatus' }
+        displayStatus: { $ref: '#/components/schemas/DisplayStatus' }
+        holdExpiresUtc: { type: [string, 'null'], format: date-time }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeAppointmentItem' }
+        total: { $ref: '#/components/schemas/Money' }
+        amountDue: { $ref: '#/components/schemas/Money', description: '"Salonda ödenecek"' }
+        deposit:
+          description: Kapora; istenmiyorsa null. instructions yalnız kapora bekleniyorken (Awaiting, CustomerReported) bulunur
+          oneOf:
+            - type: 'null'
+            - allOf:
+                - $ref: '#/components/schemas/DepositView'
+                - type: object
+                  properties:
+                    instructions: { $ref: '#/components/schemas/DepositInstructions' }
+        canCancel: { type: boolean }
+        cancelDeadlineUtc: { type: [string, 'null'], format: date-time }
+        canReschedule: { type: boolean }
+        rescheduleDeadlineUtc: { type: [string, 'null'], format: date-time }
+        canReview: { type: boolean }
+        canRebook: { type: boolean }
+        review:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/MeAppointmentReview'
+        preAppointmentNote: { type: [string, 'null'], description: Salonun randevu öncesi notu }
+        customerNote: { type: [string, 'null'], description: '"Salona notunuz"' }
+        cancellation:
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [cancelledUtc, cancelledBy, reason]
+              properties:
+                cancelledUtc: { type: string, format: date-time }
+                cancelledBy: { type: string, enum: [Customer, Salon, System] }
+                reason: { $ref: '#/components/schemas/CancellationReason' }
+        version: { $ref: '#/components/schemas/Version' }
+    MeRescheduleSlotSearch:
+      type: object
+      description: Saat değişikliği için gün
+      required: [date]
+      properties:
+        date: { type: string, format: date, description: Şubenin yerel günü }
+    MeRescheduleRequest:
+      type: object
+      description: Yeni başlangıç (meSearchRescheduleSlots'tan)
+      required: [startUtc]
+      properties:
+        startUtc: { type: string, format: date-time }
+    MeReviewCreate:
+      type: object
+      description: Degerlendir gövdesi
+      required: [appointmentId, rating]
+      properties:
+        appointmentId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5, example: 4 }
+        comment: { type: [string, 'null'], maxLength: 1000, description: '"Yorum (isteğe bağlı)"' }
+    MeReview:
+      type: object
+      description: Gönderilen değerlendirme
+      required: [id, appointmentId, rating, comment, createdUtc]
+      properties:
+        id: { type: string, format: uuid }
+        appointmentId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: [string, 'null'] }
+        createdUtc: { type: string, format: date-time }
+    MeBrandPackageBadge:
+      type: object
+      description: '"Fön paketiniz var" rozeti'
+      required: [customerPackageId, packageName, remainingSessions]
+      properties:
+        customerPackageId: { type: string, format: uuid }
+        packageName: { type: string, example: Fön paketi }
+        remainingSessions: { type: integer, minimum: 1, example: 2 }
+    MeBrand:
+      type: object
+      description: Salonlarım satırı (YRSalon, Profil)
+      required: [id, name, slug, logoUrl, coverColor, bookingEnabled, hasBooked, savedUtc, lastVisitOn, branches, activePackages]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Kuaför Elif }
+        slug: { type: string, example: kuafor-elif }
+        logoUrl: { type: [string, 'null'] }
+        coverColor: { type: string, enum: [petrol, mercan, kum], description: Rozet zemini (rezervasyon sayfası kapak rengi) }
+        bookingEnabled: { type: boolean, description: false ise "Online randevu kapalı · Salonu arayın" }
+        hasBooked: { type: boolean, description: Bu markada müşteri kaydı (randevu) var }
+        savedUtc: { type: [string, 'null'], format: date-time, description: QR veya bağlantıyla eklendiği an (CustomerSavedBrand); yalnız randevuyla gelen markada null }
+        lastVisitOn: { type: [string, 'null'], format: date, description: '"son ziyaret 12 Kas" (son tamamlanan randevu, şubenin yerel günü)' }
+        branches:
+          type: array
+          description: Şubeler ("Kadıköy", "Online ve Şişli")
+          items: { $ref: '#/components/schemas/MeBranchRef' }
+        activePackages:
+          type: array
+          items: { $ref: '#/components/schemas/MeBrandPackageBadge' }
+    MeBrandList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeBrand' }
+    MeSaveBrandRequest:
+      type: object
+      description: QR veya yapıştırılan bağlantıdan çıkarılan bağlantı adı
+      required: [brandSlug, source]
+      properties:
+        brandSlug: { type: string, pattern: '^[a-z0-9-]{3,60}$', example: spa-moda }
+        source: { type: string, enum: [Qr, Link], description: CustomerSavedBrand.Source (Booking yalnız sunucu yazar) }
+    MePackage:
+      type: object
+      description: Paketlerim kartı ("Fön paketi · Kuaför Elif · Kadıköy · 2 / 5 seans kaldı · Son kullanım 31 Aralık")
+      required: [id, brand, branchName, isAvailableAllBranches, packageName, status, items, totalSessions, remainingSessions, expiresOn, isUsable, isRunningLow, finishedOn]
+      properties:
+        id: { type: string, format: uuid, description: CustomerPackage }
+        brand: { $ref: '#/components/schemas/MeBrandRef' }
+        branchName: { type: [string, 'null'], description: Yalnız satıldığı şubede geçerliyse şube adı; bütün şubelerde geçerliyse null }
+        isAvailableAllBranches: { type: boolean }
+        packageName: { type: string, example: Fön paketi }
+        status: { $ref: '#/components/schemas/CustomerPackageStatus' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CustomerPackageItemView' }
+        totalSessions: { type: integer, example: 5 }
+        remainingSessions: { type: integer, example: 2 }
+        expiresOn: { type: string, format: date, description: Son kullanım günü }
+        isUsable: { type: boolean, description: Active ve kalan seansı var (üstteki kartlar); false ise "Biten paketler" }
+        isRunningLow: { type: boolean, description: '"Az kaldı": kullanılabilir ve kalan seans PackageLowSessionThreshold''u geçmiyor veya son kullanım PackageExpiringSoonDays içinde' }
+        finishedOn: { type: [string, 'null'], format: date, description: '"Eylül''de bitti": son seansın, son kullanım gününün veya iadenin yerel günü; kullanılabilirse null' }
+    MePackageList:
+      type: object
+      required: [activeCount, items]
+      properties:
+        activeCount: { type: integer, minimum: 0, description: '"2 aktif paket"', example: 2 }
+        items:
+          type: array
+          description: Önce kullanılabilirler, sonra bitenler
+          items: { $ref: '#/components/schemas/MePackage' }
+    MePaymentKind:
+      type: string
+      description: Deposit = kapora havalesi, AppointmentPayment = salonda alınan randevu ödemesi, PackagePurchase = paket satın alma. İstemciler bilinmeyen değeri genel satır olarak gösterir
+      enum: [Deposit, AppointmentPayment, PackagePurchase]
+    MePaymentStatus:
+      type: string
+      description: AwaitingConfirmation = "Salon onayı bekleniyor" (havale bildirildi, salon onaylamadı); Recorded = kayıtlı ("Alındı"); PartiallyRefunded / Refunded = "Salon iade etti"
+      enum: [AwaitingConfirmation, Recorded, PartiallyRefunded, Refunded]
+    MePaymentRow:
+      type: object
+      description: Ödemelerim satırı (salt okunur)
+      required: [id, kind, status, brand, amount, method, occurredUtc, timeZone]
+      properties:
+        id: { type: string, format: uuid, description: Tahsilat kaydı; AwaitingConfirmation satırında randevu kimliği }
+        kind: { $ref: '#/components/schemas/MePaymentKind' }
+        status: { $ref: '#/components/schemas/MePaymentStatus' }
+        brand: { $ref: '#/components/schemas/MeBrandRef' }
+        amount: { $ref: '#/components/schemas/Money' }
+        method: { $ref: '#/components/schemas/PaymentMethod' }
+        occurredUtc: { type: string, format: date-time, description: Tahsilat anı; AwaitingConfirmation satırında müşterinin bildirdiği an }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        refundedAmount: { $ref: '#/components/schemas/Money', description: Yalnız iade işaretlendiyse }
+        appointmentId: { type: [string, 'null'], format: uuid, description: Kapora ve randevu ödemesinde randevu }
+        appointmentStartUtc: { type: [string, 'null'], format: date-time, description: '"Alındı · 26 Kasım randevusu"' }
+        serviceNames:
+          type: array
+          description: Randevu ödemesinde hizmetler ("Boya ve fön")
+          items: { type: string }
+        packageName: { type: [string, 'null'], description: Paket satın almada, example: Fön paketi }
+        packageSessionCount: { type: [integer, 'null'], description: '"5 seans"', example: 5 }
+    MePaymentPage:
+      type: object
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MePaymentRow' }
+        nextCursor: { type: [string, 'null'] }
+    MeConsent:
+      type: object
+      description: İzinlerim satırı ("Kampanya ve indirim mesajları")
+      required: [brand, marketingGranted, updatedUtc]
+      properties:
+        brand: { $ref: '#/components/schemas/MeBrandRef' }
+        marketingGranted: { type: boolean, description: Son kampanya rızası verilmiş mi }
+        updatedUtc: { type: [string, 'null'], format: date-time, description: Son rıza kaydının anı; hiç kayıt yoksa null }
+    MeConsentList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeConsent' }
+    MeMarketingConsentUpdate:
+      type: object
+      description: Bir markanın kampanya izni anahtarı
+      required: [brandId, granted]
+      properties:
+        brandId: { type: string, format: uuid }
+        granted: { type: boolean }
+    MeAccountDeletionConfirm:
+      type: object
+      description: Hesap silme onay kodu (meRequestAccountDeletionOtp'tan)
+      required: [otpId, code]
+      properties:
+        otpId: { type: string, format: uuid }
+        code: { type: string, pattern: '^\d{6}$', example: '482193' }
+    MeAccountDeletionResult:
+      type: object
+      description: Hesap silindi (HesapSilindi)
+      required: [deletedUtc, cancelledAppointmentCount]
+      properties:
+        deletedUtc: { type: string, format: date-time }
+        cancelledAppointmentCount: { type: integer, minimum: 0, description: İptal edilen yaklaşan randevular }
+    MeNotificationEvent:
+      type: string
+      description: |
+        Müşteri uygulaması bildirim listesindeki olay kodu (docs/standartlar/bildirimler.md § Müşteri olayları; push metni olan olaylar). CustomerNotificationEvent
+        salonun ezebildiği SMS şablonlarıdır; bu enum ondan ayrıdır ve deposit.received'ı da içerir. Yalnız SMS olan olaylar (otp.code, deposit.awaiting,
+        deposit.not_received, walkin.almost_turn) listede yoktur. İstemciler bilinmeyen değeri genel bildirim olarak gösterir.
+      enum:
+        - appointment.confirmed
+        - appointment.requested
+        - appointment.approved
+        - appointment.approval_expired
+        - appointment.declined
+        - appointment.reminder
+        - appointment.rescheduled
+        - appointment.cancelled_by_salon
+        - deposit.received
+        - waitlist.offer
+        - review.invite
+    MeNotificationTarget:
+      type: object
+      description: Müşteri bildirimine dokununca açılacak ekran
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: Appointment = RandevuDetay (appointmentId); WaitlistOffer = BeklemeTeklif (accessCode ile public waitlist-offer uçları); Review = Degerlendir (appointmentId); Booking = rezervasyon akışı (brandSlug; "Başka bir saat seçin")
+          enum: [Appointment, WaitlistOffer, Review, Booking]
+        appointmentId: { type: [string, 'null'], format: uuid }
+        accessCode: { type: [string, 'null'], description: 'Bekleme teklifi kodu (/b/{code})' }
+        brandSlug: { type: [string, 'null'] }
+    MeNotification:
+      type: object
+      description: Müşteri bildirim satırı
+      required: [id, event, title, body, createdUtc, readUtc, brand, target]
+      properties:
+        id: { type: string, format: uuid }
+        event: { $ref: '#/components/schemas/MeNotificationEvent' }
+        title: { type: string, maxLength: 80, example: Randevunuz onaylandı }
+        body: { type: string, maxLength: 200, example: Kuaför Elif · Yarın 14:30. Görüşmek üzere. }
+        createdUtc: { type: string, format: date-time }
+        readUtc: { type: [string, 'null'], format: date-time }
+        brand:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/MeBrandRef'
+        target: { $ref: '#/components/schemas/MeNotificationTarget' }
+    MeNotificationPage:
+      type: object
+      required: [items, nextCursor, unreadCount]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MeNotification' }
+        nextCursor: { type: [string, 'null'] }
+        unreadCount: { type: integer, minimum: 0, example: 2 }

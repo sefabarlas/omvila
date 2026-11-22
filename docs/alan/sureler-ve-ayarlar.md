@@ -61,6 +61,7 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 |---|---|---|---|---|
 | `Package.ValidityDays` | — | Package | "Geçerlilik": son kullanım günü = satış günü + gün (şubenin yerel takvimi); bu gün dahil kullanılır | |
 | `PackageExpiringSoonDays` | 30 | Platform | "Süresi yaklaşan": 30 gün içinde biten Active paketler | |
+| `PackageLowSessionThreshold` | 2 | Platform | Müşteri uygulaması Paketlerim "Az kaldı": kalan seans bu sayıyı geçmiyorsa (veya son kullanım `PackageExpiringSoonDays` içindeyse) (T-101) | |
 | `ExpireCustomerPackages` | günlük | Platform | Son kullanım günü yerel takvimde geçen Active paket Expired olur (iş saatlik turda çalışır, idempotent; T-95) | |
 
 ## Bekleme listesi ve kapıda sıra
