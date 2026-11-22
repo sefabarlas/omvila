@@ -20,6 +20,7 @@ import 'package:omvila_musteri/features/booking/presentation/saat_ekrani.dart';
 import 'package:omvila_musteri/features/booking/presentation/salon_secimi_ekrani.dart';
 import 'package:omvila_musteri/features/notifications/presentation/bildirim_izni_ekrani.dart';
 import 'package:omvila_musteri/features/shell/sekme_kabugu.dart';
+import 'package:omvila_musteri/features/wallet/presentation/paketler_ekrani.dart';
 import 'package:omvila_musteri/shared/widgets/baglanti_gecersiz_ekrani.dart';
 
 import '../helpers/booking_fixtures.dart';
@@ -119,9 +120,9 @@ void main() {
   );
 
   screenGoldenTest(
-    'Paketlerim',
-    fileName: 'paketler_sekmesi',
-    screen: () => _sekme(const PaketlerSekmesi(), 1),
+    'Paketlerim boş',
+    fileName: 'paketler_bos',
+    screen: () => _sekme(const PaketlerEkrani(), 1),
     deps: TestDeps.new,
   );
 
