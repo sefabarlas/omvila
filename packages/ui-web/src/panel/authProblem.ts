@@ -1,8 +1,11 @@
 import { ApiProblem } from '@omvila/api-client-ts';
-import { errorMessage } from '@omvila/ui-web/errors';
+import { errorMessage } from '../errors';
 
 /** Kullanıcıya gösterilecek metin ve sayaç (api-kurallari.md: meta.attemptsLeft, meta.retryAfterSeconds). */
-export function describeProblem(error: unknown): { message: string; retryAfterSeconds?: number } {
+export function describeAuthProblem(error: unknown): {
+  message: string;
+  retryAfterSeconds?: number;
+} {
   if (!(error instanceof ApiProblem)) {
     return { message: errorMessage(undefined) };
   }

@@ -1,0 +1,42 @@
+{
+  "name": "@omvila/platform-panel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OMVILA platform paneli: iç ekip (React + Vite SPA)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --port 5174",
+    "typecheck": "tsc -p tsconfig.json && tsc -p e2e",
+    "lint": "eslint --max-warnings=0 src e2e",
+    "test": "vitest run",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^7.0.8",
+    "@omvila/api-client-ts": "workspace:*",
+    "@omvila/design-tokens": "workspace:*",
+    "@omvila/ui-web": "workspace:*",
+    "@tanstack/react-query": "^5.108.2",
+    "@tanstack/react-router": "^1.170.46",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.92.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@tanstack/router-plugin": "^1.169.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "jsdom": "^26.1.0",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

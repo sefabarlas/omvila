@@ -1,0 +1,70 @@
+/* Platform paneli kartları (platform-paneli/Main, PMarkaDetay): beyaz yüzey, başlık satırı, iki sütunlu ızgara. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--bosluk-4);
+  align-items: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-5) var(--bosluk-5) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.cardHead {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.flush {
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 0;
+}
+
+.flush > .cardHead {
+  padding: 0 var(--bosluk-5);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  line-height: var(--yazi-kart-basligi-satir);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+}
+
+.muted {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.link {
+  color: var(--metin-marka);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  border-radius: var(--kose-sm);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+@media (width <= 899px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

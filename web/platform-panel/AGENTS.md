@@ -17,4 +17,11 @@ Ekranlar: `design/ekranlar/platform-paneli/`. Yığın, yapı ve stil kuralları
 pnpm --filter @omvila/platform-panel dev    # http://localhost:5174
 pnpm --filter @omvila/platform-panel test
 pnpm --filter @omvila/platform-panel lint
+pnpm --filter @omvila/platform-panel e2e    # Playwright, Prism mock'a karşı (ekran görüntüleri e2e-results/ekranlar)
 ```
+
+## Yapı notları (T-123)
+- Oturum: erişim jetonu bellekte, yenileme jetonu gövdede gelir ve yalnız `sessionStorage`'da durur (sekme ömrü; `src/app/auth.ts`). Çerez yok.
+- İzin kancası: `useSession().can('platform.credits.grant')` (`AdminPermission`). İzinsiz eylem butonu kilitli ve pasif; ipucu "Yönetici yetkisi ister".
+- Menü: `src/app/menu.ts`; henüz yapılmamış bölümler `available: false` ve rotasız.
+- Giriş bileşenleri (`AuthLayout`, `CodeStep`) ve filtre çipleri salon paneliyle ortak (`@omvila/ui-web/panel`).

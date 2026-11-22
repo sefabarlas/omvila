@@ -1,3 +1,4 @@
+/* Panel giriş ve kayıt formları (salon-paneli/Giris, GirisKod, Kayit; platform paneli girişi). */
 .header {
   display: flex;
   flex-direction: column;

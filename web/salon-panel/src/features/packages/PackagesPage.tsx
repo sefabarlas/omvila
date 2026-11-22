@@ -9,6 +9,7 @@ import {
   Button,
   DataTable,
   EmptyState,
+  FilterChips,
   Skeleton,
   Tabs,
   TextField,
@@ -20,7 +21,6 @@ import { useEffect, useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
 import { useSession } from '@/app/session';
-import { FilterChips } from '@/features/customers/FilterChips';
 import { packageStatusBadge, shortDate } from '@/features/customers/labels';
 import { Page } from '@/shared/Page';
 import { allCustomerPackagesQuery, packagesQuery, toPackageWrite, useUpdatePackage } from './api';
