@@ -46,6 +46,10 @@ public static class SalesModule
         services.AddScoped<Features.Me.MeWalletReader>();
         services.AddScoped<ICommissionQueries, CommissionQueries>();
         services.AddScoped<MyCommissionSummaryReader>();
+        // Dilim 6 raporlar (T-120): hak edilen gelir, tahsilat, prim raporu; net tahsilat Genel bakış ve gün sonu özeti için.
+        services.AddScoped<ICollectionQueries, CollectionLedger>();
+        services.AddScoped<Features.Reports.ReportReader>();
+        services.AddScoped<Features.Reports.CommissionReportReader>();
         services.AddUniqueConstraintError(CashDayCloseConfiguration.BranchDayIndex, ErrorCodes.CashDayAlreadyClosed);
         // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
         services.AddScoped<CustomerPaymentsParticipant>();
@@ -71,6 +75,7 @@ public static class SalesModule
         CustomerPaymentEndpoints.Map(app);
         Features.Me.MeWalletEndpoints.Map(app);
         CommissionEndpoints.Map(app);
+        Features.Reports.ReportEndpoints.Map(app);
         return app;
     }
 }
