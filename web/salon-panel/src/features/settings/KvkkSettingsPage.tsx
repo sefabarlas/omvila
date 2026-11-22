@@ -6,6 +6,7 @@ import { branchToday, daysBetween, toBranchDate } from '@omvila/ui-web/time';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
@@ -13,6 +14,7 @@ import type { DataDeletionRequestView } from '@/features/customers/api';
 import { shortDate } from '@/features/customers/labels';
 import { deletionRequestsQuery } from '@/features/customers/records-api';
 import kvkk from './Kvkk.module.css';
+import { PrivacyCards, privacyFormId } from './PrivacyCards';
 import styles from './Settings.module.css';
 import { SettingsLayout } from './SettingsLayout';
 
@@ -42,11 +44,21 @@ export function deletionStatus(
 }
 
 /**
- * Ayarlar → KVKK ve veri (salon-paneli/AyarlarKvkk). Dilim 5'te yalnız "Silme talepleri" tablosu
- * (manageListDeletionRequests); aydınlatma metni, veri saklama ve "Tüm verileri dışa aktar" Dilim 6'da (T-86 (7),
- * T-99). Yanıt süresi notu talebin kendi son gününden okunur (DeletionRequestDueDays). customer.kvkk (yalnız sahip).
+ * Ayarlar → KVKK ve veri (salon-paneli/AyarlarKvkk): aydınlatma metni, veri saklama ve "Tüm verileri dışa aktar"
+ * (Dilim 6, PrivacyCards; T-127) ve "Silme talepleri" tablosu (manageListDeletionRequests; Dilim 5, T-99). Yanıt süresi
+ * notu talebin kendi son gününden okunur (DeletionRequestDueDays). customer.kvkk (yalnız sahip).
  */
 export function KvkkSettingsPage() {
+  const [saving, setSaving] = useState(false);
+  return (
+    <SettingsLayout context="Kişisel verilerin korunması" saving={saving} formId={privacyFormId}>
+      <PrivacyCards onSaving={setSaving} />
+      <DeletionRequests />
+    </SettingsLayout>
+  );
+}
+
+function DeletionRequests() {
   const api = useApi();
   const clock = useClock();
   const today = branchToday(clock, defaultTimeZone);
@@ -58,90 +70,87 @@ export function KvkkSettingsPage() {
     : null;
 
   return (
-    <SettingsLayout context="Kişisel verilerin korunması">
-      <section className={kvkk.tableCard} aria-labelledby="silme-talepleri">
-        <div className={kvkk.tableHead}>
-          <h2 id="silme-talepleri" className={styles.cardTitle}>
-            Silme talepleri
-          </h2>
-          {dueDays !== null && dueDays > 0 ? (
-            <span className={styles.cardText}>{`${String(dueDays)} gün içinde yanıtlanmalı`}</span>
-          ) : null}
-        </div>
-        {query.isPending ? (
-          <Skeleton variant="block" height="160px" />
-        ) : query.isError ? (
-          <EmptyState
-            headingLevel={3}
-            title="Silme talepleri yüklenemedi"
-            description={errorMessage(
-              query.error instanceof ApiProblem ? query.error.code : undefined,
-            )}
-            actions={<Button onClick={() => void query.refetch()}>Tekrar dene</Button>}
-          />
-        ) : (
-          <DataTable<DataDeletionRequestView>
-            caption="Silme talepleri"
-            rows={rows}
-            rowKey={(row) => row.id}
-            empty={
-              <EmptyState
-                icon={<ShieldCheck size={24} />}
-                headingLevel={3}
-                title="Silme talebi yok"
-                description="Müşteri uygulamadan hesabını silmek isterse veya panelden bir kaydı anonimleştirirseniz burada görünür."
-              />
-            }
-            columns={[
-              {
-                key: 'customer',
-                label: 'Müşteri',
-                render: (row) =>
-                  row.status === 'Pending' && row.brandCustomerId ? (
-                    <Link
-                      to="/musteriler/$id"
-                      params={{ id: row.brandCustomerId }}
-                      className={kvkk.strongLink}
-                    >
-                      {row.customerDisplayName}
-                    </Link>
-                  ) : (
-                    <strong>{row.customerDisplayName}</strong>
-                  ),
+    <section className={kvkk.tableCard} aria-labelledby="silme-talepleri">
+      <div className={kvkk.tableHead}>
+        <h2 id="silme-talepleri" className={styles.cardTitle}>
+          Silme talepleri
+        </h2>
+        {dueDays !== null && dueDays > 0 ? (
+          <span className={styles.cardText}>{`${String(dueDays)} gün içinde yanıtlanmalı`}</span>
+        ) : null}
+      </div>
+      {query.isPending ? (
+        <Skeleton variant="block" height="160px" />
+      ) : query.isError ? (
+        <EmptyState
+          headingLevel={3}
+          title="Silme talepleri yüklenemedi"
+          description={errorMessage(
+            query.error instanceof ApiProblem ? query.error.code : undefined,
+          )}
+          actions={<Button onClick={() => void query.refetch()}>Tekrar dene</Button>}
+        />
+      ) : (
+        <DataTable<DataDeletionRequestView>
+          caption="Silme talepleri"
+          rows={rows}
+          rowKey={(row) => row.id}
+          empty={
+            <EmptyState
+              icon={<ShieldCheck size={24} />}
+              headingLevel={3}
+              title="Silme talebi yok"
+              description="Müşteri uygulamadan hesabını silmek isterse veya panelden bir kaydı anonimleştirirseniz burada görünür."
+            />
+          }
+          columns={[
+            {
+              key: 'customer',
+              label: 'Müşteri',
+              render: (row) =>
+                row.status === 'Pending' && row.brandCustomerId ? (
+                  <Link
+                    to="/musteriler/$id"
+                    params={{ id: row.brandCustomerId }}
+                    className={kvkk.strongLink}
+                  >
+                    {row.customerDisplayName}
+                  </Link>
+                ) : (
+                  <strong>{row.customerDisplayName}</strong>
+                ),
+            },
+            { key: 'via', label: 'Talep', render: (row) => via[row.requestedVia] },
+            {
+              key: 'date',
+              label: 'Tarih',
+              render: (row) => shortDate(toBranchDate(new Date(row.requestedUtc), defaultTimeZone)),
+            },
+            {
+              key: 'status',
+              label: 'Durum',
+              render: (row) => {
+                const status = deletionStatus(row, today);
+                return <Badge tone={status.tone}>{status.label}</Badge>;
               },
-              { key: 'via', label: 'Talep', render: (row) => via[row.requestedVia] },
-              {
-                key: 'date',
-                label: 'Tarih',
-                render: (row) =>
-                  shortDate(toBranchDate(new Date(row.requestedUtc), defaultTimeZone)),
-              },
-              {
-                key: 'status',
-                label: 'Durum',
-                render: (row) => {
-                  const status = deletionStatus(row, today);
-                  return <Badge tone={status.tone}>{status.label}</Badge>;
-                },
-              },
-            ]}
-            {...(query.hasNextPage
-              ? {
-                  footer: (
-                    <Button
-                      size="sm"
-                      loading={query.isFetchingNextPage}
-                      loadingLabel="Yükleniyor…"
-                      onClick={() => void query.fetchNextPage()}
-                    >
-                      Daha fazla göster
-                    </Button>
-                  ),
-                }
-              : {})}
-          />
-        )}
-      </section>
-    </SettingsLayout>
+            },
+          ]}
+          {...(query.hasNextPage
+            ? {
+                footer: (
+                  <Button
+                    size="sm"
+                    loading={query.isFetchingNextPage}
+                    loadingLabel="Yükleniyor…"
+                    onClick={() => void query.fetchNextPage()}
+                  >
+                    Daha fazla göster
+                  </Button>
+                ),
+              }
+            : {})}
+        />
+      )}
+    </section>
   );
 }
