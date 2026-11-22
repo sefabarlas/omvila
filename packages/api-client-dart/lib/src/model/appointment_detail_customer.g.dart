@@ -159,7 +159,10 @@ AppointmentDetailCustomer _$AppointmentDetailCustomerFromJson(
     lastVisitLabel: $checkedConvert('lastVisitLabel', (v) => v as String?),
     lastVisitOn: $checkedConvert(
       'lastVisitOn',
-      (v) => v == null ? null : DateTime.parse(v as String),
+      (v) => _$JsonConverterFromJson<String, DateTime>(
+        v,
+        const DateOnlyConverter().fromJson,
+      ),
     ),
     isNew: $checkedConvert('isNew', (v) => v as bool?),
   );
@@ -175,6 +178,19 @@ Map<String, dynamic> _$AppointmentDetailCustomerToJson(
   'phoneMasked': ?instance.phoneMasked,
   'visitCount': instance.visitCount,
   'lastVisitLabel': ?instance.lastVisitLabel,
-  'lastVisitOn': ?instance.lastVisitOn?.toIso8601String(),
+  'lastVisitOn': ?_$JsonConverterToJson<String, DateTime>(
+    instance.lastVisitOn,
+    const DateOnlyConverter().toJson,
+  ),
   'isNew': ?instance.isNew,
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

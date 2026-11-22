@@ -10,6 +10,8 @@ import 'package:omvila_api/src/model/payment_method.dart';
 import 'package:omvila_api/src/model/payment_purpose.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'payment_view.g.dart';
 

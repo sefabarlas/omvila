@@ -228,7 +228,10 @@ CustomerSummary _$CustomerSummaryFromJson(Map<String, dynamic> json) =>
         noShowCount: $checkedConvert('noShowCount', (v) => (v as num).toInt()),
         lastVisitOn: $checkedConvert(
           'lastVisitOn',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         nextAppointmentUtc: $checkedConvert(
           'nextAppointmentUtc',
@@ -258,7 +261,10 @@ Map<String, dynamic> _$CustomerSummaryToJson(CustomerSummary instance) =>
       'birthYear': ?instance.birthYear,
       'visitCount': instance.visitCount,
       'noShowCount': instance.noShowCount,
-      'lastVisitOn': ?instance.lastVisitOn?.toIso8601String(),
+      'lastVisitOn': ?_$JsonConverterToJson<String, DateTime>(
+        instance.lastVisitOn,
+        const DateOnlyConverter().toJson,
+      ),
       'nextAppointmentUtc': ?instance.nextAppointmentUtc?.toIso8601String(),
       'totalSpent': ?instance.totalSpent?.toJson(),
       'isNew': ?instance.isNew,
@@ -266,3 +272,13 @@ Map<String, dynamic> _$CustomerSummaryToJson(CustomerSummary instance) =>
       'tags': instance.tags,
       'notes': ?instance.notes,
     };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

@@ -164,6 +164,13 @@ DateTime parseLocalDate(String localDate) {
   return date;
 }
 
+/// Yanıttaki `format: date` değeri (`DateTime`) → yerel gün ("2026-11-26");
+/// bileşenler olduğu gibi alınır. İsteklerde `format: date` alanına
+/// [parseLocalDate] verilir; üretilmiş istemci günü "yyyy-MM-dd" yazar (T-110).
+String localDateOf(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-'
+    '${_two(date.month)}-${_two(date.day)}';
+
 String _two(int n) => n.toString().padLeft(2, '0');
 
 /// Takvim gününü Türkçe yazar (web formatDate ile aynı).

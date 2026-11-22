@@ -99,7 +99,10 @@ CashDayCloseRequest _$CashDayCloseRequestFromJson(Map<String, dynamic> json) =>
       $checkKeys(json, requiredKeys: const ['branchId', 'date', 'countedCash']);
       final val = CashDayCloseRequest(
         branchId: $checkedConvert('branchId', (v) => v as String),
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         countedCash: $checkedConvert(
           'countedCash',
           (v) => Money.fromJson(v as Map<String, dynamic>),
@@ -113,7 +116,7 @@ Map<String, dynamic> _$CashDayCloseRequestToJson(
   CashDayCloseRequest instance,
 ) => <String, dynamic>{
   'branchId': instance.branchId,
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'countedCash': instance.countedCash.toJson(),
   'differenceNote': ?instance.differenceNote,
 };

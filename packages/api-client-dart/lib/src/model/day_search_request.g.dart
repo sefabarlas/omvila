@@ -110,8 +110,14 @@ DaySearchRequest _$DaySearchRequestFromJson(Map<String, dynamic> json) =>
           'sameStaffForAll',
           (v) => v as bool? ?? true,
         ),
-        from: $checkedConvert('from', (v) => DateTime.parse(v as String)),
-        to: $checkedConvert('to', (v) => DateTime.parse(v as String)),
+        from: $checkedConvert(
+          'from',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
+        to: $checkedConvert(
+          'to',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
       );
       return val;
     });
@@ -120,6 +126,6 @@ Map<String, dynamic> _$DaySearchRequestToJson(DaySearchRequest instance) =>
     <String, dynamic>{
       'items': instance.items.map((e) => e.toJson()).toList(),
       'sameStaffForAll': ?instance.sameStaffForAll,
-      'from': instance.from.toIso8601String(),
-      'to': instance.to.toIso8601String(),
+      'from': const DateOnlyConverter().toJson(instance.from),
+      'to': const DateOnlyConverter().toJson(instance.to),
     };

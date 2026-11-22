@@ -107,45 +107,48 @@ extension $WaitlistPreferencesCopyWith on WaitlistPreferences {
 // JsonSerializableGenerator
 // **************************************************************************
 
-WaitlistPreferences _$WaitlistPreferencesFromJson(
-  Map<String, dynamic> json,
-) => $checkedCreate('WaitlistPreferences', json, ($checkedConvert) {
-  $checkKeys(
-    json,
-    requiredKeys: const [
-      'serviceIds',
-      'acceptOtherStaff',
-      'dates',
-      'timeWindows',
-    ],
-  );
-  final val = WaitlistPreferences(
-    serviceIds: $checkedConvert(
-      'serviceIds',
-      (v) => (v as List<dynamic>).map((e) => e as String).toList(),
-    ),
-    preferredStaffId: $checkedConvert('preferredStaffId', (v) => v as String?),
-    acceptOtherStaff: $checkedConvert('acceptOtherStaff', (v) => v as bool),
-    dates: $checkedConvert(
-      'dates',
-      (v) =>
-          (v as List<dynamic>).map((e) => DateTime.parse(e as String)).toList(),
-    ),
-    timeWindows: $checkedConvert(
-      'timeWindows',
-      (v) => (v as List<dynamic>)
-          .map(
-            (e) => $enumDecode(
-              _$WaitlistTimeWindowEnumMap,
-              e,
-              unknownValue: WaitlistTimeWindow.unknownDefaultOpenApi,
-            ),
-          )
-          .toList(),
-    ),
-  );
-  return val;
-});
+WaitlistPreferences _$WaitlistPreferencesFromJson(Map<String, dynamic> json) =>
+    $checkedCreate('WaitlistPreferences', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        requiredKeys: const [
+          'serviceIds',
+          'acceptOtherStaff',
+          'dates',
+          'timeWindows',
+        ],
+      );
+      final val = WaitlistPreferences(
+        serviceIds: $checkedConvert(
+          'serviceIds',
+          (v) => (v as List<dynamic>).map((e) => e as String).toList(),
+        ),
+        preferredStaffId: $checkedConvert(
+          'preferredStaffId',
+          (v) => v as String?,
+        ),
+        acceptOtherStaff: $checkedConvert('acceptOtherStaff', (v) => v as bool),
+        dates: $checkedConvert(
+          'dates',
+          (v) => (v as List<dynamic>)
+              .map((e) => const DateOnlyConverter().fromJson(e as String))
+              .toList(),
+        ),
+        timeWindows: $checkedConvert(
+          'timeWindows',
+          (v) => (v as List<dynamic>)
+              .map(
+                (e) => $enumDecode(
+                  _$WaitlistTimeWindowEnumMap,
+                  e,
+                  unknownValue: WaitlistTimeWindow.unknownDefaultOpenApi,
+                ),
+              )
+              .toList(),
+        ),
+      );
+      return val;
+    });
 
 Map<String, dynamic> _$WaitlistPreferencesToJson(
   WaitlistPreferences instance,
@@ -153,7 +156,7 @@ Map<String, dynamic> _$WaitlistPreferencesToJson(
   'serviceIds': instance.serviceIds,
   'preferredStaffId': ?instance.preferredStaffId,
   'acceptOtherStaff': instance.acceptOtherStaff,
-  'dates': instance.dates.map((e) => e.toIso8601String()).toList(),
+  'dates': instance.dates.map(const DateOnlyConverter().toJson).toList(),
   'timeWindows': instance.timeWindows
       .map((e) => _$WaitlistTimeWindowEnumMap[e]!)
       .toList(),

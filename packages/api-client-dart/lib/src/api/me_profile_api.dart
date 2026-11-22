@@ -6,6 +6,8 @@ import 'dart:async';
 
 // ignore: unused_import
 import 'dart:convert';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 import 'package:omvila_api/src/deserialize.dart';
 import 'package:dio/dio.dart';
 

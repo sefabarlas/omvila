@@ -5,6 +5,8 @@
 // ignore_for_file: unused_element
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'time_off_create.g.dart';
 
@@ -67,6 +69,7 @@ class TimeOffCreate {
     required: false,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime? fromDate;
@@ -80,6 +83,7 @@ class TimeOffCreate {
     required: false,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime? toDate;

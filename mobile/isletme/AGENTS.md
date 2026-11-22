@@ -20,7 +20,7 @@ Yapı: `lib/app/` (uygulama, router, sağlayıcılar: `apiProvider`, `clockProvi
 - **Tamamla ve ödeme al:** yöntemler Nakit / Kart (salonun POS'u) / Havale / Paketten; "İkinci ödeme ekle"; uygulamada ödeme alınmaz, yalnız kaydedilir (Dilim 5).
 - **Kapıda sıra:** numara her gün 1'den; "Başlat" randevuya çevirir.
 - Salt okunur abonelikte kırmızı şerit; yeni randevu pasif.
-- Sözleşmede `format: date` olan alanlara ve sorgulara `ApiDate` verilir (üretilmiş istemci `DateTime`'ı tam an olarak yazar; T-109).
+- Sözleşmede `format: date` olan alanlara ve sorgulara gün olarak düz `DateTime` verilir (`parseLocalDate("2026-11-25")`, omvila_ui); üretilmiş istemci "yyyy-MM-dd" yazar, dizi sorguları sözleşmedeki biçimle gider (T-110). Yanıttaki günü metne `localDateOf` (omvila_ui) çevirir.
 - Push bildirimine dokununca ilgili ekran açılır (randevu detayı, kapora, değerlendirme).
 
 ## Komutlar

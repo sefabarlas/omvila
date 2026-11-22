@@ -264,8 +264,14 @@ MyCommissionSummary _$MyCommissionSummaryFromJson(
     staffName: $checkedConvert('staffName', (v) => v as String),
     timeZone: $checkedConvert('timeZone', (v) => v as String),
     month: $checkedConvert('month', (v) => v as String),
-    from: $checkedConvert('from', (v) => DateTime.parse(v as String)),
-    to: $checkedConvert('to', (v) => DateTime.parse(v as String)),
+    from: $checkedConvert(
+      'from',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
+    to: $checkedConvert(
+      'to',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     totalMinor: $checkedConvert('totalMinor', (v) => (v as num).toInt()),
     serviceRevenueMinor: $checkedConvert(
       'serviceRevenueMinor',
@@ -320,8 +326,8 @@ Map<String, dynamic> _$MyCommissionSummaryToJson(
   'staffName': instance.staffName,
   'timeZone': instance.timeZone,
   'month': instance.month,
-  'from': instance.from.toIso8601String(),
-  'to': instance.to.toIso8601String(),
+  'from': const DateOnlyConverter().toJson(instance.from),
+  'to': const DateOnlyConverter().toJson(instance.to),
   'totalMinor': instance.totalMinor,
   'serviceRevenueMinor': instance.serviceRevenueMinor,
   'currency': _$MyCommissionSummaryCurrencyEnumEnumMap[instance.currency]!,

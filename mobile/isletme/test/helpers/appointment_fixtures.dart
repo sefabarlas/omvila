@@ -276,9 +276,12 @@ Map<String, Object?> _day(String date, {bool closed = false}) => {
 
 /// 23 Kasım – 6 Aralık penceresi (29 Kasım Pazar kapalı); randevular
 /// 25 Kasım'da.
+/// [onlyStaff]: sunucunun `staffIds` filtresi (yalnız bu kolonlar, blokları
+/// ve izinleri).
 Map<String, Object?> calendarJson({
   bool staffOnly = false,
   bool empty = false,
+  Set<String>? onlyStaff,
 }) {
   final days = [
     for (var d = 23; d <= 30; d++) _day('2026-11-$d', closed: d == 29),
@@ -346,7 +349,7 @@ Map<String, Object?> calendarJson({
             ),
           ],
         ];
-  return {
+  final json = {
     'branchId': branchId,
     'timeZone': 'Europe/Istanbul',
     'from': '2026-11-23',
@@ -371,6 +374,17 @@ Map<String, Object?> calendarJson({
           'isAllDay': false,
         },
     ],
+  };
+  if (onlyStaff == null) {
+    return json;
+  }
+
+  bool shown(Object? item) => onlyStaff.contains((item! as Map)['staffId']);
+  return {
+    ...json,
+    'staff': (json['staff']! as List).where(shown).toList(),
+    'appointments': (json['appointments']! as List).where(shown).toList(),
+    'timeOffs': (json['timeOffs']! as List).where(shown).toList(),
   };
 }
 

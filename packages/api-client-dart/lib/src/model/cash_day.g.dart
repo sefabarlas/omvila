@@ -199,7 +199,10 @@ CashDay _$CashDayFromJson(Map<String, dynamic> json) =>
       );
       final val = CashDay(
         branchId: $checkedConvert('branchId', (v) => v as String),
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         timeZone: $checkedConvert('timeZone', (v) => v as String),
         status: $checkedConvert(
           'status',
@@ -251,7 +254,7 @@ CashDay _$CashDayFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$CashDayToJson(CashDay instance) => <String, dynamic>{
   'branchId': instance.branchId,
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'timeZone': instance.timeZone,
   'status': _$CashDayStatusEnumEnumMap[instance.status]!,
   'total': instance.total.toJson(),

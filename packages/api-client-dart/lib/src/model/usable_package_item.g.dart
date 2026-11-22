@@ -149,7 +149,10 @@ UsablePackageItem _$UsablePackageItemFromJson(Map<String, dynamic> json) =>
         ),
         expiresOn: $checkedConvert(
           'expiresOn',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
       );
       return val;
@@ -162,5 +165,18 @@ Map<String, dynamic> _$UsablePackageItemToJson(UsablePackageItem instance) =>
       'packageName': instance.packageName,
       'remainingSessions': instance.remainingSessions,
       'totalSessions': instance.totalSessions,
-      'expiresOn': ?instance.expiresOn?.toIso8601String(),
+      'expiresOn': ?_$JsonConverterToJson<String, DateTime>(
+        instance.expiresOn,
+        const DateOnlyConverter().toJson,
+      ),
     };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

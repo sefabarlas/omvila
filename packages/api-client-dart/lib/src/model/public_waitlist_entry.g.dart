@@ -205,7 +205,7 @@ PublicWaitlistEntry _$PublicWaitlistEntryFromJson(Map<String, dynamic> json) =>
         dates: $checkedConvert(
           'dates',
           (v) => (v as List<dynamic>)
-              .map((e) => DateTime.parse(e as String))
+              .map((e) => const DateOnlyConverter().fromJson(e as String))
               .toList(),
         ),
         timeWindows: $checkedConvert(
@@ -235,7 +235,7 @@ Map<String, dynamic> _$PublicWaitlistEntryToJson(
   'serviceNames': instance.serviceNames,
   'preferredStaffName': ?instance.preferredStaffName,
   'acceptOtherStaff': instance.acceptOtherStaff,
-  'dates': instance.dates.map((e) => e.toIso8601String()).toList(),
+  'dates': instance.dates.map(const DateOnlyConverter().toJson).toList(),
   'timeWindows': instance.timeWindows
       .map((e) => _$WaitlistTimeWindowEnumMap[e]!)
       .toList(),

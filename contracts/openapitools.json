@@ -8,6 +8,8 @@
         "generatorName": "dart-dio",
         "inputSpec": "dist/openapi.dart.json",
         "output": "../packages/api-client-dart",
+        "templateDir": "templates/dart-dio",
+        "config": "templates/dart-dio/config.yaml",
         "additionalProperties": {
           "pubName": "omvila_api",
           "pubVersion": "0.1.0",

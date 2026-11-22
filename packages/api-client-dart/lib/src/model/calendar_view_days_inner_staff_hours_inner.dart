@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/time_interval.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'calendar_view_days_inner_staff_hours_inner.g.dart';
 

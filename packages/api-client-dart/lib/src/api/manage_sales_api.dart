@@ -6,6 +6,8 @@ import 'dart:async';
 
 // ignore: unused_import
 import 'dart:convert';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 import 'package:omvila_api/src/deserialize.dart';
 import 'package:dio/dio.dart';
 
@@ -165,7 +167,7 @@ _responseData = rawData == null ? null : deserialize<CashDay, CashDay>(rawData, 
 
     final _queryParameters = <String, dynamic>{
       r'branchId': branchId,
-      if (date != null) r'date': date,
+      if (date != null) r'date': formatDateOnly(date),
     };
 
     final _response = await _dio.request<Object>(

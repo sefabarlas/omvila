@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/day_search_result_days_inner.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'day_search_result.g.dart';
 
@@ -50,6 +52,7 @@ class DaySearchResult {
     required: false,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime? maxDate;

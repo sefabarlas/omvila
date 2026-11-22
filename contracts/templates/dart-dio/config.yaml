@@ -1,0 +1,9 @@
+# openapi-generator (dart-dio, json_serializable) özel şablonları; neden:
+# packages/api-client-dart/AGENTS.md. Bu klasördeki şablonlar üreticinin gömülü
+# dosyalarını (7.27.0, dart/libraries/dio) aynı göreli yolla geçersiz kılar;
+# üretici sürümü değişince gömülü sürümle karşılaştırın.
+files:
+  date_only.mustache:
+    templateType: SupportingFiles
+    folder: lib/src
+    destinationFilename: date_only.dart

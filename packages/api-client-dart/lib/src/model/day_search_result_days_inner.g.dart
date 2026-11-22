@@ -100,7 +100,10 @@ DaySearchResultDaysInner _$DaySearchResultDaysInnerFromJson(
 ) => $checkedCreate('DaySearchResultDaysInner', json, ($checkedConvert) {
   $checkKeys(json, requiredKeys: const ['date', 'hasAvailability']);
   final val = DaySearchResultDaysInner(
-    date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+    date: $checkedConvert(
+      'date',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     hasAvailability: $checkedConvert('hasAvailability', (v) => v as bool),
     isClosed: $checkedConvert('isClosed', (v) => v as bool?),
     firstSlotUtc: $checkedConvert(
@@ -114,7 +117,7 @@ DaySearchResultDaysInner _$DaySearchResultDaysInnerFromJson(
 Map<String, dynamic> _$DaySearchResultDaysInnerToJson(
   DaySearchResultDaysInner instance,
 ) => <String, dynamic>{
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'hasAvailability': instance.hasAvailability,
   'isClosed': ?instance.isClosed,
   'firstSlotUtc': ?instance.firstSlotUtc?.toIso8601String(),

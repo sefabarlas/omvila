@@ -1,0 +1,29 @@
+//
+// AUTO-GENERATED FILE, DO NOT MODIFY!
+//
+
+
+import 'package:json_annotation/json_annotation.dart';
+
+/// `format: date` değerini "yyyy-MM-dd" olarak yazar.
+///
+/// Sunucu takvim günü alanlarında yalnız bu biçimi kabul eder; `DateTime`'ın
+/// `toIso8601String()` ve `toString()` gösterimleri saat de içerir. Gün,
+/// değerin kendi yıl/ay/gün alanlarından okunur (saat dilimi çevrilmez).
+String formatDateOnly(DateTime date) {
+  final year = date.year.toString().padLeft(4, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}
+
+/// Modellerdeki `format: date` alanları için JSON dönüştürücüsü.
+class DateOnlyConverter implements JsonConverter<DateTime, String> {
+  const DateOnlyConverter();
+
+  @override
+  DateTime fromJson(String json) => DateTime.parse(json);
+
+  @override
+  String toJson(DateTime object) => formatDateOnly(object);
+}

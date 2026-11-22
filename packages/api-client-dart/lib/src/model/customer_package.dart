@@ -10,6 +10,8 @@ import 'package:omvila_api/src/model/package_session_usage_view.dart';
 import 'package:omvila_api/src/model/customer_package_item_view.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'customer_package.g.dart';
 
@@ -169,6 +171,7 @@ class CustomerPackage {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime expiresOn;

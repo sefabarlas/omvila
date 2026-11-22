@@ -8,6 +8,8 @@ import 'package:omvila_api/src/model/today_walk_in_summary.dart';
 import 'package:omvila_api/src/model/today_appointment.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'manage_today.g.dart';
 
@@ -94,6 +96,7 @@ class ManageToday {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime date;

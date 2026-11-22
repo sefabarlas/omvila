@@ -72,7 +72,10 @@ CommissionDayAmount _$CommissionDayAmountFromJson(Map<String, dynamic> json) =>
     $checkedCreate('CommissionDayAmount', json, ($checkedConvert) {
       $checkKeys(json, requiredKeys: const ['date', 'amountMinor']);
       final val = CommissionDayAmount(
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         amountMinor: $checkedConvert('amountMinor', (v) => (v as num).toInt()),
       );
       return val;
@@ -81,6 +84,6 @@ CommissionDayAmount _$CommissionDayAmountFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$CommissionDayAmountToJson(
   CommissionDayAmount instance,
 ) => <String, dynamic>{
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'amountMinor': instance.amountMinor,
 };
