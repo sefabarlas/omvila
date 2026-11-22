@@ -11,6 +11,7 @@ using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Catalog;
 using Omvila.Modules.Customers;
 using Omvila.Modules.Identity;
+using Omvila.Modules.Integrations;
 using Omvila.Modules.Notifications;
 using Omvila.Modules.Platform;
 using Omvila.Modules.Platform.Infrastructure;
@@ -44,6 +45,7 @@ builder.Services.AddCustomersModule();
 builder.Services.AddSalesModule();
 builder.Services.AddReviewsModule();
 builder.Services.AddSchedulingModule(builder.Configuration);
+builder.Services.AddIntegrationsModule(builder.Configuration);
 // OpenAPI belgesi derleme sırasında üretilirken (GetDocument.Insider) uygulama veritabanısız başlar; iş zamanlanmaz.
 var isOpenApiGeneration = string.Equals(Assembly.GetEntryAssembly()?.GetName().Name, "GetDocument.Insider", StringComparison.Ordinal);
 if (role.HasFlag(HostRole.Worker) && !isOpenApiGeneration)
@@ -106,6 +108,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapSalesEndpoints();
     app.MapReviewsEndpoints();
     app.MapNotificationsEndpoints();
+    app.MapIntegrationsEndpoints();
     // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).
     app.MapDevSmsLogPage();
 }

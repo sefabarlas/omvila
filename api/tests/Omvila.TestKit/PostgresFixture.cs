@@ -9,6 +9,7 @@ using Omvila.Infrastructure.Sms;
 using Omvila.Modules.Catalog;
 using Omvila.Modules.Customers;
 using Omvila.Modules.Identity;
+using Omvila.Modules.Integrations;
 using Omvila.Modules.Notifications;
 using Omvila.Modules.Platform;
 using Omvila.Modules.Platform.Infrastructure;
@@ -60,7 +61,8 @@ public sealed class PostgresFixture : IAsyncLifetime
             .AddCustomersModule()
             .AddSalesModule()
             .AddReviewsModule()
-            .AddSchedulingModule(configuration));
+            .AddSchedulingModule(configuration)
+            .AddIntegrationsModule(configuration));
         await services.GetRequiredService<MigrationRunner>().RunAsync(MigratorConnectionString, CancellationToken.None);
         await services.GetRequiredService<PlanSeeder>().SeedAsync(MigratorConnectionString, CancellationToken.None);
     }
@@ -127,6 +129,12 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Scheduling:ExtendRecurringSeriesIntervalMinutes"] = "60",
         ["Scheduling:ExpireWaitlistOffersIntervalSeconds"] = "60",
         ["Scheduling:ExpireWaitlistEntriesIntervalMinutes"] = "60",
+        ["Integrations:Calendar:Provider"] = "Fake",
+        ["Integrations:Calendar:RedirectUris:Web"] = "https://salon.omvila.com/ayarlar/google-takvim",
+        ["Integrations:Calendar:StateMinutes"] = "10",
+        ["Integrations:Calendar:SyncWindowDays"] = "60",
+        ["Integrations:Calendar:SyncIntervalSeconds"] = "300",
+        ["Integrations:Calendar:RefreshAheadMinutes"] = "10",
         ["Sms:Provider"] = "Fake",
         ["Push:Provider"] = "Fake",
         ["Sms:DefaultSender"] = "OMVILA",
@@ -159,6 +167,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
         ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
         ["Tenancy:IbanEncryptionKey"] = TestSigningKey.IbanEncryptionKey,
+        ["Customers:DataExport:LinkSigningKey"] = TestSigningKey.DataExportLinkKey,
+        ["Integrations:Calendar:TokenEncryptionKey"] = TestSigningKey.CalendarTokenKey,
     };
 
     /// <summary>Migrator rolüyle (tablo sahibi, RLS'i atlar) açık bağlantı: test verisi ve şema kurulumu için.</summary>

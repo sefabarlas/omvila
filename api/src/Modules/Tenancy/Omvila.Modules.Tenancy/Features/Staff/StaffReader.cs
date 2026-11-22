@@ -13,7 +13,7 @@ namespace Omvila.Modules.Tenancy.Features.Staff;
 /// Personel okuma: kapsam (jetondaki şubeler), liste özeti ve ayrıntı. Rol ve üyelik durumu Identity'den,
 /// hizmetler Catalog'dan gelir. Kapsam dışı personel bulunamaz (404).
 /// </summary>
-internal sealed class StaffReader(TenancyDbContext db, IStaffMemberships memberships, IStaffServiceAssignments services)
+internal sealed class StaffReader(TenancyDbContext db, IStaffMemberships memberships, IStaffServiceAssignments services, Integrations.Contracts.ICalendarLinkQueries calendars)
 {
     public async Task<Domain.Staff?> FindAsync(Guid brandId, Guid staffId, ClaimsPrincipal user, bool track, CancellationToken ct)
     {
@@ -59,6 +59,7 @@ internal sealed class StaffReader(TenancyDbContext db, IStaffMemberships members
         var info = (await memberships.GetByStaffAsync(staff.BrandId, [staff.Id], ct)).GetValueOrDefault(staff.Id);
         var assigned = await services.GetAsync(staff.BrandId, staff.Id, ct);
         var summary = Summary(staff, [.. links.Select(l => l.BranchId)], info);
+        var calendar = (await calendars.GetStatusesAsync(staff.BrandId, [staff.Id], ct)).GetValueOrDefault(staff.Id);
         return new StaffDetailResponse(
             summary.Id, summary.FullName, summary.DisplayName, summary.Title, summary.PhotoUrl, summary.CalendarColor, summary.IsBookableOnline,
             summary.IsActive, summary.BranchIds, summary.Role, summary.MembershipStatus, info?.PhoneMasked, staff.Bio,
@@ -68,6 +69,7 @@ internal sealed class StaffReader(TenancyDbContext db, IStaffMemberships members
                 [.. hours[l.Id].GroupBy(h => h.DayOfWeek).OrderBy(g => g.Key).Select(g => new WeeklyHoursDayDto(
                     (int)g.Key,
                     [.. g.OrderBy(h => h.StartTime).Select(h => new TimeIntervalDto(TimeText.Format(h.StartTime), TimeText.Format(h.EndTime)))]))])))],
+            calendar,
             staff.Version.ToString(CultureInfo.InvariantCulture));
     }
 

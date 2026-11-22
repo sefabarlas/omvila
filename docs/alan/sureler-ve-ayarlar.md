@@ -118,6 +118,15 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | `PrivacyNoticeMode` | `Standard` | Brand (`Standard`, `Custom`) | "Kendi metnimi kullan"; `Custom` iken salonun metni (`CustomPrivacyNoticeText`, en fazla 20.000 karakter) gösterilir (`manageUpdatePrivacySettings`) | |
 | `DataExportLinkValidityDays` | 7 | Platform | "Tüm verileri dışa aktar" e-postasındaki indirme bağlantısının geçerliliği (T-116) | |
 
+## Google Takvim (K7, T-121)
+
+| Anahtar | Varsayılan | Not | Onay |
+|---|---|---|---|
+| `Integrations:Calendar:StateMinutes` | 10 | connect-url state geçerliliği (sözleşme) | |
+| `Integrations:Calendar:SyncWindowDays` | 60 | Bugünden bu kadar gün sonrasına kadar randevular takvime yazılır (dünden itibaren) | |
+| `Integrations:Calendar:SyncIntervalSeconds` | 300 | RefreshCalendarTokens ve SyncCalendarEvents aralığı (mimari.md: 5 dk) | |
+| `Integrations:Calendar:RefreshAheadMinutes` | 10 | Erişim jetonu bu süre içinde dolacaksa yenilenir | |
+
 ## Abonelik ve platform ("Planlar ve fiyat → Ortak kurallar")
 
 | Anahtar | Varsayılan | Not | Onay |

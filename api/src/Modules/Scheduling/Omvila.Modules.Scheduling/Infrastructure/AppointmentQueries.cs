@@ -222,6 +222,39 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
         return [.. rows.Select(r => new StaffAppointmentOutcome(r.Id, r.BrandCustomerId, r.StartUtc, r.Status.ToString()))];
     }
 
+    public async Task<IReadOnlyList<StaffCalendarAppointment>> ListForStaffCalendarAsync(
+        Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct)
+    {
+        var rows = await db.Appointments.AsNoTracking()
+            .Where(a => a.BrandId == brandId && a.StartUtc >= fromUtc && a.StartUtc < toUtc && a.Status != AppointmentStatus.Draft
+                && a.Items.Any(i => i.StaffId == staffId))
+            .OrderBy(a => a.StartUtc).ThenBy(a => a.Id)
+            .Select(a => new
+            {
+                a.Id,
+                a.BrandCustomerId,
+                a.Status,
+                Items = a.Items.Where(i => i.StaffId == staffId).OrderBy(i => i.SeqNo)
+                    .Select(i => new { i.StartUtc, i.EndUtc, i.ServiceNameSnapshot, i.Status }).ToList(),
+            })
+            .ToListAsync(ct);
+        return
+        [
+            .. rows.Select(r =>
+            {
+                var active = r.Items.Where(i => i.Status != AppointmentItemStatus.Cancelled).ToList();
+                var shown = active.Count > 0 ? active : r.Items;
+                return new StaffCalendarAppointment(
+                    r.Id,
+                    r.BrandCustomerId,
+                    r.Status == AppointmentStatus.Cancelled || active.Count == 0,
+                    shown.Min(i => i.StartUtc),
+                    shown.Max(i => i.EndUtc),
+                    [.. shown.Select(i => i.ServiceNameSnapshot)]);
+            }),
+        ];
+    }
+
     private static AwaitedDepositInfo? AwaitedDeposit(Appointment a) =>
         a is { DisplayStatus: DisplayStatus.DepositPending, DepositRequiredMinor: { } amount, DepositTransferCode: { } code, HoldExpiresUtc: { } due }
             ? new AwaitedDepositInfo(
