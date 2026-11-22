@@ -1,7 +1,10 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
 using NodaTime.Text;
@@ -25,6 +28,9 @@ internal sealed class AuditLogReader(PlatformDbContext db, IPlatformBrandDirecto
     public const int DefaultLimit = 50;
     private const int ExportMaxDays = 92;
     private static readonly Duration DefaultWindow = Duration.FromHours(24);
+
+    // CSV'de Türkçe harfler kaçırılmadan yazılır (hücre zaten tırnaklı ve kaçırılmış).
+    private static readonly JsonSerializerOptions CsvJson = new() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
     private static readonly string[] ApproveRejectEntities = [nameof(PaymentNotice), "BrandSmsSender"];
     private static readonly string[] CreditsAndPlanEntities = ["CreditTransaction", "Subscription"];
 
@@ -96,7 +102,7 @@ internal sealed class AuditLogReader(PlatformDbContext db, IPlatformBrandDirecto
                 item.Action.ToString(),
                 item.EntityType,
                 item.Brand?.Name ?? string.Empty,
-                item.Changes.ToJsonString()]);
+                item.Changes.ToJsonString(CsvJson)]);
         }
 
         return ([.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(csv.ToString())], items.Count, filter!);
