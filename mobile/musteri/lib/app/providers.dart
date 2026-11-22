@@ -8,7 +8,11 @@ import 'package:omvila_musteri/features/auth/data/sms_code_retriever.dart';
 import 'package:omvila_musteri/features/booking/data/booking_repository.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/device_repository.dart';
+import 'package:omvila_musteri/features/notifications/data/notifications_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/push_service.dart';
+import 'package:omvila_musteri/features/profile/data/profile_repository.dart';
+import 'package:omvila_musteri/features/waitlist/data/waitlist_repository.dart';
+import 'package:omvila_musteri/features/wallet/data/wallet_repository.dart';
 import 'package:omvila_musteri/shared/external_actions.dart';
 import 'package:omvila_musteri/shared/key_value_store.dart';
 import 'package:omvila_ui/omvila_ui.dart';
@@ -88,6 +92,26 @@ final brandsRepositoryProvider = Provider<BrandsRepository>(
 /// Cihaz kaydı.
 final deviceRepositoryProvider = Provider<DeviceRepository>(
   (ref) => ApiDeviceRepository(ref.watch(omvilaApiProvider)),
+);
+
+/// Paketlerim ve Ödemelerim.
+final walletRepositoryProvider = Provider<WalletRepository>(
+  (ref) => ApiWalletRepository(ref.watch(omvilaApiProvider)),
+);
+
+/// Profil, izinler, hesap silme.
+final profileRepositoryProvider = Provider<ProfileRepository>(
+  (ref) => ApiProfileRepository(ref.watch(omvilaApiProvider)),
+);
+
+/// Uygulama içi bildirimler.
+final notificationsRepositoryProvider = Provider<NotificationsRepository>(
+  (ref) => ApiNotificationsRepository(ref.watch(omvilaApiProvider)),
+);
+
+/// Bekleme listesi ve teklifler.
+final waitlistRepositoryProvider = Provider<WaitlistRepository>(
+  (ref) => ApiWaitlistRepository(ref.watch(omvilaApiProvider)),
 );
 
 /// Push katmanı; Firebase/APNs açılana kadar sahte (K4).

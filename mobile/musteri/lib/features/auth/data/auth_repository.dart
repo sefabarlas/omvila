@@ -10,6 +10,14 @@ abstract interface class AuthRepository {
 
   /// Kod doğruysa oturumu saklar.
   Future<void> verifyOtp({required String otpId, required String code});
+
+  /// "Çıkış yap": yenileme jetonu iptal edilir, [pushToken] verilirse cihaz
+  /// pasifleşir. Sunucuya ulaşılamasa da oturum cihazdan silinir.
+  Future<void> logout({String? pushToken});
+
+  /// Oturumu yalnız cihazdan siler (hesap silindi; sunucu oturumları
+  /// kapattı).
+  Future<void> forget();
 }
 
 /// İstemci başlığı (sözleşme ClientHeader).
@@ -52,4 +60,25 @@ final class ApiAuthRepository implements AuthRepository {
           refreshToken: result.refreshToken,
         );
       });
+
+  @override
+  Future<void> logout({String? pushToken}) async {
+    try {
+      await apiCall(
+        () => api.getMeAuthApi().meLogout(
+          meLogoutRequest: MeLogoutRequest(
+            refreshToken: session.refreshToken,
+            pushToken: pushToken,
+          ),
+        ),
+      );
+    } on ApiProblem {
+      // Jeton zaten geçersiz veya bağlantı yok: oturum yine de kapanır.
+    } finally {
+      await session.clear();
+    }
+  }
+
+  @override
+  Future<void> forget() => session.clear();
 }
