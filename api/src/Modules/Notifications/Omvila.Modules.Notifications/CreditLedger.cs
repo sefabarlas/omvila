@@ -16,6 +16,15 @@ internal sealed class CreditLedger(NotificationsDbContext db, IClock clock, IIdG
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task PurchaseAsync(Guid brandId, int credits, long? priceMinor, string referenceType, Guid referenceId, CancellationToken ct)
+    {
+        var balance = await LockBalanceAsync(db, brandId, ct);
+        long? unitPrice = priceMinor is { } price ? price / credits : null;
+        db.CreditTransactions.Add(
+            CreditTransaction.Purchase(ids.New(), brandId, credits, balance, unitPrice, referenceType, referenceId, clock.GetCurrentInstant()));
+        await db.SaveChangesAsync(ct);
+    }
+
     public Task<int> GetBalanceAsync(Guid brandId, CancellationToken ct) =>
         db.CreditTransactions.AsNoTracking().Where(t => t.BrandId == brandId).SumAsync(t => t.Amount, ct);
 

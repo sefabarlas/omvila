@@ -30,7 +30,6 @@ internal sealed class ManageAppointmentCreator(
     private const int NameMinLength = 2;
     private const int NameMaxLength = 120;
     private const int StaffNoteMaxLength = 1000;
-    private const string ReadOnlyStatus = "ReadOnly";
     private const int AlternativeCount = 3;
 
     // Kural: durum-makinesi.md A1, musaitlik.md § Panelden elle ekleme, dilim-02 § Alan kuralları (tekrarlayan randevu)
@@ -81,7 +80,7 @@ internal sealed class ManageAppointmentCreator(
         }
 
         // Kural: durum-makinesi.md § Abonelik ReadOnly ("yeni randevu ... kapalı"), acik-sorular.md S-05 (tasarım: hayır).
-        if (await subscriptions.GetBannerAsync(brandId, ct) is { Status: ReadOnlyStatus })
+        if (await subscriptions.GetBannerAsync(brandId, ct) is { BlocksNewWork: true })
         {
             return Error.Forbidden(ErrorCodes.SubscriptionReadOnly);
         }

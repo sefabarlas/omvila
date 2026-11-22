@@ -46,6 +46,10 @@ public static class NotificationsModule
         services.AddBrandDataEraser<NotificationsDbContext>();
         services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
+        // İşletme e-postaları (bildirimler.md § E-posta; T-118): kontör azaldı, deneme bitiyor, abonelik ödemesi alınamadı.
+        services.AddIntegrationEventHandler<SmsCreditsLow, EmailCreditsLow>();
+        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionTrialEnding, EmailOwnerAboutSubscription>();
+        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionPastDue, EmailOwnerAboutSubscription>();
         services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();
         services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
         services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();

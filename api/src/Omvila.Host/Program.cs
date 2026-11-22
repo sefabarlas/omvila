@@ -106,6 +106,7 @@ if (role.HasFlag(HostRole.Api))
     app.MapSalesEndpoints();
     app.MapReviewsEndpoints();
     app.MapNotificationsEndpoints();
+    app.MapPlatformEndpoints();
     // Yalnız sahte SMS sağlayıcısı etkinken (Production'da yok); kimlik doğrulamasız, koruma ters vekilde (T-76).
     app.MapDevSmsLogPage();
 }

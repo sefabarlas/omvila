@@ -85,7 +85,21 @@ internal sealed class Brand
         return true;
     }
 
-    /// <summary>Kayıtta: durum Onboarding; kurulum adımları bitince Active (dilim-01).</summary>
+    /// <summary>
+    /// Abonelik iptalinden CancelledArchiveDays sonra (durum-makinesi.md § 8 Cancelled "30 gün sonra arşiv"): her durumdan Archived.
+    /// Veri silinmez. Zaten arşivdeyse false.
+    /// </summary>
+    public bool Archive()
+    {
+        if (Status == BrandStatus.Archived)
+        {
+            return false;
+        }
+
+        Status = BrandStatus.Archived;
+        return true;
+    }
+
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }
 
