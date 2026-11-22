@@ -30,6 +30,7 @@ describe('oturum', () => {
       'Değerlendirmeler',
       'Hizmetler',
       'Personel',
+      'Paketler',
       'Ayarlar',
     ]);
     expect(
@@ -106,8 +107,12 @@ describe('menü', () => {
       'degerlendirmeler',
       'hizmetler',
       'personel',
+      'paketler',
       'ayarlar',
     ]);
+    // Paketler: package.manage veya package.sell (şube müdürü yalnız satar).
+    const manager = new Set(['report.view', 'package.sell']);
+    expect(visibleMenu((p) => manager.has(p)).map((e) => e.key)).toEqual(['genel', 'paketler']);
     // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; izne göre Takvimim (calendar.view), Müşteriler.
     expect(visibleMenu((p) => p === 'calendar.view').map((e) => e.key)).toEqual(['takvimim']);
     expect(visibleMenu(() => false)).toEqual([]);
@@ -132,6 +137,7 @@ describe('menü', () => {
     expect(activeMenuKey('/takvim/kapida-sira')).toBe('takvim');
     expect(activeMenuKey('/takvim/kapida-sira', true)).toBe('kapida');
     expect(activeMenuKey('/bekleme')).toBe('bekleme');
+    expect(activeMenuKey('/paketler')).toBe('paketler');
     expect(activeMenuKey('/ayarlar/isletme')).toBe('ayarlar');
     expect(activeMenuKey('/musteriler/0193a8f0-0000-7000-8000-00000000c002')).toBe('musteriler');
     expect(activeMenuKey('/musteriler', true)).toBe('musteriler');
