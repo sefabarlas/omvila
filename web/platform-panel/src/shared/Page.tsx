@@ -11,7 +11,7 @@ export interface PageProps extends Omit<TopbarProps, 'search' | 'notifications'>
 
 /**
  * Platform sayfası: üst bar (marka araması ⌘K → Markalar listesinde arama; zil rozeti onay kuyruğundaki bekleyenler,
- * session.pendingApprovalCount) ve içerik. Onay kuyruğu ekranı gelene kadar zil Genel bakış'ı açar (T-123).
+ * session.pendingApprovalCount; Onay kuyruklarını açar) ve içerik.
  */
 export function Page({ children, ...topbar }: PageProps) {
   const { session } = useSession();
@@ -29,7 +29,7 @@ export function Page({ children, ...topbar }: PageProps) {
         }}
         notifications={{
           count: session.pendingApprovalCount,
-          onOpen: () => void navigate({ to: '/' }),
+          onOpen: () => void navigate({ to: '/onay' }),
         }}
         {...topbar}
       />

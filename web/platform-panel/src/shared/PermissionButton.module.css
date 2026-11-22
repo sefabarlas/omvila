@@ -1,0 +1,10 @@
+/* Kilitli butonun ipucu sağ kenarda sağa hizalanır (ui-web Tooltip ortalar; sayfa yatay kaymasın). */
+.end {
+  display: inline-flex;
+}
+
+.end [role='tooltip'] {
+  right: 0;
+  left: auto;
+  transform: none;
+}

@@ -11,7 +11,7 @@ import type { Api } from '@/app/api';
 import { useApi } from '@/app/api-context';
 import { useClock } from '@/app/clock';
 import { platformTimeZone } from '@/app/config';
-import { roleLabels } from '@/app/session';
+import { auditActionLabel, auditActorLabel, auditDetail } from '@/features/audit/labels';
 import { QueryState } from '@/shared/QueryState';
 import {
   brandAuditQuery,
@@ -25,7 +25,6 @@ import type { BrandTab } from './labels';
 type Schemas = components['schemas'];
 type Invoice = Schemas['SubscriptionInvoice'];
 type Notice = Schemas['PaymentNoticeSummary'];
-type AuditEntry = Schemas['AuditLogEntry'];
 
 // Marka denetim sekmesi son 90 günü gösterir (fromUtc; sunucunun varsayılanı son 24 saat, T-123).
 const auditWindowDays = 90;
@@ -230,49 +229,6 @@ function NoticesTab({ brandId }: { brandId: string }) {
   );
 }
 
-const sectionLabels: Record<string, string> = {
-  Summary: 'Özet',
-  Invoices: 'Abonelik ve fatura',
-  Credits: 'Kontör',
-  Payments: 'Ödemeler',
-};
-
-/** İşlem adı istemcide üretilir (adminListAuditLog): eylem + varlık türü. */
-function auditActionLabel(entry: AuditEntry): string {
-  const section = typeof entry.changes.section === 'string' ? entry.changes.section : undefined;
-  switch (entry.action) {
-    case 'View':
-      return section ? `Görüntülendi · ${sectionLabels[section] ?? section}` : 'Görüntülendi';
-    case 'Match':
-      return 'Havale eşleştirildi';
-    case 'Approve':
-      return 'Onaylandı';
-    case 'Export':
-      return 'Dışa aktarıldı';
-    case 'Anonymize':
-      return 'Kişisel veri silindi';
-    case 'Create':
-      return entry.entityType === 'CreditTransaction' ? 'Kontör eklendi' : 'Kayıt oluşturuldu';
-    case 'Update':
-      return entry.entityType === 'Subscription'
-        ? 'Abonelik değişti'
-        : entry.entityType === 'Brand'
-          ? 'Marka durumu değişti'
-          : 'Kayıt güncellendi';
-    case 'Delete':
-      return 'Kayıt silindi';
-  }
-}
-
-function actorLabel(actor: AuditEntry['actor']): string {
-  if (actor.type === 'System') {
-    return 'Sistem · Otomatik';
-  }
-
-  const name = actor.name ?? '—';
-  return actor.platformRole ? `${name} · ${roleLabels[actor.platformRole]}` : name;
-}
-
 function auditQuery(api: Api, brandId: string, today: string) {
   return brandAuditQuery(
     api,
@@ -301,8 +257,9 @@ function AuditTab({ brandId }: { brandId: string }) {
               render: (entry) =>
                 `${localDate(entry.occurredUtc)} ${formatTime(entry.occurredUtc, platformTimeZone)}`,
             },
-            { key: 'actor', label: 'Kim', render: (entry) => actorLabel(entry.actor) },
+            { key: 'actor', label: 'Kim', render: (entry) => auditActorLabel(entry.actor) },
             { key: 'action', label: 'İşlem', render: auditActionLabel },
+            { key: 'detail', label: 'Ayrıntı', render: auditDetail },
           ]}
           empty={
             <EmptyState
