@@ -1,8 +1,8 @@
 namespace Omvila.Modules.Integrations.Contracts;
 
 /// <summary>
-/// Personelin Google Takvim bağlantı durumu (alan-modeli.md § CalendarLink; sözleşme StaffDetail.googleCalendarStatus,
-/// AdminBrandDetail.googleCalendarConnectedStaffCount). Markanın kiracı bağlamında (veya platform bağlamında) çağrılır.
+/// Personelin Google Takvim bağlantı durumu (alan-modeli.md § CalendarLink; sözleşme StaffDetail.googleCalendarStatus).
+/// Markanın kiracı bağlamında çağrılır. Platform paneli sayıyı <see cref="IPlatformCalendarLinks"/> ile okur (ADR-0006 K4).
 /// </summary>
 public interface ICalendarLinkQueries
 {
@@ -11,9 +11,4 @@ public interface ICalendarLinkQueries
     /// <param name="staffIds">Personel kimlikleri.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyDictionary<Guid, string>> GetStatusesAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
-
-    /// <summary>Bağlantısı etkin (Active) personel sayısı.</summary>
-    /// <param name="brandId">Marka.</param>
-    /// <param name="ct">İptal belirteci.</param>
-    Task<int> CountActiveAsync(Guid brandId, CancellationToken ct);
 }

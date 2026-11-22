@@ -34,6 +34,7 @@ public static class IntegrationsModule
         services.AddScoped<ICalendarProvider>(CreateProvider);
         services.AddScoped<CalendarConnections>();
         services.AddScoped<ICalendarLinkQueries, CalendarLinkQueries>();
+        services.AddScoped<IPlatformCalendarLinks, PlatformCalendarLinks>();
         services.AddPeriodicJob<RefreshCalendarTokens, CalendarOptions>(o => Duration.FromSeconds(o.SyncIntervalSeconds));
         services.AddPeriodicJob<SyncCalendarEvents, CalendarOptions>(o => Duration.FromSeconds(o.SyncIntervalSeconds));
         // Demo verisi --reset (T-74): markanın bağlantıları ve aktarım kayıtları.
