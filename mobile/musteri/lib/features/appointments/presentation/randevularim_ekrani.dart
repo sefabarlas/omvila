@@ -13,6 +13,7 @@ import 'package:omvila_musteri/features/booking/domain/booking_draft.dart';
 import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_musteri/features/brands/presentation/salon_ekleme.dart';
 import 'package:omvila_musteri/features/notifications/presentation/bildirim_kapali_seridi.dart';
+import 'package:omvila_musteri/features/notifications/presentation/bildirimler_ekrani.dart';
 import 'package:omvila_musteri/features/notifications/presentation/notification_prefs_controller.dart';
 import 'package:omvila_musteri/features/shell/sekme_kabugu.dart';
 import 'package:omvila_musteri/shared/widgets/durum_desenleri.dart';
@@ -60,7 +61,11 @@ class RandevularimEkrani extends ConsumerWidget {
     return SekmeSayfasi(
       ustBaslik: greeting,
       baslik: 'Randevularım',
-      onRefresh: () => ref.refresh(homeProvider.future),
+      eylem: const BildirimZili(),
+      onRefresh: () {
+        ref.invalidate(unreadCountProvider);
+        return ref.refresh(homeProvider.future);
+      },
       children: children,
     );
   }

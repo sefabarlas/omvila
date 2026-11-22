@@ -27,7 +27,6 @@ final List<GoRoute> _routes = [
     Routes.yrPersonel,
     Routes.yrSaat,
     Routes.yrOnay,
-    Routes.beklemeKatil,
     '/randevu/:id/havale',
     '/randevu/:id/tamam',
   ])
@@ -365,7 +364,9 @@ void main() {
       expect(find.text('Sayfa yüklenemedi'), findsOneWidget);
     });
 
-    testWidgets('"Uygun saat yok mu?" bekleme listesine gider', (tester) async {
+    testWidgets('"Uygun saat yok mu?" bekleme listesi sayfasını açar', (
+      tester,
+    ) async {
       await _pump(
         tester,
         const SaatEkrani(),
@@ -378,7 +379,7 @@ void main() {
       );
       await tester.tap(find.text('Uygun saat yok mu?'));
       await tester.pumpAndSettle();
-      expect(find.text('adres:${Routes.beklemeKatil}'), findsOneWidget);
+      expect(find.text('Bekleme listesine katılın'), findsOneWidget);
     });
   });
 

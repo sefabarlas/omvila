@@ -12,6 +12,7 @@ import 'package:omvila_musteri/features/booking/presentation/akis_sayfasi.dart';
 import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_musteri/features/booking/presentation/personel_ekrani.dart';
 import 'package:omvila_musteri/features/booking/presentation/saat_secimi.dart';
+import 'package:omvila_musteri/features/waitlist/presentation/bekleme_katil_sayfasi.dart';
 import 'package:omvila_musteri/shared/widgets/durum_desenleri.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -187,7 +188,21 @@ class _Govde extends ConsumerWidget {
               },
             ),
             const SizedBox(height: OmvilaBosluk.bosluk5),
-            _BeklemeKarti(onTap: () => context.push(Routes.beklemeKatil)),
+            _BeklemeKarti(
+              onTap: () async {
+                final joined = await beklemeKatilGoster(context);
+                if ((joined ?? false) && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Bekleme listesine katıldınız. Uygun saat boşalınca '
+                        'haber vereceğiz.',
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           ],
         );
       }(),

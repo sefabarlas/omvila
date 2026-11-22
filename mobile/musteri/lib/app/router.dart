@@ -23,10 +23,17 @@ import 'package:omvila_musteri/features/brands/domain/brand_link.dart';
 import 'package:omvila_musteri/features/brands/presentation/qr_tarama_ekrani.dart';
 import 'package:omvila_musteri/features/brands/presentation/salon_ekle_ekrani.dart';
 import 'package:omvila_musteri/features/notifications/presentation/bildirim_izni_ekrani.dart';
+import 'package:omvila_musteri/features/notifications/presentation/bildirimler_ekrani.dart';
 import 'package:omvila_musteri/features/notifications/presentation/notification_prefs_controller.dart';
+import 'package:omvila_musteri/features/profile/presentation/hesap_silme_ekranlari.dart';
+import 'package:omvila_musteri/features/profile/presentation/izinler_ekrani.dart';
+import 'package:omvila_musteri/features/profile/presentation/profil_duzenle_ekrani.dart';
+import 'package:omvila_musteri/features/profile/presentation/profil_ekrani.dart';
 import 'package:omvila_musteri/features/shell/sekme_kabugu.dart';
+import 'package:omvila_musteri/features/waitlist/presentation/bekleme_teklif_ekrani.dart';
+import 'package:omvila_musteri/features/wallet/presentation/odemelerim_ekrani.dart';
+import 'package:omvila_musteri/features/wallet/presentation/paketler_ekrani.dart';
 import 'package:omvila_musteri/shared/widgets/baglanti_gecersiz_ekrani.dart';
-import 'package:omvila_musteri/shared/widgets/hazirlaniyor_ekrani.dart';
 
 /// Uygulama adresleri. Derin bağlantılar (K3) randevu.omvila.com.tr ile aynı
 /// yolları kullanır: `/{brandSlug}`, `/r/{code}`, `/b/{code}`, `/d/{code}`.
@@ -70,8 +77,32 @@ abstract final class Routes {
   /// Son kontrol.
   static const yrOnay = '/randevu-al/onay';
 
-  /// Bekleme listesine katıl (BeklemeKatil; sonraki PR).
-  static const beklemeKatil = '/randevu-al/bekleme';
+  /// Bildirimler.
+  static const bildirimler = '/bildirimler';
+
+  /// Profil bilgilerim.
+  static const profilBilgileri = '/profil/bilgiler';
+
+  /// Ödemelerim.
+  static const odemeler = '/odemeler';
+
+  /// İzinlerim.
+  static const izinler = '/izinler';
+
+  /// Hesabı sil.
+  static const hesapSil = '/hesap-sil';
+
+  /// Hesap silme kodu (extra: OtpChallengeResponse).
+  static const hesapSilKod = '/hesap-sil/kod';
+
+  /// Hesabınız silindi.
+  static const hesapSilindi = '/hesap-silindi';
+
+  /// Bekleme teklifi (`/b/{code}`).
+  static String beklemeTeklif(String code) => '/b/$code';
+
+  /// SMS bağlantısındaki randevu (`/r/{code}`).
+  static String kodluRandevu(String code) => '/r/$code';
 
   /// Geçmiş.
   static const gecmis = '/gecmis';
@@ -145,7 +176,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             ('personel', PersonelEkrani()),
             ('saat', SaatEkrani()),
             ('onay', OnayEkrani()),
-            ('bekleme', HazirlaniyorEkrani(baslik: 'Bekleme listesi')),
           ])
             GoRoute(
               path: path,
@@ -189,8 +219,42 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Kişiye özel bağlantılar (K3): /r/ randevu, /d/ değerlendirme; /b/
-      // bekleme teklifi sonraki PR'da (şimdilik Randevularım).
+      GoRoute(
+        path: Routes.bildirimler,
+        builder: (context, state) => const BildirimlerEkrani(),
+      ),
+      GoRoute(
+        path: Routes.profilBilgileri,
+        builder: (context, state) => const ProfilDuzenleEkrani(),
+      ),
+      GoRoute(
+        path: Routes.odemeler,
+        builder: (context, state) => const OdemelerimEkrani(),
+      ),
+      GoRoute(
+        path: Routes.izinler,
+        builder: (context, state) => const IzinlerEkrani(),
+      ),
+      GoRoute(
+        path: Routes.hesapSil,
+        builder: (context, state) => const HesapSilEkrani(),
+        routes: [
+          GoRoute(
+            path: 'kod',
+            redirect: (context, state) =>
+                state.extra is OtpChallengeResponse ? null : Routes.hesapSil,
+            builder: (context, state) => HesapSilKodEkrani(
+              challenge: state.extra! as OtpChallengeResponse,
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.hesapSilindi,
+        builder: (context, state) => const HesapSilindiEkrani(),
+      ),
+      // Kişiye özel bağlantılar (K3): /r/ randevu, /d/ değerlendirme, /b/
+      // bekleme teklifi.
       GoRoute(
         path: '/r/:code',
         builder: (context, state) =>
@@ -203,7 +267,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/b/:code',
-        redirect: (context, state) => Routes.randevularim,
+        builder: (context, state) =>
+            BeklemeTeklifEkrani(code: state.pathParameters['code']!),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => SekmeKabugu.shell(shell),
@@ -220,7 +285,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: Routes.paketler,
-                builder: (context, state) => const PaketlerSekmesi(),
+                builder: (context, state) => const PaketlerEkrani(),
               ),
             ],
           ),
@@ -228,7 +293,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: Routes.profil,
-                builder: (context, state) => const ProfilSekmesi(),
+                builder: (context, state) => const ProfilEkrani(),
               ),
             ],
           ),
@@ -275,7 +340,10 @@ String? _redirect(Ref ref, GoRouterState state) {
       return null;
     }
 
-    final target = path == Routes.acilis ? from : location;
+    // Silinen hesabın ekranına girişten sonra dönülmez.
+    final target = path == Routes.acilis
+        ? from
+        : (path == Routes.hesapSilindi ? null : location);
     return Uri(
       path: Routes.giris,
       queryParameters: target == null || target == Routes.randevularim

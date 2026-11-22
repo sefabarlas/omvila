@@ -6,7 +6,8 @@ import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/booking/presentation/salon_secimi_ekrani.dart';
 import 'package:omvila_musteri/features/brands/presentation/qr_tarama_ekrani.dart';
 import 'package:omvila_musteri/features/notifications/presentation/bildirim_izni_ekrani.dart';
-import 'package:omvila_musteri/features/shell/sekme_kabugu.dart';
+import 'package:omvila_musteri/features/profile/presentation/profil_ekrani.dart';
+import 'package:omvila_musteri/features/wallet/presentation/paketler_ekrani.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import '../helpers/fakes.dart';
@@ -185,13 +186,17 @@ void main() {
   });
 
   group('Sekmeler', () {
-    testWidgets('Paketlerim ve Profil başlık ve boş durum', (tester) async {
-      await tester.pumpWidget(screenApp(const PaketlerSekmesi(), TestDeps()));
+    testWidgets('Paketlerim ve Profil sekmeleri yer tutucu değil', (
+      tester,
+    ) async {
+      await tester.pumpWidget(screenApp(const PaketlerEkrani(), TestDeps()));
+      await tester.pumpAndSettle();
       expect(find.text('Paketlerim'), findsOneWidget);
       expect(find.text('Henüz paketiniz yok'), findsOneWidget);
-      await tester.pumpWidget(screenApp(const ProfilSekmesi(), TestDeps()));
-      expect(find.text('Profil'), findsOneWidget);
-      expect(find.byType(OmvilaBosDurum), findsOneWidget);
+      await tester.pumpWidget(screenApp(const ProfilEkrani(), TestDeps()));
+      await tester.pumpAndSettle();
+      expect(find.text('Merve Yıldız'), findsOneWidget);
+      expect(find.text('Çıkış yap'), findsOneWidget);
     });
   });
 }
