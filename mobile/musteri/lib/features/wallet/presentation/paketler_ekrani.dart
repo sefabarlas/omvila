@@ -39,7 +39,7 @@ class PaketlerEkrani extends ConsumerWidget {
             baslik: 'Henüz paketiniz yok',
             aciklama:
                 'Salonunuzdan bir seans paketi aldığınızda kalan seanslarınızı '
-                've son kullanma tarihini burada takip edersiniz.',
+                've paketin bitiş gününü burada takip edersiniz.',
           ),
           _BilgiKarti(
             'Paketler uygulamadan satılmaz; salonda satın alınır ve hesabınıza '
