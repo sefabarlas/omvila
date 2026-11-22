@@ -1,7 +1,7 @@
 # Yerel deneme: staging yığınını *.localhost alt alanlarıyla çalıştırır (Caddy iç CA ile TLS; tarayıcı uyarısı beklenir).
 #   docker compose -f deploy/staging/compose.yml -f deploy/staging/compose.local.yml \
 #     --env-file deploy/staging/.env.local up --build
-# Adresler: https://salon.localhost:8443, https://api.localhost:8443, https://randevu.localhost:8443,
+# Adresler: https://salon.localhost:8443, https://admin.localhost:8443, https://api.localhost:8443, https://randevu.localhost:8443,
 #           https://sms.localhost:8443, https://posta.localhost:8443
 # Portlar kök docker-compose.yml (5432, 4010, 8025, 1025) ve yerel geliştirme (5173, 3000) ile çakışmaz.
 # Caddy içeride de 8443'te dinler: rezervasyon sunucusu (SSR) aynı adresi iç ağdan çağırabilsin.
