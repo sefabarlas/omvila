@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_musteri/app/providers.dart';
+import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/appointments/domain/randevu_metinleri.dart';
+import 'package:omvila_musteri/features/appointments/presentation/randevularim_ekrani.dart';
+import 'package:omvila_musteri/features/booking/domain/booking_draft.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_musteri/features/brands/presentation/salon_ekleme.dart';
 import 'package:omvila_musteri/shared/widgets/durum_desenleri.dart';
 import 'package:omvila_ui/omvila_ui.dart';
@@ -16,8 +20,7 @@ final FutureProvider<List<MeBrand>> brandsProvider =
     );
 
 /// Randevu alma akışının başlangıcı "Hangi salon?" (YRSalon, YRSalonBos).
-/// Hizmet, personel, saat ve onay adımları sonraki PR'da; bu PR'da salonlar
-/// listelenir, seçim henüz ileri gitmez (T-106).
+/// Salon seçilince (birden çok şubede önce şube) hizmet adımı açılır.
 class SalonSecimiEkrani extends ConsumerWidget {
   /// Ekran.
   const SalonSecimiEkrani({super.key});
@@ -32,11 +35,20 @@ class SalonSecimiEkrani extends ConsumerWidget {
         backgroundColor: r.zemin,
         centerTitle: true,
         title: const Text('Randevu al'),
-        leading: IconButton(
-          tooltip: 'Geri',
-          icon: const Icon(LucideIcons.arrowLeft),
-          onPressed: () => context.pop(),
-        ),
+        leading: context.canPop()
+            ? IconButton(
+                tooltip: 'Geri',
+                icon: const Icon(LucideIcons.arrowLeft),
+                onPressed: () => context.pop(),
+              )
+            : null,
+        actions: [
+          IconButton(
+            tooltip: 'Kapat',
+            icon: const Icon(LucideIcons.x),
+            onPressed: () => context.go(Routes.randevularim),
+          ),
+        ],
       ),
       body: switch (brands) {
         AsyncData(:final value) => ListView(
@@ -49,18 +61,25 @@ class SalonSecimiEkrani extends ConsumerWidget {
                 style: OmvilaYazi.buyukBaslik.copyWith(color: r.metin),
               ),
             ),
-            if (value.isEmpty)
-              OmvilaBosDurum(
-                ikon: LucideIcons.store,
-                baslik: 'Henüz salonunuz yok',
+            if (value.isEmpty) ...[
+              const SizedBox(height: OmvilaBosluk.bosluk4),
+              IlkSalonKarti(
+                baslik: 'Henüz bir salonunuz yok',
                 aciklama:
-                    'Salonun paylaştığı bağlantıyı açın ya da salondaki QR '
-                    'kodu okutun.',
-                eylemEtiketi: 'QR kodu okut',
-                eylemIkonu: LucideIcons.scanLine,
-                onEylem: () => SalonEkleme.qrIle(context, ref),
-              )
-            else ...[
+                    'Randevu almak için salonunuzun bağlantısını açın ya da '
+                    'salondaki QR kodu okutun. Randevu aldığınız salonlar '
+                    'burada listelenir.',
+                onQr: () => SalonEkleme.qrIle(context, ref),
+                onPaste: () => SalonEkleme.panodan(context, ref),
+              ),
+              const SizedBox(height: OmvilaBosluk.bosluk4),
+              Text(
+                "OMVILA'da salon araması yoktur. Salonunuz OMVILA "
+                'kullanıyorsa bağlantısını ondan isteyebilirsiniz.',
+                textAlign: TextAlign.center,
+                style: OmvilaYazi.aciklama.copyWith(color: r.metinIkincil),
+              ),
+            ] else ...[
               Text(
                 'Daha önce randevu aldığınız salonlar.',
                 style: OmvilaYazi.govde.copyWith(color: r.metinIkincil),
@@ -110,13 +129,71 @@ class SalonSecimiEkrani extends ConsumerWidget {
   }
 }
 
-class _SalonSatiri extends StatelessWidget {
+/// Salon seçildi: tek şubede doğrudan, birden çok şubede şube sorulur.
+Future<void> salonSecildi(
+  BuildContext context,
+  WidgetRef ref,
+  MeBrand brand,
+) async {
+  final branches = brand.branches;
+  final branch = branches.length == 1
+      ? branches.single
+      : await showModalBottomSheet<MeBranchRef>(
+          context: context,
+          showDragHandle: true,
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OmvilaBosluk.bosluk5,
+                  ),
+                  child: Text(
+                    'Hangi şube?',
+                    style: OmvilaYazi.baslik2.copyWith(
+                      color: context.omvilaRenkler.metin,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: OmvilaBosluk.bosluk2),
+                for (final b in branches)
+                  ListTile(
+                    title: Text(b.name),
+                    subtitle: b.district == b.name ? null : Text(b.district),
+                    trailing: const Icon(LucideIcons.chevronRight),
+                    onTap: () => Navigator.of(context).pop(b),
+                  ),
+                const SizedBox(height: OmvilaBosluk.bosluk4),
+              ],
+            ),
+          ),
+        );
+  if (branch == null || !context.mounted) {
+    return;
+  }
+
+  ref
+      .read(bookingProvider.notifier)
+      .start(
+        BookingDraft(
+          brandSlug: brand.slug,
+          brandName: brand.name,
+          branchId: branch.id,
+          branchName: branch.name,
+        ),
+      );
+  await context.push(Routes.yrHizmet);
+}
+
+class _SalonSatiri extends ConsumerWidget {
   const _SalonSatiri({required this.brand});
 
   final MeBrand brand;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final r = context.omvilaRenkler;
     final (zemin, metin) = switch (brand.coverColor) {
       MeBrandCoverColorEnum.mercan => (r.avatar3Zemin, r.avatar3Metin),
@@ -128,75 +205,94 @@ class _SalonSatiri extends StatelessWidget {
         ? ''
         : 'son ziyaret ${formatDate(_date(lastVisit), DateStyle.dayMonth)}';
     final package = brand.activePackages.firstOrNull;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: r.zeminYukseltilmis,
-        borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
-        boxShadow: context.omvilaGolgeler.golgeSm,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(OmvilaBosluk.bosluk4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: zemin,
-                borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
+    final enabled = brand.bookingEnabled && brand.branches.isNotEmpty;
+    final radius = BorderRadius.circular(OmvilaKose.koseLg);
+    return Material(
+      color: r.zeminYukseltilmis,
+      borderRadius: radius,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: enabled ? () => salonSecildi(context, ref, brand) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(OmvilaBosluk.bosluk4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: zemin,
+                  borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
+                ),
+                child: Text(
+                  initials(brand.name),
+                  style: OmvilaYazi.govdeGuclu.copyWith(color: metin),
+                ),
               ),
-              child: Text(
-                initials(brand.name),
-                style: OmvilaYazi.govdeGuclu.copyWith(color: metin),
-              ),
-            ),
-            const SizedBox(width: OmvilaBosluk.bosluk3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    brand.name,
-                    style: OmvilaYazi.baslik3.copyWith(color: r.metin),
-                  ),
-                  Text(
-                    ozetSatiri([
-                      brand.branches
-                          .map((b) => b.district)
-                          .toSet()
-                          .join(' ve '),
-                      visit,
-                    ]),
-                    style: OmvilaYazi.ikincil.copyWith(color: r.metinIkincil),
-                  ),
-                  if (package != null) ...[
-                    const SizedBox(height: OmvilaBosluk.bosluk2),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: r.zeminMarkaYumusak,
-                        borderRadius: BorderRadius.circular(OmvilaKose.koseTam),
+              const SizedBox(width: OmvilaBosluk.bosluk3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      brand.name,
+                      style: OmvilaYazi.baslik3.copyWith(color: r.metin),
+                    ),
+                    Text(
+                      ozetSatiri([
+                        brand.branches
+                            .map((b) => b.district)
+                            .toSet()
+                            .join(' ve '),
+                        visit,
+                      ]),
+                      style: OmvilaYazi.ikincil.copyWith(color: r.metinIkincil),
+                    ),
+                    if (!brand.bookingEnabled)
+                      Text(
+                        'Online randevu kapalı · Salonu arayın',
+                        style: OmvilaYazi.aciklama.copyWith(color: r.uyari),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: OmvilaBosluk.bosluk3,
-                          vertical: OmvilaBosluk.bosluk1,
+                    if (package != null) ...[
+                      const SizedBox(height: OmvilaBosluk.bosluk2),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: r.zeminMarkaYumusak,
+                          borderRadius: BorderRadius.circular(
+                            OmvilaKose.koseTam,
+                          ),
                         ),
-                        child: Text(
-                          '${package.packageName} var',
-                          style: OmvilaYazi.aciklama.copyWith(
-                            color: r.metinMarka,
-                            fontWeight: FontWeight.w700,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: OmvilaBosluk.bosluk3,
+                            vertical: OmvilaBosluk.bosluk1,
+                          ),
+                          child: Text(
+                            '${package.packageName} var',
+                            style: OmvilaYazi.aciklama.copyWith(
+                              color: r.metinMarka,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              if (enabled)
+                Padding(
+                  padding: const EdgeInsets.only(top: OmvilaBosluk.bosluk4),
+                  child: Icon(
+                    LucideIcons.chevronRight,
+                    size: 20,
+                    color: r.metin,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

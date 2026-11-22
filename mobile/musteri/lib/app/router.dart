@@ -2,11 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omvila_api/omvila_api.dart';
+import 'package:omvila_musteri/features/appointments/presentation/basari_ekrani.dart';
+import 'package:omvila_musteri/features/appointments/presentation/degerlendir_ekrani.dart';
+import 'package:omvila_musteri/features/appointments/presentation/ertele_ekrani.dart';
+import 'package:omvila_musteri/features/appointments/presentation/gecmis_ekrani.dart';
+import 'package:omvila_musteri/features/appointments/presentation/havale_ekrani.dart';
+import 'package:omvila_musteri/features/appointments/presentation/randevu_detay_ekrani.dart';
 import 'package:omvila_musteri/features/appointments/presentation/randevularim_ekrani.dart';
 import 'package:omvila_musteri/features/auth/presentation/acilis_ekrani.dart';
 import 'package:omvila_musteri/features/auth/presentation/auth_controller.dart';
 import 'package:omvila_musteri/features/auth/presentation/giris_ekrani.dart';
 import 'package:omvila_musteri/features/auth/presentation/giris_kod_ekrani.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
+import 'package:omvila_musteri/features/booking/presentation/hizmet_ekrani.dart';
+import 'package:omvila_musteri/features/booking/presentation/onay_ekrani.dart';
+import 'package:omvila_musteri/features/booking/presentation/personel_ekrani.dart';
+import 'package:omvila_musteri/features/booking/presentation/saat_ekrani.dart';
 import 'package:omvila_musteri/features/booking/presentation/salon_secimi_ekrani.dart';
 import 'package:omvila_musteri/features/brands/domain/brand_link.dart';
 import 'package:omvila_musteri/features/brands/presentation/qr_tarama_ekrani.dart';
@@ -15,6 +26,7 @@ import 'package:omvila_musteri/features/notifications/presentation/bildirim_izni
 import 'package:omvila_musteri/features/notifications/presentation/notification_prefs_controller.dart';
 import 'package:omvila_musteri/features/shell/sekme_kabugu.dart';
 import 'package:omvila_musteri/shared/widgets/baglanti_gecersiz_ekrani.dart';
+import 'package:omvila_musteri/shared/widgets/hazirlaniyor_ekrani.dart';
 
 /// Uygulama adresleri. Derin bağlantılar (K3) randevu.omvila.com.tr ile aynı
 /// yolları kullanır: `/{brandSlug}`, `/r/{code}`, `/b/{code}`, `/d/{code}`.
@@ -45,6 +57,41 @@ abstract final class Routes {
 
   /// Randevu alma akışının başlangıcı ("Hangi salon?").
   static const randevuAl = '/randevu-al';
+
+  /// Hizmet seçin.
+  static const yrHizmet = '/randevu-al/hizmet';
+
+  /// Kimden olsun?
+  static const yrPersonel = '/randevu-al/personel';
+
+  /// Ne zaman?
+  static const yrSaat = '/randevu-al/saat';
+
+  /// Son kontrol.
+  static const yrOnay = '/randevu-al/onay';
+
+  /// Bekleme listesine katıl (BeklemeKatil; sonraki PR).
+  static const beklemeKatil = '/randevu-al/bekleme';
+
+  /// Geçmiş.
+  static const gecmis = '/gecmis';
+
+  /// Randevu detayı.
+  static String randevu(String id) => '/randevu/$id';
+
+  /// Saati değiştir.
+  static String ertele(String id) => '/randevu/$id/ertele';
+
+  /// Kapora havalesi; [yeni] randevu yeni oluşturuldu ("Daha sonra" →
+  /// başarı ekranı).
+  static String havale(String id, {bool yeni = false}) =>
+      '/randevu/$id/havale${yeni ? '?yeni=1' : ''}';
+
+  /// Randevu oluşturuldu.
+  static String tamam(String id) => '/randevu/$id/tamam';
+
+  /// Değerlendir.
+  static String degerlendir(String id) => '/randevu/$id/degerlendir';
 
   /// Girişten sonra dönülecek adres parametresi.
   static const fromParam = 'from';
@@ -92,6 +139,71 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.randevuAl,
         builder: (context, state) => const SalonSecimiEkrani(),
+        routes: [
+          for (final (path, screen) in const [
+            ('hizmet', HizmetEkrani()),
+            ('personel', PersonelEkrani()),
+            ('saat', SaatEkrani()),
+            ('onay', OnayEkrani()),
+            ('bekleme', HazirlaniyorEkrani(baslik: 'Bekleme listesi')),
+          ])
+            GoRoute(
+              path: path,
+              // Taslak yoksa (uygulama yeniden açıldı) akış baştan başlar.
+              redirect: (context, state) =>
+                  ref.read(bookingProvider) == null ? Routes.randevuAl : null,
+              builder: (context, state) => screen,
+            ),
+        ],
+      ),
+      GoRoute(
+        path: Routes.gecmis,
+        builder: (context, state) => const GecmisEkrani(),
+      ),
+      GoRoute(
+        path: '/randevu/:id',
+        builder: (context, state) =>
+            RandevuDetayEkrani(id: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'ertele',
+            builder: (context, state) =>
+                ErteleEkrani(id: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'havale',
+            builder: (context, state) => HavaleEkrani(
+              id: state.pathParameters['id']!,
+              yeni: state.uri.queryParameters['yeni'] == '1',
+            ),
+          ),
+          GoRoute(
+            path: 'tamam',
+            builder: (context, state) =>
+                BasariEkrani(id: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: 'degerlendir',
+            builder: (context, state) =>
+                DegerlendirEkrani(appointmentId: state.pathParameters['id']),
+          ),
+        ],
+      ),
+      // Kişiye özel bağlantılar (K3): /r/ randevu, /d/ değerlendirme; /b/
+      // bekleme teklifi sonraki PR'da (şimdilik Randevularım).
+      GoRoute(
+        path: '/r/:code',
+        builder: (context, state) =>
+            KodluRandevuEkrani(code: state.pathParameters['code']!),
+      ),
+      GoRoute(
+        path: '/d/:code',
+        builder: (context, state) =>
+            DegerlendirEkrani(accessCode: state.pathParameters['code']),
+      ),
+      GoRoute(
+        path: '/b/:code',
+        redirect: (context, state) => Routes.randevularim,
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => SekmeKabugu.shell(shell),
@@ -122,14 +234,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Kişiye özel bağlantı ekranları (RandevuDetay, BeklemeTeklif,
-      // Degerlendir) sonraki PR'larda; o zamana kadar Randevularım açılır
-      // (T-106).
-      for (final prefix in linkPrefixes)
-        GoRoute(
-          path: '/$prefix/:code',
-          redirect: (context, state) => Routes.randevularim,
-        ),
       GoRoute(
         path: '/:brandSlug',
         // Geçişsiz: salon eklenip hemen Randevularım'a dönülürse sekme

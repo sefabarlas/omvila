@@ -4,6 +4,7 @@ import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
+import '../helpers/booking_fixtures.dart';
 import '../helpers/fakes.dart';
 import '../helpers/fixtures.dart';
 import '../helpers/harness.dart';
@@ -15,9 +16,14 @@ Future<TestDeps> _start(
   Map<String, String>? store,
   String? location,
   FakeBrandsRepository? brands,
+  FakeAppointmentsRepository? appointments,
 }) async {
   usePhone(tester);
-  final deps = TestDeps(store: store, brands: brands);
+  final deps = TestDeps(
+    store: store,
+    brands: brands,
+    appointments: appointments,
+  );
   final container = deps.container();
   addTearDown(container.dispose);
   await tester.pumpWidget(routedApp(container));
@@ -64,14 +70,49 @@ void main() {
     expect(find.text('Merhaba Merve'), findsOneWidget);
   });
 
-  for (final link in ['/r/ABC123', '/b/ABC123', '/d/ABC123']) {
-    testWidgets('kişiye özel bağlantı $link şimdilik Randevularım', (
+  testWidgets('bekleme teklifi bağlantısı /b/ şimdilik Randevularım', (
+    tester,
+  ) async {
+    await _start(tester, store: signedInStore(), location: '/b/ABC123');
+    expect(find.text('Merhaba Merve'), findsOneWidget);
+  });
+
+  testWidgets('/r/ müşterinin randevusunu açar', (tester) async {
+    final repo = FakeAppointmentsRepository(home: doluHome, detail: detay())
+      ..byCode = {'ABC123': detay()};
+    await _start(
       tester,
-    ) async {
-      await _start(tester, store: signedInStore(), location: link);
-      expect(find.text('Merhaba Merve'), findsOneWidget);
-    });
-  }
+      store: signedInStore(),
+      location: '/r/ABC123',
+      appointments: repo,
+    );
+    expect(find.text('Moda Cad. 42, Kadıköy'), findsOneWidget);
+    expect(find.text('Randevuyu iptal et'), findsOneWidget);
+  });
+
+  testWidgets('/r/ kodu müşterinin değilse "Bu bağlantı geçersiz"', (
+    tester,
+  ) async {
+    await _start(tester, store: signedInStore(), location: '/r/BASKA1');
+    expect(find.text('Bu bağlantı geçersiz'), findsOneWidget);
+  });
+
+  testWidgets('/d/ değerlendirme ekranını açar', (tester) async {
+    final repo = FakeAppointmentsRepository(home: doluHome)
+      ..review = degerlendirme(code: 'D1');
+    await _start(
+      tester,
+      store: signedInStore(),
+      location: '/d/D1',
+      appointments: repo,
+    );
+    expect(find.text("Kuaför Elif'te nasıldı?"), findsOneWidget);
+  });
+
+  testWidgets('girişsiz /r/ bağlantısı girişten sonra açılır', (tester) async {
+    await _start(tester, location: '/r/ABC123');
+    expect(find.text('Kod gönder'), findsOneWidget);
+  });
 
   testWidgets('salon bağlantısı salonu ekler', (tester) async {
     final deps = await _start(

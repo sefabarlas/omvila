@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/appointments/presentation/randevularim_ekrani.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -17,7 +19,14 @@ Future<void> _pump(WidgetTester tester, TestDeps deps) async {
       // Uygulamada sekme kabuğunun Scaffold'u içindedir.
       const Scaffold(body: RandevularimEkrani()),
       deps,
-      routes: [markerRoute(Routes.randevuAl), markerRoute(Routes.qr)],
+      routes: [
+        markerRoute(Routes.randevuAl),
+        markerRoute(Routes.qr),
+        markerRoute(Routes.yrHizmet),
+        markerRoute(Routes.yrSaat),
+        markerRoute(Routes.gecmis),
+        markerRoute('/randevu/:id'),
+      ],
     ),
   );
   await tester.pump();
@@ -76,6 +85,23 @@ void main() {
   });
 
   group('dolu (Main)', () {
+    testWidgets('kart detaya, "Geçmiş" Geçmiş\'e gider', (tester) async {
+      await _pump(tester, TestDeps());
+      await tester.tap(find.text('Nail Studio Moda'));
+      await tester.pumpAndSettle();
+      expect(find.text('adres:/randevu/a2'), findsOneWidget);
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('14:30'));
+      await tester.pumpAndSettle();
+      expect(find.text('adres:/randevu/a1'), findsOneWidget);
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Geçmiş'));
+      await tester.pumpAndSettle();
+      expect(find.text('adres:${Routes.gecmis}'), findsOneWidget);
+    });
+
     testWidgets('kahraman kart ve yaklaşanlar', (tester) async {
       await _pump(tester, TestDeps());
       expect(find.text('Merhaba Merve'), findsOneWidget);
@@ -231,7 +257,31 @@ void main() {
       );
       await tester.tap(find.text('Aynısını tekrar al'));
       await tester.pumpAndSettle();
-      expect(find.text('adres:${Routes.randevuAl}'), findsOneWidget);
+      // Akış önceki randevuyla dolar, saat adımı açılır; geri hizmet adımı.
+      expect(find.text('adres:${Routes.yrSaat}'), findsOneWidget);
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('adres:${Routes.yrSaat}')),
+      );
+      final draft = container.read(bookingProvider)!;
+      expect(draft.brandName, 'Kuaför Elif');
+      expect(draft.serviceIds, ['svc-Saç kesimi', 'svc-Fön']);
+      expect(draft.staff.values.toSet(), {'stf-Elif Kaya'});
+      expect(draft.sameStaffForAll, isTrue);
+      tester.state<NavigatorState>(find.byType(Navigator).last).pop();
+      await tester.pumpAndSettle();
+      expect(find.text('adres:${Routes.yrHizmet}'), findsOneWidget);
+    });
+
+    testWidgets('"Geçmiş randevular" Geçmiş\'i açar', (tester) async {
+      await _pump(
+        tester,
+        TestDeps(
+          appointments: FakeAppointmentsRepository(home: yaklasanYokHome),
+        ),
+      );
+      await tester.tap(find.text('Geçmiş randevular'));
+      await tester.pumpAndSettle();
+      expect(find.text('adres:${Routes.gecmis}'), findsOneWidget);
     });
 
     testWidgets('tekrar alınamıyorsa yalnız "Başka randevu al"', (

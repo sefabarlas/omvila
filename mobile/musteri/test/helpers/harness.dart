@@ -20,6 +20,7 @@ class TestDeps {
     FakeAuthRepository? auth,
     FakeAppointmentsRepository? appointments,
     FakeBrandsRepository? brands,
+    FakeBookingRepository? booking,
     FakePush? push,
     Clock? clock,
     this.config = const AppConfig(apiUrl: 'http://test'),
@@ -27,6 +28,7 @@ class TestDeps {
        appointments =
            appointments ?? FakeAppointmentsRepository(home: doluHome),
        brands = brands ?? FakeBrandsRepository(),
+       booking = booking ?? FakeBookingRepository(),
        push = push ?? FakePush(),
        clock = clock ?? testClock {
     this.auth = auth ?? FakeAuthRepository(store: this.store);
@@ -36,6 +38,7 @@ class TestDeps {
   late final FakeAuthRepository auth;
   final FakeAppointmentsRepository appointments;
   final FakeBrandsRepository brands;
+  final FakeBookingRepository booking;
   final FakePush push;
   final AppConfig config;
   final Clock clock;
@@ -50,6 +53,7 @@ class TestDeps {
     authRepositoryProvider.overrideWithValue(auth),
     appointmentsRepositoryProvider.overrideWithValue(appointments),
     brandsRepositoryProvider.overrideWithValue(brands),
+    bookingRepositoryProvider.overrideWithValue(booking),
     deviceRepositoryProvider.overrideWithValue(device),
     pushServiceProvider.overrideWithValue(push),
     smsCodeRetrieverProvider.overrideWithValue(sms),
