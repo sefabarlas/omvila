@@ -1,0 +1,10 @@
+# Yanlış pozitifler: contract/d5-mobil (#112) ilk iki commit'indeki uydurma örnek jetonlar
+# (meVerifyOtp / meRefreshToken yanıt örnekleri). Sonraki commit'te "ornek-..." metinleriyle değiştirildi.
+f4604b88766ba0a263813ea48073a5ac27c3ff45:contracts/openapi.yaml:generic-api-key:4172
+f4604b88766ba0a263813ea48073a5ac27c3ff45:contracts/openapi.yaml:generic-api-key:4174
+f4604b88766ba0a263813ea48073a5ac27c3ff45:contracts/openapi.yaml:generic-api-key:4202
+f4604b88766ba0a263813ea48073a5ac27c3ff45:contracts/openapi.yaml:generic-api-key:4204
+9889ec829cb12a88d0807de63adb646578193361:packages/api-client-ts/src/generated/schema.ts:generic-api-key:11619
+9889ec829cb12a88d0807de63adb646578193361:packages/api-client-ts/src/generated/schema.ts:generic-api-key:11621
+9889ec829cb12a88d0807de63adb646578193361:packages/api-client-ts/src/generated/schema.ts:generic-api-key:11654
+9889ec829cb12a88d0807de63adb646578193361:packages/api-client-ts/src/generated/schema.ts:generic-api-key:11656

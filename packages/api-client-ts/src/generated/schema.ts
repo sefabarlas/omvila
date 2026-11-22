@@ -11616,9 +11616,9 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "accessToken": "eyJhbGciOiJFUzI1NiJ9.me.signature",
+                     *       "accessToken": "ornek-erisim-jetonu",
                      *       "expiresInSeconds": 900,
-                     *       "refreshToken": "rt_9f8e7d6c5b4a",
+                     *       "refreshToken": "ornek-yenileme-jetonu",
                      *       "isNewAccount": false
                      *     }
                      */
@@ -11651,9 +11651,9 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "accessToken": "eyJhbGciOiJFUzI1NiJ9.me.signature",
+                     *       "accessToken": "ornek-erisim-jetonu",
                      *       "expiresInSeconds": 900,
-                     *       "refreshToken": "rt_1a2b3c4d5e6f"
+                     *       "refreshToken": "ornek-yeni-yenileme-jetonu"
                      *     }
                      */
                     "application/json": components["schemas"]["TokenPair"];
