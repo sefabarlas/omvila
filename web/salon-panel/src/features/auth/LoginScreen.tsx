@@ -1,17 +1,20 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { parseMobilePhone } from '@omvila/ui-web/format';
-import { Button, TextField } from '@omvila/ui-web/panel';
+import {
+  authStyles as styles,
+  CodeStep,
+  describeAuthProblem,
+  Button,
+  TextField,
+} from '@omvila/ui-web/panel';
+import type { OtpChallenge } from '@omvila/ui-web/panel';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useAuthApi } from './api';
-import type { OtpChallenge } from './api';
-import styles from './auth.module.css';
-import { AuthLayout } from './AuthLayout';
-import { CodeStep } from './CodeStep';
+import { SalonAuthLayout as AuthLayout } from './SalonAuthLayout';
 import { signupHandoff } from './handoff';
-import { describeProblem } from './problem';
 
 const schema = z.object({
   phone: z
@@ -35,7 +38,7 @@ export function LoginScreen({ redirectTo }: { redirectTo: string | undefined }) 
       setPhone(e164);
       setChallenge(await authApi.requestOtp(e164, 'Login'));
     } catch (problem) {
-      form.setError('phone', { message: describeProblem(problem).message });
+      form.setError('phone', { message: describeAuthProblem(problem).message });
     }
   });
 

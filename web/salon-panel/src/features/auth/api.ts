@@ -1,4 +1,5 @@
 import { unwrap } from '@omvila/api-client-ts';
+import type { OtpChallenge } from '@omvila/ui-web/panel';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useApi } from '@/app/api-context';
@@ -8,12 +9,6 @@ import { queryKeys } from '@/app/query-keys';
 import type { IndustryCode } from '@/shared/industries';
 
 export type OtpPurpose = 'Login' | 'Signup';
-
-export interface OtpChallenge {
-  otpId: string;
-  phoneMasked: string;
-  resendAfterSeconds: number;
-}
 
 /** manage-auth uçları (ADR-0007). Web'de yenileme jetonu HttpOnly çerezde; erişim jetonu bellekte. */
 export function useAuthApi() {

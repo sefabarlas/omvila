@@ -132,7 +132,7 @@ jobs:
         if: env.RUN == 'true'
         run: pnpm --filter @omvila/design-tokens test
 
-  # Salon paneli ve rezervasyon sayfası uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md
+  # Salon paneli, platform paneli ve rezervasyon sayfası uçtan uca testleri (Playwright, Prism mock'a karşı; test-stratejisi.md
   # kritik akışlar 1, 2, 6, 7 ve ekran görüntüleri) ve tanıtım sitesinin gezinme ve ekran görüntüleri. Zorunlu denetimlere eklenmedi; dal koruması ayrıca karar verilir.
   e2e:
     needs: changes
@@ -157,6 +157,9 @@ jobs:
       - name: Uçtan uca testler (salon paneli)
         if: env.RUN == 'true'
         run: pnpm --filter @omvila/salon-panel e2e
+      - name: Uçtan uca testler (platform paneli)
+        if: env.RUN == 'true' && always()
+        run: pnpm --filter @omvila/platform-panel e2e
       - name: Uçtan uca testler (rezervasyon sayfası)
         if: env.RUN == 'true' && always()
         env:
@@ -175,6 +178,15 @@ jobs:
           path: |
             web/salon-panel/e2e-report/
             web/salon-panel/e2e-results/
+          retention-days: 7
+      - name: Rapor ve ekran görüntüleri (platform paneli)
+        if: env.RUN == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-panel-e2e
+          path: |
+            web/platform-panel/e2e-report/
+            web/platform-panel/e2e-results/
           retention-days: 7
       - name: Rapor ve ekran görüntüleri (rezervasyon sayfası)
         if: env.RUN == 'true' && always()

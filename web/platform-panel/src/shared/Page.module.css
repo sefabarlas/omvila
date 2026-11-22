@@ -1,0 +1,9 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-5);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--icerik-genislik);
+  padding: 0 var(--bosluk-6) var(--bosluk-8);
+}

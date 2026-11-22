@@ -1,4 +1,4 @@
-/* salon-paneli/Giris, GirisKod, Kayit: solda marka paneli, sağda form. */
+/* salon-paneli/Giris, GirisKod, Kayit (platform paneli girişi de): solda marka paneli, sağda form. */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
