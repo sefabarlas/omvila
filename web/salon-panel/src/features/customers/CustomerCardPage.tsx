@@ -33,7 +33,14 @@ import type { CustomerAppointmentRow, CustomerSummary } from './api';
 import styles from './Customers.module.css';
 import { PackagesTab, PaymentsTab, ReviewsTab } from './CustomerTabs';
 import { DeleteCustomerModal } from './DeleteCustomerModal';
-import { activePackage, customerPhone, dayLabel, instantLabel, shortDate, tagTone } from './labels';
+import {
+  activePackage,
+  customerPhone,
+  inlineDayLabel,
+  instantLabel,
+  shortDate,
+  tagTone,
+} from './labels';
 import { MergeCustomersModal } from './MergeCustomersModal';
 import { customerPackagesQuery } from './records-api';
 
@@ -274,7 +281,7 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
               value={String(visits)}
               sub={
                 customer.lastVisitOn
-                  ? `son: ${dayLabel(customer.lastVisitOn, today).toLocaleLowerCase('tr-TR')}`
+                  ? `son: ${inlineDayLabel(customer.lastVisitOn, today)}`
                   : 'henüz ziyaret yok'
               }
             />

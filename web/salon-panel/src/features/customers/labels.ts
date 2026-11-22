@@ -65,6 +65,12 @@ export function dayLabel(date: string, today: string): string {
     : formatDate(date, 'numeric');
 }
 
+/** Cümle içinde gün ("son bugün", "son 21 Ekim"): göreli gün küçük harfle, ay adı büyük kalır. */
+export function inlineDayLabel(date: string, today: string): string {
+  const label = dayLabel(date, today);
+  return /^\d/.test(label) ? label : label.toLocaleLowerCase('tr-TR');
+}
+
 /** Anlık zaman: "Bugün 13:00", "21 Ekim 14:00". */
 export function instantLabel(instantUtc: string, today: string, timeZone: string): string {
   const date = toBranchDate(new Date(instantUtc), timeZone);

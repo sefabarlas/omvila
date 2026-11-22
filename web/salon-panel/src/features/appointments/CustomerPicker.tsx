@@ -4,7 +4,7 @@ import { Search, UserPlus } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useApi } from '@/app/api-context';
 import type { CustomerSummary } from '@/features/customers/api';
-import { customerPhone, dayLabel, looksLikePhone } from '@/features/customers/labels';
+import { customerPhone, inlineDayLabel, looksLikePhone } from '@/features/customers/labels';
 import { customerSearchQuery } from './api';
 import styles from './NewAppointment.module.css';
 
@@ -47,7 +47,7 @@ export function customerLine(customer: PickedCustomer, today: string): string[] 
   return [
     ...(phone ? [phone] : []),
     `${String(customer.visitCount)} ziyaret`,
-    ...(customer.lastVisitOn ? [`son ${dayLabel(customer.lastVisitOn, today)}`] : []),
+    ...(customer.lastVisitOn ? [`son ${inlineDayLabel(customer.lastVisitOn, today)}`] : []),
   ];
 }
 

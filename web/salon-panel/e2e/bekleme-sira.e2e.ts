@@ -55,4 +55,6 @@ test('kapıda sıra: telefonsuz sıraya ekle ve ilk kişiyi randevuya çevir', a
   await page.getByRole('button', { name: 'Randevuya çevir: Okan Er' }).click();
   expect((await start).headers()['if-match']).toBe('W/"1"');
   await expect(page.getByText('Randevuya çevrildi')).toBeVisible();
+  // KK4: başlatılan bilet takvime "Kapıdan" kanalıyla eklenir.
+  await expect(page.getByText('Okan Er takvime “Kapıdan” kanalıyla eklendi.')).toBeVisible();
 });

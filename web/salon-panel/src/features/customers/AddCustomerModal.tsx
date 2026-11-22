@@ -13,7 +13,7 @@ import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { customerQuery, useCreateCustomer } from './api';
 import styles from './Customers.module.css';
-import { dayLabel } from './labels';
+import { inlineDayLabel } from './labels';
 
 export interface CustomerPrefill {
   fullName?: string;
@@ -129,7 +129,7 @@ export function AddCustomerModal({
     ? [
         match.fullName,
         `${String(match.visitCount)} ziyaret`,
-        match.lastVisitOn ? `son ${dayLabel(match.lastVisitOn, today)}` : null,
+        match.lastVisitOn ? `son ${inlineDayLabel(match.lastVisitOn, today)}` : null,
       ]
         .filter(Boolean)
         .join(', ')

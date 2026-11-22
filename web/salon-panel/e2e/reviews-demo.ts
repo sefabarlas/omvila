@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { demoNow } from './calendar-demo';
+import { demoNow, ownerPermissions } from './calendar-demo';
 import { sessionAs } from './support';
 
 // Değerlendirme ekran görüntüleri için salon-paneli/Degerlendirmeler verisi (Prism örneği tek kayıt döner). Filtre
@@ -44,25 +44,11 @@ const review = (
     : null,
 });
 
-const reviewPermissions = [
-  'settings.manage',
-  'service.manage',
-  'staff.manage',
-  'calendar.view',
-  'calendar.view.all-staff',
-  'customer.view',
-  'customer.phone.view',
-  'customer.edit',
-  'report.view',
-  'review.view',
-  'review.reply',
-];
-
 /** Değerlendirmeler; `empty`: hiç değerlendirme yok (DegerlendirmelerBos). */
 export async function reviewsDemo(page: Page, { empty = false } = {}) {
   await page.clock.setFixedTime(demoNow);
   await sessionAs(page, {
-    permissions: reviewPermissions,
+    permissions: ownerPermissions,
     membership: { role: 'Owner', branchIds: [], staffId: '0193a8f0-0000-7000-8000-0000000000c1' },
   });
   const store = empty
