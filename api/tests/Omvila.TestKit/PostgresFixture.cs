@@ -125,6 +125,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Scheduling:ExtendRecurringSeriesIntervalMinutes"] = "60",
         ["Scheduling:ExpireWaitlistOffersIntervalSeconds"] = "60",
         ["Scheduling:ExpireWaitlistEntriesIntervalMinutes"] = "60",
+        ["Scheduling:SendDailySummariesIntervalSeconds"] = "300",
         ["Sms:Provider"] = "Fake",
         ["Push:Provider"] = "Fake",
         ["Sms:DefaultSender"] = "OMVILA",
