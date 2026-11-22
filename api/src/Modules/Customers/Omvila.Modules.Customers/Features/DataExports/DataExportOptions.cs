@@ -19,5 +19,11 @@ internal sealed class DataExportOptions
     /// </summary>
     public string? LinkSigningKey { get; set; }
 
-    internal bool IsValid() => ProcessIntervalSeconds > 0 && ApplyRetentionIntervalMinutes > 0;
+    /// <summary>
+    /// E-postadaki indirme bağlantısının kökü: API'nin dışarıdan erişilen adresi (ör. https://api.test.omvila.com.tr/). Boşsa
+    /// bağlantı gönderilmez, istek hazır (Ready) kalır.
+    /// </summary>
+    public Uri? DownloadBaseUrl { get; set; }
+
+    internal bool IsValid() => ProcessIntervalSeconds > 0 && ApplyRetentionIntervalMinutes > 0 && DownloadBaseUrl is null or { IsAbsoluteUri: true };
 }

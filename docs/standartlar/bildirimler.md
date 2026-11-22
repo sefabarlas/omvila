@@ -74,6 +74,7 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.credits_low` | Kontör eşiğin altına inince (push ile birlikte) |
 | `owner.subscription_payment_failed` | Çekim başarısız / havale gelmedi |
 | `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte; metin taslak, T-116) |
+| `owner.data_export_ready` | "Tüm verileri dışa aktar" arşivi hazır: indirme bağlantısı (`DataExportLinkValidityDays` geçerli; alıcı isteği yapanın verdiği adres; metin taslak, T-121) |
 | `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte; metin taslak, T-116) |
 
 Platform ekibine ayrı bildirim olayı yoktur: yeni havale bildirimi ve SMS adı başvurusu platform panelindeki "Onay kuyrukları" rozetinde (`AdminSession.pendingApprovalCount`) görünür (T-116).

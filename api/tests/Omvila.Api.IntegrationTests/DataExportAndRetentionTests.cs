@@ -1,7 +1,9 @@
 using System.IO.Compression;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
+using Omvila.Infrastructure.Email;
 using Omvila.TestKit;
 
 namespace Omvila.Api.IntegrationTests;
@@ -66,9 +68,14 @@ public sealed class DataExportAndRetentionTests(PostgresFixture db) : IAsyncLife
 
         await _api.RunJobAsync(ProcessDataExportsJob);
 
-        (await _api.ScalarAsync<string>($"SELECT status FROM customers.data_exports WHERE id = '{exportId}'")).ShouldBe("Ready");
-        var brandId = await _api.ScalarAsync<Guid>($"SELECT brand_id FROM customers.data_exports WHERE id = '{exportId}'");
-        var token = CreateToken(brandId, exportId, _factory.Clock.GetCurrentInstant() + Duration.FromDays(7));
+        (await _api.ScalarAsync<string>($"SELECT status FROM customers.data_exports WHERE id = '{exportId}'")).ShouldBe("Sent");
+        var mail = _factory.Services.GetRequiredService<FakeEmailSender>().Sent.Single(m => string.Equals(m.EventCode, "owner.data_export_ready", StringComparison.Ordinal));
+        mail.To.ShouldBe("elif@ornek.com");
+        mail.Subject.ShouldBe("Verileriniz hazır");
+        mail.TextBody.ShouldContain("Kuaför Elif için");
+        var link = Regex.Match(mail.TextBody, @"https://api\.omvila\.com/api/v1/public/data-exports/(?<token>[A-Za-z0-9_-]+)", RegexOptions.None, TimeSpan.FromSeconds(1));
+        link.Success.ShouldBeTrue(mail.TextBody);
+        var token = link.Groups["token"].Value;
 
         var download = await DownloadAsync(token);
         download.Status.ShouldBe(200);
@@ -140,14 +147,6 @@ public sealed class DataExportAndRetentionTests(PostgresFixture db) : IAsyncLife
                 return reader.ReadToEnd();
             },
             StringComparer.Ordinal);
-    }
-
-    // İndirme bağlantısı e-postayla gider (T-121); testte jeton uygulamanın imzalayıcısıyla üretilir.
-    private string CreateToken(Guid brandId, Guid exportId, Instant expires)
-    {
-        var type = Type.GetType("Omvila.Modules.Customers.Features.DataExports.DataExportLinks, Omvila.Modules.Customers", throwOnError: true)!;
-        var links = _factory.Services.GetRequiredService(type);
-        return (string)type.GetMethod("CreateToken")!.Invoke(links, [brandId, exportId, expires])!;
     }
 
     private async Task<(int Status, string? ContentType, byte[] Body)> DownloadAsync(string token)

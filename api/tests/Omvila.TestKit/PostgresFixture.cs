@@ -124,6 +124,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Sales:ExpireCustomerPackagesIntervalMinutes"] = "60",
         ["Customers:DataExport:ProcessIntervalSeconds"] = "60",
         ["Customers:DataExport:ApplyRetentionIntervalMinutes"] = "1440",
+        ["Customers:DataExport:DownloadBaseUrl"] = "https://api.omvila.com/",
         ["Scheduling:ExpireAppointmentHoldsIntervalSeconds"] = "60",
         ["Scheduling:MarkNoShowsIntervalSeconds"] = "60",
         ["Scheduling:ExtendRecurringSeriesIntervalMinutes"] = "60",

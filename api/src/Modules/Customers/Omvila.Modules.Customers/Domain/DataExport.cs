@@ -62,7 +62,7 @@ internal sealed class DataExport
         ExpiresUtc = now + validity;
     }
 
-    /// <summary>Bağlantı e-postayla gönderildi (e-posta altyapısı bağlanınca; T-121).</summary>
+    /// <summary>Bağlantı e-postayla gönderildi.</summary>
     public void MarkSent() => Status = DataExportStatus.Sent;
 
     public void Fail(string reason, Instant now)
