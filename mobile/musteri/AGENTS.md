@@ -6,7 +6,16 @@ Zorunlu okuma: [kodlama-flutter.md](../../docs/standartlar/kodlama-flutter.md), 
 Ekranlar: `design/ekranlar/musteri-uygulamasi/` (Acilis, Giris, GirisKod, BildirimIzni → Main, MainBos (ilk giriş), MainYaklasanYok, MainBildirimKapali, Paketler(+Bos), Profil → YRSalon(+Bos), YRHizmet, YRPersonel, YRSaat, YROnay, YRHavale, YRBasari → BeklemeKatil, BeklemeTeklif, BeklemeDoldu → RandevuDetay, RandevuErtele, ErteleKapali, Iptal → Gecmis(+Bos), Degerlendir → Odemelerim(+Bos), Izinler, HesapSil, HesapSilindi, ProfilDuzenle, Bildirimler(+Bos), Durumlar).
 
 ## Yapı ve yığın
-`mobile/isletme` ile aynı yığın. Uygulama kimliği `com.omvila.app`; ad "OMVILA"; ikon açık kum zemin. Derin bağlantılar: `omvila.com/{slug}` (salonu ekle / randevu al), `omvila.com/r/{code}`, `/b/{code}`, `/d/{code}`.
+`mobile/isletme` ile aynı yığın. Uygulama kimliği `com.omvila.app`; ad "OMVILA"; ikon açık kum zemin. Derin bağlantılar: `randevu.omvila.com.tr/{slug}` (salonu ekle / randevu al), `/r/{code}`, `/b/{code}`, `/d/{code}` (K3; yapıştırma ve QR'da kısa `omvila.com` da tanınır).
+
+| Yol | Ne |
+|---|---|
+| `lib/app/` | `providers.dart` (bütün bağımlılıklar; testler `ProviderScope` ile değiştirir), `router.dart` (adresler, oturum ve bildirim izni yönlendirmesi, derin bağlantılar), `app.dart`, `config.dart` (`--dart-define`: `API_URL`, `PRIVACY_NOTICE_URL`) |
+| `lib/features/<özellik>/{data,domain,presentation}` | `auth` (oturum, giriş, kod), `notifications` (push arayüzü + sahte, izin, şerit), `appointments` (Randevularım), `brands` (salon ekleme, QR, derin bağlantı), `booking` (randevu alma akışı), `shell` (sekmeler) |
+| `lib/shared/` | API çağrısı (`apiCall` → `ApiProblem`), cihaz deposu, dış eylemler (harita, takvim), durum desenleri |
+| `test/helpers/` | Sahte depolar (`fakes.dart`), test verisi ve sabit saat (`fixtures.dart`), `screenApp`/`screenGoldenTest` (`harness.dart`) |
+
+Riverpod kod üretimsiz kullanılır (T-106 (1)); "şimdi" yalnız `clockProvider`.
 
 ## Özel kurallar
 - API: `/api/v1/me` (müşteri jetonu) + randevu almak için `/api/v1/public` uçları müşteri jetonuyla (sözleşmede `meBearer` güvenliği). Uçlar Dilim 5'te sözleşmeye girer.
@@ -26,5 +35,8 @@ Ekranlar: `design/ekranlar/musteri-uygulamasi/` (Acilis, Giris, GirisKod, Bildir
 cd mobile/musteri
 fvm flutter run --dart-define=API_URL=http://10.0.2.2:4010
 fvm flutter test
+fvm flutter test --update-goldens test/goldens   # yalnız bilinçli görsel değişiklikte (goldens/ci)
+OMVILA_PLATFORM_GOLDENS=1 fvm flutter test --update-goldens test/goldens   # gerçek yazı tipiyle bakmak için (git dışı)
 fvm flutter analyze --fatal-infos
+fvm flutter build apk --debug                   # CI'da da derlenir
 ```

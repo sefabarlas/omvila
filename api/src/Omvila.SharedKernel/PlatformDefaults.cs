@@ -40,6 +40,9 @@ public static class PlatformDefaults
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: QuietHoursLocal bitişi (08:00; müşteri hatırlatması bu saate kayar).</summary>
     public const int QuietHoursEndHour = 8;
 
+    /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: DailySummaryLocalTime (20:00, şube yerel; "Her akşam 20:00").</summary>
+    public const int DailySummaryHour = 20;
+
     /// <summary>sureler-ve-ayarlar.md § Bildirim ve iletişim: PushTitleMaxChars (40).</summary>
     public const int PushTitleMaxChars = 40;
 

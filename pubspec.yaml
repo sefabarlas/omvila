@@ -10,7 +10,7 @@ workspace:
   - packages/omvila_ui
   - packages/api-client-dart
   - mobile/isletme
-  # - mobile/musteri
+  - mobile/musteri
 
 dev_dependencies:
   melos: ^7.0.0

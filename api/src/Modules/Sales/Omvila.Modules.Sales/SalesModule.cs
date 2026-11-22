@@ -5,6 +5,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Sales.Features.Cash;
+using Omvila.Modules.Sales.Features.Commissions;
 using Omvila.Modules.Sales.Features.CustomerPayments;
 using Omvila.Modules.Sales.Infrastructure.Configurations;
 using Omvila.SharedKernel;
@@ -43,6 +44,8 @@ public static class SalesModule
         services.AddScoped<CustomerPaymentReader>();
         // D5 müşteri uygulaması Paketlerim ve Ödemelerim (T-104).
         services.AddScoped<Features.Me.MeWalletReader>();
+        services.AddScoped<ICommissionQueries, CommissionQueries>();
+        services.AddScoped<MyCommissionSummaryReader>();
         services.AddUniqueConstraintError(CashDayCloseConfiguration.BranchDayIndex, ErrorCodes.CashDayAlreadyClosed);
         // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
         services.AddScoped<CustomerPaymentsParticipant>();
@@ -63,6 +66,7 @@ public static class SalesModule
         CashDayEndpoints.Map(app);
         CustomerPaymentEndpoints.Map(app);
         Features.Me.MeWalletEndpoints.Map(app);
+        CommissionEndpoints.Map(app);
         return app;
     }
 }

@@ -16,6 +16,7 @@ using Omvila.Modules.Scheduling.Features.Deposits;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
 using Omvila.Modules.Scheduling.Features.Waitlist;
+using Omvila.Modules.Scheduling.Features.Today;
 using Omvila.Modules.Scheduling.Features.WalkIns;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
@@ -52,8 +53,6 @@ public static class SchedulingModule
         services.AddScoped<ManageAppointmentChanges>();
         services.AddScoped<AppointmentLinkResolver>();
         services.AddScoped<PublicAppointmentLinkChanges>();
-        // D5 müşteri uygulaması Randevularım (T-104).
-        services.AddScoped<Features.Me.MeAppointmentReader>();
         services.AddScoped<CalendarReader>();
         AddContractImplementations(services);
         services.AddScoped<AppointmentApprovals>();
@@ -63,6 +62,7 @@ public static class SchedulingModule
         services.AddScoped<BranchQueueNumbers>();
         services.AddScoped<WalkInTickets>();
         services.AddScoped<WalkInQueueReader>();
+        services.AddScoped<TodayReader>();
         services.AddScoped<AppointmentCompletions>();
         services.AddScoped<WaitlistOfferEngine>();
         services.AddScoped<WaitlistInput>();
@@ -95,6 +95,8 @@ public static class SchedulingModule
     {
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
         services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
+        // D5 müşteri uygulaması Randevularım (T-104).
+        services.AddScoped<Features.Me.MeAppointmentReader>();
         services.AddScoped<CustomerDataParticipant>();
         services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
         services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
@@ -108,6 +110,7 @@ public static class SchedulingModule
         ApprovalEndpoints.Map(app);
         DepositEndpoints.Map(app);
         WalkInEndpoints.Map(app);
+        TodayEndpoints.Map(app);
         CompletionEndpoints.Map(app);
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);

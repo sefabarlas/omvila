@@ -24,6 +24,9 @@ internal sealed class InAppNotifier(NotificationsDbContext db, IClock clock, IId
     /// <summary>Değerlendirmeler (staff.review_received; id değerlendirme).</summary>
     public const string ReviewsTarget = "Reviews";
 
+    /// <summary>Kapıda sıra (staff.walkin_queue; id bilet).</summary>
+    public const string WalkInQueueTarget = "WalkInQueue";
+
     public async Task AddAsync(InAppEntry entry, IReadOnlyCollection<Guid> userIds, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entry);

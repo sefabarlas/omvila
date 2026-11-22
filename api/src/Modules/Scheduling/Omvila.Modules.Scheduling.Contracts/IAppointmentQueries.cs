@@ -61,4 +61,24 @@ public interface IAppointmentQueries
     /// <param name="customerId">Global müşteri.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyList<ReportedDepositInfo>> ListReportedDepositsAsync(Guid customerId, CancellationToken ct);
+
+    /// <summary>Prim satırları için randevu kalemi bilgisi (toplu, tek sorgu; anahtar kalem kimliği); markada olmayan kalem yer almaz.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="appointmentItemIds">Randevu kalemleri.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyDictionary<Guid, AppointmentItemContext>> GetItemContextsAsync(
+        Guid brandId, IReadOnlyCollection<Guid> appointmentItemIds, CancellationToken ct);
+
+    /// <summary>
+    /// Personelin [<paramref name="fromUtc"/>, <paramref name="toUtc"/>) aralığında başlayan ve sonuçlanmış veya gelmiş randevuları
+    /// (Completed, NoShow, CheckedIn; iptal edilmemiş bir kalemi bu personelde olanlar), başlangıca göre artan. Kişisel prim özeti
+    /// (randevu sayısı, gelmedi oranı, "bitince eklenecek") içindir.
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffId">Personel.</param>
+    /// <param name="fromUtc">Aralık başı.</param>
+    /// <param name="toUtc">Aralık sonu (hariç).</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<StaffAppointmentOutcome>> ListStaffOutcomesAsync(
+        Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct);
 }
