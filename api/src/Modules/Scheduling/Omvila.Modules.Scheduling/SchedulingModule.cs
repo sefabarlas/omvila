@@ -52,6 +52,8 @@ public static class SchedulingModule
         services.AddScoped<ManageAppointmentChanges>();
         services.AddScoped<AppointmentLinkResolver>();
         services.AddScoped<PublicAppointmentLinkChanges>();
+        // D5 müşteri uygulaması Randevularım (T-104).
+        services.AddScoped<Features.Me.MeAppointmentReader>();
         services.AddScoped<CalendarReader>();
         AddContractImplementations(services);
         services.AddScoped<AppointmentApprovals>();
@@ -110,6 +112,7 @@ public static class SchedulingModule
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);
         PublicAppointmentLinkEndpoints.Map(app);
+        Features.Me.MeAppointmentEndpoints.Map(app);
         WaitlistEndpoints.Map(app);
         return app;
     }
