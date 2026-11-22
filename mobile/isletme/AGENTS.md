@@ -6,9 +6,9 @@ Zorunlu okuma: [kodlama-flutter.md](../../docs/standartlar/kodlama-flutter.md), 
 Ekranlar: `design/ekranlar/isletme-uygulamasi/` (Acilis, Giris, GirisKod, BildirimIzni → Main(Bugün), MainBos, MainBildirimKapali, MainSaltOkunur → Takvim, TakvimBos, TakvimKapali → RandevuDetay, RandevuIslem, KaporaOnay, OdemeAl, YeniRandevu → Sira, SiraEkle, SiraBos → Musteriler, MusterilerAramaYok, MusterilerBos, MusteriKarti, MusteriKartiYeni → Bildirimler, BildirimlerBos, Profil, BildirimAyar).
 
 ## Yapı ve yığın
-Flutter 3.27+, Riverpod (elle sağlayıcı; kod üretimi neden yok: T-107), go_router, `omvila_ui` (tema + ortak widget'lar), `omvila_api` (`packages/api-client-dart`), `flutter_secure_storage`, `lucide_icons_flutter`, `flutter_svg`, `share_plus`. `firebase_messaging` mağaza/Firebase hesapları açılınca (K4; o zamana kadar `PushService` + `FakePushService`), `sms_autofill` imzalı Android derlemesiyle eklenir.
+Flutter 3.27+, Riverpod (elle sağlayıcı; kod üretimi neden yok: T-107), go_router, `omvila_ui` (tema + ortak widget'lar), `omvila_api` (`packages/api-client-dart`), `flutter_secure_storage`, `lucide_icons_flutter`, `flutter_svg`, `share_plus`, `url_launcher` ("Ara"/"SMS": tel:/sms:). `firebase_messaging` mağaza/Firebase hesapları açılınca (K4; o zamana kadar `PushService` + `FakePushService`), `sms_autofill` imzalı Android derlemesiyle eklenir.
 
-Yapı: `lib/app/` (uygulama, router, sağlayıcılar: `apiProvider`, `clockProvider`, `keyValueStoreProvider`, `pushServiceProvider`), `lib/features/<özellik>/{data,presentation}`, `lib/shared/`. Testler `test/helpers/fake_api.dart` (`Harness`: sözleşme uçlarını taklit eden HTTP bağdaştırıcısı, bellekte depo, sahte push, sabit saat) ve `test/helpers/screen_golden.dart` (390×844, açık/koyu/1.3×; `test/goldens/ci/`). Uygulama kimliği `com.omvila.isletme`; ad "OMVILA İşletme"; ikon koyu petrol zemin (`packages/design-tokens/assets/app-icon-isletme.svg`).
+Yapı: `lib/app/` (uygulama, router, sağlayıcılar: `apiProvider`, `clockProvider`, `keyValueStoreProvider`, `pushServiceProvider`), `lib/features/<özellik>/{data,presentation}`, `lib/shared/`. Testler `test/helpers/fake_api.dart` (`Harness`: sözleşme uçlarını taklit eden HTTP bağdaştırıcısı, bellekte depo, sahte push, sahte `ExternalLauncher`, sabit saat; takvim/randevu verisi `appointment_fixtures.dart`) ve `test/helpers/screen_golden.dart` (390×844, açık/koyu/1.3×; `test/goldens/ci/`). Uygulama kimliği `com.omvila.isletme`; ad "OMVILA İşletme"; ikon koyu petrol zemin (`packages/design-tokens/assets/app-icon-isletme.svg`).
 
 ## Özel kurallar
 - API yüzeyi `/api/v1/manage` (salon paneliyle aynı uçlar ve izinler). Menü ve eylemler `session.permissions` ile.
@@ -20,6 +20,7 @@ Yapı: `lib/app/` (uygulama, router, sağlayıcılar: `apiProvider`, `clockProvi
 - **Tamamla ve ödeme al:** yöntemler Nakit / Kart (salonun POS'u) / Havale / Paketten; "İkinci ödeme ekle"; uygulamada ödeme alınmaz, yalnız kaydedilir (Dilim 5).
 - **Kapıda sıra:** numara her gün 1'den; "Başlat" randevuya çevirir.
 - Salt okunur abonelikte kırmızı şerit; yeni randevu pasif.
+- Sözleşmede `format: date` olan alanlara ve sorgulara `ApiDate` verilir (üretilmiş istemci `DateTime`'ı tam an olarak yazar; T-109).
 - Push bildirimine dokununca ilgili ekran açılır (randevu detayı, kapora, değerlendirme).
 
 ## Komutlar

@@ -11,6 +11,7 @@ import 'package:omvila_isletme/app/app.dart';
 import 'package:omvila_isletme/app/providers.dart';
 import 'package:omvila_isletme/features/push/data/push_service.dart';
 import 'package:omvila_isletme/main.dart';
+import 'package:omvila_isletme/shared/external_launcher.dart';
 import 'package:omvila_isletme/shared/key_value_store.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
@@ -113,6 +114,18 @@ class MemoryKeyValueStore implements KeyValueStore {
       value == null ? values.remove(key) : values[key] = value;
 }
 
+/// Açılan dış bağlantıları kaydeder (tel:, sms:).
+class FakeLauncher implements ExternalLauncher {
+  /// Açılan bağlantılar.
+  final opened = <Uri>[];
+
+  @override
+  Future<bool> open(Uri url) async {
+    opened.add(url);
+    return true;
+  }
+}
+
 /// Uygulamanın tamamını sahte API, depo, push ve sabit saatle kurar.
 class Harness {
   /// Sahte API.
@@ -124,6 +137,9 @@ class Harness {
   /// Push (varsayılan izin verilmiş; şerit testleri değiştirir).
   FakePushService push = FakePushService(initial: PushPermission.granted);
 
+  /// Dış bağlantılar.
+  final launcher = FakeLauncher();
+
   /// Sözleşme örneğindeki an (Bugün `generatedUtc`).
   Clock clock = FixedClock.parse('2026-11-25T09:10:00Z');
 
@@ -133,6 +149,7 @@ class Harness {
     keyValueStoreProvider.overrideWithValue(store),
     pushServiceProvider.overrideWithValue(push),
     clockProvider.overrideWithValue(clock),
+    externalLauncherProvider.overrideWithValue(launcher),
   ];
 
   /// Yenileme jetonu kayıtlı, oturum ve izin ekranı geçilmiş.
