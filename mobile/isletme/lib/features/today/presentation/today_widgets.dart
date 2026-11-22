@@ -180,7 +180,7 @@ class TodayBento extends StatelessWidget {
           ustEtiket: 'Sırada',
           deger: formatCount(walkIns.waitingCount),
           aciklama: wait == null ? null : '~${formatDuration(wait)} bekleme',
-          onTap: () => context.go(Routes.walkIns),
+          onTap: () => context.push(Routes.walkIns),
         ),
     ];
     final nextBlock = next == null

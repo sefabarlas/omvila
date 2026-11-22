@@ -7,6 +7,7 @@ import 'package:omvila_ui/omvila_ui.dart';
 
 import '../helpers/fake_api.dart';
 import '../helpers/fixtures.dart';
+import '../helpers/screen_fixtures.dart';
 
 // Kural: dilim-05 KK10/KK11, mobile/isletme/AGENTS.md § Bugün — bento
 // (Sıradaki, Onay bekliyor, Sırada), prim kartı yetkiye bağlı (null ise
@@ -163,7 +164,12 @@ void main() {
     final h = Harness()..signIn();
     h.api
       ..reply('GET', todayPath, emptyTodayJson())
-      ..reply('GET', '/api/v1/manage/brand/booking-page', bookingPageJson);
+      ..reply('GET', '/api/v1/manage/brand/booking-page', bookingPageJson)
+      ..reply(
+        'GET',
+        '/api/v1/manage/walk-in-tickets',
+        walkInQueueJson(empty: true),
+      );
     await h.pumpApp(tester);
 
     expect(find.text('RANDEVU'), findsOneWidget);
@@ -174,7 +180,12 @@ void main() {
 
     await tester.tap(find.text('Kapıdan gelen müşteriyi sıraya al'));
     await tester.pumpAndSettle();
-    expect(find.text('Kapıda sıra'), findsOneWidget);
+    expect(find.text('Randevusuz gelenler'), findsOneWidget);
+    expect(find.text('Sırada kimse yok'), findsOneWidget);
+    // Yöneticide Sıra sekme değil: geri oku var, sekme çubuğu yok.
+    await tester.tap(find.byTooltip('Geri'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bugün randevunuz yok'), findsOneWidget);
   });
 
   testWidgets('bildirim kapalı şeridi: aç ve kapat', (tester) async {

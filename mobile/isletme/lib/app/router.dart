@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_isletme/features/appointments/presentation/appointment_detail_screen.dart';
 import 'package:omvila_isletme/features/auth/data/auth_controller.dart';
@@ -9,14 +8,19 @@ import 'package:omvila_isletme/features/auth/presentation/login_code_screen.dart
 import 'package:omvila_isletme/features/auth/presentation/login_screen.dart';
 import 'package:omvila_isletme/features/auth/presentation/splash_screen.dart';
 import 'package:omvila_isletme/features/calendar/presentation/calendar_screen.dart';
+import 'package:omvila_isletme/features/customers/presentation/customer_card_screen.dart';
+import 'package:omvila_isletme/features/customers/presentation/customers_screen.dart';
 import 'package:omvila_isletme/features/new_appointment/presentation/new_appointment_screen.dart';
 import 'package:omvila_isletme/features/new_appointment/presentation/reschedule_screen.dart';
-import 'package:omvila_isletme/features/placeholders/presentation/placeholder_screens.dart';
+import 'package:omvila_isletme/features/notifications/presentation/notifications_screen.dart';
+import 'package:omvila_isletme/features/profile/presentation/notification_settings_screen.dart';
+import 'package:omvila_isletme/features/profile/presentation/profile_screen.dart';
 import 'package:omvila_isletme/features/push/data/push_prompt_controller.dart';
 import 'package:omvila_isletme/features/push/presentation/notification_permission_screen.dart';
 import 'package:omvila_isletme/features/shell/presentation/app_shell.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
 import 'package:omvila_isletme/features/today/presentation/today_screen.dart';
+import 'package:omvila_isletme/features/walk_ins/presentation/walk_in_screen.dart';
 
 /// Oturum ve izin durumuna göre yönlendirme. Bildirimden randevu
 /// ayrıntısına derin bağlantı `Routes.appointment`.
@@ -70,37 +74,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: Routes.customers,
-            builder: (_, _) => const TabPlaceholderScreen(
-              title: 'Müşteriler',
-              icon: LucideIcons.users,
-              description:
-                  'Müşteri listesi ve kartı sonraki sürümde bu sekmede '
-                  'açılacak.',
-            ),
+            builder: (_, _) => const CustomersScreen(),
           ),
           GoRoute(
             path: Routes.walkIns,
-            builder: (_, _) => const TabPlaceholderScreen(
-              title: 'Kapıda sıra',
-              icon: LucideIcons.listOrdered,
-              description:
-                  'Randevusuz gelen müşterileri sıraya alma sonraki sürümde '
-                  'bu ekranda açılacak.',
-            ),
+            builder: (_, _) => const WalkInScreen(),
           ),
           GoRoute(
             path: Routes.notifications,
-            builder: (_, _) => const TabPlaceholderScreen(
-              title: 'Bildirimler',
-              icon: LucideIcons.bell,
-              description:
-                  'Uygulama içi bildirimler sonraki sürümde bu sekmede '
-                  'açılacak.',
-            ),
+            builder: (_, _) => const NotificationsScreen(),
           ),
           GoRoute(
             path: Routes.profile,
-            builder: (_, _) => const ProfilePlaceholder(),
+            builder: (_, _) => const ProfileScreen(),
           ),
         ],
       ),
@@ -108,7 +94,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.newAppointment,
         builder: (_, state) => NewAppointmentScreen(
           initialDate: _localDate(state.uri.queryParameters['gun']),
+          initialCustomer: state.extra is CustomerSummary
+              ? state.extra! as CustomerSummary
+              : null,
         ),
+      ),
+      GoRoute(
+        path: '/musteriler/:id',
+        builder: (_, state) =>
+            CustomerCardScreen(customerId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.notificationSettings,
+        builder: (_, _) => const NotificationSettingsScreen(),
       ),
       GoRoute(
         path: '/randevu/:id',
@@ -162,6 +160,11 @@ String? redirectFor({
     if (session.can('walkin.manage')) Routes.walkIns,
   };
   if (tabRoots.contains(location) && !allowed.contains(location)) {
+    return Routes.today;
+  }
+
+  if (location.startsWith('${Routes.customers}/') &&
+      !session.can('customer.view')) {
     return Routes.today;
   }
 
