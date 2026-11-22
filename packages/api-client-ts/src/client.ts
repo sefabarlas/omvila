@@ -141,6 +141,10 @@ function create<P extends object>(options: ApiClientOptions): Client<P> {
   return createClient<P>({
     baseUrl: options.baseUrl,
     fetch: createSender(options),
+    // Sözleşmedeki dizi sorgu parametreleri `style: form, explode: false` (staffIds=a,b); openapi-fetch
+    // varsayılanı explode: true (staffIds=a&staffIds=b). explode: true bir parametre eklenirse o çağrıda
+    // `querySerializer` verilir (T-113).
+    querySerializer: { array: { style: 'form', explode: false } },
     ...(options.headers ? { headers: options.headers } : {}),
     ...(options.credentials ? { credentials: options.credentials } : {}),
   });
