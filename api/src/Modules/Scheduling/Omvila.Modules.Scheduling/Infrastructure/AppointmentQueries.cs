@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using NodaTime;
+using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
 using Omvila.Modules.Tenancy.Contracts;
@@ -14,7 +15,7 @@ namespace Omvila.Modules.Scheduling.Infrastructure;
 /// <see cref="IAppointmentQueries"/>: müşteri kartı randevuları (yeniden eskiye, opak imleç) ve yaklaşan randevu (toplu,
 /// tek sorgu), bildirim bilgisi. Personel adları Tenancy'den toplu okunur.
 /// </summary>
-internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries tenants) : IAppointmentQueries
+internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries tenants, IDbSession session) : IAppointmentQueries
 {
     public async Task<Result<CustomerAppointmentPage>> ListForCustomerAsync(
         Guid brandId, Guid brandCustomerId, Guid? onlyStaffId, int limit, string? cursor, CancellationToken ct)
@@ -135,7 +136,8 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
             [.. ordered.Select(i => i.ServiceNameSnapshot)],
             [.. staffIds.Where(staff.ContainsKey).Select(id => staff[id].DisplayName ?? staff[id].FullName).Distinct(StringComparer.Ordinal)],
             code,
-            AwaitedDeposit(appointment));
+            AwaitedDeposit(appointment),
+            staffIds);
     }
 
     public async Task<IReadOnlyDictionary<Guid, AppointmentPaymentContext>> GetPaymentContextsAsync(
@@ -162,6 +164,32 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
                 : null;
             return new AppointmentPaymentContext(a.Id, a.StartUtc, [.. ordered.Select(i => i.ServiceNameSnapshot)], staffName);
         });
+    }
+
+    // Kural: sözleşme meListPayments (AwaitingConfirmation: bildirildi, alınmadı, kaporasız onaylanmadı; randevu onay bekliyor)
+    public async Task<IReadOnlyList<ReportedDepositInfo>> ListReportedDepositsAsync(Guid customerId, CancellationToken ct)
+    {
+        var previous = session.Scope;
+        await session.SetTenantAsync(TenantScope.Platform, ct);
+        try
+        {
+            var appointments = await db.Appointments.AsNoTracking().Include(a => a.Items)
+                .Where(a => a.CustomerId == customerId && a.Status == AppointmentStatus.PendingApproval && a.DepositRequiredMinor != null
+                    && a.DepositCustomerReportedUtc != null && a.DepositReceivedUtc == null && a.DepositWaivedUtc == null)
+                .ToListAsync(ct);
+            return [.. appointments.Select(a => new ReportedDepositInfo(
+                a.Id,
+                a.BrandId,
+                a.BranchId,
+                new Money(a.DepositRequiredMinor!.Value, Enum.TryParse<Currency>(a.CurrencyCode, out var c) ? c : PlatformDefaults.DefaultCurrency),
+                a.DepositCustomerReportedUtc!.Value,
+                a.StartUtc,
+                [.. a.Items.Where(i => i.Status != AppointmentItemStatus.Cancelled).OrderBy(i => i.SeqNo).Select(i => i.ServiceNameSnapshot)]))];
+        }
+        finally
+        {
+            await session.SetTenantAsync(previous, ct);
+        }
     }
 
     public async Task<IReadOnlyDictionary<Guid, AppointmentItemContext>> GetItemContextsAsync(

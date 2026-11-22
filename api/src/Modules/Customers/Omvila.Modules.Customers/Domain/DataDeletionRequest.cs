@@ -50,6 +50,21 @@ internal sealed class DataDeletionRequest
         CompletedUtc = now,
     };
 
+    /// <summary>Müşterinin uygulamadan kendi hesabını silmesi (BrandId boş; W7: hemen uygulanır, tamamlanmış yazılır).</summary>
+    public static DataDeletionRequest CompletedFromApp(Guid id, Guid customerId, string fullName, LocalDate dueOn, Instant now) => new()
+    {
+        Id = id,
+        CustomerId = customerId,
+        BrandId = null,
+        BrandCustomerId = null,
+        CustomerNameMasked = MaskName(fullName),
+        RequestedVia = DeletionRequestedVia.CustomerApp,
+        Status = DeletionRequestStatus.Completed,
+        RequestedUtc = now,
+        DueOn = dueOn,
+        CompletedUtc = now,
+    };
+
     /// <summary>Bekleyen talep anonimleştirmeyle tamamlandı; kart bağı silinir.</summary>
     public void Complete(Instant now)
     {

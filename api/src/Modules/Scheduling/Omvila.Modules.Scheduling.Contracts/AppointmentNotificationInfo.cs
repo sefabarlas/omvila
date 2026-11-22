@@ -14,6 +14,7 @@ namespace Omvila.Modules.Scheduling.Contracts;
 /// <param name="StaffNames">Kalemlerin personelinin müşteriye görünen adları (görünen ad, yoksa ad soyad; tekrarsız, sırayla).</param>
 /// <param name="ManageAccessCode">SMS bağlantısının (/r/) geçerli erişim kodu; yoksa null.</param>
 /// <param name="Deposit">Kapora bekleniyorsa (Kapora bekleniyor gösterimi) tutar, açıklama kodu ve son an; değilse null.</param>
+/// <param name="StaffIds">Kalemlerin personel kayıtları, sırayla (işletme bildiriminde "İlgili personel"); bilinmiyorsa null.</param>
 public sealed record AppointmentNotificationInfo(
     Guid AppointmentId,
     Guid BranchId,
@@ -23,4 +24,5 @@ public sealed record AppointmentNotificationInfo(
     IReadOnlyList<string> ServiceNames,
     IReadOnlyList<string> StaffNames,
     string? ManageAccessCode,
-    AwaitedDepositInfo? Deposit = null);
+    AwaitedDepositInfo? Deposit = null,
+    IReadOnlyList<Guid>? StaffIds = null);

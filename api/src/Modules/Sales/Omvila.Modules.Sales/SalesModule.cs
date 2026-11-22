@@ -42,6 +42,8 @@ public static class SalesModule
         services.AddScoped<PaymentRows>();
         services.AddScoped<CashDays>();
         services.AddScoped<CustomerPaymentReader>();
+        // D5 müşteri uygulaması Paketlerim ve Ödemelerim (T-104).
+        services.AddScoped<Features.Me.MeWalletReader>();
         services.AddScoped<ICommissionQueries, CommissionQueries>();
         services.AddScoped<MyCommissionSummaryReader>();
         services.AddUniqueConstraintError(CashDayCloseConfiguration.BranchDayIndex, ErrorCodes.CashDayAlreadyClosed);
@@ -63,6 +65,7 @@ public static class SalesModule
         CustomerPackageEndpoints.Map(app);
         CashDayEndpoints.Map(app);
         CustomerPaymentEndpoints.Map(app);
+        Features.Me.MeWalletEndpoints.Map(app);
         CommissionEndpoints.Map(app);
         return app;
     }

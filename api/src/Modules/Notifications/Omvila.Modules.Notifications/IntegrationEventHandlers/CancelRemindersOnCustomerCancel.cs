@@ -4,8 +4,8 @@ using Omvila.Modules.Scheduling.Contracts;
 namespace Omvila.Modules.Notifications.IntegrationEventHandlers;
 
 /// <summary>
-/// Müşteri SMS bağlantısından iptal etti (A6): müşteriye mesaj gitmez, bekleyen hatırlatmalar düşer. Personele
-/// <c>staff.appointment_changed</c> push ve panel bildirimidir; push kanalı ve bildirim paneli D3'te (T-53).
+/// Müşteri SMS bağlantısından, uygulamadan veya hesabını silerek iptal etti (A6): müşteriye mesaj gitmez, bekleyen hatırlatmalar düşer.
+/// Personele <c>staff.appointment_changed</c> <see cref="NotifyAppointmentCancelledByCustomer"/> ile gider (T-104).
 /// </summary>
 internal sealed class CancelRemindersOnCustomerCancel(AppointmentSms sms) : IIntegrationEventHandler<AppointmentCancelledByCustomer>
 {

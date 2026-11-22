@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Omvila.Infrastructure.Messaging;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Scheduling.Contracts;
 using Omvila.Modules.Scheduling.Domain;
+using Omvila.Modules.Scheduling.Features.Appointments;
 
 namespace Omvila.Modules.Scheduling.Infrastructure;
 
@@ -11,7 +13,7 @@ namespace Omvila.Modules.Scheduling.Infrastructure;
 /// kayıtları ve kapıda sıra biletleri. Silmede bekleyen bekleme kaydı "Listeden çık" ile kapanır (teklif varsa reddedilir;
 /// saat otomatik sıradakine verilmez), biletteki ad ve telefon kopyası anonimleşir.
 /// </summary>
-internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox outbox) : ICustomerMergeParticipant, ICustomerErasureParticipant
+internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox outbox, IPackageSessions packageSessions) : ICustomerMergeParticipant, ICustomerErasureParticipant
 {
     private static readonly AppointmentStatus[] Upcoming = [AppointmentStatus.Draft, AppointmentStatus.PendingApproval, AppointmentStatus.Confirmed];
 
@@ -66,6 +68,11 @@ internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox ou
         await CloseWaitlistAsync(erasure, ct);
         await db.SaveChangesAsync(ct);
         await UnlinkAsync(erasure, ct);
+        if (erasure.ByCustomer)
+        {
+            await AnnounceCustomerCancellationsAsync(upcoming, ct);
+            return;
+        }
 
         // Bildirim gitmez (NotifyCustomer = false); Notifications planlanmış hatırlatmaları düşürür (T-53).
         foreach (var appointment in upcoming)
@@ -74,6 +81,27 @@ internal sealed class CustomerDataParticipant(SchedulingDbContext db, IOutbox ou
                 new AppointmentCancelledBySalon(
                     appointment.BrandId, appointment.Id, appointment.BrandCustomerId, appointment.StartUtc,
                     nameof(CancellationReason.AccountDeleted), NotifyCustomer: false),
+                ct);
+        }
+    }
+
+    /// <summary>
+    /// Müşterinin uygulamadan hesap silmesi (KK9; sözleşme meRequestAccountDeletion): seanslar geri döner ve iptal müşteri iptali olarak
+    /// duyurulur (müşteriye mesaj gitmez; hatırlatmalar düşer, salona staff.appointment_changed, boşalan saat bekleme listesine).
+    /// </summary>
+    private async Task AnnounceCustomerCancellationsAsync(List<Appointment> cancelled, CancellationToken ct)
+    {
+        foreach (var brand in cancelled.GroupBy(a => a.BrandId))
+        {
+            await packageSessions.ReleaseAsync(brand.Key, brand, ct);
+        }
+
+        foreach (var appointment in cancelled)
+        {
+            await outbox.EnqueueAsync(
+                new AppointmentCancelledByCustomer(
+                    appointment.BrandId, appointment.Id, appointment.BranchId, appointment.BrandCustomerId, appointment.StartUtc,
+                    nameof(CancellationReason.AccountDeleted)),
                 ct);
         }
     }

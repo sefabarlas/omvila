@@ -30,6 +30,9 @@ public static class CustomersModule
         // D5 müşteri uygulaması (T-103): hesap, profil, Salonlarım.
         services.AddScoped<ICustomerAccounts, CustomerAccounts>();
         services.AddScoped<MeBrandReader>();
+        // D5 müşteri uygulaması (T-104): rızalar ve hesap silme.
+        services.AddScoped<MarketingConsentLedger>();
+        services.AddScoped<CustomerAccountEraser>();
         // D5 (T-92): birleştirme, içe/dışa aktarma, KVKK silme.
         services.AddOptions<CustomerImportOptions>()
             .BindConfiguration(CustomerImportOptions.Section)
@@ -53,6 +56,7 @@ public static class CustomersModule
         PhoneRevealEndpoints.Map(app);
         Features.Me.MeProfileEndpoints.Map(app);
         Features.Me.MeBrandEndpoints.Map(app);
+        Features.Me.MeConsentEndpoints.Map(app);
         return app;
     }
 }

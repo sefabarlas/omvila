@@ -81,6 +81,33 @@ internal sealed class AppointmentReviewLinks(SchedulingDbContext db, IDbSession 
         return await GetSubjectAsync(accessCode.BrandId, accessCode.AppointmentId, ct);
     }
 
+    // Kural: sözleşme meCreateReview (başka müşterinin randevusu 404)
+    public async Task<AppointmentReviewSubject?> EnterForCustomerAsync(Guid customerId, Guid appointmentId, CancellationToken ct)
+    {
+        var previous = session.Scope;
+        await session.SetTenantAsync(TenantScope.Platform, ct);
+        Guid? brandId;
+        try
+        {
+            brandId = await db.Appointments.AsNoTracking()
+                .Where(a => a.Id == appointmentId && a.CustomerId == customerId && a.Status != AppointmentStatus.Draft)
+                .Select(a => (Guid?)a.BrandId)
+                .SingleOrDefaultAsync(ct);
+        }
+        finally
+        {
+            await session.SetTenantAsync(previous, ct);
+        }
+
+        if (brandId is null)
+        {
+            return null;
+        }
+
+        await session.SetTenantAsync(TenantScope.ForBrand(brandId.Value), ct);
+        return await GetSubjectAsync(brandId.Value, appointmentId, ct);
+    }
+
     private static AppointmentReviewSubject Map(Appointment appointment)
     {
         var ordered = appointment.Items.OrderBy(i => i.SeqNo).ToList();
