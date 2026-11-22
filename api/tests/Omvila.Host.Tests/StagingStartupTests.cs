@@ -46,6 +46,7 @@ public sealed class StagingStartupTests
     [InlineData("Auth:Otp:HmacKey", "Auth__Otp__HmacKey")]
     [InlineData("Auth:SigningKeys:0:PrivateKeyPem", "Auth__SigningKeys__0__PrivateKeyPem")]
     [InlineData("Tenancy:IbanEncryptionKey", "Tenancy__IbanEncryptionKey")]
+    [InlineData("Customers:DataExport:LinkSigningKey", "Customers__DataExport__LinkSigningKey")]
     public async Task Staging_WithoutSecret_FailsAtStartup(string missingKey, string expectedHint)
     {
         var settings = Secrets(allowFake: "true");
@@ -75,6 +76,7 @@ public sealed class StagingStartupTests
             ["Auth:SigningKeys:0:Kid"] = TestSigningKey.Kid,
             ["Auth:SigningKeys:0:PrivateKeyPem"] = TestSigningKey.PrivateKeyPem,
             ["Tenancy:IbanEncryptionKey"] = TestSigningKey.IbanEncryptionKey,
+            ["Customers:DataExport:LinkSigningKey"] = TestSigningKey.DataExportLinkKey,
             ["Cors:Surfaces:Manage:Origins:0"] = "https://salon.test.omvila.com.tr",
             ["Cors:Surfaces:Public:Origins:0"] = "https://randevu.test.omvila.com.tr",
         };

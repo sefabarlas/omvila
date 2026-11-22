@@ -30,6 +30,9 @@ public static class TenancyModule
         // IBAN şifreleme anahtarı Staging/Production'da gizli değerden; eksikse açılış durur (T-73 deseni, T-78).
         services.AddSingleton<IValidateOptions<TenancyOptions>, TenancySecretsValidator>();
         services.AddSingleton<IbanProtector>();
+        services.AddOptions<Features.Privacy.PrivacyNoticeOptions>()
+            .Bind(configuration.GetSection(Features.Privacy.PrivacyNoticeOptions.Section))
+            .Validate(o => o.IsValid(), "Legal:PrivacyNoticeVersion eksik veya yyyy-MM-dd değil.");
         services.AddScoped<IBrandBankAccounts, BrandBankAccounts>();
         services.AddModuleDbContext<TenancyDbContext>(TenancyDbContext.Schema);
         services.AddScoped<SlugRegistry>();
@@ -63,6 +66,7 @@ public static class TenancyModule
         BrandEndpoints.Map(app);
         BankAccountEndpoints.Map(app);
         NotificationSettingsEndpoints.Map(app);
+        Features.Privacy.PrivacyEndpoints.Map(app);
         BranchEndpoints.Map(app);
         StaffEndpoints.Map(app);
         PublicBrandEndpoints.Map(app);

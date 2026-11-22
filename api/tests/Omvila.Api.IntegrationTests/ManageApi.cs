@@ -26,7 +26,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
             TRUNCATE identity.otp_challenges, identity.trusted_devices, identity.refresh_tokens, identity.terms_acceptances, identity.user_memberships, identity.users CASCADE;
             TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.brand_sms_senders, notifications.devices, notifications.in_app_notifications, notifications.customer_notifications;
             TRUNCATE platform.subscriptions, platform.audit_logs;
-            TRUNCATE customers.customer_imports, customers.customer_saved_brands;
+            TRUNCATE customers.customer_imports, customers.customer_saved_brands, customers.data_exports;
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;

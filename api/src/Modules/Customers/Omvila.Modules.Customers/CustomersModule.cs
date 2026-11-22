@@ -1,6 +1,11 @@
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using NodaTime;
 using Omvila.Infrastructure.Http;
+using Omvila.Infrastructure.Jobs;
+using Omvila.Modules.Customers.Features.DataExports;
+using Omvila.Modules.Customers.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Customers.Contracts;
 using Omvila.Modules.Customers.Features;
@@ -44,6 +49,16 @@ public static class CustomersModule
         services.AddScoped<DeletionRequestReader>();
         // Aynı numarayla eşzamanlı iki ekleme: ikincisi kart benzersizliğine takılır (meta'sız phone_already_exists).
         services.AddUniqueConstraintError(BrandCustomerConfiguration.BrandCustomerIndex, ErrorCodes.PhoneAlreadyExists);
+        // D6 (T-121): tüm verileri dışa aktarma ve saklama süresi.
+        services.AddOptions<DataExportOptions>()
+            .BindConfiguration(DataExportOptions.Section)
+            .Validate(o => o.IsValid(), "Dışa aktarma ayarları geçersiz (appsettings \"Customers:DataExport\").")
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<DataExportOptions>, CustomersSecretsValidator>();
+        services.AddSingleton<DataExportLinks>();
+        services.AddScoped<IBrandDataExportParticipant, CustomersExportParticipant>();
+        services.AddPeriodicJob<ProcessDataExports, DataExportOptions>(o => Duration.FromSeconds(o.ProcessIntervalSeconds));
+        services.AddPeriodicJob<ApplyRetention, DataExportOptions>(o => Duration.FromMinutes(o.ApplyRetentionIntervalMinutes));
         // Demo verisi --reset (T-74): markanın kartları ve rızaları; global kişi kalır.
         services.AddBrandDataEraser<CustomersDbContext>();
         return services;
@@ -57,6 +72,7 @@ public static class CustomersModule
         Features.Me.MeProfileEndpoints.Map(app);
         Features.Me.MeBrandEndpoints.Map(app);
         Features.Me.MeConsentEndpoints.Map(app);
+        DataExportEndpoints.Map(app);
         return app;
     }
 }

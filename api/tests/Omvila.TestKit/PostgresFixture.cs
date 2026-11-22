@@ -120,6 +120,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Notifications:RetryBaseDelaySeconds"] = "30",
         ["Notifications:RetryMaxDelaySeconds"] = "3600",
         ["Sales:ExpireCustomerPackagesIntervalMinutes"] = "60",
+        ["Customers:DataExport:ProcessIntervalSeconds"] = "60",
+        ["Customers:DataExport:ApplyRetentionIntervalMinutes"] = "1440",
         ["Scheduling:ExpireAppointmentHoldsIntervalSeconds"] = "60",
         ["Scheduling:MarkNoShowsIntervalSeconds"] = "60",
         ["Scheduling:ExtendRecurringSeriesIntervalMinutes"] = "60",

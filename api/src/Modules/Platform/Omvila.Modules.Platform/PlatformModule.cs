@@ -18,6 +18,7 @@ public static class PlatformModule
         services.AddScoped<ISubscriptionProvisioning, SubscriptionProvisioning>();
         services.AddScoped<ISubscriptionQueries, SubscriptionQueries>();
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<IAuditLogRetention, AuditLogRetention>();
         services.AddSingleton<PlanSeeder>();
         // Demo verisi --reset (T-74): markanın aboneliği.
         services.AddBrandDataEraser<PlatformDbContext>();
