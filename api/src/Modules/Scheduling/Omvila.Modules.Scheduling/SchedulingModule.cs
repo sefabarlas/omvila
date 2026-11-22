@@ -16,6 +16,7 @@ using Omvila.Modules.Scheduling.Features.Deposits;
 using Omvila.Modules.Scheduling.Features.PublicBooking;
 using Omvila.Modules.Scheduling.Features.Slots;
 using Omvila.Modules.Scheduling.Features.Waitlist;
+using Omvila.Modules.Scheduling.Features.Today;
 using Omvila.Modules.Scheduling.Features.WalkIns;
 using Omvila.Modules.Scheduling.Infrastructure;
 using Omvila.Modules.Scheduling.Infrastructure.Availability;
@@ -61,6 +62,7 @@ public static class SchedulingModule
         services.AddScoped<BranchQueueNumbers>();
         services.AddScoped<WalkInTickets>();
         services.AddScoped<WalkInQueueReader>();
+        services.AddScoped<TodayReader>();
         services.AddScoped<AppointmentCompletions>();
         services.AddScoped<WaitlistOfferEngine>();
         services.AddScoped<WaitlistInput>();
@@ -106,6 +108,7 @@ public static class SchedulingModule
         ApprovalEndpoints.Map(app);
         DepositEndpoints.Map(app);
         WalkInEndpoints.Map(app);
+        TodayEndpoints.Map(app);
         CompletionEndpoints.Map(app);
         PublicAvailabilityEndpoints.Map(app);
         PublicAppointmentEndpoints.Map(app);

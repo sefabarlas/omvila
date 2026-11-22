@@ -19,4 +19,13 @@ internal sealed class ReviewRatings(ReviewsDbContext db) : IReviewRatings
             ? null
             : new PublicReviewRating(Math.Round(stats.Average, 1, MidpointRounding.AwayFromZero), stats.Count);
     }
+
+    public async Task<double?> GetStaffAverageAsync(Guid brandId, Guid staffId, NodaTime.Instant sinceUtc, CancellationToken ct)
+    {
+        var average = await db.Reviews.AsNoTracking()
+            .Where(r => r.BrandId == brandId && r.StaffId == staffId && r.CreatedUtc >= sinceUtc)
+            .Select(r => (double?)r.Rating)
+            .AverageAsync(ct);
+        return average is { } value ? Math.Round(value, 1, MidpointRounding.AwayFromZero) : null;
+    }
 }

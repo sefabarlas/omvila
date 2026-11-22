@@ -5,6 +5,7 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Sales.Features.Cash;
+using Omvila.Modules.Sales.Features.Commissions;
 using Omvila.Modules.Sales.Features.CustomerPayments;
 using Omvila.Modules.Sales.Infrastructure.Configurations;
 using Omvila.SharedKernel;
@@ -40,6 +41,8 @@ public static class SalesModule
         services.AddScoped<PaymentRows>();
         services.AddScoped<CashDays>();
         services.AddScoped<CustomerPaymentReader>();
+        services.AddScoped<ICommissionQueries, CommissionQueries>();
+        services.AddScoped<MyCommissionSummaryReader>();
         services.AddUniqueConstraintError(CashDayCloseConfiguration.BranchDayIndex, ErrorCodes.CashDayAlreadyClosed);
         // Müşteri birleştirme ve KVKK silmesi (T-92): tahsilatlar.
         services.AddScoped<CustomerPaymentsParticipant>();
@@ -59,6 +62,7 @@ public static class SalesModule
         CustomerPackageEndpoints.Map(app);
         CashDayEndpoints.Map(app);
         CustomerPaymentEndpoints.Map(app);
+        CommissionEndpoints.Map(app);
         return app;
     }
 }

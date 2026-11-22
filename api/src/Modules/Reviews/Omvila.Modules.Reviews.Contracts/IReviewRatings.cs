@@ -10,5 +10,15 @@ public interface IReviewRatings
     /// <param name="brandId">Marka.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<PublicReviewRating?> GetPublicRatingAsync(Guid brandId, CancellationToken ct);
+
+    /// <summary>
+    /// Personelin <paramref name="sinceUtc"/> ve sonrasında aldığı değerlendirmelerin ortalaması (bir ondalık); yoksa null
+    /// (işletme uygulaması Primim "Puan", son 90 gün).
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffId">Personel.</param>
+    /// <param name="sinceUtc">Dönem başı.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<double?> GetStaffAverageAsync(Guid brandId, Guid staffId, NodaTime.Instant sinceUtc, CancellationToken ct);
 }
 

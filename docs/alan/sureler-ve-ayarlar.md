@@ -129,7 +129,7 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | `VatNote` | `[KDV NOTU]` | Fiyat gösteriminde | ✔ |
 | `OmvilaBankAccount` | `[OMVILA ŞİRKET UNVANI]`, `[OMVILA IBAN]` | Abonelik havalesinde gösterilir; yapılandırmadan okunur | ✔ |
 | `ReviewPublicThreshold` | 5 | Rezervasyon sayfasında puan için en az 5 yayınlanmış değerlendirme | ✔ |
-| `ReviewOverviewWindowDays` | 90 | Değerlendirmeler "Ortalama · son 90 gün" ve "En çok övülen" penceresi (T-89) | |
+| `ReviewOverviewWindowDays` | 90 | Değerlendirmeler "Ortalama · son 90 gün" ve "En çok övülen" penceresi (T-89); işletme uygulaması Primim "Puan" da aynı pencere (personelin değerlendirmeleri, T-105) | |
 | `BookingDomain` | `omvila.com` (örnek) | Rezervasyon ve kısa bağlantı alanı; yapılandırmadan | ✔ |
 | `SlugRedirectDays` | 30 | Rezervasyon bağlantı adı değişince eski adres bu kadar gün yeni adrese yönlenir (alan-modeli.md § Brand, `BrandSlugHistory`) | |
 
