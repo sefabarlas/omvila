@@ -4,6 +4,7 @@ import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
 import { cashDemo, checkoutDemo } from './cash-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
+import { packagesDemo } from './packages-demo';
 import { queuesDemo } from './queues-demo';
 import { reviewsDemo } from './reviews-demo';
 import { depositSetup } from './support';
@@ -25,6 +26,10 @@ interface ScreenCase {
 
 const dayCalendar = (page: Page) =>
   expect(page.getByRole('region', { name: 'Günlük takvim' })).toBeVisible();
+const packageScreen = (page: Page) =>
+  expect(
+    page.getByRole('region', { name: 'Süresi yaklaşanlar' }).getByText('Melis Tunç'),
+  ).toBeVisible();
 const customerTable = (page: Page) =>
   expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible();
 
@@ -234,6 +239,75 @@ const screens: ScreenCase[] = [
     setup: (page) => cashDemo(page, { empty: true }),
     act: (page) =>
       expect(page.getByRole('heading', { name: 'Bugün henüz tahsilat yok' })).toBeVisible(),
+  },
+  {
+    path: '/paketler',
+    name: 'Paketler',
+    heading: 'Paketler',
+    setup: packagesDemo,
+    act: packageScreen,
+  },
+  {
+    path: '/paketler',
+    name: 'Paketler1199',
+    heading: 'Paketler',
+    setup: packagesDemo,
+    act: packageScreen,
+    viewport: { width: 1199, height: 900 },
+  },
+  {
+    path: '/paketler',
+    name: 'Paketler899',
+    heading: 'Paketler',
+    setup: packagesDemo,
+    act: packageScreen,
+    viewport: { width: 899, height: 1400 },
+  },
+  {
+    path: '/paketler',
+    name: 'PaketlerBos',
+    heading: 'Paketler',
+    setup: (page) => packagesDemo(page, { empty: true }),
+    act: (page) =>
+      expect(page.getByRole('heading', { name: 'Henüz paket tanımı yok' })).toBeVisible(),
+  },
+  {
+    path: '/paketler',
+    name: 'PaketOlustur',
+    heading: 'Paketler',
+    setup: packagesDemo,
+    act: async (page) => {
+      await packageScreen(page);
+      await page.getByRole('button', { name: 'Paket oluştur' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Paket oluştur' });
+      await dialog.getByLabel('Paket adı').fill('Manikür · 6 seans');
+      await dialog.getByLabel('Fiyat').fill('1.700');
+      await dialog.getByLabel('1. hizmet', { exact: true }).selectOption({ label: 'Manikür' });
+      await dialog.getByLabel('Manikür seans sayısı').fill('6');
+      await dialog.getByRole('button', { name: 'Hizmet ekle' }).click();
+      await dialog.getByLabel('2. hizmet', { exact: true }).selectOption({ label: 'Kalıcı oje' });
+      await dialog.getByLabel('Kalıcı oje seans sayısı').fill('2');
+      await dialog.getByLabel('Satış primi').fill('10');
+      await settle(page);
+    },
+  },
+  {
+    path: '/paketler',
+    name: 'PaketSat',
+    heading: 'Paketler',
+    setup: packagesDemo,
+    act: async (page) => {
+      await packageScreen(page);
+      await page.getByRole('button', { name: 'Müşteriye paket sat' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Müşteriye paket sat' });
+      await dialog.getByRole('searchbox', { name: 'Müşteri ara' }).fill('Melis');
+      await dialog.getByRole('button', { name: /Melis Tunç/ }).click();
+      await dialog.getByLabel('Paket').selectOption({ label: 'Manikür' });
+      await expect(
+        dialog.getByRole('button', { name: '1.700 ₺ al ve paketi tanımla' }),
+      ).toBeVisible();
+      await settle(page);
+    },
   },
   {
     path: '/musteriler',

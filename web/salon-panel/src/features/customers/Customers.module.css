@@ -396,3 +396,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Kart üst barı: "Paket sat" (ikincil) + "Randevu ver". */
+.topActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}

@@ -37,6 +37,8 @@ interface CustomerPickerProps {
   draftErrors?: { fullName?: string | undefined; phone?: string | undefined };
   /** Yeni müşteri alanlarının altındaki not (bekleme listesinde kayıtla birlikte açılır). */
   newCustomerHint?: string;
+  /** Yeni müşteri açılabilir mi (paket satışında yalnız kayıtlı müşteri). */
+  allowNew?: boolean;
 }
 
 /** "Derya Şahin · 0532 760 21 18 · 6 ziyaret · son 21 Ekim". */
@@ -60,6 +62,7 @@ export function CustomerPicker({
   error,
   draftErrors,
   newCustomerHint = 'Müşteri kartı randevuyla birlikte açılır.',
+  allowNew = true,
 }: CustomerPickerProps) {
   const labelId = useId();
   return (
@@ -126,7 +129,7 @@ export function CustomerPicker({
           </div>
         </>
       ) : (
-        <CustomerSearch onChange={onChange} today={today} error={error} />
+        <CustomerSearch onChange={onChange} today={today} error={error} allowNew={allowNew} />
       )}
     </div>
   );
@@ -136,10 +139,12 @@ function CustomerSearch({
   onChange,
   today,
   error,
+  allowNew,
 }: {
   onChange: (value: CustomerChoice) => void;
   today: string;
   error?: string | undefined;
+  allowNew: boolean;
 }) {
   const api = useApi();
   const [text, setText] = useState('');
@@ -208,9 +213,11 @@ function CustomerSearch({
         {q.length >= 2 && query.isSuccess && results.length === 0 ? (
           <span className={styles.subLabel}>{`"${q}" ile kayıtlı müşteri yok.`}</span>
         ) : null}
-        <Button size="sm" icon={<UserPlus size={16} aria-hidden="true" />} onClick={startNew}>
-          Yeni müşteri ekle
-        </Button>
+        {allowNew ? (
+          <Button size="sm" icon={<UserPlus size={16} aria-hidden="true" />} onClick={startNew}>
+            Yeni müşteri ekle
+          </Button>
+        ) : null}
       </div>
     </>
   );

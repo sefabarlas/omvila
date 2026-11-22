@@ -9,6 +9,8 @@ import { createNotificationSettingsFake } from './fake-notification-settings';
 import type { NotificationSettingsFakeOptions } from './fake-notification-settings';
 import { createQueuesFake } from './fake-queues';
 import type { QueuesFakeOptions } from './fake-queues';
+import { createPackagesFake } from './fake-packages';
+import type { PackagesFakeOptions } from './fake-packages';
 import { createSalesFake } from './fake-sales';
 import type { SalesFakeOptions } from './fake-sales';
 import { createReviewsFake } from './fake-reviews';
@@ -44,6 +46,8 @@ export const ownerPermissions = [
   'customer.import',
   'customer.export',
   'customer.kvkk',
+  'package.sell',
+  'package.manage',
 ];
 export const staffPermissions = [
   'calendar.view',
@@ -119,6 +123,8 @@ export interface FakeApiOptions {
   sales?: SalesFakeOptions;
   /** Değerlendirme uçları. */
   reviews?: ReviewsFakeOptions;
+  /** Paket tanımları, müşteri paketleri, satış ve iade. */
+  packages?: PackagesFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -407,9 +413,11 @@ export function fakeFetch({
   queues = {},
   sales = {},
   reviews = {},
+  packages = {},
 }: FakeApiOptions = {}) {
   const queuesFake = createQueuesFake(queues);
   const salesFake = createSalesFake(session, sales);
+  const packagesFake = createPackagesFake(session, packages);
   const calendarFake = createCalendarFake(session, calendar);
   const customersFake = createCustomersFake(session, customers);
   const notificationsFake = createNotificationsFake(notifications);
@@ -451,6 +459,11 @@ export function fakeFetch({
     const calendarResponse = await calendarFake(request);
     if (calendarResponse) {
       return calendarResponse;
+    }
+
+    const packagesResponse = await packagesFake(request);
+    if (packagesResponse) {
+      return packagesResponse;
     }
 
     const salesResponse = await salesFake(request);

@@ -7,6 +7,8 @@ export interface MenuEntry {
   to: string;
   /** Görmek için gereken izin; boş = her oturum. */
   permission?: string;
+  /** Bunlardan biri de yeter (Paketler: package.manage veya package.sell). */
+  anyPermission?: readonly string[];
   available: boolean;
   group: 'isletme' | 'yonetim' | 'benim';
 }
@@ -73,8 +75,8 @@ export const menuEntries: readonly MenuEntry[] = [
     key: 'paketler',
     label: 'Paketler',
     to: '/paketler',
-    permission: 'package.manage',
-    available: false,
+    anyPermission: ['package.manage', 'package.sell'],
+    available: true,
     group: 'yonetim',
   },
   {
@@ -150,7 +152,8 @@ export function visibleMenu(
   return source.filter(
     (entry) =>
       (ignoreAvailability || entry.available) &&
-      (entry.permission === undefined || can(entry.permission)),
+      (entry.permission === undefined || can(entry.permission)) &&
+      (entry.anyPermission === undefined || entry.anyPermission.some(can)),
   );
 }
 
