@@ -1,4 +1,4 @@
-# Kök bağlam yalnız web imajları içindir (web/salon-panel, web/rezervasyon, web/tanitim Dockerfile).
+# Kök bağlam yalnız web imajları içindir (web/salon-panel, web/platform-panel, web/rezervasyon, web/tanitim Dockerfile).
 # İzin listesi: her şey dışarıda, yalnız pnpm çalışma alanının gereken parçaları içeride.
 # api/ kendi bağlamını ve .dockerignore'unu kullanır (api/Dockerfile).
 *
@@ -10,6 +10,7 @@
 !packages/design-tokens/
 !packages/ui-web/
 !web/salon-panel/
+!web/platform-panel/
 !web/rezervasyon/
 !web/tanitim/
 
