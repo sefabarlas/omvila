@@ -13,6 +13,9 @@ internal sealed class RefreshToken
 
     public const string MeAudience = "me";
 
+    /// <summary>Platform paneli (aud=admin): jeton gövdede taşınır, üyelik yoktur (T-116 (1)).</summary>
+    public const string AdminAudience = "admin";
+
     private RefreshToken()
     {
     }
@@ -22,7 +25,7 @@ internal sealed class RefreshToken
     /// <summary>Oturum sahibi: salon/platform kullanıcısı veya (yüzey me ise) global müşteri kaydı (alan-modeli.md § CustomerSession).</summary>
     public Guid UserId { get; private set; }
 
-    /// <summary>Jetonun yüzeyi (manage veya me): bir yüzeyin yenileme jetonu diğerinde geçmez (ADR-0007).</summary>
+    /// <summary>Jetonun yüzeyi (manage, me veya admin): bir yüzeyin yenileme jetonu diğerinde geçmez (ADR-0007).</summary>
     public string Audience { get; private set; } = ManageAudience;
 
     /// <summary>manage jetonunun üyeliği; platform kullanıcısında boş.</summary>

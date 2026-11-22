@@ -32,7 +32,17 @@ internal sealed class OtpService(
         RequestAsync(phone, purpose, branchId: null, ct);
 
     /// <summary>Rezervasyon kodu: <paramref name="branchId"/> kodun istendiği şube (doğrulamada geri verilir).</summary>
-    public async Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, Guid? branchId, CancellationToken ct)
+    public Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, Guid? branchId, CancellationToken ct) =>
+        RequestCoreAsync(phone, purpose, branchId, deliver: true, ct);
+
+    /// <summary>
+    /// <paramref name="deliver"/> false ise kod kaydı ve sınırlar aynen işler ama SMS gitmez (platform girişi: numaranın
+    /// platform kullanıcısı olup olmadığı yanıttan anlaşılmaz; kimse kodu bilmediği için doğrulama otp_invalid döner).
+    /// </summary>
+    public Task<Result<OtpIssued>> RequestAsync(PhoneNumber phone, OtpPurpose purpose, bool deliver, CancellationToken ct) =>
+        RequestCoreAsync(phone, purpose, branchId: null, deliver, ct);
+
+    private async Task<Result<OtpIssued>> RequestCoreAsync(PhoneNumber phone, OtpPurpose purpose, Guid? branchId, bool deliver, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(phone);
         var settings = options.Value;
@@ -70,9 +80,12 @@ internal sealed class OtpService(
             ids.New(), phone.E164, purpose, hasher.Hash(purpose, phone.E164, code), now, Duration.FromSeconds(settings.TtlSeconds), branchId);
         db.OtpChallenges.Add(challenge);
         await db.SaveChangesAsync(ct);
-        await notifications.EnqueueSmsAsync(
-            new SmsNotification(NotificationEvents.OtpCode, phone.E164, new Dictionary<string, string>(StringComparer.Ordinal) { ["kod"] = code }),
-            ct);
+        if (deliver)
+        {
+            await notifications.EnqueueSmsAsync(
+                new SmsNotification(NotificationEvents.OtpCode, phone.E164, new Dictionary<string, string>(StringComparer.Ordinal) { ["kod"] = code }),
+                ct);
+        }
 
         return new OtpIssued(challenge.Id, settings.TtlSeconds, settings.ResendCooldownSeconds, phone.Masked);
     }
