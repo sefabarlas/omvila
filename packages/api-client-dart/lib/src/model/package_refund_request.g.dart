@@ -86,5 +86,5 @@ Map<String, dynamic> _$PackageRefundRequestToJson(
   PackageRefundRequest instance,
 ) => <String, dynamic>{
   'amount': instance.amount.toJson(),
-  'note': ?instance.note,
+  'note': instance.note,
 };

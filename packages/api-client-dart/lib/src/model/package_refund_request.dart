@@ -46,7 +46,7 @@ class PackageRefundRequest {
     
     name: r'note',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

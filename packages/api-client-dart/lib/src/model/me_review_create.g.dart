@@ -92,5 +92,5 @@ Map<String, dynamic> _$MeReviewCreateToJson(MeReviewCreate instance) =>
     <String, dynamic>{
       'appointmentId': instance.appointmentId,
       'rating': instance.rating,
-      'comment': ?instance.comment,
+      'comment': instance.comment,
     };

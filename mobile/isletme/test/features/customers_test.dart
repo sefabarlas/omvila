@@ -193,6 +193,8 @@ void main() {
     expect(post.body, {
       'fullName': 'Selin Öztürk',
       'phone': '+905321234521',
+      'birthYear': null,
+      'notes': null,
       'sendAppointmentSms': true,
     });
     expect(find.text('ZİYARET'), findsOneWidget);

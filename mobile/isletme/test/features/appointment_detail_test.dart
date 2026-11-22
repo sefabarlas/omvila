@@ -401,6 +401,7 @@ void main() {
       expect(post.header('If-Match'), 'v5');
       expect(post.body, {
         'reason': 'CustomerRequested',
+        'note': null,
         'notifyCustomer': true,
         'offerToWaitlist': false,
       });

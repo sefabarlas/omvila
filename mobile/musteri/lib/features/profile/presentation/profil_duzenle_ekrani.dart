@@ -76,15 +76,13 @@ class _FormState extends ConsumerState<_Form> {
   Future<void> _save() async {
     final name = _name.text.trim();
     final mail = _mail.text.trim();
-    final hadMail = (widget.profil.email ?? '').isNotEmpty;
     setState(() {
       _error = null;
       _nameError = name.length < 2 ? 'Adınızı ve soyadınızı yazın.' : null;
-      // Üretilmiş istemci null alanı göndermediği için e-posta silinemiyor
-      // (T-112).
-      _mailError = mail.isEmpty
-          ? (hadMail ? 'E-postayı kaldırmak için destekle görüşün.' : null)
-          : (_email.hasMatch(mail) ? null : 'Geçerli bir e-posta yazın.');
+      // Boş alan e-postayı siler: istemci `email: null` gönderir (T-113).
+      _mailError = mail.isEmpty || _email.hasMatch(mail)
+          ? null
+          : 'Geçerli bir e-posta yazın.';
     });
     if (_nameError != null || _mailError != null) {
       return;

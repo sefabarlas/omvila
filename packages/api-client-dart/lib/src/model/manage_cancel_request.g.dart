@@ -144,7 +144,7 @@ Map<String, dynamic> _$ManageCancelRequestToJson(
   ManageCancelRequest instance,
 ) => <String, dynamic>{
   'reason': _$ManageCancelRequestReasonEnumEnumMap[instance.reason]!,
-  'note': ?instance.note,
+  'note': instance.note,
   'scope': ?_$ManageCancelRequestScopeEnumEnumMap[instance.scope],
   'notifyCustomer': ?instance.notifyCustomer,
   'offerToWaitlist': ?instance.offerToWaitlist,

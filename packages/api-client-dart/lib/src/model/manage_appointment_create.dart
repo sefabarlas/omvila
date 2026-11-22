@@ -126,7 +126,7 @@ class ManageAppointmentCreate {
     
     name: r'staffNote',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

@@ -96,7 +96,7 @@ MeProfileUpdate _$MeProfileUpdateFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$MeProfileUpdateToJson(MeProfileUpdate instance) =>
     <String, dynamic>{
       'fullName': ?instance.fullName,
-      'email': ?instance.email,
+      'email': instance.email,
       'language': ?_$MeLanguageEnumMap[instance.language],
     };
 

@@ -51,7 +51,7 @@ class WaitlistPreferences {
     
     name: r'preferredStaffId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

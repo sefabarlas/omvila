@@ -241,7 +241,7 @@ Map<String, dynamic> _$ManageAppointmentCreateToJson(
   'channel': _$ManageAppointmentCreateChannelEnumEnumMap[instance.channel]!,
   'startUtc': instance.startUtc.toIso8601String(),
   'items': instance.items.map((e) => e.toJson()).toList(),
-  'staffNote': ?instance.staffNote,
+  'staffNote': instance.staffNote,
   'recurrence': ?instance.recurrence?.toJson(),
   'notifyCustomer': ?instance.notifyCustomer,
   'allowOutsideWorkingHours': ?instance.allowOutsideWorkingHours,

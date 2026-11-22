@@ -147,7 +147,7 @@ Map<String, dynamic> _$BookingPageSettingsUpdateToJson(
       _$BookingPageSettingsUpdateCoverColorEnumEnumMap[instance.coverColor]!,
   'showReviews': instance.showReviews,
   'showPrices': instance.showPrices,
-  'preAppointmentNote': ?instance.preAppointmentNote,
+  'preAppointmentNote': instance.preAppointmentNote,
 };
 
 const _$BookingPageSettingsUpdateCoverColorEnumEnumMap = {

@@ -96,7 +96,7 @@ class PublicAppointmentCreate {
     
     name: r'customerNote',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

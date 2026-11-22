@@ -245,7 +245,7 @@ Map<String, dynamic> _$StaffCreateToJson(StaffCreate instance) =>
     <String, dynamic>{
       'fullName': instance.fullName,
       'phone': ?instance.phone,
-      'title': ?instance.title,
+      'title': instance.title,
       'role': _$StaffCreateRoleEnumEnumMap[instance.role]!,
       'calendarColor': instance.calendarColor,
       'branchIds': instance.branchIds,

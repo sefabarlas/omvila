@@ -49,7 +49,7 @@ class StaffServiceAssignment {
     
     name: r'durationOverrideMinutes',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -73,7 +73,7 @@ class StaffServiceAssignment {
     
     name: r'commissionPercentOverride',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
