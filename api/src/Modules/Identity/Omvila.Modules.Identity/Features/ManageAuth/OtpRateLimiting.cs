@@ -23,6 +23,8 @@ internal static class OtpRateLimiting
             options.AddPolicy(ManageAuthEndpoints.OtpRateLimitPolicy, PerIp);
             // Rezervasyon sayfası kod istekleri ayrı sayılır (aynı sınır; güvenilir cihazla SMS'siz dönen istek de sayılır).
             options.AddPolicy(PublicOtpEndpoints.RateLimitPolicy, PerIp);
+            // Müşteri uygulaması girişi ayrı sayılır (aynı sınır; T-103).
+            options.AddPolicy(MeAuth.MeAuthEndpoints.OtpRateLimitPolicy, PerIp);
             options.OnRejected = async (context, ct) =>
             {
                 var http = context.HttpContext;

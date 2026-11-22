@@ -75,12 +75,13 @@ public static class IdentityModule
         return services;
     }
 
-    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session, rezervasyon sayfası telefon doğrulaması).</summary>
+    /// <summary>Identity uçlarını eşler (manage-auth, manage-session/session, rezervasyon sayfası telefon doğrulaması, me-auth).</summary>
     public static IEndpointRouteBuilder MapIdentityEndpoints(this IEndpointRouteBuilder app)
     {
         ManageAuthEndpoints.Map(app);
         ManageSessionEndpoints.Map(app);
         PublicOtpEndpoints.Map(app);
+        Features.MeAuth.MeAuthEndpoints.Map(app);
         return app;
     }
 
