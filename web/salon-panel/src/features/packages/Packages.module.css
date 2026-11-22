@@ -1,0 +1,313 @@
+/* Paketler (salon-paneli/Paketler, PaketlerBos, PaketOlustur, PaketSat). */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 432px;
+  align-items: start;
+  gap: var(--bosluk-4);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+  min-width: 0;
+}
+
+.card {
+  padding: var(--bosluk-8) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.note,
+.hint {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.muted {
+  color: var(--metin-ikincil);
+}
+
+.error {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+/* Süresi yaklaşanlar */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.sideTitle {
+  margin: 0;
+  padding-bottom: var(--bosluk-3);
+  border-bottom: 1px solid var(--cizgi);
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+  line-height: var(--yazi-kart-basligi-satir);
+}
+
+.expiring {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.expiringRow {
+  display: flex;
+  align-items: center;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.expiringRow:last-child {
+  border-bottom: 0;
+}
+
+.expiringText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.expiringDate {
+  color: var(--uyari);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Müşteri paketleri araç çubuğu */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search {
+  width: 280px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+/* Satır "…" menüsü */
+.menuRoot {
+  position: relative;
+  display: inline-flex;
+}
+
+.menuTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--kontrol-sm);
+  height: var(--kontrol-sm);
+  border: 0;
+  border-radius: var(--kose-md);
+  background: transparent;
+  color: var(--metin-ikincil);
+  cursor: pointer;
+}
+
+.menuTrigger:hover,
+.menuTrigger[aria-expanded='true'] {
+  background: var(--zemin-hover);
+  color: var(--metin);
+}
+
+.menuTrigger:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + var(--bosluk-1));
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  margin: 0;
+  padding: var(--bosluk-1);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  list-style: none;
+  box-shadow: var(--golge-md);
+}
+
+.menuItem {
+  width: 100%;
+  padding: var(--bosluk-2) var(--bosluk-3);
+  border: 0;
+  border-radius: var(--kose-md);
+  background: transparent;
+  color: var(--metin);
+  font: inherit;
+  font-size: var(--yazi-kucuk-boyut);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--zemin-hover);
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.danger {
+  color: var(--hata);
+}
+
+/* Pencereler */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--bosluk-4);
+}
+
+.contents {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bosluk-1);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--yazi-govde-boyut);
+  font-weight: 700;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  margin: var(--bosluk-2) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--cizgi);
+  list-style: none;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px auto;
+  align-items: center;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-2) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.lineName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sessions {
+  min-width: 0;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.summaryLine {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-3) 0;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.summaryLine:last-child {
+  border-bottom: 0;
+}
+
+.summaryLine dt {
+  color: var(--metin-ikincil);
+}
+
+.summaryLine dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryTotal dt,
+.summaryTotal dd {
+  color: var(--metin);
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: 700;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--bosluk-2);
+}
+
+/* Tablet (web/salon-panel/AGENTS.md: 1199 → yan kart daralır, 899 → tek sütun). */
+@media (width <= 1199px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+@media (width <= 899px) {
+  .grid,
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .search {
+    width: 100%;
+  }
+}

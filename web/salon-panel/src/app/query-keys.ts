@@ -54,6 +54,11 @@ export const queryKeys = {
   notifications: () => ['notifications'] as const,
   /** Bekleme listesi (manageListWaitlist); önek ['waitlist'] bütün şubeleri geçersizler. */
   waitlist: (branchId: string) => ['waitlist', branchId] as const,
+  /** Paket tanımları ve üst kartlar (manageListPackages); önek ['packages']. */
+  packages: (branchId: string) => ['packages', branchId] as const,
+  /** Müşteri paketleri sekmesi ve "Süresi yaklaşanlar"; önek ['customer-packages']. */
+  allCustomerPackages: (branchId: string, filter: string, q: string) =>
+    ['customer-packages', branchId, filter, q] as const,
   /** Kapıda sıra (manageListWalkIns); önek ['walk-ins'] takvim ve Genel bakış sayısını da tazeler. */
   walkIns: (branchId: string) => ['walk-ins', branchId] as const,
 };
