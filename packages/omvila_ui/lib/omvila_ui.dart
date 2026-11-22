@@ -3,6 +3,7 @@
 library;
 
 export 'api/api_client.dart';
+export 'api/api_date.dart';
 export 'api/api_problem.dart';
 export 'errors/tr.dart';
 export 'format.dart';
