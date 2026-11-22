@@ -1,0 +1,15 @@
+.page {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bosluk-6);
+}
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}

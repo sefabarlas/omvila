@@ -6,6 +6,7 @@ import {
   Button,
   DataTable,
   EmptyState,
+  FilterChips,
   PersonCell,
   Skeleton,
   TextField,
@@ -27,7 +28,6 @@ import type { CustomerPrefill } from './AddCustomerModal';
 import { customersQuery } from './api';
 import type { CustomerSummary } from './api';
 import styles from './Customers.module.css';
-import { FilterChips } from './FilterChips';
 import { ImportCustomersModal } from './ImportCustomersModal';
 import {
   customerPhone,
