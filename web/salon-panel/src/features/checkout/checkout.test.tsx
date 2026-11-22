@@ -42,7 +42,7 @@ async function openCheckout(options: FakeApiOptions = {}) {
 
 const money = (amountMinor: number) => ({ amountMinor, currency: 'TRY' as const });
 
-/** KK5'teki randevu: Boya 1.250 + Fön 190, 11 Kasım'da alınan 200 ₺ kapora; alınacak 1.240 ₺. */
+/** KK5'teki randevu: Boya 1.250 + Fön 190, 11 Kasım'da alınan 200\u00a0₺ kapora; alınacak 1.240\u00a0₺. */
 function kk5Detail(overrides: Partial<AppointmentDetail> = {}): AppointmentDetail {
   const item = (id: string, serviceId: string, serviceName: string, price: number) => ({
     id,
@@ -111,7 +111,7 @@ function fonPackage(overrides: Partial<CustomerPackage> = {}): CustomerPackage {
 }
 
 describe('tamamla: hesaplar', () => {
-  it('KK5: kapora satırı "Kapora (havale, 11 Kas)" 200 ₺; alınacak 1.240 ₺', () => {
+  it('KK5: kapora satırı "Kapora (havale, 11 Kas)" 200\u00a0₺; alınacak 1.240\u00a0₺', () => {
     const detail = kk5Detail();
     expect(depositLine(detail)).toEqual({ amountMinor: 20000, label: 'Kapora (havale, 11 Kas)' });
     expect(amountToCollect(detail, [])).toBe(124000);
@@ -191,7 +191,7 @@ describe('tamamla: hesaplar', () => {
     });
     expect(checkRows([{ method: 'Cash', amount: '1.000' }], 124000)).toMatchObject({
       ok: false,
-      totalError: 'Ödemelerin toplamı (1.000 ₺) alınacak tutarla (1.240 ₺) aynı olmalı.',
+      totalError: 'Ödemelerin toplamı (1.000\u00a0₺) alınacak tutarla (1.240\u00a0₺) aynı olmalı.',
     });
     expect(checkRows([{ method: 'Cash', amount: '' }], 0)).toEqual({ ok: true, amounts: [] });
     expect(remainderFor([{ method: 'Cash', amount: '1.000' }], 124000)).toBe('240');
@@ -200,12 +200,12 @@ describe('tamamla: hesaplar', () => {
 });
 
 describe('tamamla ve ödeme al (OdemeAl)', () => {
-  it('Geldi randevuda buton; Kart ile 450 ₺ → Tamamlandı, If-Match + Idempotency-Key, yan panelde ödemeler', async () => {
+  it('Geldi randevuda buton; Kart ile 450\u00a0₺ → Tamamlandı, If-Match + Idempotency-Key, yan panelde ödemeler', async () => {
     const { calls, modal } = await openCheckout();
     expect(within(modal).getByText('Selin Öztürk')).toBeTruthy();
     expect(within(modal).getByText(/bugün 10:30–12:30 · Geldi/)).toBeTruthy();
     const total = within(modal).getByText('Alınacak').nextElementSibling;
-    expect(total?.textContent).toBe('450 ₺');
+    expect(total?.textContent).toBe('450\u00a0₺');
     // Müşterinin paketi yok: "Paketten" seçeneği görünmez. Kart yalnız yöntem; kart numarası alanı yok.
     const methods = within(modal).getByRole('group', { name: 'Ödeme yöntemi' });
     expect(within(methods).queryByRole('radio', { name: 'Paketten' })).toBeNull();
@@ -254,7 +254,7 @@ describe('tamamla ve ödeme al (OdemeAl)', () => {
 
     await userEvent.click(within(modal).getByRole('button', { name: 'Tamamla ve kaydet' }));
     expect(within(modal).getByRole('alert').textContent).toBe(
-      'Ödemelerin toplamı (500 ₺) alınacak tutarla (450 ₺) aynı olmalı.',
+      'Ödemelerin toplamı (500\u00a0₺) alınacak tutarla (450\u00a0₺) aynı olmalı.',
     );
     expect(calls[`${selinPath}/complete`]).toBeUndefined();
 
@@ -278,7 +278,7 @@ describe('tamamla ve ödeme al (OdemeAl)', () => {
     });
     await userEvent.click(within(modal).getByRole('button', { name: 'Tamamla ve kaydet' }));
     expect((await within(modal).findByRole('alert')).textContent).toBe(
-      'Alınacak tutar 450 ₺ olmalı. Tutarları kontrol edin.',
+      'Alınacak tutar 450\u00a0₺ olmalı. Tutarları kontrol edin.',
     );
     await userEvent.click(within(modal).getByRole('button', { name: 'Tamamla ve kaydet' }));
     await waitFor(() => {
@@ -299,7 +299,7 @@ describe('tamamla ve ödeme al (OdemeAl)', () => {
     const { calls, modal } = await openCheckout({ sales: { packageCustomerId: selinCustomer } });
     const methods = within(modal).getByRole('group', { name: 'Ödeme yöntemi' });
     await userEvent.click(await within(methods).findByRole('radio', { name: 'Paketten' }));
-    expect(within(modal).getByText('Alınacak').nextElementSibling?.textContent).toBe('0 ₺');
+    expect(within(modal).getByText('Alınacak').nextElementSibling?.textContent).toBe('0\u00a0₺');
     expect(within(modal).getByText('Paketten (Kesim paketi · Boya)')).toBeTruthy();
     expect(within(modal).queryByLabelText('Tutar')).toBeNull();
     await userEvent.click(within(modal).getByRole('button', { name: 'Tamamla ve kaydet' }));

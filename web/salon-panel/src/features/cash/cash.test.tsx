@@ -84,20 +84,20 @@ describe('Kasa', () => {
     const table = screen.getByRole('table', { name: 'Günün tahsilatları' });
     const rows = within(table).getAllByRole('row');
     expect(rows).toHaveLength(8);
-    expect(rows[1]?.textContent).toBe('12:05Selin ÖztürkBoya ve fön · kalanKartElif1.240 ₺');
-    expect(rows[3]?.textContent).toBe('11:35Melis TunçManikür ve pedikürPakettenZeynep0 ₺');
-    expect(rows[4]?.textContent).toBe('11:10Gizem ArslanKapora · 14:30 randevusuHavale—150 ₺');
-    expect(rows[7]?.textContent).toBe('09:50Hande ErFön paketi · 5 seansHavaleCan500 ₺');
+    expect(rows[1]?.textContent).toBe('12:05Selin ÖztürkBoya ve fön · kalanKartElif1.240\u00a0₺');
+    expect(rows[3]?.textContent).toBe('11:35Melis TunçManikür ve pedikürPakettenZeynep0\u00a0₺');
+    expect(rows[4]?.textContent).toBe('11:10Gizem ArslanKapora · 14:30 randevusuHavale—150\u00a0₺');
+    expect(rows[7]?.textContent).toBe('09:50Hande ErFön paketi · 5 seansHavaleCan500\u00a0₺');
 
     const count = screen.getByRole('form', { name: 'Kasa sayımı' });
-    expect(within(count).getByText('Beklenen').nextElementSibling?.textContent).toBe('900 ₺');
+    expect(within(count).getByText('Beklenen').nextElementSibling?.textContent).toBe('900\u00a0₺');
   });
 
   it('KK7: fark varsa açıklama zorunlu; Günü kapat → kapalı gün özeti', async () => {
     const { calls } = openCash();
     const count = await screen.findByRole('form', { name: 'Kasa sayımı' });
     await userEvent.type(within(count).getByLabelText('Sayılan nakit'), '850');
-    expect(within(count).getByText('Fark').nextElementSibling?.textContent).toBe('−50 ₺');
+    expect(within(count).getByText('Fark').nextElementSibling?.textContent).toBe('−50\u00a0₺');
     await userEvent.click(screen.getByRole('button', { name: 'Günü kapat' }));
     expect(await within(count).findByText('Fark var. Nedenini yazın.')).toBeTruthy();
     expect(calls['/api/v1/manage/cash/close']).toBeUndefined();
@@ -116,7 +116,7 @@ describe('Kasa', () => {
     });
     expect(calls['/api/v1/manage/cash/close Idempotency-Key']).toHaveLength(1);
     const closed = await screen.findByRole('region', { name: 'Gün kapatıldı' });
-    expect(within(closed).getByText('Fark').nextElementSibling?.textContent).toBe('−50 ₺');
+    expect(within(closed).getByText('Fark').nextElementSibling?.textContent).toBe('−50\u00a0₺');
     expect(within(closed).getByText('Fark açıklaması: Bozuk para verildi')).toBeTruthy();
     expect(screen.getByText('Çarşamba, 25 Kasım · Merkez · gün kapatıldı')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Günü kapat' })).toBeNull();
@@ -126,7 +126,7 @@ describe('Kasa', () => {
     const { calls } = openCash('/kasa', { sales: { closeError: 'cash_day_already_closed' } });
     const count = await screen.findByRole('form', { name: 'Kasa sayımı' });
     await userEvent.type(within(count).getByLabelText('Sayılan nakit'), '900');
-    expect(within(count).getByText('Fark').nextElementSibling?.textContent).toBe('0 ₺');
+    expect(within(count).getByText('Fark').nextElementSibling?.textContent).toBe('0\u00a0₺');
     await userEvent.click(screen.getByRole('button', { name: 'Günü kapat' }));
     expect(await screen.findByText('Bu gün zaten kapatıldı. Sayfayı yenileyin.')).toBeTruthy();
     expect(calls['/api/v1/manage/cash/close']).toEqual([
