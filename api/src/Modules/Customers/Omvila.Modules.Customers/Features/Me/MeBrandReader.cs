@@ -79,7 +79,8 @@ internal sealed class MeBrandReader(
                 brand.CoverColor,
                 brand.BookingEnabled,
                 card is not null,
-                savedByBrand.GetValueOrDefault(brandId)?.AddedUtc,
+                // Randevuyla eklenen satır (Booking) "kaydedilme" sayılmaz: savedUtc yalnız QR veya bağlantıyla (sözleşme MeBrand.savedUtc).
+                savedByBrand.GetValueOrDefault(brandId) is { Source: not CustomerSavedBrand.BookingSource } s ? s.AddedUtc : null,
                 card?.LastVisitOn,
                 [.. brand.Branches.Select(b => new MeBranchRef(b.Id, b.Name, b.District))],
                 card is not null && badges.TryGetValue(card.Id, out var list)

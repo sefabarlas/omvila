@@ -39,6 +39,7 @@ public static class NotificationsModule
         services.AddScoped<DepositSms>();
         services.AddScoped<InAppNotifier>();
         services.AddScoped<ICustomerDevices, CustomerDevices>();
+        services.AddScoped<ICustomerAppDataEraser, CustomerAppDataEraser>();
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
         services.AddBrandDataEraser<NotificationsDbContext>();

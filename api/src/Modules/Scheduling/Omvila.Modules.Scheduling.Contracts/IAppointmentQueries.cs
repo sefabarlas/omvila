@@ -52,4 +52,13 @@ public interface IAppointmentQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyDictionary<Guid, AppointmentPaymentContext>> GetPaymentContextsAsync(
         Guid brandId, IReadOnlyCollection<Guid> appointmentIds, CancellationToken ct);
+
+    /// <summary>
+    /// Ödemelerim "Salon onayı bekleniyor" satırları (sözleşme meListPayments, MePaymentStatus AwaitingConfirmation): müşterinin bütün
+    /// markalarda "Havaleyi yaptım" dediği, salonun henüz "Kapora geldi" demediği ve hâlâ onay bekleyen randevular. Platform
+    /// bağlamında yalnız global müşteri kimliğiyle süzülür; oturumun önceki bağlamı geri yüklenir.
+    /// </summary>
+    /// <param name="customerId">Global müşteri.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<ReportedDepositInfo>> ListReportedDepositsAsync(Guid customerId, CancellationToken ct);
 }
