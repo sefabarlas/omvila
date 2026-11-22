@@ -211,14 +211,11 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
 
         // Değerlendirme: tamamla ucu (T-88) ve /d/ gönderimi bu testin konusu değil; satır doğrudan yazılır.
         var brandId = session.GetProperty("brand").GetProperty("id").GetString()!;
-        var reviewId = await _api.ScalarAsync<string>($"""
-            INSERT INTO reviews.reviews (id, brand_id, branch_id, appointment_id, brand_customer_id, rating, service_names, is_published, created_utc)
-            VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
-            RETURNING id::text
-            """);
+        var reviewId = await SeedReviewAsync(brandId, branchId, appointmentId, brandCustomerId);
         var (packageId, customerPackageId) = await SeedPackageAsync(token, serviceId, branchId, ownerStaffId, brandCustomerId);
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
+            ["invoiceId"] = await SeedInvoiceAsync(brandId),
             ["importId"] = await PreviewImportAsync(token),
             ["entryId"] = await WaitlistEntryAsync(token, branchId, brandCustomerId, serviceId),
             ["packageId"] = packageId,
@@ -235,6 +232,22 @@ public sealed partial class IsolationAndPermissionTests(PostgresFixture db) : IA
             ["ticketId"] = await PostIdAsync(token, "/api/v1/manage/walk-in-tickets", new { branchId, fullName = "Okan Er" }),
         };
     }
+
+    private Task<string> SeedReviewAsync(string brandId, string branchId, string appointmentId, string brandCustomerId) =>
+        _api.ScalarAsync<string>($"""
+            INSERT INTO reviews.reviews (id, brand_id, branch_id, appointment_id, brand_customer_id, rating, service_names, is_published, created_utc)
+            VALUES (gen_random_uuid(), '{brandId}', '{branchId}', '{appointmentId}', '{brandCustomerId}', 4, ARRAY['Saç kesimi'], true, now())
+            RETURNING id::text
+            """);
+
+    // Fatura: fiyatlı planda AdvanceSubscriptionStatuses keser (T-118); izolasyon testi için satır doğrudan yazılır.
+    private Task<string> SeedInvoiceAsync(string brandId) =>
+        _api.ScalarAsync<string>($"""
+            INSERT INTO platform.subscription_invoices (id, brand_id, subscription_id, invoice_number, period_start, period_end, amount_minor, tax_minor, currency, status, issued_utc, due_on)
+            SELECT gen_random_uuid(), brand_id, id, 'OMV-2026-' || right(replace(brand_id::text, '-', ''), 6), current_period_start, current_period_end, 100000, 0, 'TRY', 'Issued', now(), current_period_start
+            FROM platform.subscriptions WHERE brand_id = '{brandId}'
+            RETURNING id::text
+            """);
 
     // İçe aktarma önizlemesi (çok parçalı CSV); commit ucunun importId'si.
     private async Task<string> PreviewImportAsync(string token)

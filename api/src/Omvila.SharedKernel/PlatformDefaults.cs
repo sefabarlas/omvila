@@ -7,6 +7,9 @@ namespace Omvila.SharedKernel;
 /// </summary>
 public static class PlatformDefaults
 {
+    /// <summary>guvenlik-kvkk.md § Dosya yükleme: dekont en fazla 5 MB (PDF, JPG, PNG).</summary>
+    public const long PaymentReceiptMaxBytes = 5L * 1024 * 1024;
+
     /// <summary>sureler-ve-ayarlar.md § Abonelik ve platform: SlugRedirectDays.</summary>
     public const int SlugRedirectDays = 30;
 

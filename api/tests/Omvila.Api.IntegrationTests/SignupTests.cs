@@ -23,7 +23,7 @@ public sealed class SignupTests(PostgresFixture db) : IAsyncLifetime
         await ExecuteAsync("""
             TRUNCATE identity.otp_challenges, identity.refresh_tokens, identity.terms_acceptances, identity.user_memberships, identity.users CASCADE;
             TRUNCATE notifications.notification_outbox, notifications.credit_transactions;
-            TRUNCATE platform.subscriptions;
+            TRUNCATE platform.payment_notices, platform.subscription_invoices, platform.subscriptions;
             TRUNCATE tenancy.brands CASCADE;
             """);
         _factory = new OmvilaApiFactory(db);

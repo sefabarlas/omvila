@@ -11,6 +11,7 @@ using Omvila.Modules.Identity.Contracts;
 using Omvila.Modules.Notifications.Contracts;
 using Omvila.Modules.Platform.Contracts;
 using Omvila.Modules.Platform.Domain;
+using Omvila.Modules.Platform.Features.ManageSubscription;
 using Omvila.Modules.Platform.Infrastructure;
 using Omvila.Modules.Tenancy.Contracts;
 using Omvila.SharedKernel;
@@ -70,15 +71,27 @@ internal static class AdminBrandEndpoints
         return VersionedResults.Versioned(http, detail.Version, detail.Detail);
     }
 
-    // Abonelik faturası (SubscriptionInvoice) tablosu abonelik/faturalama PR'ında gelir; o zamana kadar sözleşmeye uygun boş sayfa (T-119).
+    // Faturalar sekmesi: salonun manageListInvoices ile aynı sayfa (SubscriptionInvoicePage; T-118).
     private static Task<IResult> ListInvoicesAsync(
-        Guid brandId, int? limit, string? cursor, HttpContext http, IPlatformBrandDirectory brands, IAuditLog audit, CancellationToken ct) =>
-        EmptyTabAsync(brandId, limit, "Invoices", http, brands, audit, ct);
+        Guid brandId, int? limit, string? cursor, HttpContext http, IPlatformBrandDirectory brands, SubscriptionAccount account, IAuditLog audit,
+        CancellationToken ct) =>
+        TabAsync(brandId, "Invoices", http, brands, audit, async () =>
+        {
+            var page = await account.ListInvoicesAsync(brandId, limit, cursor, ct);
+            return page.IsSuccess ? TypedResults.Ok(page.Value) : page.Error.ToProblem();
+        }, ct);
 
-    // Havale bildirimi (PaymentNotice) tablosu abonelik/faturalama PR'ında gelir; o zamana kadar sözleşmeye uygun boş sayfa (T-119).
+    // Ödemeler sekmesi: markanın havale bildirimleri (AdminPaymentNoticePage; T-118).
     private static Task<IResult> ListPaymentNoticesAsync(
-        Guid brandId, int? limit, string? cursor, HttpContext http, IPlatformBrandDirectory brands, IAuditLog audit, CancellationToken ct) =>
-        EmptyTabAsync(brandId, limit, "Payments", http, brands, audit, ct);
+        Guid brandId, int? limit, string? cursor, HttpContext http, IPlatformBrandDirectory brands, SubscriptionAccount account, IAuditLog audit,
+        CancellationToken ct) =>
+        TabAsync(brandId, "Payments", http, brands, audit, async () =>
+        {
+            var page = await account.ListPaymentNoticesAsync(brandId, limit, cursor, ct);
+            return page.IsSuccess
+                ? TypedResults.Ok(new AdminPage<PaymentNoticeSummary>(page.Value.Items, page.Value.NextCursor))
+                : page.Error.ToProblem();
+        }, ct);
 
     private static async Task<IResult> ListCreditsAsync(
         Guid brandId, int? limit, string? cursor, HttpContext http, IPlatformBrandDirectory brands, AdminBrandReader reader, IAuditLog audit,
@@ -273,21 +286,23 @@ internal static class AdminBrandEndpoints
             : null;
     }
 
-    private static async Task<IResult> EmptyTabAsync(
-        Guid brandId, int? limit, string section, HttpContext http, IPlatformBrandDirectory brands, IAuditLog audit, CancellationToken ct)
+    // Marka yoksa 404; sayfa hatası (400) denetime yazılmaz; başarılı açılış AuditLog(View, section).
+    private static async Task<IResult> TabAsync(
+        Guid brandId, string section, HttpContext http, IPlatformBrandDirectory brands, IAuditLog audit, Func<Task<IResult>> read, CancellationToken ct)
     {
-        if (limit is < 1 or > 100)
-        {
-            return Error.Validation("limit", "out_of_range").ToProblem();
-        }
-
         if (await brands.GetAsync(brandId, ct) is null)
         {
             return Error.NotFound().ToProblem();
         }
 
+        var result = await read();
+        if (result is IStatusCodeHttpResult { StatusCode: >= 400 })
+        {
+            return result;
+        }
+
         await WriteViewAsync(http, audit, brandId, section, ct);
-        return TypedResults.Ok(new AdminPage<object>([], null));
+        return result;
     }
 
     private static async Task<IResult> DetailAsync(HttpContext http, AdminBrandReader reader, Guid brandId, CancellationToken ct)

@@ -45,6 +45,8 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _api.ScalarAsync<long>("""
+            DELETE FROM platform.payment_notices;
+            DELETE FROM platform.subscription_invoices;
             WITH s AS (DELETE FROM platform.subscriptions RETURNING 1), p AS (DELETE FROM platform.plans WHERE code IN ('solo', 'tiny', 'retired') RETURNING 1)
             SELECT (SELECT count(*) FROM s) + (SELECT count(*) FROM p)
             """);
@@ -280,10 +282,25 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         detail.ETag.ShouldBe(detail.Body.GetProperty("version").GetString());
         await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}", support);
 
-        (await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}/invoices", support)).Body.GetProperty("items").GetArrayLength().ShouldBe(0);
+        // Fatura ve havale bildirimi sekmeleri markanın gerçek satırlarını döner (T-118); satırlar doğrudan yazılır.
+        await _api.ScalarAsync<int>($"""
+            INSERT INTO platform.subscription_invoices (id, brand_id, subscription_id, invoice_number, period_start, period_end, amount_minor, tax_minor, currency, status, issued_utc, due_on)
+            SELECT gen_random_uuid(), brand_id, id, 'OMV-2026-000007', current_period_start, current_period_end, 100000, 20000, 'TRY', 'Issued', now(), current_period_start
+            FROM platform.subscriptions WHERE brand_id = '{_elifBrand}';
+            INSERT INTO platform.payment_notices (id, brand_id, purpose, channel, transfer_code, notified_utc, status)
+            SELECT gen_random_uuid(), brand_id, 'Subscription', 'Panel', transfer_code, now(), 'Pending' FROM platform.subscriptions WHERE brand_id = '{_elifBrand}';
+            SELECT 1
+            """);
+        var invoices = (await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}/invoices", support)).Body.GetProperty("items");
+        invoices.GetArrayLength().ShouldBe(1);
+        invoices[0].GetProperty("invoiceNumber").GetString().ShouldBe("OMV-2026-000007");
+        invoices[0].GetProperty("total").GetProperty("amountMinor").GetInt64().ShouldBe(120000);
         var notices = await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}/payment-notices", support);
         notices.Status.ShouldBe(200);
+        notices.Body.GetProperty("items")[0].GetProperty("status").GetString().ShouldBe("Pending");
+        notices.Body.GetProperty("items")[0].GetProperty("transferCode").GetString()!.ShouldStartWith("ABN-");
         notices.Body.GetProperty("nextCursor").ValueKind.ShouldBe(JsonValueKind.Null);
+        Card((await _api.GetAsync("/api/v1/admin/overview", support)).Body, "pendingApprovals").ShouldBe("total=1,paymentNotices=1,smsSenders=0");
         (await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}/credit-transactions", support)).Status.ShouldBe(200);
         (await _api.GetAsync("/api/v1/admin/brands", support)).Status.ShouldBe(200);
 
@@ -292,6 +309,9 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
             WHERE action = 'View' AND entity_type = 'Brand' AND brand_id = '{_elifBrand}' AND entity_id = '{_elifBrand}'
               AND actor_type = 'PlatformUser' AND actor_id = '{supportId}'
             """)).ShouldBe("Summary,Summary,Invoices,Payments,Credits", "liste görüntülemesi denetime yazılmaz");
+        var card = (await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}", support)).Body.GetProperty("subscription");
+        card.GetProperty("transferCode").GetString()!.ShouldStartWith("ABN-KE-");
+        card.GetProperty("pendingNoticeId").GetString().ShouldBe(notices.Body.GetProperty("items")[0].GetProperty("id").GetString());
 
         (await _api.GetAsync("/api/v1/admin/brands/0193a8f0-0000-7000-8000-00000000dead", support)).Status.ShouldBe(404);
         (await _api.GetAsync("/api/v1/admin/brands/0193a8f0-0000-7000-8000-00000000dead/invoices", support)).Status.ShouldBe(404);
