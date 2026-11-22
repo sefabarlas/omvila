@@ -270,6 +270,16 @@ jobs:
           else
             echo "Test klasörü olan paket yok; atlandı."
           fi
+      # Uygulamanın yerel katmanı (Gradle, eklentiler, manifest) derleniyor mu; imzasız hata ayıklama APK'sı.
+      - uses: actions/setup-java@v4
+        if: steps.guard.outputs.go == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Müşteri uygulaması Android derlemesi
+        if: steps.guard.outputs.go == 'true'
+        working-directory: mobile/musteri
+        run: flutter build apk --debug
       # Golden testleri (alchemist) CI goldenleriyle karşılaştırılır: metin blok çizilir, gölge yok; yazı tipi ve
       # işletim sisteminden bağımsız (packages/omvila_ui/test/flutter_test_config.dart). Fark olursa beklenen,
       # üretilen ve fark görüntüleri indirilebilir.
