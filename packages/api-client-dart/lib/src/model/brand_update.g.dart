@@ -190,14 +190,14 @@ Map<String, dynamic> _$BrandUpdateToJson(BrandUpdate instance) =>
     <String, dynamic>{
       'name': ?instance.name,
       'industryCode': ?_$IndustryCodeEnumMap[instance.industryCode],
-      'shortDescription': ?instance.shortDescription,
-      'phone': ?instance.phone,
-      'email': ?instance.email,
-      'instagram': ?instance.instagram,
-      'website': ?instance.website,
-      'legalName': ?instance.legalName,
-      'taxOffice': ?instance.taxOffice,
-      'taxNumber': ?instance.taxNumber,
+      'shortDescription': instance.shortDescription,
+      'phone': instance.phone,
+      'email': instance.email,
+      'instagram': instance.instagram,
+      'website': instance.website,
+      'legalName': instance.legalName,
+      'taxOffice': instance.taxOffice,
+      'taxNumber': instance.taxNumber,
     };
 
 const _$IndustryCodeEnumMap = {

@@ -188,7 +188,7 @@ Dilim 5 kapsamında bilinçli olarak yapılmayan veya dışa bağlı işler (T-1
 - Salona "Saat değişti" push'u bağlı değil (müşteri erteleme).
 - Paketler "Hepsine SMS": bildirim kataloğunda olay yok.
 - Menü sayaç rozetleri (panel kenar menüsü, müşteri kartı sekmeleri).
-- Mağaza hesapları, imzalama, Firebase/APNs (K4): sahte push ve emülatör; mağaza yayını ayrı adım.
+- Mağaza hesapları, imzalama, Firebase/APNs (K4): ürün sahibiyle birlikte, ayrı adım; o zamana kadar sahte push ve emülatör.
 - Uygulama ikonu ve açılış görseli (mağaza varlıkları).
 - i18n: yalnız Türkçe.
 - H-04 hukuk metinleri (hesap silme, kapora/iade, SSS).

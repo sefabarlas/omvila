@@ -114,7 +114,7 @@ Map<String, dynamic> _$NotificationSettingsUpdateTemplatesInnerToJson(
   NotificationSettingsUpdateTemplatesInner instance,
 ) => <String, dynamic>{
   'eventCode': _$CustomerNotificationEventEnumMap[instance.eventCode]!,
-  'variant': ?instance.variant,
+  'variant': instance.variant,
   'customBody': instance.customBody,
 };
 

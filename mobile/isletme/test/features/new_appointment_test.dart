@@ -165,7 +165,8 @@ void main() {
       'items': [
         {'serviceId': kesimId, 'staffId': elifId},
       ],
-      'recurrence': {'frequency': 'Weekly', 'intervalWeeks': 1},
+      'staffNote': null,
+      'recurrence': {'frequency': 'Weekly', 'intervalWeeks': 1, 'endsOn': null},
       'notifyCustomer': true,
     });
     expect(find.text('Randevu oluşturuldu.'), findsOneWidget);

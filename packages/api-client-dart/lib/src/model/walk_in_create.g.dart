@@ -136,6 +136,6 @@ Map<String, dynamic> _$WalkInCreateToJson(WalkInCreate instance) =>
       'brandCustomerId': ?instance.brandCustomerId,
       'fullName': instance.fullName,
       'phone': ?instance.phone,
-      'serviceId': ?instance.serviceId,
-      'preferredStaffId': ?instance.preferredStaffId,
+      'serviceId': instance.serviceId,
+      'preferredStaffId': instance.preferredStaffId,
     };

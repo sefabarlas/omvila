@@ -76,7 +76,7 @@ class CashDayCloseRequest {
     
     name: r'differenceNote',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

@@ -159,6 +159,33 @@ describe('createManageClient', () => {
     expect(results.map((r) => r.response.status)).toEqual([200, 200]);
   });
 
+  it('dizi sorgu parametresini sözleşmedeki gibi virgülle yazar (form, explode: false)', async () => {
+    const { fetch, requests } = recorder(json({ days: [] }));
+    const api = createManageClient({ baseUrl: BASE, fetch });
+
+    await api.GET('/api/v1/manage/calendar', {
+      params: {
+        query: {
+          branchId: '0195f3a0-0000-7000-8000-000000000001',
+          from: '2026-11-25',
+          to: '2026-11-25',
+          staffIds: [
+            '0195f3a0-0000-7000-8000-00000000000a',
+            '0195f3a0-0000-7000-8000-00000000000b',
+          ],
+        },
+      },
+    });
+
+    const url = new URL(requests[0]?.url ?? '');
+    expect(url.searchParams.getAll('staffIds')).toEqual([
+      '0195f3a0-0000-7000-8000-00000000000a,0195f3a0-0000-7000-8000-00000000000b',
+    ]);
+    expect(url.search).toContain(
+      'staffIds=0195f3a0-0000-7000-8000-00000000000a,0195f3a0-0000-7000-8000-00000000000b',
+    );
+  });
+
   it('503 try_again yanıtında bir kez tekrar dener', async () => {
     const { fetch, requests } = recorder(problem(503, 'try_again'), problem(503, 'try_again'));
     const client = createManageClient({ baseUrl: BASE, fetch });

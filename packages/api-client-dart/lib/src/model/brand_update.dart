@@ -73,7 +73,7 @@ class BrandUpdate {
     
     name: r'shortDescription',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -85,7 +85,7 @@ class BrandUpdate {
     
     name: r'phone',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -97,7 +97,7 @@ class BrandUpdate {
     
     name: r'email',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -109,7 +109,7 @@ class BrandUpdate {
     
     name: r'instagram',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -121,7 +121,7 @@ class BrandUpdate {
     
     name: r'website',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -133,7 +133,7 @@ class BrandUpdate {
     
     name: r'legalName',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -145,7 +145,7 @@ class BrandUpdate {
     
     name: r'taxOffice',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -157,7 +157,7 @@ class BrandUpdate {
     
     name: r'taxNumber',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

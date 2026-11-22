@@ -166,7 +166,7 @@ Map<String, dynamic> _$WorkingHoursOverrideCreateToJson(
   'kind': _$WorkingHoursOverrideCreateKindEnumEnumMap[instance.kind]!,
   'isClosed': instance.isClosed,
   'intervals': ?instance.intervals?.map((e) => e.toJson()).toList(),
-  'note': ?instance.note,
+  'note': instance.note,
 };
 
 Value? _$JsonConverterFromJson<Json, Value>(

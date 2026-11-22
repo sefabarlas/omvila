@@ -60,7 +60,7 @@ class MeReviewCreate {
     
     name: r'comment',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

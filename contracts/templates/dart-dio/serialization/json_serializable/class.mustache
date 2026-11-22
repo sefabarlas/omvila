@@ -59,7 +59,7 @@ class {{{classname}}} {
     {{#defaultValue}}defaultValue: {{{defaultValue}}},{{/defaultValue}}
     name: r'{{{baseName}}}',
     required: {{#required}}true{{/required}}{{^required}}false{{/required}},
-    includeIfNull: {{#required}}{{#isNullable}}true{{/isNullable}}{{^isNullable}}false{{/isNullable}}{{/required}}{{^required}}false{{/required}},{{^required}}{{#useOptional}}
+    includeIfNull: {{#required}}{{#isNullable}}true{{/isNullable}}{{^isNullable}}false{{/isNullable}}{{/required}}{{^required}}{{#vendorExtensions.x-send-null}}true{{/vendorExtensions.x-send-null}}{{^vendorExtensions.x-send-null}}false{{/vendorExtensions.x-send-null}}{{/required}},{{^required}}{{#useOptional}}
     readValue: readOptionalValue,{{/useOptional}}{{/required}}
   {{#enumUnknownDefaultCase}}
   {{#isArray}}

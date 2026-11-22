@@ -77,7 +77,7 @@ class StaffCreate {
     
     name: r'title',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

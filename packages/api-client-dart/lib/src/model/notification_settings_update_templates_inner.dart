@@ -48,7 +48,7 @@ class NotificationSettingsUpdateTemplatesInner {
     
     name: r'variant',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

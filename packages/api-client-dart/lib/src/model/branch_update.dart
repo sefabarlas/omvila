@@ -97,7 +97,7 @@ class BranchUpdate {
     
     name: r'postalCode',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -109,7 +109,7 @@ class BranchUpdate {
     
     name: r'latitude',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -121,7 +121,7 @@ class BranchUpdate {
     
     name: r'longitude',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -133,7 +133,7 @@ class BranchUpdate {
     
     name: r'phone',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -145,7 +145,7 @@ class BranchUpdate {
     
     name: r'email',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -157,7 +157,7 @@ class BranchUpdate {
     
     name: r'slotIntervalMinutes',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   unknownEnumValue: BranchUpdateSlotIntervalMinutesEnum.unknownDefaultOpenApi,
   )
 

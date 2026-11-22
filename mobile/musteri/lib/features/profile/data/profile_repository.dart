@@ -23,7 +23,8 @@ abstract interface class ProfileRepository {
   /// Profil.
   Future<MeProfile> profile();
 
-  /// "Kaydet" (If-Match); [email] null ise e-posta gönderilmez.
+  /// "Kaydet" (If-Match); [email] null ise e-posta silinir (gövdede
+  /// `"email": null`).
   Future<MeProfile> update(
     MeProfile current, {
     required String fullName,

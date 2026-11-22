@@ -44,7 +44,7 @@ class AppointmentItemRequest {
     
     name: r'staffId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

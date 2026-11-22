@@ -90,7 +90,7 @@ class ServiceWrite {
     
     name: r'description',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -182,7 +182,7 @@ class ServiceWrite {
     
     name: r'requiresApproval',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -195,7 +195,7 @@ class ServiceWrite {
     
     name: r'minNoticeMinutes',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -209,7 +209,7 @@ class ServiceWrite {
     
     name: r'maxAdvanceDays',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -221,7 +221,7 @@ class ServiceWrite {
     
     name: r'resourceTypeId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

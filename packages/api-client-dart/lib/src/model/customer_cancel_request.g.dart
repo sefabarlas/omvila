@@ -94,7 +94,7 @@ Map<String, dynamic> _$CustomerCancelRequestToJson(
   CustomerCancelRequest instance,
 ) => <String, dynamic>{
   'reason': _$CustomerCancelRequestReasonEnumEnumMap[instance.reason]!,
-  'note': ?instance.note,
+  'note': instance.note,
 };
 
 const _$CustomerCancelRequestReasonEnumEnumMap = {

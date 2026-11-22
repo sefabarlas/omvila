@@ -141,5 +141,5 @@ Map<String, dynamic> _$ManageWaitlistCreateToJson(
   'brandCustomerId': ?instance.brandCustomerId,
   'newCustomer': ?instance.newCustomer?.toJson(),
   'preferences': instance.preferences.toJson(),
-  'note': ?instance.note,
+  'note': instance.note,
 };

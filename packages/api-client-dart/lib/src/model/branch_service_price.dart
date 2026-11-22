@@ -47,7 +47,7 @@ class BranchServicePrice {
     
     name: r'durationOverrideMinutes',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

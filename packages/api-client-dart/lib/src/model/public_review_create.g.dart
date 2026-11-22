@@ -78,4 +78,4 @@ PublicReviewCreate _$PublicReviewCreateFromJson(Map<String, dynamic> json) =>
     });
 
 Map<String, dynamic> _$PublicReviewCreateToJson(PublicReviewCreate instance) =>
-    <String, dynamic>{'rating': instance.rating, 'comment': ?instance.comment};
+    <String, dynamic>{'rating': instance.rating, 'comment': instance.comment};

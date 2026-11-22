@@ -118,5 +118,5 @@ Map<String, dynamic> _$CashDayCloseRequestToJson(
   'branchId': instance.branchId,
   'date': const DateOnlyConverter().toJson(instance.date),
   'countedCash': instance.countedCash.toJson(),
-  'differenceNote': ?instance.differenceNote,
+  'differenceNote': instance.differenceNote,
 };

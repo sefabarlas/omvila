@@ -89,7 +89,7 @@ class WalkInCreate {
     
     name: r'serviceId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 
@@ -102,7 +102,7 @@ class WalkInCreate {
     
     name: r'preferredStaffId',
     required: false,
-    includeIfNull: false,
+    includeIfNull: true,
   )
 
 

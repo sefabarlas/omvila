@@ -104,6 +104,6 @@ BranchServicePrice _$BranchServicePriceFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$BranchServicePriceToJson(BranchServicePrice instance) =>
     <String, dynamic>{
       'price': instance.price.toJson(),
-      'durationOverrideMinutes': ?instance.durationOverrideMinutes,
+      'durationOverrideMinutes': instance.durationOverrideMinutes,
       'isAvailable': instance.isAvailable,
     };
