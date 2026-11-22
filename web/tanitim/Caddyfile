@@ -1,0 +1,23 @@
+# Tanıtım sitesi statik sunucusu (imaj içi). TLS, basic auth ve X-Robots-Tag kenardaki Caddy'de (deploy/staging/Caddyfile).
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	root * /srv
+	encode zstd gzip
+
+	# Next'in parmak izli varlıkları değişmez; sayfalar her seferinde yeniden doğrulanır.
+	@assets path /_next/static/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	header ?Cache-Control "no-cache"
+
+	# trailingSlash: /fiyatlar → /fiyatlar/ (dizinin index.html'i). Bilinmeyen yol 404.html.
+	file_server
+	handle_errors {
+		@notfound expression {err.status_code} == 404
+		rewrite @notfound /404.html
+		file_server
+	}
+}
