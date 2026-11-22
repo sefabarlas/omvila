@@ -82,7 +82,9 @@ class _BeklemeKatilSayfasiState extends ConsumerState<BeklemeKatilSayfasi> {
                 serviceIds: draft.serviceIds,
                 preferredStaffId: staff,
                 acceptOtherStaff: staff == null || _otherStaff,
-                dates: [for (final d in _dates.toList()..sort()) ApiDate(d)],
+                dates: [
+                  for (final d in _dates.toList()..sort()) parseLocalDate(d),
+                ],
                 timeWindows: [
                   for (final (w, _) in _windows)
                     if (_windowsChosen.contains(w)) w,
