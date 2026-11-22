@@ -9,13 +9,21 @@ namespace Omvila.Modules.Identity.Domain;
 /// </summary>
 internal sealed class RefreshToken
 {
+    public const string ManageAudience = "manage";
+
+    public const string MeAudience = "me";
+
     private RefreshToken()
     {
     }
 
     public Guid Id { get; private set; }
 
+    /// <summary>Oturum sahibi: salon/platform kullanıcısı veya (yüzey me ise) global müşteri kaydı (alan-modeli.md § CustomerSession).</summary>
     public Guid UserId { get; private set; }
+
+    /// <summary>Jetonun yüzeyi (manage veya me): bir yüzeyin yenileme jetonu diğerinde geçmez (ADR-0007).</summary>
+    public string Audience { get; private set; } = ManageAudience;
 
     /// <summary>manage jetonunun üyeliği; platform kullanıcısında boş.</summary>
     public Guid? MembershipId { get; private set; }
@@ -40,10 +48,11 @@ internal sealed class RefreshToken
 
     public static RefreshToken Create(
         Guid id, Guid userId, Guid? membershipId, Guid familyId, string tokenHash,
-        RefreshClientType clientType, bool rememberDevice, Instant now, Duration lifetime) => new()
+        RefreshClientType clientType, bool rememberDevice, Instant now, Duration lifetime, string audience = ManageAudience) => new()
         {
             Id = id,
             UserId = userId,
+            Audience = audience,
             MembershipId = membershipId,
             FamilyId = familyId,
             TokenHash = tokenHash,

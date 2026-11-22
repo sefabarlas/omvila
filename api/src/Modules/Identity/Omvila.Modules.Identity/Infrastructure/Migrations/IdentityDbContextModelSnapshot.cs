@@ -90,6 +90,14 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("manage")
+                        .HasColumnName("audience");
+
                     b.Property<string>("ClientType")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -151,6 +159,8 @@ namespace Omvila.Modules.Identity.Infrastructure.Migrations
 
                     b.ToTable("refresh_tokens", "identity", t =>
                         {
+                            t.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me')");
+
                             t.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')");
                         });
                 });

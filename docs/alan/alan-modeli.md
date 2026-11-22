@@ -124,7 +124,7 @@ SMS doğrulama kodu. (Eski adı `OtpCode`.)
 | ConsumedUtc | Instant? | Tek kullanımlık |
 
 ### RefreshToken / CustomerSession
-Yenileme jetonu; yalnız hash'i saklanır. Her kullanımda döndürülür (rotation). Eski jeton yeniden kullanılırsa o zincirdeki tüm jetonlar iptal edilir. `RefreshToken.UserId` salon/platform içindir, `CustomerSession.CustomerId` müşteri içindir. Ortak alanlar: `TokenHash` (UNIQUE), `FamilyId`, `ExpiresUtc`, `RevokedUtc?`, `DeviceLabel?`, `RememberDevice: bool` (panelde "Bu bilgisayarda 30 gün hatırla").
+Yenileme jetonu; yalnız hash'i saklanır. Her kullanımda döndürülür (rotation). Eski jeton yeniden kullanılırsa o zincirdeki tüm jetonlar iptal edilir. `RefreshToken.UserId` salon/platform içindir, `CustomerSession.CustomerId` müşteri içindir (uygulamada ikisi aynı `identity.refresh_tokens` tablosunda, `Audience` = `manage`/`me` ile ayrılır; me satırında `UserId` müşteri kimliğidir, T-103). Ortak alanlar: `TokenHash` (UNIQUE), `FamilyId`, `ExpiresUtc`, `RevokedUtc?`, `DeviceLabel?`, `RememberDevice: bool` (panelde "Bu bilgisayarda 30 gün hatırla").
 
 ### TermsAcceptance
 Salon kullanıcısının kullanım koşulları ve aydınlatma metni onayı: `UserId`, `DocumentType` (`TermsOfUse`, `PrivacyNotice`), `DocumentVersion`, `AcceptedUtc`, `IpAddress?`. Kayıtta zorunludur; yeni sürüm yayınlanınca girişte yeniden istenir.
@@ -133,7 +133,7 @@ Salon kullanıcısının kullanım koşulları ve aydınlatma metni onayı: `Use
 Rezervasyon sayfasında bir telefon bir kez doğrulandıktan sonra aynı tarayıcıdan tekrar randevuda kod istenmez. Alanlar: `PhoneE164`, `TokenHash` (çerezde saklanan rastgele değerin hash'i), `ExpiresUtc`, `LastUsedUtc`.
 
 ### Device
-Push bildirimi için cihaz kaydı. Hem müşteri hem işletme uygulaması kullanır. Notifications modülündedir (gönderim işi cihazları okur; T-66). İşletme cihazı kaydedildiği markanın kiracı bağlamındadır (`BrandId`, RLS); ayrıca `AppVersion`, `CreatedUtc`.
+Push bildirimi için cihaz kaydı. Hem müşteri hem işletme uygulaması kullanır. Notifications modülündedir (gönderim işi cihazları okur; T-66). İşletme cihazı kaydedildiği markanın kiracı bağlamındadır (`BrandId`, RLS); müşteri cihazı markasızdır (`BrandId` boş) ve müşterinin kendi bağlamında görünür (T-103); ayrıca `AppVersion`, `CreatedUtc`.
 
 | Alan | Tip | Not |
 |---|---|---|

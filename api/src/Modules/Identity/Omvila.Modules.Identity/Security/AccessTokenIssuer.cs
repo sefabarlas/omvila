@@ -48,6 +48,16 @@ internal sealed class AccessTokenIssuer(SigningKeyStore keys, IClock clock, IOpt
             new ClaimsIdentity([new Claim(OmvilaClaims.Phone, phoneE164), new Claim(OmvilaClaims.OtpId, otpId.ToString())]),
             Duration.FromMinutes(options.Value.PublicBookingTokenMinutes));
 
+    /// <summary>
+    /// Müşteri uygulaması jetonu (ADR-0007 me: sub = global Customer). Kiracı bağlamı müşteri RLS'i (TenantScope.ForCustomer);
+    /// marka iddiası yoktur. Ömür salon jetonuyla aynı (AccessTokenMinutes).
+    /// </summary>
+    public (string Token, int ExpiresInSeconds) IssueMe(Guid customerId) =>
+        Issue(
+            Audiences.Me,
+            new ClaimsIdentity([new Claim(OmvilaClaims.Subject, customerId.ToString())]),
+            Duration.FromMinutes(options.Value.AccessTokenMinutes));
+
     private (string Token, int ExpiresInSeconds) Issue(string audience, ClaimsIdentity identity, Duration lifetime)
     {
         var now = clock.GetCurrentInstant();
