@@ -32,6 +32,9 @@ internal sealed class UserMembership
 
     public Instant? ActivatedUtc { get; private set; }
 
+    /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
+    public uint Version { get; private set; }
+
     public static UserMembership Create(
         Guid id, Guid userId, Guid brandId, string role, IReadOnlyCollection<Guid> branchIds, Guid? staffId, MembershipStatus status, Instant now) => new()
         {
@@ -74,6 +77,17 @@ internal sealed class UserMembership
 
         Role = role ?? Role;
         BranchIds = branchIds is null ? BranchIds : [.. branchIds];
+    }
+
+    /// <summary>
+    /// Ayarlar → Roller "Düzenle" (sözleşme manageUpdateUser, K6): rol ve şube kapsamı. Owner bütün şubeleri görür (kapsam boş);
+    /// diğer rollerde en az bir şube gerekir (doğrulama uçta). Son Owner denetimi markanın üyeliklerine baktığı için uçtadır.
+    /// </summary>
+    public void Reassign(string role, IReadOnlyCollection<Guid> branchIds)
+    {
+        ArgumentNullException.ThrowIfNull(branchIds);
+        Role = role;
+        BranchIds = string.Equals(role, Contracts.Roles.Owner, StringComparison.Ordinal) ? [] : [.. branchIds.Distinct()];
     }
 
     /// <summary>Personel aynı numarayla ilk girişte Active olur (ADR-0007, kabul kriteri 10).</summary>

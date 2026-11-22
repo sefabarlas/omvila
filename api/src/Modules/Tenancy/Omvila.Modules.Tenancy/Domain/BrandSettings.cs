@@ -44,6 +44,17 @@ internal sealed class BrandSettings
 
     public bool ReviewInviteEnabled { get; private set; }
 
+    /// <summary>Aydınlatma metni seçimi: Standard (OMVILA metni) veya Custom (salonun metni).</summary>
+    public string PrivacyNoticeMode { get; private set; } = PrivacySettingsRules.Standard;
+
+    /// <summary>Salonun kendi aydınlatma metni; Standard'a dönünce saklanır ama gösterilmez.</summary>
+    public string? CustomPrivacyNoticeText { get; private set; }
+
+    public NodaTime.Instant? CustomPrivacyNoticeUpdatedUtc { get; private set; }
+
+    /// <summary>İşlem kayıtlarını saklama süresi (yıl; 3, 5, 10). Süre dolunca müşteri bağı anonimleşir (ApplyRetention).</summary>
+    public int TransactionRetentionYears { get; private set; } = 3;
+
     /// <summary>Doğrulanmış değerleri uygular (BrandSettingsRules). Hatırlatmalar büyükten küçüğe, tekrarsız saklanır.</summary>
     public void Apply(BrandSettingsValues v)
     {
@@ -77,6 +88,21 @@ internal sealed class BrandSettings
         ReviewInviteEnabled = reviewInviteEnabled;
     }
 
+    /// <summary>
+    /// KVKK ve veri (sözleşme manageUpdatePrivacySettings): metin verilmezse (null değil, gönderilmedi) değişmez; açıkça null ise
+    /// silinir. Doğrulama <see cref="PrivacySettingsRules"/>'ta.
+    /// </summary>
+    public void ApplyPrivacy(string mode, bool textProvided, string? customText, int retentionYears, NodaTime.Instant now)
+    {
+        PrivacyNoticeMode = mode;
+        TransactionRetentionYears = retentionYears;
+        if (textProvided && !string.Equals(CustomPrivacyNoticeText, customText, StringComparison.Ordinal))
+        {
+            CustomPrivacyNoticeText = customText;
+            CustomPrivacyNoticeUpdatedUtc = now;
+        }
+    }
+
     /// <summary>Kayıtta oluşan ayarlar: sureler-ve-ayarlar.md varsayılanları birebir.</summary>
     /// <summary>Eşzamanlı düzenleme sürümü (PostgreSQL xmin; If-Match/ETag).</summary>
     public uint Version { get; private set; }
@@ -100,5 +126,7 @@ internal sealed class BrandSettings
         MaskCustomerPhoneFromStaff = true,     // MaskCustomerPhoneFromStaff
         ReminderOffsetsMinutes = [1440, 120],  // ReminderOffsetsMinutes (✔ onay bekliyor)
         ReviewInviteEnabled = true,            // ReviewInviteEnabled
+        PrivacyNoticeMode = PrivacySettingsRules.Standard, // PrivacyNoticeMode
+        TransactionRetentionYears = 3,         // TransactionRetentionYears (✔ hukuk)
     };
 }
