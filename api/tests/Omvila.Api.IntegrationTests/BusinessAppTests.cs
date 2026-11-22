@@ -89,7 +89,9 @@ public sealed class BusinessAppTests(PostgresFixture db) : IAsyncLifetime
         body.GetProperty("branchId").GetString().ShouldBe(_merkez, "birincil şube");
         body.GetProperty("date").GetString().ShouldBe("2026-11-25");
         body.GetProperty("timeZone").GetString().ShouldBe("Europe/Istanbul");
-        Ids(body.GetProperty("items")).ShouldBe([_selin, _gizem, _okan, _derya]);
+        var ids = Ids(body.GetProperty("items"));
+        ids.Take(2).Order(StringComparer.Ordinal).ShouldBe(new[] { _selin, _gizem }.Order(StringComparer.Ordinal), "ikisi de 09:00'da başlıyor");
+        ids.Skip(2).ShouldBe([_okan, _derya], "başlangıca göre artan");
         (body.GetProperty("completedCount").GetInt32(), body.GetProperty("totalCount").GetInt32()).ShouldBe((1, 4));
         var next = body.GetProperty("next");
         next.GetProperty("appointmentId").GetString().ShouldBe(_okan);
