@@ -34,4 +34,35 @@ public sealed class UuidV7IdGeneratorTests
 
         string.CompareOrdinal(first.ToString(), second.ToString()).ShouldBeLessThan(0);
     }
+
+    // Sabit saatte (test) veya aynı milisaniyede üretilen kimlikler de üretim sırasını korur: "son kayıt" seçen sorgular
+    // (ör. rıza defteri, ORDER BY occurred_utc, id) aynı an damgalı satırlarda belirsiz kalmaz (T-113).
+    [Fact]
+    public void New_IsStrictlyIncreasing_WithinTheSameMillisecond()
+    {
+        var generator = new UuidV7IdGenerator(new FakeClock(Start));
+
+        var ids = Enumerable.Range(0, 2_000).Select(_ => generator.New()).ToList();
+
+        for (var i = 1; i < ids.Count; i++)
+        {
+            ids[i].CompareTo(ids[i - 1]).ShouldBeGreaterThan(0, "Guid sıralaması (bellekte)");
+            ids[i].ToByteArray(bigEndian: true).AsSpan().SequenceCompareTo(ids[i - 1].ToByteArray(bigEndian: true)).ShouldBeGreaterThan(0, "uuid sıralaması (PostgreSQL)");
+            ids[i].Version.ShouldBe(7);
+            (ids[i].Variant & 0b1100).ShouldBe(0b1000, "RFC 9562 varyantı");
+        }
+    }
+
+    [Fact]
+    public void New_StaysIncreasing_WhenTheClockGoesBack()
+    {
+        var clock = new FakeClock(Start);
+        var generator = new UuidV7IdGenerator(clock);
+
+        var first = generator.New();
+        clock.Reset(Start - Duration.FromSeconds(1));
+        var second = generator.New();
+
+        second.CompareTo(first).ShouldBeGreaterThan(0);
+    }
 }
