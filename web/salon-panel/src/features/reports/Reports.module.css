@@ -1,0 +1,169 @@
+/* Raporlar ve prim (salon-paneli/Raporlar, RaporlarBos) ve Primim. */
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--bosluk-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+  padding: var(--bosluk-5) var(--bosluk-6);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+/* Tablo kartı: tablo kenardan kenara (salon-paneli/Raporlar "Personel ve prim"). */
+.tableCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  padding-top: var(--bosluk-5);
+  overflow: hidden;
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.cardHead {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--yazi-kart-basligi-boyut);
+  font-weight: var(--yazi-kart-basligi-agirlik);
+  line-height: var(--yazi-kart-basligi-satir);
+}
+
+.muted {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.cardLink {
+  color: var(--metin-marka);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cardLink:hover {
+  text-decoration: underline;
+}
+
+.cardLink:focus-visible {
+  border-radius: var(--kose-sm);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.cardError {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--bosluk-5);
+  color: var(--metin-ikincil);
+}
+
+.cardError p {
+  margin: 0;
+}
+
+.tableEmpty {
+  margin: 0;
+  padding: var(--bosluk-4) var(--bosluk-5);
+  color: var(--metin-ikincil);
+}
+
+/* Tablo kartında başlık ve iletiler iç boşluklu, tablo kenardan kenara. */
+.tableCard > .cardHead,
+.tableCard > .cardError {
+  padding-right: var(--bosluk-5);
+  padding-left: var(--bosluk-5);
+}
+
+.tableFoot {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  color: var(--metin-ikincil);
+}
+
+.tableFoot strong {
+  color: var(--metin);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Primim: "Son primler". */
+.entries {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entries li + li {
+  border-top: 1px solid var(--cizgi);
+}
+
+.entry {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) 0;
+}
+
+.entryText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.entryName {
+  font-weight: 700;
+}
+
+.entryDetail {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.plus,
+.minus {
+  flex: none;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.plus {
+  color: var(--basari);
+}
+
+.minus {
+  color: var(--hata);
+}
+
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+@media (width <= 899px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
