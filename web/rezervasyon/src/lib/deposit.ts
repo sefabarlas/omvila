@@ -1,6 +1,6 @@
 import type { components } from '@omvila/api-client-ts';
 import type { Clock } from '@omvila/ui-web/time';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Kapora (Dilim 4): yanıttaki kapora alanlarının okunması ve havale geri sayımı. Tutar ve son zaman her zaman
 // yanıttan gelir (sabit "2 saat" yok); "şimdi" enjekte edilen saatten (Clock).
@@ -63,13 +63,18 @@ export function minutesLeft(dueUtc: string, now: Date): number {
 /** Saati her `intervalMs`'te yeniden okur (geri sayım). */
 export function useNow(clock: Clock, intervalMs = 15_000): Date {
   const [now, setNow] = useState(() => clock.now());
+  // Saat nesnesinin kimliği her çizimde değişebilir; aralık yeniden kurulursa geri sayım hiç ilerlemeyebilir.
+  const clockRef = useRef(clock);
+  useEffect(() => {
+    clockRef.current = clock;
+  }, [clock]);
   useEffect(() => {
     const timer = setInterval(() => {
-      setNow(clock.now());
+      setNow(clockRef.current.now());
     }, intervalMs);
     return () => {
       clearInterval(timer);
     };
-  }, [clock, intervalMs]);
+  }, [intervalMs]);
   return now;
 }
