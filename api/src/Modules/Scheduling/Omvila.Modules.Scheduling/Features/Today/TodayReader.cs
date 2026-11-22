@@ -39,7 +39,7 @@ internal sealed class TodayReader(
     {
         ArgumentNullException.ThrowIfNull(access);
         ArgumentNullException.ThrowIfNull(cards);
-        var branch = await ResolveBranchAsync(brandId, branchId, access.Branches, ct);
+        var branch = await ResolveBranchAsync(tenants, brandId, branchId, access.Branches, ct);
         if (branch is null || await tenants.GetBranchTimeZoneAsync(brandId, branch.Id, ct) is not { } zoneId)
         {
             return Error.NotFound();
@@ -88,8 +88,11 @@ internal sealed class TodayReader(
     }
 
     // branchId verilmezse kullanıcının birincil şubesi: kapsamındaki etkin şubelerin ilki (oluşturulma sırası; T-105).
-    private async Task<BranchSummary?> ResolveBranchAsync(Guid brandId, Guid? branchId, BranchScope scope, CancellationToken ct)
+    // Genel bakış (manageGetOverview) da aynı kuralı kullanır.
+    internal static async Task<BranchSummary?> ResolveBranchAsync(ITenantQueries tenants, Guid brandId, Guid? branchId, BranchScope scope, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(tenants);
+        ArgumentNullException.ThrowIfNull(scope);
         if (branchId is { } requested && !scope.Includes(requested))
         {
             return null;

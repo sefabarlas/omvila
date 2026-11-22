@@ -222,6 +222,31 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
         return [.. rows.Select(r => new StaffAppointmentOutcome(r.Id, r.BrandCustomerId, r.StartUtc, r.Status.ToString()))];
     }
 
+    public async Task<IReadOnlyList<ReportAppointment>> ListForReportAsync(
+        Guid brandId, IReadOnlyCollection<Guid>? branchIds, Instant fromUtc, Instant toUtc, CancellationToken ct)
+    {
+        var query = db.Appointments.AsNoTracking().Include(a => a.Items)
+            .Where(a => a.BrandId == brandId && a.StartUtc >= fromUtc && a.StartUtc < toUtc
+                && a.Status != AppointmentStatus.Draft && a.Status != AppointmentStatus.Cancelled);
+        if (branchIds is not null)
+        {
+            var ids = branchIds.ToList();
+            query = query.Where(a => ids.Contains(a.BranchId));
+        }
+
+        var appointments = await query.OrderBy(a => a.StartUtc).ThenBy(a => a.Id).ToListAsync(ct);
+        return [.. appointments.Select(a => new ReportAppointment(
+            a.Id,
+            a.BranchId,
+            a.StartUtc,
+            a.Status.ToString(),
+            a.Channel.ToString(),
+            a.PayableAmountMinor,
+            a.RetainedDepositMinor,
+            [.. a.Items.Where(i => i.Status != AppointmentItemStatus.Cancelled).OrderBy(i => i.SeqNo)
+                .Select(i => new ReportAppointmentItem(i.Id, i.StaffId, i.NetAmountMinor, i.CustomerPackageItemId))]))];
+    }
+
     private static AwaitedDepositInfo? AwaitedDeposit(Appointment a) =>
         a is { DisplayStatus: DisplayStatus.DepositPending, DepositRequiredMinor: { } amount, DepositTransferCode: { } code, HoldExpiresUtc: { } due }
             ? new AwaitedDepositInfo(

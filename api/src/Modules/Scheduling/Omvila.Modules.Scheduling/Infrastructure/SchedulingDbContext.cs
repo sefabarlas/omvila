@@ -26,6 +26,8 @@ internal sealed class SchedulingDbContext(DbContextOptions<SchedulingDbContext> 
 
     public DbSet<WaitlistOffer> WaitlistOffers => Set<WaitlistOffer>();
 
+    public DbSet<BranchDailySummary> BranchDailySummaries => Set<BranchDailySummary>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

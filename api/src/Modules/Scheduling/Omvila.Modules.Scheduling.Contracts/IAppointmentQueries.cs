@@ -81,4 +81,16 @@ public interface IAppointmentQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyList<StaffAppointmentOutcome>> ListStaffOutcomesAsync(
         Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct);
+
+    /// <summary>
+    /// Raporların randevuları (Raporlar ve prim): [<paramref name="fromUtc"/>, <paramref name="toUtc"/>) aralığında başlayan,
+    /// taslak ve iptal dışı randevular ve iptal edilmemiş kalemleri, başlangıca göre artan. Tek sorgu.
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="branchIds">Şubeler; null = markanın bütün şubeleri.</param>
+    /// <param name="fromUtc">Aralık başı.</param>
+    /// <param name="toUtc">Aralık sonu (hariç).</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<ReportAppointment>> ListForReportAsync(
+        Guid brandId, IReadOnlyCollection<Guid>? branchIds, Instant fromUtc, Instant toUtc, CancellationToken ct);
 }
