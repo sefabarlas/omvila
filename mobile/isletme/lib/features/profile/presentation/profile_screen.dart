@@ -240,7 +240,11 @@ class _CommissionState extends ConsumerState<_Commission> {
         ),
         if (s.thisWeek.isNotEmpty) ...[
           const SizedBox(height: OmvilaBosluk.bosluk3),
-          _WeekChart(days: s.thisWeek, currency: currency),
+          _WeekChart(
+            days: s.thisWeek,
+            today: localDateOf(s.to),
+            currency: currency,
+          ),
         ],
         const SizedBox(height: OmvilaBosluk.bosluk5),
         SectionHeader(
@@ -270,11 +274,20 @@ class _CommissionState extends ConsumerState<_Commission> {
   }
 }
 
-/// "Bu hafta": gün başına prim çubukları; en çok randevulu gün vurgulu.
+/// "Bu hafta": Pazartesi–Pazar sabit yedi sütun (tasarım); sunucu yalnız
+/// bugüne kadarki günleri verir, gelecek günler boş çubukla çizilir. En çok
+/// randevulu gün vurgulu.
 class _WeekChart extends StatelessWidget {
-  const _WeekChart({required this.days, required this.currency});
+  const _WeekChart({
+    required this.days,
+    required this.today,
+    required this.currency,
+  });
 
   final List<CommissionWeekDay> days;
+
+  /// Dönem sonu (bu ayda bugün), "2026-11-25".
+  final String today;
   final String currency;
 
   static const _barHeight = 56.0;
@@ -289,6 +302,9 @@ class _WeekChart extends StatelessWidget {
     final busiest = days.reduce(
       (a, b) => b.appointmentCount > a.appointmentCount ? b : a,
     );
+    final byDate = {for (final d in days) localDateOf(d.date): d};
+    final monday = addDays(today, 1 - parseLocalDate(today).weekday);
+    final week = [for (var i = 0; i < 7; i++) addDays(monday, i)];
     final busiestLabel = busiest.appointmentCount == 0
         ? null
         : '${formatDate(localDateOf(busiest.date), DateStyle.weekdayShort)} '
@@ -317,52 +333,60 @@ class _WeekChart extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             spacing: OmvilaBosluk.bosluk2,
             children: [
-              for (final d in days)
+              for (final date in week)
                 Expanded(
-                  child: Semantics(
-                    label:
-                        '${formatDate(localDateOf(d.date), DateStyle.weekday)} '
-                        '${formatMoney(d.amountMinor, currency: currency)}',
-                    excludeSemantics: true,
-                    child: Column(
-                      children: [
-                        Container(
-                          height: maxAmount == 0
-                              ? 4
-                              : 4 +
-                                    (_barHeight - 4) *
-                                        d.amountMinor /
-                                        maxAmount,
-                          decoration: BoxDecoration(
-                            color:
-                                identical(d, busiest) &&
-                                    busiest.appointmentCount > 0
-                                ? r.marka
-                                : r.zeminMarkaYumusak,
-                            borderRadius: BorderRadius.circular(
-                              OmvilaKose.koseSm,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: OmvilaBosluk.bosluk1),
-                        Text(
-                          formatDate(
-                            localDateOf(d.date),
-                            DateStyle.weekdayShort,
-                          ),
-                          style: OmvilaYazi.aciklama.copyWith(
-                            color: r.metinIkincil,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: _bar(context, date, byDate[date], maxAmount, busiest),
                 ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget _bar(
+    BuildContext context,
+    String date,
+    CommissionWeekDay? d,
+    int maxAmount,
+    CommissionWeekDay busiest,
+  ) {
+    final r = context.omvilaRenkler;
+    final label = formatDate(date, DateStyle.weekdayShort);
+    final future = d == null && date.compareTo(today) > 0;
+    final amount = d?.amountMinor ?? 0;
+    final column = Column(
+      children: [
+        Container(
+          height: maxAmount == 0
+              ? 4
+              : 4 + (_barHeight - 4) * amount / maxAmount,
+          decoration: BoxDecoration(
+            color: future
+                ? r.zeminIkincil
+                : identical(d, busiest) && busiest.appointmentCount > 0
+                ? r.marka
+                : r.zeminMarkaYumusak,
+            borderRadius: BorderRadius.circular(OmvilaKose.koseSm),
+          ),
+        ),
+        const SizedBox(height: OmvilaBosluk.bosluk1),
+        Text(
+          label,
+          style: OmvilaYazi.aciklama.copyWith(color: r.metinIkincil),
+        ),
+      ],
+    );
+    // Gelecek gün okunmaz (sahte değer yok).
+    return future
+        ? ExcludeSemantics(child: column)
+        : Semantics(
+            label:
+                '${formatDate(date, DateStyle.weekday)} '
+                '${formatMoney(amount, currency: currency)}',
+            excludeSemantics: true,
+            child: column,
+          );
   }
 }
 

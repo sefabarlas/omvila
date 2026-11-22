@@ -409,3 +409,56 @@ class FullBleed extends StatelessWidget {
     );
   }
 }
+
+/// Alanın üstünde etiket (components/TextField, PhoneField): etiket alanın
+/// içinde yüzmez, her zaman görünür.
+class LabeledField extends StatelessWidget {
+  /// Etiketli alan.
+  const LabeledField({required this.label, required this.child, super.key});
+
+  /// "Cep telefonu".
+  final String label;
+
+  /// Alan.
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        label,
+        style: OmvilaYazi.etiketKucuk.copyWith(
+          color: context.omvilaRenkler.metin,
+        ),
+      ),
+      const SizedBox(height: OmvilaBosluk.bosluk2),
+      child,
+    ],
+  );
+}
+
+/// Telefon alanının "+90" öneki; alan boşken de görünür (PhoneField).
+InputDecoration phoneDecoration(
+  BuildContext context, {
+  String? hintText,
+  String? errorText,
+}) => InputDecoration(
+  prefixIcon: Padding(
+    padding: const EdgeInsets.only(
+      left: OmvilaBosluk.bosluk4,
+      right: OmvilaBosluk.bosluk2,
+    ),
+    child: Text(
+      '+90',
+      style: OmvilaYazi.govdeGuclu.copyWith(
+        color: context.omvilaRenkler.metin,
+      ),
+    ),
+  ),
+  prefixIconConstraints: const BoxConstraints(),
+  hintText: hintText,
+  errorText: errorText,
+  errorMaxLines: 3,
+);
