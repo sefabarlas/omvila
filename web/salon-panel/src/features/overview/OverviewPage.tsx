@@ -13,24 +13,24 @@ import { firstExpiresLabel, remainingMinutes } from '@/features/approvals/remain
 import { calendarQuery } from '@/features/calendar/api';
 import { AppointmentDrawer } from '@/features/calendar/AppointmentDrawer';
 import { WalkInBlock } from '@/features/calendar/CalendarSummaryBlocks';
-import { walkInsQuery } from '@/features/walk-ins/api';
-import { useDayRevenue } from '@/features/cash/api';
 import { bookingPageQuery } from '@/shared/booking-link';
 import { Page } from '@/shared/Page';
-import { onboardingQuery } from './api';
+import { onboardingQuery, overviewQuery } from './api';
 import { AttentionCard } from './AttentionCard';
 import { DayFlowCard, dayFlowRows } from './DayFlowCard';
 import { dismissOnboarding, isOnboardingDismissed } from './dismissal';
 import { firstName, greeting } from './greeting';
+import { OccupancyCard } from './OccupancyCard';
 import { OnboardingChecklist } from './OnboardingChecklist';
 import styles from './Overview.module.css';
 import { ShareLinkCard } from './ShareLinkCard';
 
 /**
  * Genel bakış: marka kurulumdayken adımlar (KayitKurulum). Sonra bugün randevu veya onay bekleyen talep varsa
- * GenelBakis (bento, "Gün akışı", "Dikkat isteyenler"); hiçbiri yoksa ilk hafta görünümü (GenelBakisBos, bağlantıyı
- * paylaş). Bugün bloğu kasayı görebilen kullanıcıda "Bugünkü ciro"dur (manageGetCashDay; T-97); hedef yüzdesi
- * sözleşmede yok. Kapıda sıra manageListWalkIns'ten (T-98), doluluk Dilim 6'da; o zamana kadar "—" (sahte sayı yok; T-67).
+ * GenelBakis (bento, "Gün akışı", "Dikkat isteyenler", "Bu hafta doluluk"); hiçbiri yoksa ilk hafta görünümü
+ * (GenelBakisBos, bağlantıyı paylaş). Bento ve doluluk manageGetOverview'dan (T-120); "Onay bekliyor" yanındaki
+ * "Dikkat isteyenler" ile aynı kuyruktan sayılır, onaylayınca ikisi birlikte güncellenir (T-122). "Hedefin %72'si"
+ * sözleşmede yok (hedef ayarı yok, T-116).
  */
 export function OverviewPage() {
   const api = useApi();
@@ -54,12 +54,10 @@ export function OverviewPage() {
     ...calendarQuery(api, { branchId: activeBranch, from: today, to: today }),
     enabled: !onboardingView && can('calendar.view') && activeBranch !== '',
   });
-  const managesWalkIns = can('walkin.manage');
-  const walkIns = useQuery({
-    ...walkInsQuery(api, activeBranch),
-    enabled: !onboardingView && managesWalkIns && activeBranch !== '',
+  const overview = useQuery({
+    ...overviewQuery(api, activeBranch),
+    enabled: !onboardingView && activeBranch !== '',
   });
-  const revenue = useDayRevenue(activeBranch, today, !onboardingView);
   const queueQuery = useQuery({
     ...approvalQueueQuery(api, branchId ?? undefined),
     enabled: !onboardingView && canApprove,
@@ -124,8 +122,16 @@ export function OverviewPage() {
   const active =
     rows.length > 0 || (queue?.totalCount ?? 0) > 0 || dayQuery.isError || queueQuery.isError;
   // Kuyruk holdExpiresUtc'ye göre artan sıralı: ilk onay talebi en acilidir.
+  const summary = overview.data;
+  const pending = summary?.pendingApproval;
   const firstExpiry =
-    queue && approvals[0] ? remainingMinutes(approvals[0].holdExpiresUtc, queue.generatedUtc) : 0;
+    queue && approvals[0]
+      ? remainingMinutes(approvals[0].holdExpiresUtc, queue.generatedUtc)
+      : !queue && pending?.earliestHoldExpiresUtc && summary
+        ? remainingMinutes(pending.earliestHoldExpiresUtc, summary.generatedUtc)
+        : 0;
+  const pendingValue = queue ? String(pendingCount) : pending ? String(pending.count) : '—';
+  const occupancy = summary?.weeklyOccupancy;
 
   return (
     <Page
@@ -134,38 +140,39 @@ export function OverviewPage() {
     >
       {active || loading ? (
         <Bento label="Özet">
-          {revenue ? (
-            <BentoBlock
-              tone="marka"
-              label="Bugünkü ciro"
-              value={formatMoney(revenue.amount)}
-              {...(dayQuery.data ? { sub: `${String(rows.length)} randevu` } : {})}
-            />
-          ) : (
-            <BentoBlock
-              tone="marka"
-              label="Bugün"
-              value={dayQuery.data ? String(rows.length) : '—'}
-              sub={`randevu · ${String(rows.filter((r) => r.status === 'tamamlandi').length)} tamamlandı`}
-            />
-          )}
+          <BentoBlock
+            tone="marka"
+            label="Bugünkü ciro"
+            value={summary ? formatMoney(summary.todayRevenue) : '—'}
+            {...(summary ? { sub: `${String(summary.todayAppointmentCount)} randevu` } : {})}
+          />
           {canApprove ? (
             <BentoBlock
               tone="vurgu"
               label="Onay bekliyor"
-              value={queue ? String(pendingCount) : '—'}
+              value={pendingValue}
               sub={firstExpiry > 0 ? firstExpiresLabel(firstExpiry) : 'Bekleyen talep yok'}
             />
           ) : null}
-          {managesWalkIns ? (
+          {can('walkin.manage') ? (
             <WalkInBlock
-              summary={{
-                waitingCount: walkIns.data?.waitingCount ?? null,
-                estimatedWaitMinutesForNew: walkIns.data?.estimatedWaitMinutesForNew ?? null,
-              }}
+              summary={summary?.walkIns ?? { waitingCount: null, estimatedWaitMinutesForNew: null }}
             />
           ) : null}
-          <BentoBlock label="Bu hafta doluluk" value="—" sub="henüz veri yok" />
+          <BentoBlock
+            label="Bu hafta doluluk"
+            value={occupancy?.percent != null ? `%${String(occupancy.percent)}` : '—'}
+            {...(occupancy
+              ? {
+                  sub:
+                    occupancy.percent === null
+                      ? 'çalışma saati yok'
+                      : occupancy.previousWeekPercent === null
+                        ? 'geçen hafta veri yok'
+                        : `geçen hafta %${String(occupancy.previousWeekPercent)}`,
+                }
+              : {})}
+          />
         </Bento>
       ) : (
         <Bento label="Özet">
@@ -183,14 +190,21 @@ export function OverviewPage() {
             onRetry={() => void dayQuery.refetch()}
             onOpen={setOpenAppointment}
           />
-          <AttentionCard
-            queue={queue}
-            loading={queueQuery.isLoading}
-            isError={queueQuery.isError}
-            canMarkDeposit={can('appointment.deposit.mark')}
-            onRetry={() => void queueQuery.refetch()}
-            onOpen={setOpenAppointment}
-          />
+          <div className={styles.overviewSide}>
+            <AttentionCard
+              queue={queue}
+              loading={queueQuery.isLoading}
+              isError={queueQuery.isError}
+              canMarkDeposit={can('appointment.deposit.mark')}
+              onRetry={() => void queueQuery.refetch()}
+              onOpen={setOpenAppointment}
+            />
+            <OccupancyCard
+              occupancy={occupancy}
+              isError={overview.isError}
+              onRetry={() => void overview.refetch()}
+            />
+          </div>
         </div>
       ) : bookingUrl ? (
         <ShareLinkCard bookingUrl={bookingUrl} setupComplete={setupComplete} />

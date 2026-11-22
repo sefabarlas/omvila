@@ -57,6 +57,7 @@ export function useCompleteAppointment() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ['calendar'] }),
         queryClient.invalidateQueries({ queryKey: ['cash'] }),
+        queryClient.invalidateQueries({ queryKey: ['overview'] }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.customer(detail.customer.brandCustomerId),
         }),
