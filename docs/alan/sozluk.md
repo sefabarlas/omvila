@@ -35,6 +35,15 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Kapora durumu | `DepositStatus`: `Awaiting`, `CustomerReported`, `Received`, `Refunded`, `Waived` | Kapora bekleniyor, Havale bildirildi, Alındı, Salon iade etti, Kaporasız onaylandı |
 | Abonelik kodu (ABN-…) | `Subscription.TransferCode` | |
 | Havale bildirimi | `PaymentNotice` | Platform onay kuyruğu |
+| Kontör kodu (KNT-…) | `Subscription.CreditTransferCode` | Kontör havalesinin sabit açıklama kodu |
+| Fatura (abonelik) | `SubscriptionInvoice` | `OMV-2026-000184`; bilgi amaçlı, e-Arşiv değil |
+| Banka hareketi (OMVILA hesabı) | `PlatformBankTransaction` (API: `BankTransaction`) | "OMVILA hesabına gelen havaleler" |
+| Kod tutuyor / Kontrol edin | `MatchVerdict.CodeMatches` / `CheckRequired` | Eşleşme adayı işareti |
+| Hak edilen gelir | `earnedRevenue` | Tamamlanan randevular + kullanılan paket seansları |
+| Tahsilat (rapor) | `collections` | Paket satışları ve kaporalar dahil |
+| Doluluk | `weeklyOccupancy` | Dolu dakika / çalışma dakikası |
+| Rol izinleri (matris) | `RoleMatrix` | Salt okunur |
+| Tüm verileri dışa aktar | `BrandDataExport` | E-postayla CSV |
 | Tahsilat / Ödeme (salonun kaydı) | `Payment` | |
 | Kasa | `Payment` listesi + `CashDayClose` | |
 | Günü kapat | `CashDayClose` | |
@@ -109,6 +118,15 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Kampanya izni anahtarı (İzinlerim) | `PUT /me/consents` |
 | SMS koduyla onayla ve sil | `POST /me/account/deletion/otp` → `POST /me/account/deletion` |
 | Ara / SMS (maskeli numara, işletme uygulaması) | `POST /manage/customers/{id}/reveal-phone` |
+| Havaleyi bildir (abonelik, kontör) | `POST /manage/subscription/payment-notices` |
+| Kontör satın al (paket seç) | `POST /manage/credits/purchase` |
+| PDF (fatura) | `GET /manage/subscription/invoices/{id}/pdf` |
+| Düzenle (Roller ve yetkiler) / Kullanıcı ekle | `PATCH /manage/users/{userId}` / `POST /manage/staff` (davet) |
+| Dışa aktarma iste (KVKK ve veri) | `POST /manage/brand/data-exports` |
+| Seçili hareketle eşleştir / Eşleştir (platform) | `POST /admin/payment-notices/{id}/match` |
+| Bulunamadı, markaya yaz (platform) | `POST /admin/payment-notices/{id}/not-found` |
+| Onayla / Reddet (SMS başlığı, platform) | `POST /admin/sms-senders/{id}/approve` / `reject` |
+| Kontör ekle / Planı değiştir (platform) | `POST /admin/brands/{id}/credits` / `…/{id}/plan` |
 
 ## Müşteri listesi filtreleri (tanımlar)
 

@@ -53,6 +53,15 @@ const Map<ErrorCode, String> errorMessages = {
   ErrorCode.rateLimited:
       'Çok fazla istek gönderildi. Biraz bekleyip tekrar deneyin.',
   ErrorCode.tryAgain: 'Bir sorun oluştu. Tekrar deneyin.',
+  ErrorCode.paymentNoticeAlreadyPending:
+      'Bu ödeme için bildiriminiz zaten inceleniyor.',
+  ErrorCode.bankTransactionAlreadyMatched:
+      'Bu banka hareketi başka bir bildirimle eşleştirildi. Sayfayı yenileyin.',
+  ErrorCode.bankTransactionDuplicate:
+      'Bu banka referansıyla kayıtlı bir hareket var.',
+  ErrorCode.lastOwnerRequired: 'İşletmede en az bir işletme sahibi kalmalı.',
+  ErrorCode.planLimitExceeded:
+      'Markanın personel veya şube sayısı bu planın sınırını aşıyor.',
 };
 
 /// Bilinmeyen kod (yeni sunucu, eski istemci) için genel mesaj.

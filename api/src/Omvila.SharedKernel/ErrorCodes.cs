@@ -74,6 +74,16 @@ public static class ErrorCodes
 
     public const string TryAgain = "try_again";
 
+    public const string PaymentNoticeAlreadyPending = "payment_notice_already_pending";
+
+    public const string BankTransactionAlreadyMatched = "bank_transaction_already_matched";
+
+    public const string BankTransactionDuplicate = "bank_transaction_duplicate";
+
+    public const string LastOwnerRequired = "last_owner_required";
+
+    public const string PlanLimitExceeded = "plan_limit_exceeded";
+
     /// <summary>Bütün kodlar.</summary>
     public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -111,5 +121,10 @@ public static class ErrorCodes
         OtpResendTooSoon,
         RateLimited,
         TryAgain,
+        PaymentNoticeAlreadyPending,
+        BankTransactionAlreadyMatched,
+        BankTransactionDuplicate,
+        LastOwnerRequired,
+        PlanLimitExceeded,
     };
 }

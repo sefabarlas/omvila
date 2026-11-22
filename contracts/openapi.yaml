@@ -12,14 +12,15 @@ info:
     Kapsam (v0.1): Dilim 1 (giriş + salon kurulumu), Dilim 2 (müsaitlik + rezervasyon sayfası + panel takvimi), Dilim 3 (onay akışı + SMS + bildirimler)
     Dilim 4 (kapora havalesi: IBAN, Kapora geldi, hatırlatma, iade işareti, havale bildirimi) ve Dilim 5'in web/backend bölümü
     (tamamla ve ödeme al, kasa, paketler, değerlendirmeler, bekleme listesi, kapıda sıra, müşteri kartı sekmeleri, birleştirme, içe/dışa aktarma, KVKK silme).
-    Dilim 5'in /me uçları ve işletme uygulamasına özel uçlar sonraki sözleşme PR'ındadır.
+    Dilim 5'in /me uçları ve işletme uygulamasına özel uçlar; Dilim 6 (abonelik, faturalar, havale bildirimi, kontör satın alma, raporlar, Genel bakış,
+    kullanıcılar ve rol matrisi, KVKK ve veri, Google Takvim, platform paneli /admin uçları). Kartla ödeme (manageUpdateCard) T-06 kararını bekler.
     Sonraki dilimlerin uçları contracts/yol-haritasi.md içinde listelidir; eklenince bu dosyaya girer.
 
     Yüzeyler:
     - /api/v1/manage — salon paneli ve işletme uygulaması (JWT aud=manage)
     - /api/v1/public — rezervasyon sayfası ve müşteri uygulamasının randevu alma akışı
     - /api/v1/me — müşteri uygulaması (JWT aud=me) — Dilim 5
-    - /api/v1/admin — platform paneli (JWT aud=admin) — Dilim 6
+    - /api/v1/admin — platform paneli (JWT aud=admin; jetonlar gövdede, çerez yok) — Dilim 6
     - /api/v1/webhooks — dış sağlayıcı geri çağrıları (JWT yok, sağlayıcı imzası)
 
     Zaman: anlık zaman UTC RFC 3339; yerel tarih/saat şubenin timeZone alanına göredir.
@@ -60,6 +61,14 @@ tags:
     description: Bildirim paneli, bildirim ve SMS ayarları, gönderen adı, cihaz kaydı, kişisel bildirim tercihleri
   - name: manage-today
     description: İşletme uygulaması "Bugün" ekranı ve kişisel prim özeti ("Primim")
+  - name: manage-subscription
+    description: OMVILA aboneliği, faturalar, havale bildirimi, kontör paketleri ve kontör satın alma (Dilim 6)
+  - name: manage-reports
+    description: Genel bakış, raporlar ve personel prim raporu (Dilim 6)
+  - name: manage-users
+    description: Kullanıcılar ve rol izinleri (Ayarlar → Roller ve yetkiler, Dilim 6)
+  - name: manage-integrations
+    description: Google Takvim tek yönlü aktarım (Dilim 6)
   - name: public-booking
     description: Rezervasyon sayfası (üyeliksiz randevu)
   - name: public-appointment-link
@@ -80,6 +89,20 @@ tags:
     description: Paketlerim ve Ödemelerim (salt okunur)
   - name: me-notifications
     description: Müşteri uygulaması cihaz kaydı ve bildirimleri
+  - name: admin-auth
+    description: Platform paneli girişi (telefon + SMS kodu), jeton yenileme, çıkış
+  - name: admin-overview
+    description: Platform oturumu ve genel bakış
+  - name: admin-brands
+    description: Markalar, marka detayı, kontör ekleme, marka durumu ve plan değişikliği
+  - name: admin-approvals
+    description: Onay kuyrukları (havale bildirimi eşleştirme, SMS gönderen adı)
+  - name: admin-finance
+    description: OMVILA hesabına gelen havaleler (CSV içe aktarma, elle ekleme) ve abonelikler
+  - name: admin-audit
+    description: Denetim kaydı ve dışa aktarma
+  - name: admin-plans
+    description: Planlar, fiyatlar ve kontör paketleri
   - name: webhooks
     description: Dış sağlayıcıların geri çağrıları (JWT yok; sağlayıcı imzasıyla doğrulanır)
 
@@ -3491,6 +3514,677 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  # ───────────────────────────── manage-subscription (Dilim 6) ─────────────────────────────
+  /api/v1/manage/subscription:
+    get:
+      tags: [manage-subscription]
+      operationId: manageGetSubscription
+      summary: OMVILA aboneliği (Ayarlar → Abonelik ve fatura)
+      description: |
+        AyarlarAbonelik ekranı: deneme/gecikme şeridi, "PLAN Salon · aylık · deneme", "ŞUBE 2 · 1 dahil + 1 ek şube", "PERSONEL 5 · … dahil" kartları ve
+        "Havale / EFT ile öde" kutusu (Alıcı, IBAN, Açıklama ABN-…, Tutar). Faturalar ayrı uçtadır (manageListInvoices).
+        Fiyat ve OMVILA hesap bilgisi yapılandırmadan okunur (S-14): plan fiyatı tanımlı değilse amountDue null, OMVILA hesabı tanımlı değilse
+        omvilaBankAccount null döner; istemci bu alanları boş gösterir, köşeli parantezli yer tutucu yazmaz. Boş sınır (includedBranchCount, staffLimit) sınırsız demektir.
+        transferCode markanın sabit abonelik kodudur (ABN-…); her dönem aynıdır. Kartla ödeme (T-06) sözleşmede yoktur; kart alanı eklenince geriye uyumlu gelir.
+        Salt okunur abonelikte de çağrılabilir. İzin: subscription.manage (yalnız Owner); diğer roller 403 forbidden.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Abonelik
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionDetail'
+              example:
+                status: Trialing
+                plan: { code: salon, name: Salon }
+                billingCycle: Monthly
+                paymentMethod: null
+                trialEndsOn: '2026-12-04'
+                currentPeriodStart: '2026-11-20'
+                currentPeriodEnd: '2026-12-04'
+                pastDueSince: null
+                readOnlyOn: null
+                readOnlySince: null
+                branches: { count: 2, included: 1, extra: 1 }
+                staff: { count: 5, limit: null }
+                amountDue: null
+                transferCode: ABN-KE-1125
+                omvilaBankAccount: null
+                pendingNotice: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/subscription/invoices:
+    get:
+      tags: [manage-subscription]
+      operationId: manageListInvoices
+      summary: Faturalar
+      description: |
+        AyarlarAbonelik "Faturalar" tablosu (No, Dönem, Tutar, Durum, PDF). Yeniden eskiye. Faturalar bilgi amaçlıdır, e-Arşiv değildir ("e-Arşiv değil, bilgi amaçlı").
+        Fatura numarası boşluksuz sıradır (OMV-2026-000184). Liste boşsa items boş dizi döner (deneme süresinde fatura yoktur).
+        İzin: subscription.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Fatura sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionInvoicePage'
+              example:
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9a01
+                    invoiceNumber: OMV-2026-000184
+                    periodStart: '2026-10-01'
+                    periodEnd: '2026-10-31'
+                    amount: { amountMinor: 100000, currency: TRY }
+                    tax: { amountMinor: 20000, currency: TRY }
+                    total: { amountMinor: 120000, currency: TRY }
+                    status: Paid
+                    issuedUtc: '2026-10-01T06:00:00Z'
+                    paidUtc: '2026-10-03T09:12:00Z'
+                    paidVia: BankTransfer
+                nextCursor: null
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/subscription/invoices/{invoiceId}/pdf:
+    parameters:
+      - $ref: '#/components/parameters/InvoiceIdPath'
+    get:
+      tags: [manage-subscription]
+      operationId: manageGetInvoicePdf
+      summary: Fatura PDF'i ("PDF")
+      description: |
+        Faturanın bilgi amaçlı PDF'i; sunucuda üretilir (e-Arşiv değil). Başka markanın faturası veya olmayan fatura 404 not_found.
+        Yanıt Cache-Control: private, no-store taşır. İzin: subscription.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: PDF dosyası (Content-Disposition attachment)
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="OMV-2026-000184.pdf"' }
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/subscription/payment-notices:
+    post:
+      tags: [manage-subscription]
+      operationId: manageNotifyTransfer
+      summary: Havaleyi bildir ("Havaleyi bildir (dekont isteğe bağlı)")
+      description: |
+        Salonun OMVILA hesabına yaptığı havaleyi bildirmesi (PaymentNotice, Pending). Bildirim platform onay kuyruğuna düşer; ekip banka hareketiyle
+        eşleştirince abonelikte dönem ödendi sayılır (fatura Paid, durum Active), kontörde paket bakiyeye eklenir ve owner.payment_notice_matched gider.
+        "Havale ekibimiz tarafından 1 iş günü içinde eşleştirilir. Gönderdiyseniz bildirin, beklerken panel açık kalır."
+        purpose = Subscription: beklenen tutar o anki amountDue (fiyat tanımlı değilse boş), açıklama kodu markanın ABN- kodudur.
+        purpose = Credits: creditPackageId zorunludur (managePurchaseCredits ile seçilen paket); beklenen tutar paket fiyatı, açıklama kodu markanın KNT- kodudur.
+        Dekont isteğe bağlıdır: en fazla 5 MB, PDF, JPG veya PNG (guvenlik-kvkk.md); aşılırsa 400 validation_failed (errors.receipt = [too_large] / [invalid_format]).
+        Aynı amaç için (kontörde aynı paket için) bekleyen bildirim varsa 409 payment_notice_already_pending (meta.paymentNoticeId).
+        Salt okunur ve ödeme gecikti durumunda da çağrılabilir (ödemenin yolu budur). İzin: subscription.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentNoticeCreate'
+      responses:
+        '201':
+          description: Bildirim alındı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentNoticeSummary'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01
+                purpose: Subscription
+                transferCode: ABN-KE-1125
+                expectedAmount: null
+                credits: null
+                senderName: Elif Kaya
+                hasReceipt: true
+                status: Pending
+                notifiedUtc: '2026-11-18T11:20:00Z'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/manage/credit-packages:
+    get:
+      tags: [manage-subscription]
+      operationId: manageListCreditPackages
+      summary: SMS kontör paketleri
+      description: |
+        Kontör satın alma penceresindeki paketler (Başlangıç 1.000, Orta 5.000, Büyük 20.000 SMS). Yalnız etkin paketler; fiyat tanımlı değilse price null (S-14).
+        İzin: subscription.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Paketler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditPackageList'
+              example:
+                items:
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c01, code: starter, name: Başlangıç, credits: 1000, price: null }
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02, code: medium, name: Orta, credits: 5000, price: null }
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c03, code: large, name: Büyük, credits: 20000, price: null }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/credits/purchase:
+    post:
+      tags: [manage-subscription]
+      operationId: managePurchaseCredits
+      summary: Kontör satın al (havale bilgisi)
+      description: |
+        v1'de kontör yalnız havaleyle alınır (K1; kartla kontör yok). Salon paketi seçer, yanıt havale bilgisini döner: alıcı, IBAN, markanın sabit
+        KNT- açıklama kodu ve paket tutarı. Bu uç kayıt oluşturmaz; salon havaleyi yapınca manageNotifyTransfer (purpose = Credits, creditPackageId)
+        ile bildirir, kontör eşleştirmeden sonra eklenir. Paket etkin değilse veya yoksa 404 not_found. OMVILA hesabı yapılandırılmamışsa
+        omvilaBankAccount, fiyat tanımlı değilse amount null döner. Salt okunur abonelikte de çağrılabilir. İzin: subscription.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditPurchaseRequest'
+            example:
+              creditPackageId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02
+      responses:
+        '200':
+          description: Havale bilgisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreditPurchaseInstructions'
+              example:
+                creditPackageId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02
+                credits: 5000
+                amount: null
+                transferCode: KNT-KE-1125
+                omvilaBankAccount: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-reports (Dilim 6) ─────────────────────────────
+  /api/v1/manage/overview:
+    get:
+      tags: [manage-reports]
+      operationId: manageGetOverview
+      summary: Genel bakış (bento kartları ve haftalık doluluk)
+      description: |
+        Salon paneli Genel bakış (GenelBakis): "BUGÜNKÜ CİRO 9.840 ₺ · 16 randevu", "ONAY BEKLİYOR 2 · ilki 1 sa 35 dk içinde iptal olur",
+        "KAPIDA SIRADA 3 · ~35 dk bekleme", "BU HAFTA DOLULUK %74 · geçen hafta %68" ve "Bu hafta doluluk · personel bazında".
+        "Gün akışı" manageGetCalendar, "Dikkat isteyenler" manageListPendingApprovals ile gelir; bu uç onları tekrarlamaz.
+        Gün ve hafta şubenin saat dilimindedir (hafta Pazartesi–Pazar); kalan süreler generatedUtc'ye göre sayılır.
+        Bugünkü ciro: bugün kaydedilen tahsilatların toplamı (iade düşülmüş; paket satışı ve kapora dahil), appointmentCount bugünün iptal ve taslak dışındaki randevuları.
+        Doluluk: haftanın dolu dakikaları / personelin çalışma dakikaları (izin ve kapalı gün düşülür); Draft ve Cancelled sayılmaz, NoShow sayılır.
+        Çalışma dakikası olmayan personel listede yoktur; hiç çalışma dakikası yoksa percent null. "Hedefin %72'si" sözleşmede yoktur (hedef ayarı yok, T-116).
+        branchId verilmezse kullanıcının birincil şubesi. Kapsam: BranchManager yalnız kendi şubeleri (başka şube 404).
+        İzin: report.view (Owner, BranchManager); Staff 403 forbidden (personel özeti manageGetToday'dir). Yetkiye bağlı kartlar: pendingApproval yalnız
+        appointment.approve, walkIns yalnız walkin.manage izninde dolu; aksi hâlde null.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+      responses:
+        '200':
+          description: Genel bakış
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageOverview'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                branchName: Kadıköy
+                timeZone: Europe/Istanbul
+                date: '2026-11-25'
+                generatedUtc: '2026-11-25T09:10:00Z'
+                todayRevenue: { amountMinor: 984000, currency: TRY }
+                todayAppointmentCount: 16
+                pendingApproval: { count: 2, earliestHoldExpiresUtc: '2026-11-25T10:45:00Z' }
+                walkIns: { waitingCount: 3, estimatedWaitMinutesForNew: 35 }
+                weeklyOccupancy:
+                  weekStart: '2026-11-24'
+                  percent: 74
+                  previousWeekPercent: 68
+                  staff:
+                    - { staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41, staffName: Elif Kaya, calendarColor: '#0F6E5C', percent: 86 }
+                    - { staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42, staffName: Mert Demir, calendarColor: '#C2410C', percent: 72 }
+                    - { staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e43, staffName: Can Yücel, calendarColor: '#1D4ED8', percent: 68 }
+                    - { staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e44, staffName: Zeynep Aksoy, calendarColor: '#8B7355', percent: 61 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/reports/overview:
+    get:
+      tags: [manage-reports]
+      operationId: manageGetReportOverview
+      summary: Raporlar (hak edilen gelir, tahsilat, gelmedi, online pay, günlük tahsilat)
+      description: |
+        "Raporlar ve prim" ekranı (Raporlar, RaporlarBos) üst kartları ve "Günlük tahsilat" grafiği. Gün / Hafta / Ay seçimi istemcide from–to aralığına çevrilir
+        (şubenin yerel takvimi, iki uç dahil, en fazla 31 gün; aşılırsa 400 validation_failed, errors.to = [out_of_range]).
+        Hak edilen gelir: aralıkta tamamlanan randevuların hizmet tutarları ve paketten düşülen seansların payı (seans kullanıldıkça). Peşin satılan paket
+        hak edilen gelirde satış anında görünmez (KK6). earnedRevenueChangePercent bir önceki eşit uzunluktaki aralığa göre değişimdir; önceki aralıkta gelir yoksa null.
+        Tahsilat: aralıkta kaydedilen bütün tahsilatlar (paket satışları ve kaporalar dahil), iadeler düşülmüş ("paket satışları ve kaporalar dahil").
+        Gelmedi: aralıktaki NoShow sayısı, sonuçlanan randevulara oranı ve kayıp (gelmeyen randevuların hizmet tutarı; alınmış kapora düşülür).
+        Online pay: aralıktaki iptal ve taslak dışı randevuların kanalı Online olanların oranı.
+        Günlük tahsilat: aralıktaki her gün için bir satır; şube o gün kapalıysa isClosed = true ("Pazartesi kapalı").
+        Veri yoksa tutarlar 0, oranlar null döner (RaporlarBos). branchId verilmezse kullanıcının erişebildiği bütün şubeler (Owner: marka geneli).
+        Kapsam: BranchManager yalnız kendi şubeleri (başka şube 404). İzin: report.view (Owner, BranchManager); Staff 403 forbidden.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - $ref: '#/components/parameters/ReportFrom'
+        - $ref: '#/components/parameters/ReportTo'
+      responses:
+        '200':
+          description: Rapor özeti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportOverview'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                timeZone: Europe/Istanbul
+                from: '2026-11-18'
+                to: '2026-11-24'
+                earnedRevenue: { amountMinor: 6120000, currency: TRY }
+                completedAppointmentCount: 118
+                earnedRevenueChangePercent: 9
+                collections: { amountMinor: 6795000, currency: TRY }
+                noShow: { count: 5, percent: 4, lostRevenue: { amountMinor: 215000, currency: TRY } }
+                online: { appointmentCount: 54, percent: 46 }
+                dailyCollections:
+                  - { date: '2026-11-18', amountMinor: 0, isClosed: true }
+                  - { date: '2026-11-19', amountMinor: 1120000, isClosed: false }
+                  - { date: '2026-11-20', amountMinor: 950000, isClosed: false }
+                  - { date: '2026-11-21', amountMinor: 1300000, isClosed: false }
+                  - { date: '2026-11-22', amountMinor: 1580000, isClosed: false }
+                  - { date: '2026-11-23', amountMinor: 1845000, isClosed: false }
+                  - { date: '2026-11-24', amountMinor: 0, isClosed: true }
+                currency: TRY
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/reports/commissions:
+    get:
+      tags: [manage-reports]
+      operationId: manageGetCommissionReport
+      summary: Personel ve prim
+      description: |
+        "Raporlar ve prim" ekranındaki "Personel ve prim" tablosu (Personel, Randevu, Hizmet cirosu, Oran, Prim) ve toplam
+        ("Gelmeyen ve iptal edilen randevular prime dahil değil."). Aralık manageGetReportOverview ile aynıdır (en fazla 31 gün, şubenin yerel takvimi).
+        Satır: aralıkta tamamlanan randevu sayısı, hizmet primi tabanı (hizmet cirosu), hizmet prim oranı (personelin varsayılan oranı; hizmete özel oran varsa
+        etkin ortalama), hizmet primi, satış primi ve toplam (Accrued, Approved, Paid + ters kayıtlar; eksi olabilir). Prim tutarları CommissionEntry'den okunur, yeniden hesaplanmaz.
+        Kapsam: Owner bütün personel, BranchManager kendi şubelerinin personeli, Staff (commission.view K) yalnız kendi satırı ("Primim"); personel kaydı yoksa items boş.
+        İzin: commission.view.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/BranchIdQueryOptional'
+        - $ref: '#/components/parameters/ReportFrom'
+        - $ref: '#/components/parameters/ReportTo'
+      responses:
+        '200':
+          description: Prim raporu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionReport'
+              example:
+                branchId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01
+                from: '2026-11-18'
+                to: '2026-11-24'
+                currency: TRY
+                items:
+                  - staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                    staffName: Elif Kaya
+                    appointmentCount: 38
+                    serviceRevenueMinor: 2430000
+                    serviceCommissionPercent: 24
+                    serviceCommissionMinor: 583200
+                    saleCommissionMinor: 0
+                    totalCommissionMinor: 583200
+                  - staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42
+                    staffName: Mert Demir
+                    appointmentCount: 31
+                    serviceRevenueMinor: 1595000
+                    serviceCommissionPercent: 22
+                    serviceCommissionMinor: 350900
+                    saleCommissionMinor: 0
+                    totalCommissionMinor: 350900
+                totalCommissionMinor: 934100
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ───────────────────────────── manage-users (Dilim 6) ─────────────────────────────
+  /api/v1/manage/users:
+    get:
+      tags: [manage-users]
+      operationId: manageListUsers
+      summary: Kullanıcılar (Ayarlar → Roller ve yetkiler)
+      description: |
+        AyarlarRoller "Kullanıcılar" tablosu (Ad, Rol, Şube, Durum: Aktif / Davet gönderildi). Markadaki bütün üyelikler (Disabled dahil), ada göre sıralı.
+        "Kullanıcı ekle" ayrı uç değildir: personel davet akışı (manageCreateStaff, telefon + "Davet SMS'i gönder") kullanılır; markaya özel rol yoktur (K6).
+        İzin: settings.roles (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Kullanıcılar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageUserList'
+              example:
+                items:
+                  - userId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b01
+                    fullName: Elif Kaya
+                    phoneMasked: '0532 *** ** 05'
+                    role: Owner
+                    branchIds: []
+                    status: Active
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41
+                    isCurrentUser: true
+                    version: 'W/"8812"'
+                  - userId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b04
+                    fullName: Deniz Kara
+                    phoneMasked: '0533 *** ** 18'
+                    role: Staff
+                    branchIds: [0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01]
+                    status: Invited
+                    staffId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e45
+                    isCurrentUser: false
+                    version: 'W/"9031"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/manage/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserIdPath'
+    patch:
+      tags: [manage-users]
+      operationId: manageUpdateUser
+      summary: Kullanıcının rolünü ve şubelerini düzenle ("Düzenle")
+      description: |
+        Kullanıcının markadaki rolü ve şubeleri değişir (K6). Owner rolünde branchIds yok sayılır (tüm şubeler); BranchManager ve Staff için en az bir şube gerekir
+        (yoksa 400 validation_failed, errors.branchIds = [required]). Markadaki son Owner başka role alınamaz: 409 last_owner_required.
+        Rol değişince kullanıcının açık oturumlarındaki izinler bir sonraki jeton yenilemede güncellenir. Değişiklik denetime yazılır.
+        Başka markanın kullanıcısı 404. İzin: settings.roles (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManageUserUpdate'
+            example:
+              role: BranchManager
+              branchIds: [0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01]
+      responses:
+        '200':
+          description: Güncellendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManageUser'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/roles:
+    get:
+      tags: [manage-users]
+      operationId: manageGetRoleMatrix
+      summary: Rol izinleri (salt okunur matris)
+      description: |
+        AyarlarRoller "Rol izinleri" tablosu ("İşletme sahibi her şeyi görür"). Satırlar docs/alan/roller-yetkiler.md izin kataloğunun ekran gruplarıdır;
+        her satır için rol başına erişim düzeyi döner (All = tam, Branch = kendi şube(ler)i, Own = yalnız kendi kayıtları "Kendi", None = yok "—").
+        Matris v1'de düzenlenemez (markaya özel rol yok, K6). Satır adları istemcide group kodundan üretilir. İzin: settings.roles (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Rol matrisi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleMatrix'
+              example:
+                rows:
+                  - { group: CalendarAndAppointments, permissions: [calendar.view, appointment.create, appointment.update], owner: All, branchManager: Branch, staff: Own }
+                  - { group: CustomerPhone, permissions: [customer.phone.view], owner: All, branchManager: All, staff: None }
+                  - { group: Settings, permissions: [settings.manage, settings.payment, settings.roles], owner: All, branchManager: None, staff: None }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────────── manage-brand: KVKK ve veri (Dilim 6) ─────────────────────────────
+  /api/v1/manage/brand/privacy:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetPrivacySettings
+      summary: KVKK ve veri (aydınlatma metni, saklama süresi)
+      description: |
+        AyarlarKvkk "Aydınlatma metni" ("OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026", "Önizle", "Kendi metnimi kullan") ve
+        "Veri saklama" ("İşlem kayıtlarını saklama süresi" 3 / 5 / 10 yıl). "Silme talepleri" manageListDeletionRequests ile gelir.
+        Veri sorumlusu olarak işletme adı ve iletişim bilgisi metne sunucuda eklenir. İzin: settings.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: KVKK ayarları
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySettings'
+              example:
+                noticeMode: Standard
+                standardNotice:
+                  version: '2026-11-01'
+                  updatedOn: '2026-11-01'
+                  text: 'Kuaför Elif olarak kişisel verilerinizi randevu hizmeti sunmak amacıyla işliyoruz.'
+                customNoticeText: null
+                customNoticeUpdatedUtc: null
+                transactionRetentionYears: 3
+                allowedRetentionYears: [3, 5, 10]
+                version: 'W/"4410"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [manage-brand]
+      operationId: manageUpdatePrivacySettings
+      summary: KVKK ayarlarını kaydet ("Değişiklikleri kaydet")
+      description: |
+        noticeMode = Custom ise customNoticeText zorunludur (yoksa 400 validation_failed, errors.customNoticeText = [required]); Standard'a dönünce salonun metni saklanır
+        ama gösterilmez. transactionRetentionYears yalnız 3, 5 veya 10 olabilir (yoksa errors.transactionRetentionYears = [out_of_range]).
+        Kaydedilen metin rezervasyon sayfasında ve müşteri uygulamasında gösterilir; değişiklik denetime yazılır. İzin: settings.manage (Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrivacySettingsUpdate'
+            example:
+              noticeMode: Standard
+              customNoticeText: null
+              transactionRetentionYears: 5
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrivacySettings'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/manage/brand/data-exports:
+    post:
+      tags: [manage-brand]
+      operationId: manageRequestDataExport
+      summary: Tüm verileri dışa aktar ("Dışa aktarma iste")
+      description: |
+        AyarlarKvkk "Tüm verileri dışa aktar · Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir". İstek kuyruğa alınır (202);
+        dosyalar arka planda hazırlanır, indirme bağlantısı e-postayla gider (bağlantı süresi yapılandırmadadır). email verilmezse kullanıcının kayıtlı
+        e-postası kullanılır; ikisi de yoksa 400 validation_failed (errors.email = [required]). Markada hazırlanmakta olan istek varsa yeni istek açılmaz,
+        o istek 202 ile döner. Her istek denetime yazılır (Export). İzin: customer.export (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataExportRequest'
+      responses:
+        '202':
+          description: İstek alındı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExportRequestResult'
+              example:
+                exportId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9d01
+                status: Queued
+                requestedUtc: '2026-11-22T10:00:00Z'
+                emailMasked: 'el***@ornek.com'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  # ───────────────────────────── manage-integrations (Dilim 6) ─────────────────────────────
+  /api/v1/manage/integrations/google:
+    get:
+      tags: [manage-integrations]
+      operationId: manageGetGoogleCalendarStatus
+      summary: Google Takvim bağlantı durumu (oturumdaki personel)
+      description: |
+        Oturumdaki kullanıcının kendi personel kaydının Google Takvim bağlantısı (CalendarLink). Aktarım tek yönlüdür (OMVILA → Google); Google'daki
+        değişiklikler geri gelmez. Bağlantı yoksa status = NotConnected. Diğer personelin durumu StaffDetail.googleCalendarStatus'tadır.
+        v1'de sağlayıcı sahte adaptörle çalışır, gerçek OAuth istemcisi mağaza hazırlığıyla açılır (K7). Kullanıcının bu markada personel kaydı yoksa 404.
+        İzin: calendar.view.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Bağlantı durumu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleCalendarConnection'
+              example:
+                status: Active
+                accountEmailMasked: 'el***@gmail.com'
+                connectedUtc: '2026-11-12T08:30:00Z'
+                lastSyncedUtc: '2026-11-25T09:05:00Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [manage-integrations]
+      operationId: manageDisconnectGoogleCalendar
+      summary: Google Takvim bağlantısını kes
+      description: |
+        Bağlantı Revoked olur, saklanan jetonlar silinir, sağlayıcıdaki erişim iptal edilir. Google'a aktarılmış etkinlikler silinmez.
+        Bağlantı yoksa da 204 (idempotent). Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+      security: [ { manageBearer: [] } ]
+      responses:
+        '204': { description: Bağlantı kesildi }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/integrations/google/connect-url:
+    get:
+      tags: [manage-integrations]
+      operationId: manageGetGoogleCalendarConnectUrl
+      summary: Google Takvim bağlantı adresi
+      description: |
+        Sağlayıcının izin sayfası adresi ve tek kullanımlık state değeri (10 dk geçerli, kullanıcıya bağlı). İstemci kullanıcıyı url'e yönlendirir;
+        sağlayıcı code ve state ile panelin geri dönüş sayfasına döner, panel bunları manageCompleteGoogleCalendarConnect'e gönderir.
+        Sahte adaptörde url doğrudan geri dönüş sayfasını gösterir (K7). Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+      security: [ { manageBearer: [] } ]
+      parameters:
+        - name: client
+          in: query
+          required: false
+          description: Geri dönüş adresinin seçimi (web paneli veya işletme uygulaması)
+          schema: { type: string, enum: [web, mobile], default: web }
+      responses:
+        '200':
+          description: Bağlantı adresi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleCalendarConnectUrl'
+              example:
+                url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=ornek&state=ornek-state'
+                state: ornek-state
+                expiresUtc: '2026-11-25T09:20:00Z'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/manage/integrations/google/callback:
+    post:
+      tags: [manage-integrations]
+      operationId: manageCompleteGoogleCalendarConnect
+      summary: Google Takvim bağlantısını tamamla
+      description: |
+        Sağlayıcıdan dönen code ve state ile bağlantıyı kurar (CalendarLink Active); varsa eski bağlantının yerini alır ve gelecekteki randevular aktarılmaya başlar.
+        state geçersiz, süresi dolmuş veya başka kullanıcınınsa 400 validation_failed (errors.state = [invalid_format]); sağlayıcı code'u reddederse
+        errors.code = [invalid_format]. Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+      security: [ { manageBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleCalendarCallbackRequest'
+            example:
+              code: ornek-yetki-kodu
+              state: ornek-state
+      responses:
+        '200':
+          description: Bağlandı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GoogleCalendarConnection'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   # ───────────────────────────── public-booking ─────────────────────────────
   /api/v1/public/brands/{brandSlug}:
     get:
@@ -5052,6 +5746,1218 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
 
+  # ───────────────────────────── admin-auth (platform paneli, Dilim 6) ─────────────────────────────
+  /api/v1/admin/auth/otp/request:
+    post:
+      tags: [admin-auth]
+      operationId: adminRequestOtp
+      summary: SMS kodu iste (platform paneli girişi)
+      description: |
+        Platform paneli girişi telefon + SMS kodudur (K2). Platform kullanıcıları sunucuda komutla oluşturulur; web'den kayıt yoktur.
+        Numaranın platform kullanıcısı olup olmadığı yanıtta açık edilmez (her durumda 202; platform kullanıcısı değilse SMS gitmez ve doğrulama otp_invalid döner).
+        Yeniden gönderim ve deneme sınırları salon girişiyle aynıdır (429 otp_resend_too_soon, otp_attempts_exceeded).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminOtpRequest'
+            example:
+              phone: '0532 700 10 20'
+      responses:
+        '202':
+          description: Kod gönderildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+              example:
+                otpId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa001
+                expiresInSeconds: 180
+                resendAfterSeconds: 60
+                phoneMasked: '0532 *** ** 20'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/admin/auth/otp/verify:
+    post:
+      tags: [admin-auth]
+      operationId: adminVerifyOtp
+      summary: SMS kodunu doğrula, platform oturumu aç
+      description: |
+        Kod doğru ve numara etkin bir platform kullanıcısına aitse oturum açılır (JWT aud=admin, platform_role iddiası). Jetonlar gövdede döner:
+        admin yüzeyinin CORS politikası çerez kabul etmez (AllowCredentials: false), bu yüzden yenileme jetonu çerezle değil gövdeyle taşınır.
+        Platform paneli yenileme jetonunu yalnız sekme ömrü boyunca saklar (bellek / sessionStorage); rememberDevice yok sayılır.
+        Kod hatalıysa 422 otp_invalid (meta.attemptsLeft), süresi dolmuşsa 422 otp_expired. Giriş denetime yazılır.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+      responses:
+        '200':
+          description: Oturum açıldı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAuthResult'
+              example:
+                accessToken: ornek-erisim-jetonu
+                expiresInSeconds: 900
+                refreshToken: ornek-yenileme-jetonu
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /api/v1/admin/auth/refresh:
+    post:
+      tags: [admin-auth]
+      operationId: adminRefreshToken
+      summary: Erişim jetonunu yenile (platform)
+      description: |
+        Yenileme jetonu gövdede gönderilir ve her kullanımda döndürülür (rotation). Kullanılmış bir jeton yeniden gelirse zincirdeki bütün jetonlar iptal edilir
+        ve 401 unauthorized döner. Platform kullanıcısı pasifleştirildiyse veya rolü kaldırıldıysa 401.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminRefreshRequest'
+      responses:
+        '200':
+          description: Yeni jetonlar (refreshToken her zaman dolu)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+              example:
+                accessToken: ornek-erisim-jetonu
+                expiresInSeconds: 900
+                refreshToken: ornek-yeni-yenileme-jetonu
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/admin/auth/logout:
+    post:
+      tags: [admin-auth]
+      operationId: adminLogout
+      summary: Platform oturumunu kapat
+      description: Gönderilen yenileme jetonunun zinciri iptal edilir.
+      security: [ { adminBearer: [] } ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminRefreshRequest'
+      responses:
+        '204': { description: Kapatıldı }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────────── admin-overview ─────────────────────────────
+  /api/v1/admin/session:
+    get:
+      tags: [admin-overview]
+      operationId: adminGetSession
+      summary: Platform oturumu (kullanıcı, rol, izinler)
+      description: |
+        Platform paneli açılışında bir kez çağrılır; menü ve butonlar permissions listesine göre kurulur (ör. Destek rolünde "Kontör ekle" ve "Planı değiştir" kilitli).
+        Gizlemek yetkilendirme değildir; her uç izni sunucuda yeniden denetler (docs/alan/roller-yetkiler.md § Platform rolleri).
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Oturum
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSession'
+              example:
+                user: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101, fullName: Ayşe Demir, phoneMasked: '0532 *** ** 20' }
+                role: PlatformSupport
+                permissions: [platform.brands.view, platform.payments.match, platform.sms-senders.decide, platform.plans.view, platform.audit.view]
+                pendingApprovalCount: 7
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/v1/admin/overview:
+    get:
+      tags: [admin-overview]
+      operationId: adminGetOverview
+      summary: Platform genel bakış (aktivasyon hunisi, dikkat isteyen markalar)
+      description: |
+        Platform paneli Genel bakış (Main): "AKTİF MARKA 412 · +18 bu ay", "ONAY BEKLEYEN 7 · 5 havale bildirimi · 2 SMS başlığı", "DENEMEDE 64 · 9'u bu hafta bitiyor",
+        "ÖDEME GECİKTİ 11 · 3'ü salt okunura geçmek üzere", "Aktivasyon hunisi · son 30 gün" ve "Dikkat isteyen markalar".
+        Aktif marka: Brand.Status Active ve aboneliği Trialing, Active veya PastDue olan markalar; newThisMonth bu ay kaydolanlar (Europe/Istanbul takvimi).
+        "Bu hafta bitiyor": deneme bitişi bugünden itibaren 7 gün içinde. "Salt okunura geçmek üzere": salt okunur günü 2 gün içinde.
+        Huni: son 30 günde kaydolan markalardan kaçının hizmet eklediği, çalışma saatini girdiği ve ilk online randevuyu aldığı.
+        Dikkat isteyen markalar: ödemesi geciken, kontörü biten ve denemesi 3 gün içinde biten markalar; en fazla 10 satır, aciliyete göre sıralı.
+        İzin: platform.brands.view (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Genel bakış
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminOverview'
+              example:
+                generatedUtc: '2026-11-20T07:00:00Z'
+                activeBrands: { count: 412, newThisMonth: 18 }
+                pendingApprovals: { total: 7, paymentNotices: 5, smsSenders: 2 }
+                trialing: { count: 64, endingThisWeek: 9 }
+                pastDue: { count: 11, readOnlySoon: 3 }
+                funnel: { windowDays: 30, signedUp: 120, addedServices: 86, setWorkingHours: 71, firstOnlineAppointment: 44 }
+                attentionBrands:
+                  - brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa201
+                    brandName: Berber Kaan
+                    industryCode: barber
+                    city: Ankara
+                    planName: Salon
+                    reason: PastDue
+                    pastDueDays: 6
+                    trialDaysLeft: null
+                    branchCount: 1
+                    appointmentsThisMonth: 0
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────────── admin-brands ─────────────────────────────
+  /api/v1/admin/brands:
+    get:
+      tags: [admin-brands]
+      operationId: adminListBrands
+      summary: Markalar
+      description: |
+        Platform paneli Markalar (PMarkalar): "412 aktif · 64 denemede", filtreler (Tümü, Denemede, Ödeme gecikti, Salt okunur, Kapora açık) ve tablo
+        (Marka, Plan, Durum, Şube, Bu ay randevu). "Kapora açık" = etkin kapora IBAN hesabı olan marka (BrandBankAccount.IsActive = true).
+        q marka adı, bağlantı adı (slug) veya sahibin telefonunun son 4 hanesiyle arar. Ada göre sıralı. Liste görüntülemesi denetime yazılmaz;
+        tek markanın açılışı (adminGetBrand) yazılır. İzin: platform.brands.view (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          description: Tümü, Denemede, Ödeme gecikti, Salt okunur, Kapora açık
+          schema: { type: string, enum: [All, Trialing, PastDue, ReadOnly, DepositEnabled], default: All }
+        - name: q
+          in: query
+          required: false
+          description: Marka adı, bağlantı adı veya sahip telefonunun son 4 hanesi
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Marka sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBrandPage'
+              example:
+                counts: { active: 412, trialing: 64 }
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                    name: Kuaför Elif
+                    industryCode: hair_salon
+                    city: İstanbul
+                    brandStatus: Active
+                    planCode: salon
+                    planName: Salon
+                    subscriptionStatus: Trialing
+                    trialDaysLeft: 9
+                    pastDueDays: null
+                    branchCount: 2
+                    appointmentsThisMonth: 412
+                    creditBalance: 1240
+                    depositEnabled: true
+                nextCursor: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/admin/brands/{brandId}:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    get:
+      tags: [admin-brands]
+      operationId: adminGetBrand
+      summary: Marka detayı (Özet)
+      description: |
+        PMarkaDetay "Özet" sekmesi: abonelik, kontör, bu ay randevu ve abonelik ödemesi kartları, "Marka bilgileri" ve son 30 günün "Kontör hareketleri".
+        Her açılış denetime yazılır (AuditLog Action = View, EntityType = Brand, changes.section = Summary): "Bu görüntüleme denetim kaydına yazıldı."
+        Telefonlar her zaman maskelidir; platform kullanıcısı marka verisini değiştiremez, yalnız plan, kontör, durum ve eşleştirme işlemleri yapar.
+        Diğer sekmeler: adminListBrandInvoices (Abonelik ve fatura), adminListBrandCreditTransactions (Kontör), adminListBrandPaymentNotices (Ödemeler),
+        adminListAuditLog?brandId= (Denetim kaydı). ETag, durum ve plan değişikliklerinde If-Match ile gönderilir. İzin: platform.brands.view.
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Marka detayı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBrandDetail'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                name: Kuaför Elif
+                slug: kuafor-elif
+                industryCode: hair_salon
+                city: İstanbul
+                brandStatus: Active
+                createdUtc: '2026-11-11T09:00:00Z'
+                bookingUrl: 'https://omvila.com/kuafor-elif'
+                owner: { fullName: Elif Kaya, phoneMasked: '0532 *** ** 05' }
+                branches:
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01, name: Kadıköy }
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a02, name: Moda }
+                activeStaffCount: 6
+                customerCount: 1284
+                googleCalendarConnectedStaffCount: 3
+                smsSender: { name: KUAFORELIF, status: None, effectiveName: OMVILA }
+                subscription:
+                  status: Trialing
+                  planCode: salon
+                  planName: Salon
+                  billingCycle: Monthly
+                  paymentMethod: BankTransfer
+                  trialEndsOn: '2026-11-29'
+                  trialDaysLeft: 9
+                  pastDueSince: null
+                  readOnlyOn: null
+                  transferCode: ABN-KE-1125
+                  pendingNoticeId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01
+                  pendingNoticeNotifiedUtc: '2026-11-18T11:20:00Z'
+                credits: { balance: 1240, estimatedDaysLeft: 26 }
+                appointmentsThisMonth: { count: 412, onlinePercent: 61 }
+                recentCreditTransactions:
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa301, occurredUtc: '2026-11-18T12:00:00Z', type: Purchase, credits: 1000, balanceAfter: 1240, note: null }
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa302, occurredUtc: '2026-11-18T06:00:00Z', type: Usage, credits: -46, balanceAfter: 240, note: null }
+                  - { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa303, occurredUtc: '2026-11-11T09:00:00Z', type: TrialGift, credits: 500, balanceAfter: 500, note: null }
+                version: 'W/"5120"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/brands/{brandId}/invoices:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    get:
+      tags: [admin-brands]
+      operationId: adminListBrandInvoices
+      summary: Marka faturaları ("Abonelik ve fatura" sekmesi)
+      description: |
+        Markanın abonelik faturaları, yeniden eskiye. Sekmenin açılışı denetime yazılır (View, changes.section = Invoices). İzin: platform.brands.view.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Fatura sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionInvoicePage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/brands/{brandId}/credit-transactions:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    get:
+      tags: [admin-brands]
+      operationId: adminListBrandCreditTransactions
+      summary: Marka kontör hareketleri ("Kontör" sekmesi)
+      description: |
+        Markanın kontör defteri (CreditTransaction), yeniden eskiye. Günlük gönderim tüketimi gün başına tek satırda toplanır ("Hatırlatma SMS'leri (günlük)").
+        Sekmenin açılışı denetime yazılır (View, changes.section = Credits). İzin: platform.brands.view.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Kontör hareketleri sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreditTransactionPage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/brands/{brandId}/payment-notices:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    get:
+      tags: [admin-brands]
+      operationId: adminListBrandPaymentNotices
+      summary: Marka havale bildirimleri ("Ödemeler" sekmesi)
+      description: |
+        Markanın abonelik ve kontör havale bildirimleri (bütün durumlar), yeniden eskiye. Sekmenin açılışı denetime yazılır (View, changes.section = Payments).
+        İzin: platform.brands.view.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Havale bildirimi sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentNoticePage'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/brands/{brandId}/credits:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    post:
+      tags: [admin-brands]
+      operationId: adminGrantCredits
+      summary: Kontör ekle ("Kontör ekle")
+      description: |
+        Hediye veya düzeltme kontörü (CreditTransaction, Grant; eksi değer düzeltmedir ve bakiyeyi sıfırın altına indiremez: 409 insufficient_credits).
+        Messaging modülünün Contracts arayüzü üzerinden yazılır (K4). Denetime yazılır (Create, CreditTransaction; neden ve miktar).
+        İzin: platform.credits.grant (yalnız PlatformAdmin); Destek ve Finans 403 forbidden.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreditGrant'
+            example:
+              credits: 500
+              reason: 'Destek talebi #4821'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreditGrantResult'
+              example:
+                transaction: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa304, occurredUtc: '2026-11-20T21:31:00Z', type: Grant, credits: 500, balanceAfter: 1740, note: 'Destek talebi #4821' }
+                balance: 1740
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/admin/brands/{brandId}/status:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    post:
+      tags: [admin-brands]
+      operationId: adminChangeBrandStatus
+      summary: Markayı askıya al veya yeniden aç
+      description: |
+        Brand.Status Active ↔ Suspended. Askıdaki markanın paneli ve rezervasyon sayfası kapanır (public uçlar 403 booking_disabled), veriler silinmez.
+        Onboarding veya Archived markada ya da durum zaten istenen değerdeyse 409 invalid_state_transition. Identity modülünün Contracts arayüzü üzerinden
+        yazılır (K4). Neden zorunludur; denetime yazılır (Update, Brand). İzin: platform.brands.manage (yalnız PlatformAdmin); diğer roller 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminBrandStatusChange'
+            example:
+              status: Suspended
+              reason: Kullanım koşulları ihlali
+      responses:
+        '200':
+          description: Durum değişti; güncel marka detayı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBrandDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/brands/{brandId}/plan:
+    parameters:
+      - $ref: '#/components/parameters/BrandIdPath'
+    post:
+      tags: [admin-brands]
+      operationId: adminChangePlan
+      summary: Planı değiştir ("Planı değiştir")
+      description: |
+        Markanın planı (ve isteğe bağlı fatura dönemi) hemen değişir; yeni fiyat bir sonraki faturadan uygulanır, açık fatura değişmez.
+        Markanın etkin personel veya şube sayısı yeni planın sınırını aşıyorsa 409 plan_limit_exceeded (meta.staffCount, meta.staffLimit, meta.branchCount,
+        meta.includedBranchCount); ek şube ücretli plana geçişte şube sınırı yerine ek şube ücreti uygulanır. Etkin olmayan plan 400 (errors.planCode = [invalid_format]).
+        Denetime yazılır (Update, Subscription). İzin: platform.brands.manage (yalnız PlatformAdmin); diğer roller 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPlanChange'
+            example:
+              planCode: salon_plus
+              billingCycle: Monthly
+              reason: Şube sayısı arttı
+      responses:
+        '200':
+          description: Plan değişti; güncel marka detayı
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminBrandDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── admin-approvals ─────────────────────────────
+  /api/v1/admin/approval-queue:
+    get:
+      tags: [admin-approvals]
+      operationId: adminListApprovalQueue
+      summary: Onay kuyrukları (havale bildirimi, SMS başlığı)
+      description: |
+        POnay / POnayBos: "7 bekleyen · en eskisi 2 gün", sekmeler "Havale bildirimi 5" ve "SMS başlığı 2". Yalnız bekleyen kayıtlar (PaymentNotice Pending,
+        BrandSmsSender Pending), en eskiden yeniye. Müşteri kaporaları bu kuyruğa düşmez; onları salon işaretler.
+        Havale satırındaki candidate en iyi eşleşme adayıdır (adminGetPaymentNotice'taki ilk aday): verdict CodeMatches = açıklamada markanın kodu var ve tutar tutuyor
+        ("Bankada eşleşen hareket var", "tutar ve açıklama tutuyor"); CheckRequired = kod yok veya tutar farklı ("Kontrol edin: açıklama kodu yok; tutar ve gönderen adıyla eşleştirin");
+        aday yoksa candidate null. SMS başlığı satırları yalnız platform.sms-senders.decide izninde döner (Finans rolünde smsSenders sayısı 0 ve satır yok).
+        İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - name: type
+          in: query
+          required: false
+          description: Sekme; verilmezse ikisi birden
+          schema: { type: string, enum: [PaymentNotice, SmsSender] }
+      responses:
+        '200':
+          description: Kuyruk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminApprovalQueue'
+              example:
+                paymentNoticeCount: 1
+                smsSenderCount: 1
+                oldestSubmittedUtc: '2026-11-18T11:20:00Z'
+                items:
+                  - type: PaymentNotice
+                    id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01
+                    brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                    brandName: Kuaför Elif
+                    submittedUtc: '2026-11-18T11:20:00Z'
+                    paymentNotice:
+                      purpose: Subscription
+                      periodStart: '2026-11-01'
+                      credits: null
+                      expectedAmount: null
+                      transferCode: ABN-KE-1125
+                      senderName: Elif Kaya
+                      hasReceipt: true
+                      version: 'W/"7001"'
+                      candidate: { bankTransactionId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401, verdict: CodeMatches, codeFound: true, amountMatches: true }
+                    smsSender: null
+                  - type: SmsSender
+                    id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa501
+                    brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa202
+                    brandName: Nail Studio Moda
+                    submittedUtc: '2026-11-19T15:00:00Z'
+                    paymentNotice: null
+                    smsSender: { requestedName: NAILSTUDIO, currentEffectiveName: OMVILA, version: 'W/"7002"' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/admin/payment-notices/{noticeId}:
+    parameters:
+      - $ref: '#/components/parameters/NoticeIdPath'
+    get:
+      tags: [admin-approvals]
+      operationId: adminGetPaymentNotice
+      summary: Havale bildirimi ve eşleşme adayları
+      description: |
+        POnayDetay: "Markanın bildirimi" (Ne için, Beklenen tutar, Açıklama kodu, Gönderen, Bildirim), "Dekont" ve "OMVILA hesabına gelen havaleler".
+        Adaylar: eşleşmemiş banka hareketlerinden değer tarihi bildirimden 7 gün önce ile 3 gün sonrası arasında olanlar (candidateWindow); sıralama: kodu bulunan,
+        sonra tutarı tutan, sonra tarihe yakın olan. codeFound: açıklamada kod var (büyük/küçük harf, boşluk ve tire farkı yok sayılır); amountMatches: tutar beklenen
+        tutara eşit. verdict CodeMatches ("Kod tutuyor") ikisi de doğruysa, aksi hâlde CheckRequired ("Kontrol edin"). Beklenen tutar tanımlı değilse amountMatches false.
+        Açılış denetime yazılır (View, PaymentNotice). Dekont adminGetPaymentNoticeReceipt ile indirilir. İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Bildirim
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentNoticeDetail'
+              example:
+                id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01
+                brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                brandName: Kuaför Elif
+                purpose: Subscription
+                planName: Salon
+                periodStart: '2026-11-01'
+                periodEnd: '2026-11-30'
+                credits: null
+                expectedAmount: null
+                transferCode: ABN-KE-1125
+                senderName: Elif Kaya
+                notifiedUtc: '2026-11-18T11:20:00Z'
+                channel: Panel
+                status: Pending
+                receipt: { fileName: dekont-ziraat.pdf, contentType: application/pdf, sizeBytes: 182400, uploadedUtc: '2026-11-18T11:20:00Z' }
+                resolution: null
+                candidateWindow: { from: '2026-11-11', to: '2026-11-21' }
+                candidates:
+                  - bankTransactionId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401
+                    valueDate: '2026-11-18'
+                    receivedUtc: '2026-11-18T11:05:00Z'
+                    amount: { amountMinor: 100000, currency: TRY }
+                    senderName: ELİF KAYA
+                    description: ABN-KE-1125
+                    codeFound: true
+                    amountMatches: true
+                    verdict: CodeMatches
+                  - bankTransactionId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa402
+                    valueDate: '2026-11-18'
+                    receivedUtc: '2026-11-18T08:42:00Z'
+                    amount: { amountMinor: 100000, currency: TRY }
+                    senderName: KAAN ÖZTÜRK
+                    description: null
+                    codeFound: false
+                    amountMatches: true
+                    verdict: CheckRequired
+                version: 'W/"7001"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/payment-notices/{noticeId}/receipt:
+    parameters:
+      - $ref: '#/components/parameters/NoticeIdPath'
+    get:
+      tags: [admin-approvals]
+      operationId: adminGetPaymentNoticeReceipt
+      summary: Dekontu indir ("Aç")
+      description: |
+        Dekont dosyası (PDF, JPG veya PNG). Dekont yoksa 404. Cache-Control: private, no-store; indirme denetime yazılır (View, changes.section = Receipt).
+        İzin: platform.payments.match.
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Dekont dosyası
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/admin/payment-notices/{noticeId}/match:
+    parameters:
+      - $ref: '#/components/parameters/NoticeIdPath'
+    post:
+      tags: [admin-approvals]
+      operationId: adminMatchPaymentNotice
+      summary: Seçili hareketle eşleştir ("Seçili hareketle eşleştir", "Eşleştir")
+      description: |
+        Bildirim Matched olur, banka hareketi bildirime bağlanır (PlatformBankTransaction.MatchedNoticeId). Abonelikte bildirimin dönemi ödendi sayılır: fatura kesilir
+        veya açık fatura Paid olur (PaidVia BankTransfer), abonelik Active'e döner. Kontörde paketin kontörü eklenir (CreditTransaction Purchase, Messaging Contracts
+        arayüzü üzerinden, K4). Markanın Owner kullanıcılarına owner.payment_notice_matched gider. Denetime yazılır (Match, PaymentNotice).
+        Tutar uyuşmasa da operatör eşleştirebilir (uyarı istemcidedir). Bildirim Pending değilse 409 invalid_state_transition; hareket başka bildirime bağlıysa
+        409 bank_transaction_already_matched. İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPaymentNoticeMatch'
+            example:
+              bankTransactionId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401
+      responses:
+        '200':
+          description: Eşleştirildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentNoticeDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/payment-notices/{noticeId}/not-found:
+    parameters:
+      - $ref: '#/components/parameters/NoticeIdPath'
+    post:
+      tags: [admin-approvals]
+      operationId: adminMarkPaymentNoticeNotFound
+      summary: Bulunamadı, markaya yaz ("Bulunamadı, markaya yaz")
+      description: |
+        Bildirim NotFound olur; markanın Owner kullanıcılarına owner.payment_notice_not_found gider (message varsa bildirime eklenir). Salon yeniden bildirebilir.
+        Abonelik durumu değişmez. Bildirim Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, PaymentNotice).
+        İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPaymentNoticeResolution'
+            example:
+              message: 18 Kasım tarihli havaleyi hesabımızda göremedik. Dekontu kontrol edip yeniden bildirin.
+      responses:
+        '200':
+          description: Bulunamadı olarak işaretlendi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentNoticeDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/payment-notices/{noticeId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/NoticeIdPath'
+    post:
+      tags: [admin-approvals]
+      operationId: adminRejectPaymentNotice
+      summary: Havale bildirimini reddet
+      description: |
+        Geçersiz veya yinelenen bildirim için: bildirim Rejected olur, markaya owner.payment_notice_rejected gider. message zorunludur
+        (yoksa 400 validation_failed, errors.message = [required]). Bildirim Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, PaymentNotice).
+        İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPaymentNoticeResolution'
+            example:
+              message: Bu bildirim aynı havale için ikinci kez gönderildi.
+      responses:
+        '200':
+          description: Reddedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPaymentNoticeDetail'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/sms-senders/{senderId}/approve:
+    parameters:
+      - $ref: '#/components/parameters/SenderIdPath'
+    post:
+      tags: [admin-approvals]
+      operationId: adminApproveSmsSender
+      summary: SMS gönderen adını onayla ("Onayla")
+      description: |
+        Operatör başvurusu onaylanınca çağrılır: BrandSmsSender Approved olur, markanın SMS'leri bu adla gitmeye başlar (effectiveName). Messaging modülünün
+        Contracts arayüzü üzerinden yazılır (K4). Başvuru Pending değilse 409 invalid_state_transition. Denetime yazılır (Approve, BrandSmsSender).
+        İzin: platform.sms-senders.decide (PlatformAdmin, PlatformSupport); Finans 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          description: Onaylandı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSmsSenderDecision'
+              example:
+                senderId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa501
+                brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa202
+                name: NAILSTUDIO
+                status: Approved
+                decidedUtc: '2026-11-20T10:00:00Z'
+                rejectionReason: null
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/sms-senders/{senderId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/SenderIdPath'
+    post:
+      tags: [admin-approvals]
+      operationId: adminRejectSmsSender
+      summary: SMS gönderen adını reddet ("Reddet")
+      description: |
+        BrandSmsSender Rejected olur; reason salonun AyarlarBildirim ekranında rejectionReason olarak görünür. Önceki onaylı ad (yoksa OMVILA) sürer.
+        Başvuru Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, BrandSmsSender). İzin: platform.sms-senders.decide (PlatformAdmin, PlatformSupport).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSmsSenderRejection'
+            example:
+              reason: Başlık işletme unvanıyla uyuşmuyor.
+      responses:
+        '200':
+          description: Reddedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSmsSenderDecision'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  # ───────────────────────────── admin-finance ─────────────────────────────
+  /api/v1/admin/bank-transactions:
+    get:
+      tags: [admin-finance]
+      operationId: adminListBankTransactions
+      summary: OMVILA hesabına gelen havaleler ("Banka hareketlerinde ara")
+      description: |
+        İçe aktarılan ve elle girilen banka hareketleri (PlatformBankTransaction), değer tarihine göre yeniden eskiye. q gönderen adında, açıklamada ve banka
+        referansında arar; unmatchedOnly eşleşmemişleri süzer. Tarih aralığı en fazla 92 gün. İzin: platform.payments.match (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Gönderen adı, açıklama (ör. ABN-KE-1125) veya banka referansı
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - name: from
+          in: query
+          required: false
+          description: Değer tarihi alt sınırı (dahil)
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: false
+          description: Değer tarihi üst sınırı (dahil)
+          schema: { type: string, format: date }
+        - name: unmatchedOnly
+          in: query
+          required: false
+          description: Yalnız eşleşmemiş hareketler
+          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Banka hareketleri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankTransactionPage'
+              example:
+                items:
+                  - id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa403
+                    valueDate: '2026-11-17'
+                    receivedUtc: '2026-11-17T13:10:00Z'
+                    amount: { amountMinor: 50000, currency: TRY }
+                    senderName: SPA MODA GÜZ. LTD
+                    description: KNT-SM-0412
+                    bankReference: '20261117-000913'
+                    source: Import
+                    matchedNoticeId: null
+                    matchedBrandName: null
+                nextCursor: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [admin-finance]
+      operationId: adminCreateBankTransaction
+      summary: Banka hareketini elle ekle
+      description: |
+        CSV'de olmayan bir havaleyi elle girer (source = Manual). bankReference markalar arası benzersizdir; aynı referans varsa 409 bank_transaction_duplicate
+        (meta.bankTransactionId). Denetime yazılır (Create, PlatformBankTransaction). İzin: platform.billing.manage (PlatformAdmin, PlatformFinance); Destek 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankTransactionCreate'
+            example:
+              valueDate: '2026-11-18'
+              amount: { amountMinor: 100000, currency: TRY }
+              senderName: ELİF KAYA
+              description: ABN-KE-1125
+              bankReference: '20261118-001204'
+      responses:
+        '201':
+          description: Eklendi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankTransaction'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+
+  /api/v1/admin/bank-transactions/import:
+    post:
+      tags: [admin-finance]
+      operationId: adminImportBankTransactions
+      summary: Banka hareketlerini CSV'den içe aktar
+      description: |
+        Tek uç, iki kip: dryRun = true önizlemedir (hiçbir kayıt yazılmaz), dryRun = false aynı dosyayı uygular. Sütunlar başlıktan eşlenir
+        (Tarih, Tutar, Gönderen, Açıklama, Referans); yalnız gelen (artı) tutarlar alınır. Kendiliğinden idempotenttir: bankReference'ı zaten kayıtlı satır
+        duplicate sayılıp atlanır, aynı dosya ikinci kez gönderilirse yeni kayıt oluşmaz. Hatalı satırlar atlanır ve errors listesinde döner.
+        Dosya CSV değilse veya boyut/satır sınırı aşılırsa 400 validation_failed (errors.file = [invalid_format] / [too_large]); sınırlar yapılandırmadadır.
+        Uygulama denetime yazılır (Create, PlatformBankTransaction; satır sayıları). İzin: platform.billing.manage (PlatformAdmin, PlatformFinance); Destek 403.
+      security: [ { adminBearer: [] } ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BankTransactionImportRequest'
+      responses:
+        '200':
+          description: Önizleme veya içe aktarma sonucu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankTransactionImportResult'
+              example:
+                dryRun: false
+                fileName: ekstre-2026-11-18.csv
+                totalRows: 42
+                imported: 38
+                duplicates: 3
+                skippedOutgoing: 0
+                invalidRows: 1
+                errors:
+                  - { rowNumber: 17, column: Tutar, code: invalid_format }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/admin/subscriptions:
+    get:
+      tags: [admin-finance]
+      operationId: adminListSubscriptions
+      summary: Abonelikler
+      description: |
+        PAbonelikler: "AKTİF 348 · ödeme düzenli", "DENEMEDE 64 · 9'u bu hafta bitiyor", "ÖDEME GECİKTİ 11 · 7 günlük hatırlatma süresinde",
+        "SALT OKUNUR 3 · online randevu kapalı", filtreler (Tümü, Denemede, Aktif, Ödeme gecikti, Salt okunur, İptal edildi, Kontörü azalan) ve tablo
+        (Marka, Plan, Durum, Sonraki adım, Kontör). CreditsLow = kontör LowCreditThreshold'un altında. nextStep satırın "Sonraki adım" sütunudur:
+        TrialEnds (deneme biter, date), ReadOnlyOn (salt okunura geçer, date), Renews (yenileme, date), ReactivatesOnPayment ("Ödeme gelince açılır"),
+        SmsStopped (kontör bitti, "SMS gönderilmiyor"), ArchivesOn (iptal; arşiv günü). Sıralama: aciliyete göre (ödeme gecikti ve salt okunur önce).
+        İzin: platform.brands.view (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          description: Tümü, Denemede, Aktif, Ödeme gecikti, Salt okunur, İptal edildi, Kontörü azalan
+          schema: { type: string, enum: [All, Trialing, Active, PastDue, ReadOnly, Cancelled, CreditsLow], default: All }
+        - name: q
+          in: query
+          required: false
+          description: Marka adı
+          schema: { type: string, minLength: 2, maxLength: 100 }
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Abonelik sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSubscriptionPage'
+              example:
+                counts: { active: 348, trialing: 64, trialEndingThisWeek: 9, pastDue: 11, readOnly: 3 }
+                items:
+                  - brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa201
+                    brandName: Berber Kaan
+                    planName: Salon
+                    status: PastDue
+                    pastDueDays: 6
+                    trialDaysLeft: null
+                    creditBalance: 210
+                    creditsLow: false
+                    nextStep: { type: ReadOnlyOn, date: '2026-11-21' }
+                  - brandId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                    brandName: Kuaför Elif
+                    planName: Salon
+                    status: Trialing
+                    pastDueDays: null
+                    trialDaysLeft: 9
+                    creditBalance: 1240
+                    creditsLow: false
+                    nextStep: { type: TrialEnds, date: '2026-11-29' }
+                nextCursor: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────────── admin-audit ─────────────────────────────
+  /api/v1/admin/audit-log:
+    get:
+      tags: [admin-audit]
+      operationId: adminListAuditLog
+      summary: Denetim kaydı
+      description: |
+        PDenetim "Tüm platform işlemleri · silinemez": filtreler (Son 24 saat, Görüntüleme, Onay ve ret, Kontör ve plan, KVKK), "Marka veya kişi ara" ve tablo
+        (Zaman, Kim, İşlem, Marka, Ayrıntı). "Son 24 saat" istemcide fromUtc ile verilir; fromUtc verilmezse son 24 saat. Kategori eşlemesi: View = Action View;
+        ApproveReject = Approve, Match ve PaymentNotice/BrandSmsSender güncellemeleri; CreditsAndPlan = CreditTransaction ve Subscription kayıtları; Kvkk = Anonymize ve Export.
+        İşlem adı ("Marka görüntülendi", "Havale eşleştirildi", "Salt okunura geçti") istemcide action + entityType + changes'ten üretilir. changes'te telefon ve ad maskelidir.
+        Kayıtlar 2 yıl saklanır ve değiştirilemez. Yeniden eskiye. İzin: platform.audit.view (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/AuditCategory'
+        - $ref: '#/components/parameters/AuditQuery'
+        - $ref: '#/components/parameters/AuditBrandId'
+        - $ref: '#/components/parameters/AuditFromUtc'
+        - $ref: '#/components/parameters/AuditToUtc'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+      responses:
+        '200':
+          description: Denetim kaydı sayfası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogPage'
+              example:
+                items:
+                  - id: 918204
+                    occurredUtc: '2026-11-20T22:12:00Z'
+                    actor: { type: PlatformUser, id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101, name: Ayşe Demir, platformRole: PlatformSupport }
+                    action: View
+                    entityType: Brand
+                    entityId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001, name: Kuaför Elif }
+                    changes: { section: Summary }
+                  - id: 918203
+                    occurredUtc: '2026-11-20T21:58:00Z'
+                    actor: { type: PlatformUser, id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101, name: Ayşe Demir, platformRole: PlatformSupport }
+                    action: Match
+                    entityType: PaymentNotice
+                    entityId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b02
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa203, name: Spa Moda }
+                    changes: { purpose: Credits, credits: 5000, transferCode: KNT-SM-0412 }
+                  - id: 918190
+                    occurredUtc: '2026-11-20T20:40:00Z'
+                    actor: { type: System, id: null, name: null, platformRole: null }
+                    action: Update
+                    entityType: Subscription
+                    entityId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa601
+                    brand: { id: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa204, name: Saç Atölyesi }
+                    changes: { status: ReadOnly, previousStatus: PastDue }
+                nextCursor: null
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/v1/admin/audit-log/export:
+    get:
+      tags: [admin-audit]
+      operationId: adminExportAuditLog
+      summary: Denetim kaydını CSV olarak dışa aktar ("Dışa aktar")
+      description: |
+        adminListAuditLog ile aynı süzgeçler; aralık en fazla 92 gün (aşılırsa 400 validation_failed, errors.toUtc = [out_of_range]). Sütunlar: Zaman (Europe/Istanbul),
+        Kim, Rol, İşlem, Varlık, Marka, Ayrıntı (maskeli). Dışa aktarma da denetime yazılır (Export, AuditLog).
+        İzin: platform.audit.export (yalnız PlatformAdmin); Destek ve Finans 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/AuditCategory'
+        - $ref: '#/components/parameters/AuditQuery'
+        - $ref: '#/components/parameters/AuditBrandId'
+        - $ref: '#/components/parameters/AuditFromUtc'
+        - $ref: '#/components/parameters/AuditToUtc'
+      responses:
+        '200':
+          description: CSV dosyası (UTF-8, BOM'lu; Content-Disposition attachment)
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="denetim-kaydi-2026-11-20.csv"' }
+          content:
+            text/csv:
+              schema: { type: string }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────────── admin-plans ─────────────────────────────
+  /api/v1/admin/plans:
+    get:
+      tags: [admin-plans]
+      operationId: adminListPlans
+      summary: Planlar ve fiyat
+      description: |
+        PPlanlar: plan kartları (Tekil, Salon, Salon Plus; "96 marka"), "Ortak kurallar" (Deneme süresi, Ödeme gecikmesinde, Deneme hediyesi, Kanallar).
+        Fiyat ve sınırlar S-14 çözülene kadar boş olabilir: boş fiyat "belirlenmedi", boş sınır "sınırsız" demektir; istemci köşeli parantezli yer tutucu yazmaz.
+        Ortak kurallar yapılandırmadan okunur ve bu uçtan değiştirilmez (trialCredits tanımlı değilse null). Özellik bayraklarının ekran metinleri istemcidedir.
+        İzin: platform.plans.view (bütün platform rolleri; Destek görüntüler, "Planı düzenle" kilitli).
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Planlar
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlanCatalog'
+              example:
+                plans:
+                  - code: solo
+                    name: Tekil
+                    description: Tek başına çalışanlar
+                    monthlyPrice: null
+                    yearlyPrice: null
+                    includedBranchCount: 1
+                    extraBranchPrice: null
+                    staffLimit: 1
+                    includedSmsCredits: null
+                    features: { walkInQueue: false, waitlist: false, packages: false, crossBranchReports: false, prioritySupport: false }
+                    isPublic: true
+                    isActive: true
+                    brandCount: 96
+                rules: { trialDays: 14, pastDueGraceDays: 7, trialCredits: null }
+                version: 'W/"301"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [admin-plans]
+      operationId: adminUpdatePlans
+      summary: Planları kaydet ("Planı düzenle")
+      description: |
+        Planların ad, açıklama, fiyat, sınır ve özellik değerleri. Gönderilen her plan code ile eşleşir; olmayan code 400 (errors.plans[i].code = [invalid_format]).
+        Plan eklenmez ve silinmez; isActive = false yeni kayıtlarda planı gizler. Değişiklik yeni kayıtlar ve sonraki faturalar için geçerlidir, mevcut aboneler korunur
+        ("Yeni kayıtlar için geçerli · mevcut aboneler korunur"). Denetime yazılır (Update, Plan). İzin: platform.plans.manage (PlatformAdmin, PlatformFinance); Destek 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPlanCatalogUpdate'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPlanCatalog'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
+  /api/v1/admin/credit-packages:
+    get:
+      tags: [admin-plans]
+      operationId: adminListCreditPackages
+      summary: Kontör paketleri
+      description: |
+        PPlanlar "Kontör paketleri" (Paket, SMS, Fiyat). Fiyat tanımlı değilse price null (S-14). İzin: platform.plans.view (bütün platform rolleri).
+      security: [ { adminBearer: [] } ]
+      responses:
+        '200':
+          description: Kontör paketleri
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreditPackageCatalog'
+              example:
+                packages:
+                  - { code: starter, name: Başlangıç, credits: 1000, price: null, isActive: true }
+                  - { code: medium, name: Orta, credits: 5000, price: null, isActive: true }
+                  - { code: large, name: Büyük, credits: 20000, price: null, isActive: true }
+                version: 'W/"302"'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    put:
+      tags: [admin-plans]
+      operationId: adminUpdateCreditPackages
+      summary: Kontör paketlerini kaydet
+      description: |
+        Paketlerin ad, kontör, fiyat ve etkinlik değerleri; code ile eşleşir, olmayan code 400. Paket eklenmez ve silinmez; isActive = false paketi satıştan kaldırır.
+        Bekleyen havale bildirimlerinin beklenen tutarı değişmez. Denetime yazılır (Update, CreditPackage). İzin: platform.plans.manage (PlatformAdmin, PlatformFinance); Destek 403.
+      security: [ { adminBearer: [] } ]
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreditPackageCatalogUpdate'
+      responses:
+        '200':
+          description: Kaydedildi
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminCreditPackageCatalog'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+
   # ───────────────────────────── webhooks ─────────────────────────────
   /api/v1/webhooks/sms/{provider}:
     parameters:
@@ -5185,6 +7091,78 @@ components:
       required: false
       schema: { type: string }
 
+    InvoiceIdPath:
+      name: invoiceId
+      in: path
+      required: true
+      description: Abonelik faturası kimliği
+      schema: { type: string, format: uuid }
+    UserIdPath:
+      name: userId
+      in: path
+      required: true
+      description: Salon kullanıcısı kimliği
+      schema: { type: string, format: uuid }
+    ReportFrom:
+      name: from
+      in: query
+      required: true
+      description: Aralığın ilk günü (dahil, şubenin yerel takvimi)
+      schema: { type: string, format: date, example: '2026-11-18' }
+    ReportTo:
+      name: to
+      in: query
+      required: true
+      description: Aralığın son günü (dahil); from ile arası en fazla 31 gün
+      schema: { type: string, format: date, example: '2026-11-24' }
+    BrandIdPath:
+      name: brandId
+      in: path
+      required: true
+      description: Marka kimliği
+      schema: { type: string, format: uuid }
+    NoticeIdPath:
+      name: noticeId
+      in: path
+      required: true
+      description: Havale bildirimi (PaymentNotice) kimliği
+      schema: { type: string, format: uuid }
+    SenderIdPath:
+      name: senderId
+      in: path
+      required: true
+      description: SMS gönderen adı başvurusu (BrandSmsSender) kimliği
+      schema: { type: string, format: uuid }
+    AuditCategory:
+      name: category
+      in: query
+      required: false
+      description: Görüntüleme, Onay ve ret, Kontör ve plan, KVKK
+      schema: { type: string, enum: [All, View, ApproveReject, CreditsAndPlan, Kvkk], default: All }
+    AuditQuery:
+      name: q
+      in: query
+      required: false
+      description: '"Marka veya kişi ara": marka adı veya işlemi yapanın adı'
+      schema: { type: string, minLength: 2, maxLength: 100 }
+    AuditBrandId:
+      name: brandId
+      in: query
+      required: false
+      description: Yalnız bu markanın kayıtları (marka detayı "Denetim kaydı" sekmesi)
+      schema: { type: string, format: uuid }
+    AuditFromUtc:
+      name: fromUtc
+      in: query
+      required: false
+      description: Alt sınır (dahil); verilmezse son 24 saat
+      schema: { type: string, format: date-time }
+    AuditToUtc:
+      name: toUtc
+      in: query
+      required: false
+      description: Üst sınır (hariç); verilmezse şimdi
+      schema: { type: string, format: date-time }
   responses:
     BadRequest:
       description: Doğrulama hatası (validation_failed)
@@ -5207,7 +7185,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
-      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, payment_total_mismatch, package_session_unavailable, cash_day_already_closed, insufficient_credits, already_reviewed)
+      description: İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, payment_total_mismatch, package_session_unavailable, cash_day_already_closed, insufficient_credits, already_reviewed, payment_notice_already_pending, bank_transaction_already_matched, bank_transaction_duplicate, last_owner_required, plan_limit_exceeded)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
@@ -5305,6 +7283,11 @@ components:
         - otp_resend_too_soon
         - rate_limited
         - try_again
+        - payment_notice_already_pending
+        - bank_transaction_already_matched
+        - bank_transaction_duplicate
+        - last_owner_required
+        - plan_limit_exceeded
     Money:
       type: object
       description: Kuruş cinsinden tutar
@@ -6394,6 +8377,9 @@ components:
         - owner.credits_low
         - owner.subscription_payment_failed
         - owner.trial_ending
+        - owner.payment_notice_matched
+        - owner.payment_notice_not_found
+        - owner.payment_notice_rejected
     NotificationTarget:
       type: object
       description: Bildirime dokununca açılacak ekran
@@ -8347,3 +10333,1208 @@ components:
           items: { $ref: '#/components/schemas/MeNotification' }
         nextCursor: { type: [string, 'null'] }
         unreadCount: { type: integer, minimum: 0, example: 2 }
+
+    # ───────── abonelik ve fatura (Dilim 6) ─────────
+    SubscriptionStatus:
+      type: string
+      description: 'Abonelik durumu (docs/alan/durum-makinesi.md § 8): Deneme, Aktif, Ödeme gecikti, Salt okunur, İptal edildi'
+      enum: [Trialing, Active, PastDue, ReadOnly, Cancelled]
+    BillingCycle:
+      type: string
+      description: Fatura dönemi (aylık, yıllık)
+      enum: [Monthly, Yearly]
+    SubscriptionPaymentMethod:
+      type: string
+      description: Abonelik ödeme yolu. Card yalnız kart sağlayıcısı seçilince kullanılır (T-06)
+      enum: [Card, BankTransfer]
+    PlanRef:
+      type: object
+      description: Plan kısa bilgisi
+      required: [code, name]
+      properties:
+        code: { type: string, description: 'Plan kodu (solo, salon, salon_plus)', example: salon }
+        name: { type: string, description: 'Ekrandaki ad (Tekil, Salon, Salon Plus)', example: Salon }
+    OmvilaBankAccount:
+      type: object
+      description: OMVILA'nın havale alacağı hesap (OmvilaBankAccount yapılandırması, S-14). Abonelik ve kontör havalesinde gösterilir
+      required: [accountHolderName, iban]
+      properties:
+        accountHolderName: { type: string, description: Alıcı (OMVILA şirket unvanı) }
+        iban: { type: string, description: 'Tam IBAN (TR ile başlar, boşluksuz)', pattern: '^TR\d{24}$' }
+        bankName: { type: [string, 'null'], description: Banka adı }
+    SubscriptionDetail:
+      type: object
+      description: Ayarlar → Abonelik ve fatura (AyarlarAbonelik)
+      required: [status, plan, billingCycle, paymentMethod, trialEndsOn, currentPeriodStart, currentPeriodEnd, pastDueSince, readOnlyOn, readOnlySince, branches, staff, amountDue, transferCode, omvilaBankAccount, pendingNotice]
+      properties:
+        status: { $ref: '#/components/schemas/SubscriptionStatus' }
+        plan: { $ref: '#/components/schemas/PlanRef' }
+        billingCycle: { $ref: '#/components/schemas/BillingCycle' }
+        paymentMethod:
+          description: Son kullanılan ödeme yolu; henüz ödeme yoksa null
+          oneOf:
+            - $ref: '#/components/schemas/SubscriptionPaymentMethod'
+            - type: 'null'
+        trialEndsOn: { type: [string, 'null'], format: date, description: Deneme bitiş günü (Trialing değilse null) }
+        currentPeriodStart: { type: string, format: date, description: Geçerli dönemin ilk günü }
+        currentPeriodEnd: { type: string, format: date, description: Geçerli dönemin son günü }
+        pastDueSince: { type: [string, 'null'], format: date, description: Ödeme gecikti başlangıcı }
+        readOnlyOn: { type: [string, 'null'], format: date, description: PastDue ise salt okunura geçeceği gün }
+        readOnlySince: { type: [string, 'null'], format: date, description: ReadOnly ise salt okunura geçtiği gün }
+        branches:
+          type: object
+          description: '"ŞUBE 2 · 1 dahil + 1 ek şube"'
+          required: [count, included, extra]
+          properties:
+            count: { type: integer, minimum: 0, description: Etkin şube sayısı, example: 2 }
+            included: { type: [integer, 'null'], minimum: 0, description: Planın içerdiği şube sayısı; null = sınırsız, example: 1 }
+            extra: { type: integer, minimum: 0, description: Ücretli ek şube sayısı, example: 1 }
+        staff:
+          type: object
+          description: '"PERSONEL 5 · … dahil"'
+          required: [count, limit]
+          properties:
+            count: { type: integer, minimum: 0, description: Etkin personel sayısı, example: 5 }
+            limit: { type: [integer, 'null'], minimum: 0, description: Plan personel sınırı; null = sınırsız veya tanımlı değil }
+        amountDue:
+          description: Bir dönemin tutarı (plan fiyatı + ek şube ücreti, KDV dahil); fiyat tanımlı değilse null ("Tutar")
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        transferCode: { type: string, description: 'Markanın sabit abonelik havale kodu ("Açıklama")', example: ABN-KE-1125 }
+        omvilaBankAccount:
+          description: Alıcı ve IBAN; yapılandırma yoksa null
+          oneOf:
+            - $ref: '#/components/schemas/OmvilaBankAccount'
+            - type: 'null'
+        pendingNotice:
+          description: Bekleyen abonelik havale bildirimi ("Havale bildirildi · eşleştirme bekliyor"); yoksa null
+          oneOf:
+            - $ref: '#/components/schemas/PaymentNoticeSummary'
+            - type: 'null'
+    SubscriptionInvoiceStatus:
+      type: string
+      description: Fatura durumu (kesildi, ödendi, ödenemedi, iptal)
+      enum: [Issued, Paid, Failed, Void]
+    SubscriptionInvoice:
+      type: object
+      description: Abonelik faturası (bilgi amaçlı, e-Arşiv değil)
+      required: [id, invoiceNumber, periodStart, periodEnd, amount, tax, total, status, issuedUtc, paidUtc, paidVia]
+      properties:
+        id: { type: string, format: uuid, description: Fatura kimliği }
+        invoiceNumber: { type: string, description: 'Boşluksuz fatura numarası ("No")', example: OMV-2026-000184 }
+        periodStart: { type: string, format: date, description: Dönem başı ("Dönem") }
+        periodEnd: { type: string, format: date, description: Dönem sonu }
+        amount: { $ref: '#/components/schemas/Money', description: KDV hariç tutar }
+        tax: { $ref: '#/components/schemas/Money', description: KDV }
+        total: { $ref: '#/components/schemas/Money', description: Toplam ("Tutar") }
+        status: { $ref: '#/components/schemas/SubscriptionInvoiceStatus' }
+        issuedUtc: { type: string, format: date-time, description: Kesildiği an }
+        paidUtc: { type: [string, 'null'], format: date-time, description: Ödendiği an }
+        paidVia:
+          description: Ödeme yolu; ödenmediyse null
+          oneOf:
+            - $ref: '#/components/schemas/SubscriptionPaymentMethod'
+            - type: 'null'
+    SubscriptionInvoicePage:
+      type: object
+      description: Fatura sayfası
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          description: Yeniden eskiye
+          items: { $ref: '#/components/schemas/SubscriptionInvoice' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    PaymentNoticePurpose:
+      type: string
+      description: Havale bildiriminin amacı (abonelik, SMS kontörü)
+      enum: [Subscription, Credits]
+    PaymentNoticeStatus:
+      type: string
+      description: Havale bildirimi durumu (bekliyor, eşleşti, bulunamadı, reddedildi)
+      enum: [Pending, Matched, NotFound, Rejected]
+    PaymentNoticeCreate:
+      type: object
+      description: '"Havaleyi bildir" formu (multipart)'
+      required: [purpose]
+      properties:
+        purpose: { $ref: '#/components/schemas/PaymentNoticePurpose' }
+        creditPackageId: { type: string, format: uuid, description: purpose = Credits ise zorunlu; seçilen kontör paketi }
+        senderName: { type: string, maxLength: 120, description: Havaleyi gönderen ad (dekonttaki ad); verilmezse boş }
+        receipt: { type: string, format: binary, description: 'Dekont (isteğe bağlı): PDF, JPG veya PNG, en fazla 5 MB' }
+    PaymentNoticeSummary:
+      type: object
+      description: Havale bildirimi özeti
+      required: [id, purpose, transferCode, expectedAmount, credits, senderName, hasReceipt, status, notifiedUtc]
+      properties:
+        id: { type: string, format: uuid, description: Bildirim kimliği }
+        purpose: { $ref: '#/components/schemas/PaymentNoticePurpose' }
+        transferCode: { type: string, description: Beklenen açıklama kodu (ABN-… veya KNT-…), example: ABN-KE-1125 }
+        expectedAmount:
+          description: Beklenen tutar; fiyat tanımlı değilse null
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        credits: { type: [integer, 'null'], minimum: 1, description: Kontör bildiriminde paketin kontörü; abonelikte null, example: 5000 }
+        senderName: { type: [string, 'null'], description: Gönderen adı }
+        hasReceipt: { type: boolean, description: Dekont yüklendi mi }
+        status: { $ref: '#/components/schemas/PaymentNoticeStatus' }
+        notifiedUtc: { type: string, format: date-time, description: Bildirim anı }
+        resolvedUtc: { type: [string, 'null'], format: date-time, description: 'Sonuçlandığı an (eşleşti, bulunamadı, reddedildi)' }
+    CreditPackage:
+      type: object
+      description: SMS kontör paketi
+      required: [id, code, name, credits, price]
+      properties:
+        id: { type: string, format: uuid, description: Paket kimliği }
+        code: { type: string, description: Paket kodu, example: medium }
+        name: { type: string, description: 'Ekrandaki ad (Başlangıç, Orta, Büyük)', example: Orta }
+        credits: { type: integer, minimum: 1, description: Kontör (SMS) sayısı, example: 5000 }
+        price:
+          description: Fiyat (KDV dahil); tanımlı değilse null
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+    CreditPackageList:
+      type: object
+      description: Satıştaki kontör paketleri
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Kontöre göre artan
+          items: { $ref: '#/components/schemas/CreditPackage' }
+    CreditPurchaseRequest:
+      type: object
+      description: Kontör paketi seçimi
+      required: [creditPackageId]
+      properties:
+        creditPackageId: { type: string, format: uuid, description: Seçilen paket }
+    CreditPurchaseInstructions:
+      type: object
+      description: Kontör havalesi bilgisi (K1; kartla kontör yok)
+      required: [creditPackageId, credits, amount, transferCode, omvilaBankAccount]
+      properties:
+        creditPackageId: { type: string, format: uuid, description: Seçilen paket }
+        credits: { type: integer, minimum: 1, description: Paketin kontörü, example: 5000 }
+        amount:
+          description: Havale tutarı; fiyat tanımlı değilse null
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        transferCode: { type: string, description: 'Markanın sabit kontör havale kodu (açıklamaya yazılır)', example: KNT-SM-0412 }
+        omvilaBankAccount:
+          description: Alıcı ve IBAN; yapılandırma yoksa null
+          oneOf:
+            - $ref: '#/components/schemas/OmvilaBankAccount'
+            - type: 'null'
+
+    # ───────── raporlar ve genel bakış (Dilim 6) ─────────
+    ManageOverview:
+      type: object
+      description: Genel bakış bento kartları ve haftalık doluluk
+      required: [branchId, branchName, timeZone, date, generatedUtc, todayRevenue, todayAppointmentCount, pendingApproval, walkIns, weeklyOccupancy]
+      properties:
+        branchId: { type: string, format: uuid, description: Şube }
+        branchName: { type: string, description: Şube adı, example: Kadıköy }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        date: { type: string, format: date, description: Şubenin yerel bugünü }
+        generatedUtc: { type: string, format: date-time, description: Yanıtın üretildiği an; kalan süreler buna göre }
+        todayRevenue: { $ref: '#/components/schemas/Money', description: '"BUGÜNKÜ CİRO": bugünkü tahsilat toplamı (iade düşülmüş)' }
+        todayAppointmentCount: { type: integer, minimum: 0, description: '"16 randevu": bugünün iptal ve taslak dışı randevuları', example: 16 }
+        pendingApproval:
+          description: '"ONAY BEKLİYOR"; appointment.approve izni yoksa null'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [count, earliestHoldExpiresUtc]
+              properties:
+                count: { type: integer, minimum: 0, description: Bekleyen talep sayısı, example: 2 }
+                earliestHoldExpiresUtc: { type: [string, 'null'], format: date-time, description: '"ilki 1 sa 35 dk içinde iptal olur"' }
+        walkIns:
+          description: '"KAPIDA SIRADA"; walkin.manage izni yoksa null'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [waitingCount, estimatedWaitMinutesForNew]
+              properties:
+                waitingCount: { type: integer, minimum: 0, description: Sırada bekleyen, example: 3 }
+                estimatedWaitMinutesForNew: { type: [integer, 'null'], minimum: 0, description: '"~35 dk bekleme"', example: 35 }
+        weeklyOccupancy:
+          type: object
+          description: '"BU HAFTA DOLULUK" ve "Bu hafta doluluk · personel bazında"'
+          required: [weekStart, percent, previousWeekPercent, staff]
+          properties:
+            weekStart: { type: string, format: date, description: Haftanın Pazartesi'si (yerel) }
+            percent: { type: [integer, 'null'], minimum: 0, maximum: 100, description: Şube doluluk yüzdesi; çalışma dakikası yoksa null, example: 74 }
+            previousWeekPercent: { type: [integer, 'null'], minimum: 0, maximum: 100, description: '"geçen hafta %68"', example: 68 }
+            staff:
+              type: array
+              description: Doluluğa göre azalan
+              items:
+                type: object
+                required: [staffId, staffName, calendarColor, percent]
+                properties:
+                  staffId: { type: string, format: uuid, description: Personel }
+                  staffName: { type: string, description: Personel adı, example: Elif Kaya }
+                  calendarColor: { type: string, pattern: '^#[0-9A-Fa-f]{6}$', description: Takvim rengi (satırdaki nokta) }
+                  percent: { type: integer, minimum: 0, maximum: 100, description: Personelin doluluk yüzdesi, example: 86 }
+    ReportOverview:
+      type: object
+      description: '"Raporlar ve prim" üst kartları ve günlük tahsilat'
+      required: [branchId, timeZone, from, to, earnedRevenue, completedAppointmentCount, earnedRevenueChangePercent, collections, noShow, online, dailyCollections, currency]
+      properties:
+        branchId: { type: [string, 'null'], format: uuid, description: Şube; null = erişilebilen bütün şubeler }
+        timeZone: { $ref: '#/components/schemas/TimeZoneId' }
+        from: { type: string, format: date, description: Aralığın ilk günü }
+        to: { type: string, format: date, description: Aralığın son günü }
+        earnedRevenue: { $ref: '#/components/schemas/Money', description: '"HAK EDİLEN GELİR"' }
+        completedAppointmentCount: { type: integer, minimum: 0, description: '"tamamlanan 118 randevu"', example: 118 }
+        earnedRevenueChangePercent: { type: [number, 'null'], description: '"+%9": önceki eşit aralığa göre değişim; önceki aralıkta gelir yoksa null', example: 9 }
+        collections: { $ref: '#/components/schemas/Money', description: '"TAHSİLAT" (paket satışları ve kaporalar dahil, iadeler düşülmüş)' }
+        noShow:
+          type: object
+          description: '"GELMEDİ 5 · %4 · 2.150 ₺ kayıp"'
+          required: [count, percent, lostRevenue]
+          properties:
+            count: { type: integer, minimum: 0, description: Gelmedi sayısı, example: 5 }
+            percent: { type: [number, 'null'], minimum: 0, maximum: 100, description: Sonuçlanan randevulara oranı; sonuçlanan yoksa null, example: 4 }
+            lostRevenue: { $ref: '#/components/schemas/Money', description: Kayıp (hizmet tutarı − alınmış kapora) }
+        online:
+          type: object
+          description: '"ONLİNE PAY %46 · 54 randevu online"'
+          required: [appointmentCount, percent]
+          properties:
+            appointmentCount: { type: integer, minimum: 0, description: Online kanaldan gelen randevu, example: 54 }
+            percent: { type: [number, 'null'], minimum: 0, maximum: 100, description: Online oranı; randevu yoksa null, example: 46 }
+        dailyCollections:
+          type: array
+          description: '"Günlük tahsilat": aralıktaki her gün için bir satır'
+          items:
+            type: object
+            required: [date, amountMinor, isClosed]
+            properties:
+              date: { type: string, format: date, description: Yerel gün }
+              amountMinor: { type: integer, format: int64, description: Günün net tahsilatı (kuruş; iade fazlaysa eksi olabilir), example: 1120000 }
+              isClosed: { type: boolean, description: Şube o gün kapalı ("Pazartesi kapalı") }
+        currency: { type: string, enum: [TRY], description: dailyCollections tutarlarının para birimi }
+    CommissionReportRow:
+      type: object
+      description: '"Personel ve prim" satırı'
+      required: [staffId, staffName, appointmentCount, serviceRevenueMinor, serviceCommissionPercent, serviceCommissionMinor, saleCommissionMinor, totalCommissionMinor]
+      properties:
+        staffId: { type: string, format: uuid, description: Personel }
+        staffName: { type: string, description: Personel adı, example: Elif Kaya }
+        appointmentCount: { type: integer, minimum: 0, description: '"Randevu": tamamlanan randevu', example: 38 }
+        serviceRevenueMinor: { type: integer, format: int64, description: '"Hizmet cirosu" (hizmet primi tabanı, kuruş)', example: 2430000 }
+        serviceCommissionPercent: { type: [number, 'null'], minimum: 0, maximum: 100, description: '"Oran": etkin hizmet prim oranı; ciro yoksa null', example: 24 }
+        serviceCommissionMinor: { type: integer, format: int64, description: Hizmet primi (ters kayıtlar dahil; eksi olabilir) }
+        saleCommissionMinor: { type: integer, format: int64, description: Paket satış primi (ters kayıtlar dahil; eksi olabilir) }
+        totalCommissionMinor: { type: integer, format: int64, description: '"Prim" toplamı', example: 583200 }
+    CommissionReport:
+      type: object
+      description: Personel bazında prim raporu
+      required: [branchId, from, to, currency, items, totalCommissionMinor]
+      properties:
+        branchId: { type: [string, 'null'], format: uuid, description: Şube; null = erişilebilen bütün şubeler }
+        from: { type: string, format: date, description: Aralığın ilk günü }
+        to: { type: string, format: date, description: Aralığın son günü }
+        currency: { type: string, enum: [TRY], description: Tutarların para birimi }
+        items:
+          type: array
+          description: Toplam prime göre azalan
+          items: { $ref: '#/components/schemas/CommissionReportRow' }
+        totalCommissionMinor: { type: integer, format: int64, description: Tablonun alt toplamı ("15.665 ₺"), example: 934100 }
+
+    # ───────── kullanıcılar ve roller (Dilim 6) ─────────
+    MembershipRole:
+      type: string
+      description: Salon rolü (İşletme sahibi, Şube yöneticisi, Personel)
+      enum: [Owner, BranchManager, Staff]
+    ManageUser:
+      type: object
+      description: Markadaki kullanıcı (üyelik) satırı
+      required: [userId, fullName, phoneMasked, role, branchIds, status, staffId, isCurrentUser, version]
+      properties:
+        userId: { type: string, format: uuid, description: Kullanıcı }
+        fullName: { type: string, description: Ad, example: Elif Kaya }
+        phoneMasked: { type: string, description: Maskeli telefon, example: '0532 *** ** 05' }
+        role: { $ref: '#/components/schemas/MembershipRole' }
+        branchIds:
+          type: array
+          description: Şubeler; boş dizi = tüm şubeler ("Tümü", Owner)
+          items: { type: string, format: uuid }
+        status: { type: string, enum: [Invited, Active, Disabled], description: '"Aktif", "Davet gönderildi", pasif' }
+        staffId: { type: [string, 'null'], format: uuid, description: Bağlı personel kaydı; yoksa null }
+        isCurrentUser: { type: boolean, description: Oturumdaki kullanıcı }
+        version: { $ref: '#/components/schemas/Version' }
+    ManageUserList:
+      type: object
+      description: Kullanıcılar
+      required: [items]
+      properties:
+        items:
+          type: array
+          description: Ada göre sıralı
+          items: { $ref: '#/components/schemas/ManageUser' }
+    ManageUserUpdate:
+      type: object
+      description: Rol ve şube düzenleme
+      required: [role, branchIds]
+      properties:
+        role: { $ref: '#/components/schemas/MembershipRole' }
+        branchIds:
+          type: array
+          description: Owner'da yok sayılır; diğer rollerde en az bir şube
+          items: { type: string, format: uuid }
+    RoleAccessLevel:
+      type: string
+      description: Erişim düzeyi (All = tam, Branch = kendi şube(ler)i, Own = yalnız kendi kayıtları, None = yok)
+      enum: [All, Branch, Own, None]
+    RoleMatrix:
+      type: object
+      description: Salt okunur rol izinleri matrisi
+      required: [rows]
+      properties:
+        rows:
+          type: array
+          description: Ekrandaki sırayla
+          items:
+            type: object
+            required: [group, permissions, owner, branchManager, staff]
+            properties:
+              group:
+                type: string
+                description: 'Satır (Takvim ve randevu, Müşteri telefonu, Müşteri kartı ve notlar, Kasa ve ödeme alma, Raporlar ve prim, Hizmet ve fiyat düzenleme, Ayarlar)'
+                enum: [CalendarAndAppointments, CustomerPhone, CustomerCardAndNotes, CashAndPayments, ReportsAndCommission, ServicesAndPrices, Settings]
+              permissions:
+                type: array
+                description: Satırın kapsadığı izin kodları
+                items: { $ref: '#/components/schemas/Permission' }
+              owner: { $ref: '#/components/schemas/RoleAccessLevel' }
+              branchManager: { $ref: '#/components/schemas/RoleAccessLevel' }
+              staff: { $ref: '#/components/schemas/RoleAccessLevel' }
+
+    # ───────── KVKK ve veri (Dilim 6) ─────────
+    PrivacyNoticeMode:
+      type: string
+      description: Aydınlatma metni seçimi (OMVILA standart metni veya salonun kendi metni)
+      enum: [Standard, Custom]
+    PrivacySettings:
+      type: object
+      description: Ayarlar → KVKK ve veri
+      required: [noticeMode, standardNotice, customNoticeText, customNoticeUpdatedUtc, transactionRetentionYears, allowedRetentionYears, version]
+      properties:
+        noticeMode: { $ref: '#/components/schemas/PrivacyNoticeMode' }
+        standardNotice:
+          type: object
+          description: '"OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026" ve "Önizle"'
+          required: [version, updatedOn, text]
+          properties:
+            version: { type: string, description: PrivacyNoticeVersion, example: '2026-11-01' }
+            updatedOn: { type: string, format: date, description: Son güncelleme günü }
+            text: { type: string, description: Markanın adı ve iletişim bilgisiyle doldurulmuş standart metin (düz metin) }
+        customNoticeText: { type: [string, 'null'], maxLength: 20000, description: Salonun kendi metni; yoksa null }
+        customNoticeUpdatedUtc: { type: [string, 'null'], format: date-time, description: Salon metninin son değiştiği an }
+        transactionRetentionYears: { type: integer, description: '"İşlem kayıtlarını saklama süresi" (TransactionRetentionYears)', example: 3 }
+        allowedRetentionYears:
+          type: array
+          description: Seçilebilir süreler (yıl)
+          items: { type: integer }
+          example: [3, 5, 10]
+        version: { $ref: '#/components/schemas/Version' }
+    PrivacySettingsUpdate:
+      type: object
+      description: KVKK ayarlarını kaydetme
+      required: [noticeMode, transactionRetentionYears]
+      properties:
+        noticeMode: { $ref: '#/components/schemas/PrivacyNoticeMode' }
+        customNoticeText: { type: [string, 'null'], maxLength: 20000, description: 'noticeMode = Custom ise zorunlu; gönderilmezse değişmez, null ise silinir' }
+        transactionRetentionYears: { type: integer, description: '3, 5 veya 10', example: 5 }
+    DataExportRequest:
+      type: object
+      description: '"Tüm verileri dışa aktar" isteği'
+      properties:
+        email: { type: string, format: email, maxLength: 160, description: Bağlantının gideceği adres; verilmezse kullanıcının kayıtlı e-postası }
+    DataExportRequestResult:
+      type: object
+      description: Dışa aktarma isteği
+      required: [exportId, status, requestedUtc, emailMasked]
+      properties:
+        exportId: { type: string, format: uuid, description: İstek kimliği }
+        status: { type: string, enum: [Queued, Processing, Sent, Failed], description: İsteğin durumu }
+        requestedUtc: { type: string, format: date-time, description: İstek anı }
+        emailMasked: { type: string, description: Bağlantının gideceği maskeli adres, example: 'el***@ornek.com' }
+
+    # ───────── Google Takvim (Dilim 6) ─────────
+    GoogleCalendarConnection:
+      type: object
+      description: Oturumdaki personelin Google Takvim bağlantısı (tek yönlü aktarım)
+      required: [status]
+      properties:
+        status:
+          type: string
+          description: NotConnected = bağlantı yok; TokenExpired = "Google Takvim bağlantısı koptu"
+          enum: [NotConnected, Active, TokenExpired, Revoked]
+        accountEmailMasked: { type: [string, 'null'], description: Bağlı Google hesabı (maskeli) }
+        connectedUtc: { type: [string, 'null'], format: date-time, description: Bağlandığı an }
+        lastSyncedUtc: { type: [string, 'null'], format: date-time, description: Son başarılı aktarım }
+    GoogleCalendarConnectUrl:
+      type: object
+      description: Sağlayıcı izin sayfası adresi
+      required: [url, state, expiresUtc]
+      properties:
+        url: { type: string, format: uri, description: Kullanıcının yönlendirileceği adres }
+        state: { type: string, description: Tek kullanımlık state değeri }
+        expiresUtc: { type: string, format: date-time, description: state'in geçerlilik sonu }
+    GoogleCalendarCallbackRequest:
+      type: object
+      description: Sağlayıcıdan dönen değerler
+      required: [code, state]
+      properties:
+        code: { type: string, maxLength: 2048, description: Sağlayıcının yetki kodu }
+        state: { type: string, maxLength: 256, description: connect-url'deki state }
+
+    # ───────── platform paneli (admin, Dilim 6) ─────────
+    PlatformRole:
+      type: string
+      description: Platform rolü (Yönetici, Destek, Finans; K3)
+      enum: [PlatformAdmin, PlatformSupport, PlatformFinance]
+    AdminPermission:
+      type: string
+      description: Platform izin kodu (docs/alan/roller-yetkiler.md § Platform rolleri)
+      enum:
+        - platform.brands.view
+        - platform.brands.manage
+        - platform.payments.match
+        - platform.sms-senders.decide
+        - platform.credits.grant
+        - platform.plans.view
+        - platform.plans.manage
+        - platform.billing.manage
+        - platform.audit.view
+        - platform.audit.export
+    AdminOtpRequest:
+      type: object
+      description: Platform girişi kod isteği
+      required: [phone]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneInput' }
+    AdminAuthResult:
+      type: object
+      description: Platform oturumu (aud=admin). Jetonlar gövdede (admin yüzeyi çerez kullanmaz)
+      required: [accessToken, expiresInSeconds, refreshToken]
+      properties:
+        accessToken: { type: string, description: Erişim jetonu }
+        expiresInSeconds: { type: integer, description: Erişim jetonunun ömrü (sn), example: 900 }
+        refreshToken: { type: string, description: Yenileme jetonu (her kullanımda döndürülür) }
+    AdminRefreshRequest:
+      type: object
+      description: Platform jetonu yenileme veya çıkış
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, description: Saklanan yenileme jetonu }
+    AdminSession:
+      type: object
+      description: Platform oturumu
+      required: [user, role, permissions, pendingApprovalCount]
+      properties:
+        user:
+          type: object
+          description: Oturumdaki platform kullanıcısı
+          required: [id, fullName, phoneMasked]
+          properties:
+            id: { type: string, format: uuid, description: Kullanıcı }
+            fullName: { type: string, description: Ad, example: Ayşe Demir }
+            phoneMasked: { type: string, description: Maskeli telefon }
+        role: { $ref: '#/components/schemas/PlatformRole' }
+        permissions:
+          type: array
+          description: Rolün izinleri
+          items: { $ref: '#/components/schemas/AdminPermission' }
+        pendingApprovalCount: { type: integer, minimum: 0, description: Menüdeki "Onay kuyrukları" rozeti (kullanıcının görebildiği bekleyenler), example: 7 }
+    AdminBrandRef:
+      type: object
+      description: Marka kısa bilgisi
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid, description: Marka }
+        name: { type: string, description: Marka adı, example: Kuaför Elif }
+    AdminAttentionBrand:
+      type: object
+      description: '"Dikkat isteyen markalar" satırı'
+      required: [brandId, brandName, industryCode, city, planName, reason, pastDueDays, trialDaysLeft, branchCount, appointmentsThisMonth]
+      properties:
+        brandId: { type: string, format: uuid, description: Marka }
+        brandName: { type: string, description: Marka adı, example: Berber Kaan }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        city: { type: [string, 'null'], description: Ana şubenin ili, example: Ankara }
+        planName: { type: string, description: Plan adı, example: Salon }
+        reason:
+          type: string
+          description: '"Ödeme gecikti · 6 gün", "Kontör bitti", "Deneme · 2 gün"'
+          enum: [PastDue, CreditsDepleted, TrialEnding]
+        pastDueDays: { type: [integer, 'null'], minimum: 0, description: Ödeme gecikti gün sayısı }
+        trialDaysLeft: { type: [integer, 'null'], minimum: 0, description: Denemenin bitmesine kalan gün }
+        branchCount: { type: integer, minimum: 0, description: Şube sayısı }
+        appointmentsThisMonth: { type: integer, minimum: 0, description: Bu ay randevu }
+    AdminOverview:
+      type: object
+      description: Platform genel bakış
+      required: [generatedUtc, activeBrands, pendingApprovals, trialing, pastDue, funnel, attentionBrands]
+      properties:
+        generatedUtc: { type: string, format: date-time, description: Yanıtın üretildiği an }
+        activeBrands:
+          type: object
+          description: '"AKTİF MARKA 412 · +18 bu ay"'
+          required: [count, newThisMonth]
+          properties:
+            count: { type: integer, minimum: 0, description: Aktif marka }
+            newThisMonth: { type: integer, minimum: 0, description: Bu ay kaydolan }
+        pendingApprovals:
+          type: object
+          description: '"ONAY BEKLEYEN 7 · 5 havale bildirimi · 2 SMS başlığı"'
+          required: [total, paymentNotices, smsSenders]
+          properties:
+            total: { type: integer, minimum: 0, description: Toplam bekleyen }
+            paymentNotices: { type: integer, minimum: 0, description: Bekleyen havale bildirimi }
+            smsSenders: { type: integer, minimum: 0, description: Bekleyen SMS başlığı }
+        trialing:
+          type: object
+          description: '"DENEMEDE 64 · 9''u bu hafta bitiyor"'
+          required: [count, endingThisWeek]
+          properties:
+            count: { type: integer, minimum: 0, description: Denemedeki marka }
+            endingThisWeek: { type: integer, minimum: 0, description: Denemesi 7 gün içinde biten }
+        pastDue:
+          type: object
+          description: '"ÖDEME GECİKTİ 11 · 3''ü salt okunura geçmek üzere"'
+          required: [count, readOnlySoon]
+          properties:
+            count: { type: integer, minimum: 0, description: Ödemesi geciken marka }
+            readOnlySoon: { type: integer, minimum: 0, description: Salt okunur günü 2 gün içinde olan }
+        funnel:
+          type: object
+          description: '"Aktivasyon hunisi · son 30 gün"'
+          required: [windowDays, signedUp, addedServices, setWorkingHours, firstOnlineAppointment]
+          properties:
+            windowDays: { type: integer, description: Pencere (gün), example: 30 }
+            signedUp: { type: integer, minimum: 0, description: Kaydoldu }
+            addedServices: { type: integer, minimum: 0, description: Hizmet ekledi }
+            setWorkingHours: { type: integer, minimum: 0, description: Çalışma saatlerini girdi }
+            firstOnlineAppointment: { type: integer, minimum: 0, description: İlk online randevu }
+        attentionBrands:
+          type: array
+          description: Aciliyete göre sıralı, en fazla 10
+          items: { $ref: '#/components/schemas/AdminAttentionBrand' }
+    AdminBrandListItem:
+      type: object
+      description: Markalar tablosu satırı
+      required: [id, name, industryCode, city, brandStatus, planCode, planName, subscriptionStatus, trialDaysLeft, pastDueDays, branchCount, appointmentsThisMonth, creditBalance, depositEnabled]
+      properties:
+        id: { type: string, format: uuid, description: Marka }
+        name: { type: string, description: Marka adı, example: Kuaför Elif }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        city: { type: [string, 'null'], description: Ana şubenin ili }
+        brandStatus: { type: string, enum: [Onboarding, Active, Suspended, Archived], description: Marka durumu }
+        planCode: { type: string, description: Plan kodu, example: salon }
+        planName: { type: string, description: Plan adı, example: Salon }
+        subscriptionStatus: { $ref: '#/components/schemas/SubscriptionStatus' }
+        trialDaysLeft: { type: [integer, 'null'], minimum: 0, description: '"Deneme · 9 gün"' }
+        pastDueDays: { type: [integer, 'null'], minimum: 0, description: Ödeme gecikti gün sayısı }
+        branchCount: { type: integer, minimum: 0, description: '"Şube"' }
+        appointmentsThisMonth: { type: integer, minimum: 0, description: '"Bu ay randevu"' }
+        creditBalance: { type: integer, minimum: 0, description: Kontör bakiyesi }
+        depositEnabled: { type: boolean, description: '"Kapora açık": etkin kapora IBAN hesabı var' }
+    AdminBrandPage:
+      type: object
+      description: Marka sayfası
+      required: [counts, items, nextCursor]
+      properties:
+        counts:
+          type: object
+          description: '"412 aktif · 64 denemede" (süzgeçten bağımsız)'
+          required: [active, trialing]
+          properties:
+            active: { type: integer, minimum: 0, description: Aktif marka }
+            trialing: { type: integer, minimum: 0, description: Denemedeki marka }
+        items:
+          type: array
+          description: Ada göre sıralı
+          items: { $ref: '#/components/schemas/AdminBrandListItem' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    CreditTransactionType:
+      type: string
+      description: Kontör hareketi türü (paket satın alındı, gönderim, deneme hediyesi, platform ekleme veya düzeltme, iade)
+      enum: [Purchase, Usage, TrialGift, Grant, Refund]
+    AdminCreditTransaction:
+      type: object
+      description: '"Kontör hareketleri" satırı'
+      required: [id, occurredUtc, type, credits, balanceAfter, note]
+      properties:
+        id: { type: string, format: uuid, description: Hareket (günlük toplanmış gönderim satırında günün ilk hareketi) }
+        occurredUtc: { type: string, format: date-time, description: '"Tarih"' }
+        type: { $ref: '#/components/schemas/CreditTransactionType' }
+        credits: { type: integer, description: '"Miktar" (artı ekleme, eksi tüketim)', example: 1000 }
+        balanceAfter: { type: integer, description: '"Bakiye"', example: 1240 }
+        note: { type: [string, 'null'], description: Platform eklemesinin nedeni; diğerlerinde null }
+    AdminCreditTransactionPage:
+      type: object
+      description: Kontör hareketleri sayfası
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          description: Yeniden eskiye
+          items: { $ref: '#/components/schemas/AdminCreditTransaction' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    AdminPaymentNoticePage:
+      type: object
+      description: Havale bildirimi sayfası
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          description: Yeniden eskiye
+          items: { $ref: '#/components/schemas/PaymentNoticeSummary' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    AdminBrandDetail:
+      type: object
+      description: Marka detayı "Özet" (telefonlar maskeli)
+      required: [id, name, slug, industryCode, city, brandStatus, createdUtc, bookingUrl, owner, branches, activeStaffCount, customerCount, googleCalendarConnectedStaffCount, smsSender, subscription, credits, appointmentsThisMonth, recentCreditTransactions, version]
+      properties:
+        id: { type: string, format: uuid, description: Marka }
+        name: { type: string, description: Marka adı, example: Kuaför Elif }
+        slug: { type: string, description: Bağlantı adı, example: kuafor-elif }
+        industryCode: { $ref: '#/components/schemas/IndustryCode' }
+        city: { type: [string, 'null'], description: Ana şubenin ili }
+        brandStatus: { type: string, enum: [Onboarding, Active, Suspended, Archived], description: Marka durumu }
+        createdUtc: { type: string, format: date-time, description: '"kayıt 11 Kasım"' }
+        bookingUrl: { type: string, format: uri, description: '"Rezervasyon bağlantısı"' }
+        owner:
+          type: object
+          description: '"Sahip" (telefon maskeli)'
+          required: [fullName, phoneMasked]
+          properties:
+            fullName: { type: string, description: Sahibin adı, example: Elif Kaya }
+            phoneMasked: { type: string, description: Maskeli telefon, example: '0532 *** ** 05' }
+        branches:
+          type: array
+          description: '"Şubeler"'
+          items: { $ref: '#/components/schemas/BranchRef' }
+        activeStaffCount: { type: integer, minimum: 0, description: '"Personel · 6 aktif"' }
+        customerCount: { type: integer, minimum: 0, description: '"Müşteri kaydı"' }
+        googleCalendarConnectedStaffCount: { type: integer, minimum: 0, description: '"Google Takvim · 3 personelde bağlı (tek yönlü)"' }
+        smsSender: { $ref: '#/components/schemas/SmsSender' }
+        subscription:
+          type: object
+          description: '"ABONELİK" ve "ABONELİK ÖDEMESİ" kartları'
+          required: [status, planCode, planName, billingCycle, paymentMethod, trialEndsOn, trialDaysLeft, pastDueSince, readOnlyOn, transferCode, pendingNoticeId, pendingNoticeNotifiedUtc]
+          properties:
+            status: { $ref: '#/components/schemas/SubscriptionStatus' }
+            planCode: { type: string, description: Plan kodu }
+            planName: { type: string, description: Plan adı }
+            billingCycle: { $ref: '#/components/schemas/BillingCycle' }
+            paymentMethod:
+              description: Ödeme yolu; henüz yoksa null
+              oneOf:
+                - $ref: '#/components/schemas/SubscriptionPaymentMethod'
+                - type: 'null'
+            trialEndsOn: { type: [string, 'null'], format: date, description: Deneme bitişi }
+            trialDaysLeft: { type: [integer, 'null'], minimum: 0, description: '"9 gün kaldı"' }
+            pastDueSince: { type: [string, 'null'], format: date, description: Ödeme gecikti başlangıcı }
+            readOnlyOn: { type: [string, 'null'], format: date, description: Salt okunura geçeceği gün }
+            transferCode: { type: string, description: Abonelik havale kodu, example: ABN-KE-1125 }
+            pendingNoticeId: { type: [string, 'null'], format: uuid, description: '"Kasım bildirildi · eşleştirme bekliyor"' }
+            pendingNoticeNotifiedUtc: { type: [string, 'null'], format: date-time, description: Bekleyen bildirimin anı }
+        credits:
+          type: object
+          description: '"KONTÖR 1.240 · tahmini 26 gün yeter"'
+          required: [balance, estimatedDaysLeft]
+          properties:
+            balance: { type: integer, minimum: 0, description: Bakiye }
+            estimatedDaysLeft: { type: [integer, 'null'], minimum: 0, description: Son 30 günün tüketimine göre; hesaplanamazsa null }
+        appointmentsThisMonth:
+          type: object
+          description: '"BU AY RANDEVU 412 · %61''i online"'
+          required: [count, onlinePercent]
+          properties:
+            count: { type: integer, minimum: 0, description: Bu ay randevu }
+            onlinePercent: { type: [number, 'null'], minimum: 0, maximum: 100, description: Online oranı }
+        recentCreditTransactions:
+          type: array
+          description: Son 30 günün kontör hareketleri (en fazla 10)
+          items: { $ref: '#/components/schemas/AdminCreditTransaction' }
+        version: { $ref: '#/components/schemas/Version' }
+    AdminCreditGrant:
+      type: object
+      description: Kontör ekleme veya düzeltme
+      required: [credits, reason]
+      properties:
+        credits: { type: integer, minimum: -100000, maximum: 100000, description: Eklenecek kontör (eksi = düzeltme; 0 olamaz), example: 500 }
+        reason: { type: string, minLength: 3, maxLength: 200, description: 'Neden (ör. "Destek talebi #4821"); denetime yazılır' }
+    AdminCreditGrantResult:
+      type: object
+      description: Kontör eklendi
+      required: [transaction, balance]
+      properties:
+        transaction: { $ref: '#/components/schemas/AdminCreditTransaction' }
+        balance: { type: integer, minimum: 0, description: Güncel bakiye }
+    AdminBrandStatusChange:
+      type: object
+      description: Marka durumu değişikliği
+      required: [status, reason]
+      properties:
+        status: { type: string, enum: [Active, Suspended], description: Yeni durum }
+        reason: { type: string, minLength: 3, maxLength: 300, description: Neden; denetime yazılır }
+    AdminPlanChange:
+      type: object
+      description: Plan değişikliği
+      required: [planCode, reason]
+      properties:
+        planCode: { type: string, description: Yeni plan kodu, example: salon_plus }
+        billingCycle: { $ref: '#/components/schemas/BillingCycle' }
+        reason: { type: string, minLength: 3, maxLength: 300, description: Neden; denetime yazılır }
+    MatchVerdict:
+      type: string
+      description: CodeMatches = "Kod tutuyor" (kod var ve tutar tutuyor); CheckRequired = "Kontrol edin" (kod yok veya tutar farklı)
+      enum: [CodeMatches, CheckRequired]
+    AdminApprovalQueueItem:
+      type: object
+      description: Onay kuyruğu satırı (type'a göre paymentNotice veya smsSender dolu)
+      required: [type, id, brandId, brandName, submittedUtc, paymentNotice, smsSender]
+      properties:
+        type: { type: string, enum: [PaymentNotice, SmsSender], description: Satır türü }
+        id: { type: string, format: uuid, description: PaymentNotice veya BrandSmsSender kimliği }
+        brandId: { type: string, format: uuid, description: Marka }
+        brandName: { type: string, description: Marka adı, example: Kuaför Elif }
+        submittedUtc: { type: string, format: date-time, description: Bildirim veya başvuru anı ("2 gündür bekliyor") }
+        paymentNotice:
+          description: Havale bildirimi ayrıntısı; SMS satırında null
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [purpose, periodStart, credits, expectedAmount, transferCode, senderName, hasReceipt, version, candidate]
+              properties:
+                purpose: { $ref: '#/components/schemas/PaymentNoticePurpose' }
+                periodStart: { type: [string, 'null'], format: date, description: Abonelikte ödenen dönemin ilk günü ("Kasım"); kontörde null }
+                credits: { type: [integer, 'null'], minimum: 1, description: Kontörde paket kontörü ("5.000") }
+                expectedAmount:
+                  description: Beklenen tutar; tanımlı değilse null
+                  oneOf:
+                    - $ref: '#/components/schemas/Money'
+                    - type: 'null'
+                transferCode: { type: string, description: Beklenen açıklama kodu }
+                senderName: { type: [string, 'null'], description: Gönderen adı }
+                hasReceipt: { type: boolean, description: '"dekont yüklendi"' }
+                version: { $ref: '#/components/schemas/Version' }
+                candidate:
+                  description: En iyi eşleşme adayı; yoksa null
+                  oneOf:
+                    - type: 'null'
+                    - type: object
+                      required: [bankTransactionId, verdict, codeFound, amountMatches]
+                      properties:
+                        bankTransactionId: { type: string, format: uuid, description: Aday banka hareketi ("Eşleştir" bununla çağrılır) }
+                        verdict: { $ref: '#/components/schemas/MatchVerdict' }
+                        codeFound: { type: boolean, description: Açıklamada kod var }
+                        amountMatches: { type: boolean, description: Tutar beklenene eşit }
+        smsSender:
+          description: SMS başlığı başvurusu; havale satırında null
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [requestedName, currentEffectiveName, version]
+              properties:
+                requestedName: { type: string, description: Başvurulan ad, example: NAILSTUDIO }
+                currentEffectiveName: { type: string, description: SMS'lerin şu an gittiği ad, example: OMVILA }
+                version: { $ref: '#/components/schemas/Version' }
+    AdminApprovalQueue:
+      type: object
+      description: Onay kuyrukları
+      required: [paymentNoticeCount, smsSenderCount, oldestSubmittedUtc, items]
+      properties:
+        paymentNoticeCount: { type: integer, minimum: 0, description: '"Havale bildirimi 5"' }
+        smsSenderCount: { type: integer, minimum: 0, description: '"SMS başlığı 2"' }
+        oldestSubmittedUtc: { type: [string, 'null'], format: date-time, description: '"en eskisi 2 gün"; kuyruk boşsa null' }
+        items:
+          type: array
+          description: En eskiden yeniye
+          items: { $ref: '#/components/schemas/AdminApprovalQueueItem' }
+    BankTransactionCandidate:
+      type: object
+      description: Eşleşme adayı banka hareketi ("OMVILA hesabına gelen havaleler")
+      required: [bankTransactionId, valueDate, receivedUtc, amount, senderName, description, codeFound, amountMatches, verdict]
+      properties:
+        bankTransactionId: { type: string, format: uuid, description: Banka hareketi }
+        valueDate: { type: string, format: date, description: Değer tarihi }
+        receivedUtc: { type: [string, 'null'], format: date-time, description: Dökümde saat varsa hareketin anı ("18 Kas 14:05") }
+        amount: { $ref: '#/components/schemas/Money' }
+        senderName: { type: string, description: Gönderen (dökümdeki gibi), example: ELİF KAYA }
+        description: { type: [string, 'null'], description: '"açıklama"; boşsa null ("açıklama: —")' }
+        codeFound: { type: boolean, description: Açıklamada markanın kodu var }
+        amountMatches: { type: boolean, description: Tutar beklenene eşit }
+        verdict: { $ref: '#/components/schemas/MatchVerdict' }
+    AdminPaymentNoticeDetail:
+      type: object
+      description: Havale bildirimi ayrıntısı ve adaylar
+      required: [id, brandId, brandName, purpose, planName, periodStart, periodEnd, credits, expectedAmount, transferCode, senderName, notifiedUtc, channel, status, receipt, resolution, candidateWindow, candidates, version]
+      properties:
+        id: { type: string, format: uuid, description: Bildirim }
+        brandId: { type: string, format: uuid, description: Marka }
+        brandName: { type: string, description: Marka adı }
+        purpose: { $ref: '#/components/schemas/PaymentNoticePurpose' }
+        planName: { type: [string, 'null'], description: Abonelikte plan adı ("Salon planı · Kasım 2026"); kontörde null }
+        periodStart: { type: [string, 'null'], format: date, description: Abonelikte dönem başı }
+        periodEnd: { type: [string, 'null'], format: date, description: Abonelikte dönem sonu }
+        credits: { type: [integer, 'null'], minimum: 1, description: Kontörde paket kontörü }
+        expectedAmount:
+          description: '"Beklenen tutar"; tanımlı değilse null'
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        transferCode: { type: string, description: '"Açıklama kodu"', example: ABN-KE-1125 }
+        senderName: { type: [string, 'null'], description: '"Gönderen"' }
+        notifiedUtc: { type: string, format: date-time, description: '"Bildirim"' }
+        channel: { type: string, enum: [Panel, App], description: '"panelden" / uygulamadan' }
+        status: { $ref: '#/components/schemas/PaymentNoticeStatus' }
+        receipt:
+          description: '"Dekont"; yüklenmediyse null'
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [fileName, contentType, sizeBytes, uploadedUtc]
+              properties:
+                fileName: { type: string, description: Dosya adı }
+                contentType: { type: string, enum: [application/pdf, image/jpeg, image/png], description: Dosya türü }
+                sizeBytes: { type: integer, minimum: 0, maximum: 5242880, description: Boyut (bayt) }
+                uploadedUtc: { type: string, format: date-time, description: Yüklendiği an }
+        resolution:
+          description: Sonuç (Pending'de null)
+          oneOf:
+            - type: 'null'
+            - type: object
+              required: [resolvedUtc, resolvedByName, matchedBankTransactionId, message]
+              properties:
+                resolvedUtc: { type: string, format: date-time, description: Sonuçlandığı an }
+                resolvedByName: { type: string, description: İşlemi yapan platform kullanıcısı }
+                matchedBankTransactionId: { type: [string, 'null'], format: uuid, description: Eşleşen banka hareketi (Matched) }
+                message: { type: [string, 'null'], description: 'Markaya yazılan not (NotFound, Rejected)' }
+        candidateWindow:
+          type: object
+          description: Aday aralığı ("16–18 Kasım")
+          required: [from, to]
+          properties:
+            from: { type: string, format: date, description: İlk gün }
+            to: { type: string, format: date, description: Son gün }
+        candidates:
+          type: array
+          description: Eşleşmemiş adaylar; en olası önce. Bildirim sonuçlandıysa boş
+          items: { $ref: '#/components/schemas/BankTransactionCandidate' }
+        version: { $ref: '#/components/schemas/Version' }
+    AdminPaymentNoticeMatch:
+      type: object
+      description: Eşleştirilecek banka hareketi
+      required: [bankTransactionId]
+      properties:
+        bankTransactionId: { type: string, format: uuid, description: Seçili banka hareketi }
+    AdminPaymentNoticeResolution:
+      type: object
+      description: Markaya yazılacak not (Bulunamadı için isteğe bağlı, ret için zorunlu)
+      properties:
+        message: { type: string, minLength: 3, maxLength: 300, description: Markanın bildiriminde gösterilecek not }
+    AdminSmsSenderDecision:
+      type: object
+      description: Gönderen adı kararı
+      required: [senderId, brandId, name, status, decidedUtc, rejectionReason]
+      properties:
+        senderId: { type: string, format: uuid, description: Başvuru }
+        brandId: { type: string, format: uuid, description: Marka }
+        name: { type: string, description: Başvurulan ad, example: NAILSTUDIO }
+        status: { $ref: '#/components/schemas/SmsSenderStatus' }
+        decidedUtc: { type: string, format: date-time, description: Karar anı }
+        rejectionReason: { type: [string, 'null'], description: Ret nedeni }
+    AdminSmsSenderRejection:
+      type: object
+      description: Gönderen adı reddi
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 3, maxLength: 200, description: Salonun göreceği ret nedeni }
+    BankTransaction:
+      type: object
+      description: OMVILA hesabına gelen havale (PlatformBankTransaction)
+      required: [id, valueDate, receivedUtc, amount, senderName, description, bankReference, source, matchedNoticeId, matchedBrandName]
+      properties:
+        id: { type: string, format: uuid, description: Hareket }
+        valueDate: { type: string, format: date, description: Değer tarihi }
+        receivedUtc: { type: [string, 'null'], format: date-time, description: Dökümde saat varsa hareketin anı }
+        amount: { $ref: '#/components/schemas/Money' }
+        senderName: { type: string, description: Gönderen }
+        description: { type: [string, 'null'], description: Açıklama }
+        bankReference: { type: string, description: Bankanın hareket referansı (benzersiz) }
+        source: { type: string, enum: [Import, Manual], description: CSV ile içe aktarıldı veya elle girildi }
+        matchedNoticeId: { type: [string, 'null'], format: uuid, description: Eşleştiği bildirim }
+        matchedBrandName: { type: [string, 'null'], description: Eşleştiği marka }
+    BankTransactionPage:
+      type: object
+      description: Banka hareketi sayfası
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          description: Değer tarihine göre yeniden eskiye
+          items: { $ref: '#/components/schemas/BankTransaction' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    BankTransactionCreate:
+      type: object
+      description: Elle banka hareketi
+      required: [valueDate, amount, senderName, bankReference]
+      properties:
+        valueDate: { type: string, format: date, description: Değer tarihi }
+        amount: { $ref: '#/components/schemas/Money' }
+        senderName: { type: string, minLength: 2, maxLength: 160, description: Gönderen }
+        description: { type: [string, 'null'], maxLength: 300, description: Açıklama }
+        bankReference: { type: string, minLength: 3, maxLength: 80, description: Bankanın hareket referansı }
+    BankTransactionImportRequest:
+      type: object
+      description: Banka dökümü CSV yükleme (multipart)
+      required: [file]
+      properties:
+        file: { type: string, format: binary, description: 'UTF-8 CSV (virgül veya noktalı virgül ayraçlı), ilk satır başlık' }
+        dryRun: { type: boolean, default: true, description: 'true = önizleme (kayıt yazılmaz), false = uygula' }
+    BankTransactionImportResult:
+      type: object
+      description: İçe aktarma önizlemesi veya sonucu
+      required: [dryRun, fileName, totalRows, imported, duplicates, skippedOutgoing, invalidRows, errors]
+      properties:
+        dryRun: { type: boolean, description: Önizleme mi }
+        fileName: { type: string, description: Yüklenen dosya adı }
+        totalRows: { type: integer, minimum: 0, description: Başlık dışı satır }
+        imported: { type: integer, minimum: 0, description: Eklenen (önizlemede eklenecek) hareket }
+        duplicates: { type: integer, minimum: 0, description: Referansı zaten kayıtlı olduğu için atlanan }
+        skippedOutgoing: { type: integer, minimum: 0, description: Giden (eksi) tutarlı olduğu için atlanan }
+        invalidRows: { type: integer, minimum: 0, description: Hatalı satır }
+        errors:
+          type: array
+          description: Hatalı satırlar (en fazla 100)
+          items:
+            type: object
+            required: [rowNumber, column, code]
+            properties:
+              rowNumber: { type: integer, minimum: 1, description: Satır numarası (başlık 1) }
+              column: { type: string, description: Sütun başlığı }
+              code: { type: string, description: 'Hata kodu (required, invalid_format, out_of_range)' }
+    AdminSubscriptionListItem:
+      type: object
+      description: Abonelikler tablosu satırı
+      required: [brandId, brandName, planName, status, pastDueDays, trialDaysLeft, creditBalance, creditsLow, nextStep]
+      properties:
+        brandId: { type: string, format: uuid, description: Marka }
+        brandName: { type: string, description: Marka adı }
+        planName: { type: string, description: Plan adı }
+        status: { $ref: '#/components/schemas/SubscriptionStatus' }
+        pastDueDays: { type: [integer, 'null'], minimum: 0, description: '"Ödeme gecikti · 6. gün"' }
+        trialDaysLeft: { type: [integer, 'null'], minimum: 0, description: Denemenin bitmesine kalan gün }
+        creditBalance: { type: integer, minimum: 0, description: '"Kontör"' }
+        creditsLow: { type: boolean, description: Kontör eşiğin altında ("Aktif · kontör bitti" bakiye 0 iken) }
+        nextStep:
+          type: object
+          description: '"Sonraki adım"'
+          required: [type, date]
+          properties:
+            type: { type: string, enum: [TrialEnds, ReadOnlyOn, Renews, ReactivatesOnPayment, SmsStopped, ArchivesOn], description: Adım türü }
+            date: { type: [string, 'null'], format: date, description: Adımın günü (ReactivatesOnPayment ve SmsStopped'da null) }
+    AdminSubscriptionPage:
+      type: object
+      description: Abonelik sayfası
+      required: [counts, items, nextCursor]
+      properties:
+        counts:
+          type: object
+          description: Üst kartlar (süzgeçten bağımsız)
+          required: [active, trialing, trialEndingThisWeek, pastDue, readOnly]
+          properties:
+            active: { type: integer, minimum: 0, description: '"AKTİF"' }
+            trialing: { type: integer, minimum: 0, description: '"DENEMEDE"' }
+            trialEndingThisWeek: { type: integer, minimum: 0, description: '"9''u bu hafta bitiyor"' }
+            pastDue: { type: integer, minimum: 0, description: '"ÖDEME GECİKTİ"' }
+            readOnly: { type: integer, minimum: 0, description: '"SALT OKUNUR"' }
+        items:
+          type: array
+          description: Aciliyete göre sıralı
+          items: { $ref: '#/components/schemas/AdminSubscriptionListItem' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    AuditLogEntry:
+      type: object
+      description: Denetim kaydı satırı (değiştirilemez)
+      required: [id, occurredUtc, actor, action, entityType, entityId, brand, changes]
+      properties:
+        id: { type: integer, format: int64, description: Kayıt numarası }
+        occurredUtc: { type: string, format: date-time, description: '"Zaman"' }
+        actor:
+          type: object
+          description: '"Kim"'
+          required: [type, id, name, platformRole]
+          properties:
+            type: { type: string, enum: [User, PlatformUser, Customer, System], description: İşlemi yapan türü ("Sistem · Otomatik") }
+            id: { type: [string, 'null'], format: uuid, description: İşlemi yapan; System'de null }
+            name: { type: [string, 'null'], description: Ad (müşteride maskeli); System'de null }
+            platformRole:
+              description: Platform kullanıcısında rol ("Destek", "Yönetici"); diğerlerinde null
+              oneOf:
+                - $ref: '#/components/schemas/PlatformRole'
+                - type: 'null'
+        action: { type: string, enum: [Create, Update, Delete, View, Approve, Match, Export, Anonymize], description: Eylem }
+        entityType: { type: string, description: 'Varlık türü (Brand, PaymentNotice, CreditTransaction, Subscription, BrandSmsSender, BrandCustomer…)', example: Brand }
+        entityId: { type: [string, 'null'], description: Varlık kimliği }
+        brand:
+          description: '"Marka"; marka dışı kayıtta null'
+          oneOf:
+            - $ref: '#/components/schemas/AdminBrandRef'
+            - type: 'null'
+        changes:
+          type: object
+          description: '"Ayrıntı": değişen alanlar ve bağlam (telefon ve ad maskeli)'
+          additionalProperties: true
+    AuditLogPage:
+      type: object
+      description: Denetim kaydı sayfası
+      required: [items, nextCursor]
+      properties:
+        items:
+          type: array
+          description: Yeniden eskiye
+          items: { $ref: '#/components/schemas/AuditLogEntry' }
+        nextCursor: { type: [string, 'null'], description: Sonraki sayfa imleci }
+    PlanFeatures:
+      type: object
+      description: Plan özellik bayrakları (ekran metinleri istemcide)
+      required: [walkInQueue, waitlist, packages, crossBranchReports, prioritySupport]
+      properties:
+        walkInQueue: { type: boolean, description: Kapıda sıra }
+        waitlist: { type: boolean, description: Bekleme listesi }
+        packages: { type: boolean, description: Paketler ve prim raporu }
+        crossBranchReports: { type: boolean, description: Şubeler arası rapor }
+        prioritySupport: { type: boolean, description: Öncelikli destek }
+    AdminPlan:
+      type: object
+      description: Plan kartı
+      required: [code, name, description, monthlyPrice, yearlyPrice, includedBranchCount, extraBranchPrice, staffLimit, includedSmsCredits, features, isPublic, isActive, brandCount]
+      properties:
+        code: { type: string, description: Plan kodu, example: salon }
+        name: { type: string, description: Plan adı, example: Salon }
+        description: { type: [string, 'null'], description: '"Küçük ve orta salonlar"' }
+        monthlyPrice:
+          description: Aylık fiyat; tanımlı değilse null
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        yearlyPrice:
+          description: Yıllık fiyat; tanımlı değilse null
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        includedBranchCount: { type: [integer, 'null'], minimum: 1, description: Dahil şube; null = sınırsız }
+        extraBranchPrice:
+          description: Ek şube ücreti (aylık); null = ek şube yok veya tanımlı değil
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        staffLimit: { type: [integer, 'null'], minimum: 1, description: Personel sınırı; null = sınırsız }
+        includedSmsCredits: { type: [integer, 'null'], minimum: 0, description: Dönem başına dahil SMS; tanımlı değilse null }
+        features: { $ref: '#/components/schemas/PlanFeatures' }
+        isPublic: { type: boolean, description: Tanıtım sitesinde ve kayıtta gösterilir }
+        isActive: { type: boolean, description: Yeni kayıtlarda seçilebilir }
+        brandCount: { type: integer, minimum: 0, description: '"241 marka": bu plandaki iptal edilmemiş abonelik' }
+    AdminPlanUpdate:
+      type: object
+      description: Plan düzenleme (code ile eşleşir)
+      required: [code, name, description, monthlyPrice, yearlyPrice, includedBranchCount, extraBranchPrice, staffLimit, includedSmsCredits, features, isPublic, isActive]
+      properties:
+        code: { type: string, description: Düzenlenen plan }
+        name: { type: string, minLength: 2, maxLength: 60, description: Plan adı }
+        description: { type: [string, 'null'], maxLength: 120, description: Kısa açıklama }
+        monthlyPrice:
+          description: Aylık fiyat; null = belirlenmedi
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        yearlyPrice:
+          description: Yıllık fiyat; null = yok
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        includedBranchCount: { type: [integer, 'null'], minimum: 1, description: Dahil şube; null = sınırsız }
+        extraBranchPrice:
+          description: Ek şube ücreti; null = ek şube yok
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        staffLimit: { type: [integer, 'null'], minimum: 1, description: Personel sınırı; null = sınırsız }
+        includedSmsCredits: { type: [integer, 'null'], minimum: 0, description: Dahil SMS }
+        features: { $ref: '#/components/schemas/PlanFeatures' }
+        isPublic: { type: boolean, description: Tanıtım sitesinde gösterilir }
+        isActive: { type: boolean, description: Yeni kayıtlarda seçilebilir }
+    AdminPlanCatalog:
+      type: object
+      description: Planlar ve ortak kurallar
+      required: [plans, rules, version]
+      properties:
+        plans:
+          type: array
+          description: Plan kartları (Tekil, Salon, Salon Plus)
+          items: { $ref: '#/components/schemas/AdminPlan' }
+        rules:
+          type: object
+          description: '"Ortak kurallar" (yapılandırmadan, salt okunur)'
+          required: [trialDays, pastDueGraceDays, trialCredits]
+          properties:
+            trialDays: { type: integer, minimum: 0, description: '"Deneme süresi"', example: 14 }
+            pastDueGraceDays: { type: integer, minimum: 0, description: '"Ödeme gecikmesinde … gün hatırlatma, sonra salt okunur"', example: 7 }
+            trialCredits: { type: [integer, 'null'], minimum: 0, description: '"Deneme hediyesi" SMS; tanımlı değilse null' }
+        version: { $ref: '#/components/schemas/Version' }
+    AdminPlanCatalogUpdate:
+      type: object
+      description: Planları kaydetme
+      required: [plans]
+      properties:
+        plans:
+          type: array
+          minItems: 1
+          description: Düzenlenen planlar
+          items: { $ref: '#/components/schemas/AdminPlanUpdate' }
+    AdminCreditPackage:
+      type: object
+      description: Kontör paketi (platform)
+      required: [code, name, credits, price, isActive]
+      properties:
+        code: { type: string, description: Paket kodu, example: starter }
+        name: { type: string, minLength: 2, maxLength: 60, description: '"Paket"', example: Başlangıç }
+        credits: { type: integer, minimum: 1, description: '"SMS"', example: 1000 }
+        price:
+          description: '"Fiyat"; null = belirlenmedi'
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+            - type: 'null'
+        isActive: { type: boolean, description: Satışta }
+    AdminCreditPackageCatalog:
+      type: object
+      description: Kontör paketleri
+      required: [packages, version]
+      properties:
+        packages:
+          type: array
+          description: Kontöre göre artan
+          items: { $ref: '#/components/schemas/AdminCreditPackage' }
+        version: { $ref: '#/components/schemas/Version' }
+    AdminCreditPackageCatalogUpdate:
+      type: object
+      description: Kontör paketlerini kaydetme
+      required: [packages]
+      properties:
+        packages:
+          type: array
+          minItems: 1
+          description: Düzenlenen paketler (code ile eşleşir)
+          items: { $ref: '#/components/schemas/AdminCreditPackage' }

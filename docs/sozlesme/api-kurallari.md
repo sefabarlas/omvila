@@ -91,7 +91,12 @@ RFC 9457 `application/problem+json`:
 | 409 | `cash_day_already_closed` | Kapatılmış kasa günü yeniden kapatılmak istendi | "Bu gün zaten kapatıldı" · yenile |
 | 409 | `outside_working_hours` | Panelde çalışma saati dışı (onaysız) | Uyarı + "Yine de ekle" |
 | 409 | `staff_on_time_off` | Personel izinli (onaysız) | Uyarı |
-| 409 | `insufficient_credits` | Kontör yetersiz | "Kontör az" şeridi |
+| 409 | `insufficient_credits` | Kontör yetersiz (platformun eksi düzeltmesi bakiyeyi sıfırın altına indirirse de) | "Kontör az" şeridi |
+| 409 | `payment_notice_already_pending` | Aynı amaç (kontörde aynı paket) için bekleyen havale bildirimi var | "Bu ödeme için bildiriminiz zaten inceleniyor" + `meta.paymentNoticeId` |
+| 409 | `bank_transaction_already_matched` | Platform: banka hareketi başka bir bildirime bağlı | "Bu hareket başka bildirimle eşleştirildi" · yenile |
+| 409 | `bank_transaction_duplicate` | Platform: aynı banka referanslı hareket zaten kayıtlı | Alan altında mesaj + `meta.bankTransactionId` |
+| 409 | `last_owner_required` | Markadaki son işletme sahibi başka role alınmak istendi | "En az bir işletme sahibi kalmalı" |
+| 409 | `plan_limit_exceeded` | Platform: markanın personel/şube sayısı yeni planın sınırını aşıyor | Uyarı + `meta.staffCount`, `meta.staffLimit`, `meta.branchCount`, `meta.includedBranchCount` |
 | 412 | `concurrency_conflict` | `If-Match` uyuşmadı | "Kayıt çakışması · Yenile" |
 | 422 | `idempotency_key_reused` | Aynı anahtar, farklı gövde | Geliştirici hatası |
 | 422 | `otp_invalid` | Kod yanlış | "Kod hatalı" + `meta.attemptsLeft` |
