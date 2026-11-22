@@ -75,6 +75,16 @@ enum ErrorCode {
   rateLimited(r'rate_limited'),
   @JsonValue(r'try_again')
   tryAgain(r'try_again'),
+  @JsonValue(r'payment_notice_already_pending')
+  paymentNoticeAlreadyPending(r'payment_notice_already_pending'),
+  @JsonValue(r'bank_transaction_already_matched')
+  bankTransactionAlreadyMatched(r'bank_transaction_already_matched'),
+  @JsonValue(r'bank_transaction_duplicate')
+  bankTransactionDuplicate(r'bank_transaction_duplicate'),
+  @JsonValue(r'last_owner_required')
+  lastOwnerRequired(r'last_owner_required'),
+  @JsonValue(r'plan_limit_exceeded')
+  planLimitExceeded(r'plan_limit_exceeded'),
   @JsonValue(r'unknown_default_open_api')
   unknownDefaultOpenApi(r'unknown_default_open_api');
 

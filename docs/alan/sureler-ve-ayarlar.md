@@ -115,6 +115,8 @@ Yüzde kapora kuruşa yukarı yuvarlanmaz, **liraya** yuvarlanır (en yakın tam
 | `AuditLogRetentionYears` | 2 | Platform | "Kayıtlar 2 yıl saklanır" | ✔ hukuk |
 | `OutboxRetentionDays` | 180 | Platform | Gönderilmiş bildirim gövdeleri sonra silinir, sayaçlar kalır | ✔ hukuk |
 | `PrivacyNoticeVersion` | `2026-11-01` | Platform / Brand | "OMVILA standart aydınlatma metni" veya salonun kendi metni | |
+| `PrivacyNoticeMode` | `Standard` | Brand (`Standard`, `Custom`) | "Kendi metnimi kullan"; `Custom` iken salonun metni (`CustomPrivacyNoticeText`, en fazla 20.000 karakter) gösterilir (`manageUpdatePrivacySettings`) | |
+| `DataExportLinkValidityDays` | 7 | Platform | "Tüm verileri dışa aktar" e-postasındaki indirme bağlantısının geçerliliği (T-116) | |
 
 ## Abonelik ve platform ("Planlar ve fiyat → Ortak kurallar")
 

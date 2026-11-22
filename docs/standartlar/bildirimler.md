@@ -56,6 +56,9 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `staff.walkin_queue` | Tercihe göre | `Sırada {n} kişi` | `Kapıda sıra · tahmini bekleme {dk} dk.` | Sıra |
 | `owner.credits_low` | Owner | `SMS kontörü azaldı` | `{kalan} SMS kaldı, tahmini {gün} gün yeter.` | Panel · kontör |
 | `owner.subscription_payment_failed` | Owner | `Abonelik ödemesi alınamadı` | `{gün} gün içinde kartı güncelleyin ya da havale ile ödeyin; {tarih} salt okunur.` | Panel · abonelik |
+| `owner.payment_notice_matched` | Owner | taslak (T-116) | Havale eşleşti: abonelik dönemi ödendi veya kontör eklendi | Panel · abonelik |
+| `owner.payment_notice_not_found` | Owner | taslak (T-116) | Havale OMVILA hesabında bulunamadı; platformun notu eklenir, salon yeniden bildirebilir | Panel · abonelik |
+| `owner.payment_notice_rejected` | Owner | taslak (T-116) | Havale bildirimi reddedildi (yinelenen veya geçersiz); platformun notu eklenir | Panel · abonelik |
 
 ### İşletme SMS'leri
 
@@ -70,6 +73,10 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.trial_ending` | Deneme bitmeden 3 gün önce |
 | `owner.credits_low` | Kontör eşiğin altına inince (push ile birlikte) |
 | `owner.subscription_payment_failed` | Çekim başarısız / havale gelmedi |
+| `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte; metin taslak, T-116) |
+| `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte; metin taslak, T-116) |
+
+Platform ekibine ayrı bildirim olayı yoktur: yeni havale bildirimi ve SMS adı başvurusu platform panelindeki "Onay kuyrukları" rozetinde (`AdminSession.pendingApprovalCount`) görünür (T-116).
 
 ## Şablon testi (zorunlu)
 `Notifications.Tests/TemplateLengthTests`: her SMS şablonu, en uzun gerçekçi değerlerle (salon adı 30 karakter, en uzun Türkçe ay ve gün kısaltması, 4 haneli tutar, 26 karakter IBAN, 10 karakter kod) render edilir. GSM-7 Türkçe ile 155 karakteri geçmemeli. Geçerse test başarısız olur; şablon kısaltılır veya değişken kırpılır (salon adı kısaltması).

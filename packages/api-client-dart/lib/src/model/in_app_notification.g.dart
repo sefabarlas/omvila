@@ -208,5 +208,11 @@ const _$StaffNotificationEventEnumMap = {
   StaffNotificationEvent.ownerPeriodSubscriptionPaymentFailed:
       'owner.subscription_payment_failed',
   StaffNotificationEvent.ownerPeriodTrialEnding: 'owner.trial_ending',
+  StaffNotificationEvent.ownerPeriodPaymentNoticeMatched:
+      'owner.payment_notice_matched',
+  StaffNotificationEvent.ownerPeriodPaymentNoticeNotFound:
+      'owner.payment_notice_not_found',
+  StaffNotificationEvent.ownerPeriodPaymentNoticeRejected:
+      'owner.payment_notice_rejected',
   StaffNotificationEvent.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

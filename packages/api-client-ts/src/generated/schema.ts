@@ -1918,6 +1918,424 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OMVILA aboneliği (Ayarlar → Abonelik ve fatura)
+         * @description AyarlarAbonelik ekranı: deneme/gecikme şeridi, "PLAN Salon · aylık · deneme", "ŞUBE 2 · 1 dahil + 1 ek şube", "PERSONEL 5 · … dahil" kartları ve
+         *     "Havale / EFT ile öde" kutusu (Alıcı, IBAN, Açıklama ABN-…, Tutar). Faturalar ayrı uçtadır (manageListInvoices).
+         *     Fiyat ve OMVILA hesap bilgisi yapılandırmadan okunur (S-14): plan fiyatı tanımlı değilse amountDue null, OMVILA hesabı tanımlı değilse
+         *     omvilaBankAccount null döner; istemci bu alanları boş gösterir, köşeli parantezli yer tutucu yazmaz. Boş sınır (includedBranchCount, staffLimit) sınırsız demektir.
+         *     transferCode markanın sabit abonelik kodudur (ABN-…); her dönem aynıdır. Kartla ödeme (T-06) sözleşmede yoktur; kart alanı eklenince geriye uyumlu gelir.
+         *     Salt okunur abonelikte de çağrılabilir. İzin: subscription.manage (yalnız Owner); diğer roller 403 forbidden.
+         */
+        get: operations["manageGetSubscription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/subscription/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Faturalar
+         * @description AyarlarAbonelik "Faturalar" tablosu (No, Dönem, Tutar, Durum, PDF). Yeniden eskiye. Faturalar bilgi amaçlıdır, e-Arşiv değildir ("e-Arşiv değil, bilgi amaçlı").
+         *     Fatura numarası boşluksuz sıradır (OMV-2026-000184). Liste boşsa items boş dizi döner (deneme süresinde fatura yoktur).
+         *     İzin: subscription.manage (Owner).
+         */
+        get: operations["manageListInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/subscription/invoices/{invoiceId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Abonelik faturası kimliği */
+                invoiceId: components["parameters"]["InvoiceIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Fatura PDF'i ("PDF")
+         * @description Faturanın bilgi amaçlı PDF'i; sunucuda üretilir (e-Arşiv değil). Başka markanın faturası veya olmayan fatura 404 not_found.
+         *     Yanıt Cache-Control: private, no-store taşır. İzin: subscription.manage (Owner).
+         */
+        get: operations["manageGetInvoicePdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/subscription/payment-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Havaleyi bildir ("Havaleyi bildir (dekont isteğe bağlı)")
+         * @description Salonun OMVILA hesabına yaptığı havaleyi bildirmesi (PaymentNotice, Pending). Bildirim platform onay kuyruğuna düşer; ekip banka hareketiyle
+         *     eşleştirince abonelikte dönem ödendi sayılır (fatura Paid, durum Active), kontörde paket bakiyeye eklenir ve owner.payment_notice_matched gider.
+         *     "Havale ekibimiz tarafından 1 iş günü içinde eşleştirilir. Gönderdiyseniz bildirin, beklerken panel açık kalır."
+         *     purpose = Subscription: beklenen tutar o anki amountDue (fiyat tanımlı değilse boş), açıklama kodu markanın ABN- kodudur.
+         *     purpose = Credits: creditPackageId zorunludur (managePurchaseCredits ile seçilen paket); beklenen tutar paket fiyatı, açıklama kodu markanın KNT- kodudur.
+         *     Dekont isteğe bağlıdır: en fazla 5 MB, PDF, JPG veya PNG (guvenlik-kvkk.md); aşılırsa 400 validation_failed (errors.receipt = [too_large] / [invalid_format]).
+         *     Aynı amaç için (kontörde aynı paket için) bekleyen bildirim varsa 409 payment_notice_already_pending (meta.paymentNoticeId).
+         *     Salt okunur ve ödeme gecikti durumunda da çağrılabilir (ödemenin yolu budur). İzin: subscription.manage (Owner).
+         */
+        post: operations["manageNotifyTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/credit-packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SMS kontör paketleri
+         * @description Kontör satın alma penceresindeki paketler (Başlangıç 1.000, Orta 5.000, Büyük 20.000 SMS). Yalnız etkin paketler; fiyat tanımlı değilse price null (S-14).
+         *     İzin: subscription.manage (Owner).
+         */
+        get: operations["manageListCreditPackages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/credits/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kontör satın al (havale bilgisi)
+         * @description v1'de kontör yalnız havaleyle alınır (K1; kartla kontör yok). Salon paketi seçer, yanıt havale bilgisini döner: alıcı, IBAN, markanın sabit
+         *     KNT- açıklama kodu ve paket tutarı. Bu uç kayıt oluşturmaz; salon havaleyi yapınca manageNotifyTransfer (purpose = Credits, creditPackageId)
+         *     ile bildirir, kontör eşleştirmeden sonra eklenir. Paket etkin değilse veya yoksa 404 not_found. OMVILA hesabı yapılandırılmamışsa
+         *     omvilaBankAccount, fiyat tanımlı değilse amount null döner. Salt okunur abonelikte de çağrılabilir. İzin: subscription.manage (Owner).
+         */
+        post: operations["managePurchaseCredits"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Genel bakış (bento kartları ve haftalık doluluk)
+         * @description Salon paneli Genel bakış (GenelBakis): "BUGÜNKÜ CİRO 9.840 ₺ · 16 randevu", "ONAY BEKLİYOR 2 · ilki 1 sa 35 dk içinde iptal olur",
+         *     "KAPIDA SIRADA 3 · ~35 dk bekleme", "BU HAFTA DOLULUK %74 · geçen hafta %68" ve "Bu hafta doluluk · personel bazında".
+         *     "Gün akışı" manageGetCalendar, "Dikkat isteyenler" manageListPendingApprovals ile gelir; bu uç onları tekrarlamaz.
+         *     Gün ve hafta şubenin saat dilimindedir (hafta Pazartesi–Pazar); kalan süreler generatedUtc'ye göre sayılır.
+         *     Bugünkü ciro: bugün kaydedilen tahsilatların toplamı (iade düşülmüş; paket satışı ve kapora dahil), appointmentCount bugünün iptal ve taslak dışındaki randevuları.
+         *     Doluluk: haftanın dolu dakikaları / personelin çalışma dakikaları (izin ve kapalı gün düşülür); Draft ve Cancelled sayılmaz, NoShow sayılır.
+         *     Çalışma dakikası olmayan personel listede yoktur; hiç çalışma dakikası yoksa percent null. "Hedefin %72'si" sözleşmede yoktur (hedef ayarı yok, T-116).
+         *     branchId verilmezse kullanıcının birincil şubesi. Kapsam: BranchManager yalnız kendi şubeleri (başka şube 404).
+         *     İzin: report.view (Owner, BranchManager); Staff 403 forbidden (personel özeti manageGetToday'dir). Yetkiye bağlı kartlar: pendingApproval yalnız
+         *     appointment.approve, walkIns yalnız walkin.manage izninde dolu; aksi hâlde null.
+         */
+        get: operations["manageGetOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/reports/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Raporlar (hak edilen gelir, tahsilat, gelmedi, online pay, günlük tahsilat)
+         * @description "Raporlar ve prim" ekranı (Raporlar, RaporlarBos) üst kartları ve "Günlük tahsilat" grafiği. Gün / Hafta / Ay seçimi istemcide from–to aralığına çevrilir
+         *     (şubenin yerel takvimi, iki uç dahil, en fazla 31 gün; aşılırsa 400 validation_failed, errors.to = [out_of_range]).
+         *     Hak edilen gelir: aralıkta tamamlanan randevuların hizmet tutarları ve paketten düşülen seansların payı (seans kullanıldıkça). Peşin satılan paket
+         *     hak edilen gelirde satış anında görünmez (KK6). earnedRevenueChangePercent bir önceki eşit uzunluktaki aralığa göre değişimdir; önceki aralıkta gelir yoksa null.
+         *     Tahsilat: aralıkta kaydedilen bütün tahsilatlar (paket satışları ve kaporalar dahil), iadeler düşülmüş ("paket satışları ve kaporalar dahil").
+         *     Gelmedi: aralıktaki NoShow sayısı, sonuçlanan randevulara oranı ve kayıp (gelmeyen randevuların hizmet tutarı; alınmış kapora düşülür).
+         *     Online pay: aralıktaki iptal ve taslak dışı randevuların kanalı Online olanların oranı.
+         *     Günlük tahsilat: aralıktaki her gün için bir satır; şube o gün kapalıysa isClosed = true ("Pazartesi kapalı").
+         *     Veri yoksa tutarlar 0, oranlar null döner (RaporlarBos). branchId verilmezse kullanıcının erişebildiği bütün şubeler (Owner: marka geneli).
+         *     Kapsam: BranchManager yalnız kendi şubeleri (başka şube 404). İzin: report.view (Owner, BranchManager); Staff 403 forbidden.
+         */
+        get: operations["manageGetReportOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/reports/commissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Personel ve prim
+         * @description "Raporlar ve prim" ekranındaki "Personel ve prim" tablosu (Personel, Randevu, Hizmet cirosu, Oran, Prim) ve toplam
+         *     ("Gelmeyen ve iptal edilen randevular prime dahil değil."). Aralık manageGetReportOverview ile aynıdır (en fazla 31 gün, şubenin yerel takvimi).
+         *     Satır: aralıkta tamamlanan randevu sayısı, hizmet primi tabanı (hizmet cirosu), hizmet prim oranı (personelin varsayılan oranı; hizmete özel oran varsa
+         *     etkin ortalama), hizmet primi, satış primi ve toplam (Accrued, Approved, Paid + ters kayıtlar; eksi olabilir). Prim tutarları CommissionEntry'den okunur, yeniden hesaplanmaz.
+         *     Kapsam: Owner bütün personel, BranchManager kendi şubelerinin personeli, Staff (commission.view K) yalnız kendi satırı ("Primim"); personel kaydı yoksa items boş.
+         *     İzin: commission.view.
+         */
+        get: operations["manageGetCommissionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kullanıcılar (Ayarlar → Roller ve yetkiler)
+         * @description AyarlarRoller "Kullanıcılar" tablosu (Ad, Rol, Şube, Durum: Aktif / Davet gönderildi). Markadaki bütün üyelikler (Disabled dahil), ada göre sıralı.
+         *     "Kullanıcı ekle" ayrı uç değildir: personel davet akışı (manageCreateStaff, telefon + "Davet SMS'i gönder") kullanılır; markaya özel rol yoktur (K6).
+         *     İzin: settings.roles (yalnız Owner).
+         */
+        get: operations["manageListUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Salon kullanıcısı kimliği */
+                userId: components["parameters"]["UserIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Kullanıcının rolünü ve şubelerini düzenle ("Düzenle")
+         * @description Kullanıcının markadaki rolü ve şubeleri değişir (K6). Owner rolünde branchIds yok sayılır (tüm şubeler); BranchManager ve Staff için en az bir şube gerekir
+         *     (yoksa 400 validation_failed, errors.branchIds = [required]). Markadaki son Owner başka role alınamaz: 409 last_owner_required.
+         *     Rol değişince kullanıcının açık oturumlarındaki izinler bir sonraki jeton yenilemede güncellenir. Değişiklik denetime yazılır.
+         *     Başka markanın kullanıcısı 404. İzin: settings.roles (yalnız Owner).
+         */
+        patch: operations["manageUpdateUser"];
+        trace?: never;
+    };
+    "/api/v1/manage/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Rol izinleri (salt okunur matris)
+         * @description AyarlarRoller "Rol izinleri" tablosu ("İşletme sahibi her şeyi görür"). Satırlar docs/alan/roller-yetkiler.md izin kataloğunun ekran gruplarıdır;
+         *     her satır için rol başına erişim düzeyi döner (All = tam, Branch = kendi şube(ler)i, Own = yalnız kendi kayıtları "Kendi", None = yok "—").
+         *     Matris v1'de düzenlenemez (markaya özel rol yok, K6). Satır adları istemcide group kodundan üretilir. İzin: settings.roles (yalnız Owner).
+         */
+        get: operations["manageGetRoleMatrix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/brand/privacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * KVKK ve veri (aydınlatma metni, saklama süresi)
+         * @description AyarlarKvkk "Aydınlatma metni" ("OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026", "Önizle", "Kendi metnimi kullan") ve
+         *     "Veri saklama" ("İşlem kayıtlarını saklama süresi" 3 / 5 / 10 yıl). "Silme talepleri" manageListDeletionRequests ile gelir.
+         *     Veri sorumlusu olarak işletme adı ve iletişim bilgisi metne sunucuda eklenir. İzin: settings.manage (Owner).
+         */
+        get: operations["manageGetPrivacySettings"];
+        /**
+         * KVKK ayarlarını kaydet ("Değişiklikleri kaydet")
+         * @description noticeMode = Custom ise customNoticeText zorunludur (yoksa 400 validation_failed, errors.customNoticeText = [required]); Standard'a dönünce salonun metni saklanır
+         *     ama gösterilmez. transactionRetentionYears yalnız 3, 5 veya 10 olabilir (yoksa errors.transactionRetentionYears = [out_of_range]).
+         *     Kaydedilen metin rezervasyon sayfasında ve müşteri uygulamasında gösterilir; değişiklik denetime yazılır. İzin: settings.manage (Owner).
+         */
+        put: operations["manageUpdatePrivacySettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/brand/data-exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tüm verileri dışa aktar ("Dışa aktarma iste")
+         * @description AyarlarKvkk "Tüm verileri dışa aktar · Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir". İstek kuyruğa alınır (202);
+         *     dosyalar arka planda hazırlanır, indirme bağlantısı e-postayla gider (bağlantı süresi yapılandırmadadır). email verilmezse kullanıcının kayıtlı
+         *     e-postası kullanılır; ikisi de yoksa 400 validation_failed (errors.email = [required]). Markada hazırlanmakta olan istek varsa yeni istek açılmaz,
+         *     o istek 202 ile döner. Her istek denetime yazılır (Export). İzin: customer.export (yalnız Owner).
+         */
+        post: operations["manageRequestDataExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/integrations/google": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Takvim bağlantı durumu (oturumdaki personel)
+         * @description Oturumdaki kullanıcının kendi personel kaydının Google Takvim bağlantısı (CalendarLink). Aktarım tek yönlüdür (OMVILA → Google); Google'daki
+         *     değişiklikler geri gelmez. Bağlantı yoksa status = NotConnected. Diğer personelin durumu StaffDetail.googleCalendarStatus'tadır.
+         *     v1'de sağlayıcı sahte adaptörle çalışır, gerçek OAuth istemcisi mağaza hazırlığıyla açılır (K7). Kullanıcının bu markada personel kaydı yoksa 404.
+         *     İzin: calendar.view.
+         */
+        get: operations["manageGetGoogleCalendarStatus"];
+        put?: never;
+        post?: never;
+        /**
+         * Google Takvim bağlantısını kes
+         * @description Bağlantı Revoked olur, saklanan jetonlar silinir, sağlayıcıdaki erişim iptal edilir. Google'a aktarılmış etkinlikler silinmez.
+         *     Bağlantı yoksa da 204 (idempotent). Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+         */
+        delete: operations["manageDisconnectGoogleCalendar"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/integrations/google/connect-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Google Takvim bağlantı adresi
+         * @description Sağlayıcının izin sayfası adresi ve tek kullanımlık state değeri (10 dk geçerli, kullanıcıya bağlı). İstemci kullanıcıyı url'e yönlendirir;
+         *     sağlayıcı code ve state ile panelin geri dönüş sayfasına döner, panel bunları manageCompleteGoogleCalendarConnect'e gönderir.
+         *     Sahte adaptörde url doğrudan geri dönüş sayfasını gösterir (K7). Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+         */
+        get: operations["manageGetGoogleCalendarConnectUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/manage/integrations/google/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Google Takvim bağlantısını tamamla
+         * @description Sağlayıcıdan dönen code ve state ile bağlantıyı kurar (CalendarLink Active); varsa eski bağlantının yerini alır ve gelecekteki randevular aktarılmaya başlar.
+         *     state geçersiz, süresi dolmuş veya başka kullanıcınınsa 400 validation_failed (errors.state = [invalid_format]); sağlayıcı code'u reddederse
+         *     errors.code = [invalid_format]. Kullanıcının personel kaydı yoksa 404. İzin: calendar.view.
+         */
+        post: operations["manageCompleteGoogleCalendarConnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/brands/{brandSlug}": {
         parameters: {
             query?: never;
@@ -2857,6 +3275,713 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/auth/otp/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS kodu iste (platform paneli girişi)
+         * @description Platform paneli girişi telefon + SMS kodudur (K2). Platform kullanıcıları sunucuda komutla oluşturulur; web'den kayıt yoktur.
+         *     Numaranın platform kullanıcısı olup olmadığı yanıtta açık edilmez (her durumda 202; platform kullanıcısı değilse SMS gitmez ve doğrulama otp_invalid döner).
+         *     Yeniden gönderim ve deneme sınırları salon girişiyle aynıdır (429 otp_resend_too_soon, otp_attempts_exceeded).
+         */
+        post: operations["adminRequestOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/otp/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS kodunu doğrula, platform oturumu aç
+         * @description Kod doğru ve numara etkin bir platform kullanıcısına aitse oturum açılır (JWT aud=admin, platform_role iddiası). Jetonlar gövdede döner:
+         *     admin yüzeyinin CORS politikası çerez kabul etmez (AllowCredentials: false), bu yüzden yenileme jetonu çerezle değil gövdeyle taşınır.
+         *     Platform paneli yenileme jetonunu yalnız sekme ömrü boyunca saklar (bellek / sessionStorage); rememberDevice yok sayılır.
+         *     Kod hatalıysa 422 otp_invalid (meta.attemptsLeft), süresi dolmuşsa 422 otp_expired. Giriş denetime yazılır.
+         */
+        post: operations["adminVerifyOtp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erişim jetonunu yenile (platform)
+         * @description Yenileme jetonu gövdede gönderilir ve her kullanımda döndürülür (rotation). Kullanılmış bir jeton yeniden gelirse zincirdeki bütün jetonlar iptal edilir
+         *     ve 401 unauthorized döner. Platform kullanıcısı pasifleştirildiyse veya rolü kaldırıldıysa 401.
+         */
+        post: operations["adminRefreshToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Platform oturumunu kapat
+         * @description Gönderilen yenileme jetonunun zinciri iptal edilir.
+         */
+        post: operations["adminLogout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Platform oturumu (kullanıcı, rol, izinler)
+         * @description Platform paneli açılışında bir kez çağrılır; menü ve butonlar permissions listesine göre kurulur (ör. Destek rolünde "Kontör ekle" ve "Planı değiştir" kilitli).
+         *     Gizlemek yetkilendirme değildir; her uç izni sunucuda yeniden denetler (docs/alan/roller-yetkiler.md § Platform rolleri).
+         */
+        get: operations["adminGetSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Platform genel bakış (aktivasyon hunisi, dikkat isteyen markalar)
+         * @description Platform paneli Genel bakış (Main): "AKTİF MARKA 412 · +18 bu ay", "ONAY BEKLEYEN 7 · 5 havale bildirimi · 2 SMS başlığı", "DENEMEDE 64 · 9'u bu hafta bitiyor",
+         *     "ÖDEME GECİKTİ 11 · 3'ü salt okunura geçmek üzere", "Aktivasyon hunisi · son 30 gün" ve "Dikkat isteyen markalar".
+         *     Aktif marka: Brand.Status Active ve aboneliği Trialing, Active veya PastDue olan markalar; newThisMonth bu ay kaydolanlar (Europe/Istanbul takvimi).
+         *     "Bu hafta bitiyor": deneme bitişi bugünden itibaren 7 gün içinde. "Salt okunura geçmek üzere": salt okunur günü 2 gün içinde.
+         *     Huni: son 30 günde kaydolan markalardan kaçının hizmet eklediği, çalışma saatini girdiği ve ilk online randevuyu aldığı.
+         *     Dikkat isteyen markalar: ödemesi geciken, kontörü biten ve denemesi 3 gün içinde biten markalar; en fazla 10 satır, aciliyete göre sıralı.
+         *     İzin: platform.brands.view (bütün platform rolleri).
+         */
+        get: operations["adminGetOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Markalar
+         * @description Platform paneli Markalar (PMarkalar): "412 aktif · 64 denemede", filtreler (Tümü, Denemede, Ödeme gecikti, Salt okunur, Kapora açık) ve tablo
+         *     (Marka, Plan, Durum, Şube, Bu ay randevu). "Kapora açık" = etkin kapora IBAN hesabı olan marka (BrandBankAccount.IsActive = true).
+         *     q marka adı, bağlantı adı (slug) veya sahibin telefonunun son 4 hanesiyle arar. Ada göre sıralı. Liste görüntülemesi denetime yazılmaz;
+         *     tek markanın açılışı (adminGetBrand) yazılır. İzin: platform.brands.view (bütün platform rolleri).
+         */
+        get: operations["adminListBrands"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Marka detayı (Özet)
+         * @description PMarkaDetay "Özet" sekmesi: abonelik, kontör, bu ay randevu ve abonelik ödemesi kartları, "Marka bilgileri" ve son 30 günün "Kontör hareketleri".
+         *     Her açılış denetime yazılır (AuditLog Action = View, EntityType = Brand, changes.section = Summary): "Bu görüntüleme denetim kaydına yazıldı."
+         *     Telefonlar her zaman maskelidir; platform kullanıcısı marka verisini değiştiremez, yalnız plan, kontör, durum ve eşleştirme işlemleri yapar.
+         *     Diğer sekmeler: adminListBrandInvoices (Abonelik ve fatura), adminListBrandCreditTransactions (Kontör), adminListBrandPaymentNotices (Ödemeler),
+         *     adminListAuditLog?brandId= (Denetim kaydı). ETag, durum ve plan değişikliklerinde If-Match ile gönderilir. İzin: platform.brands.view.
+         */
+        get: operations["adminGetBrand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Marka faturaları ("Abonelik ve fatura" sekmesi)
+         * @description Markanın abonelik faturaları, yeniden eskiye. Sekmenin açılışı denetime yazılır (View, changes.section = Invoices). İzin: platform.brands.view.
+         */
+        get: operations["adminListBrandInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/credit-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Marka kontör hareketleri ("Kontör" sekmesi)
+         * @description Markanın kontör defteri (CreditTransaction), yeniden eskiye. Günlük gönderim tüketimi gün başına tek satırda toplanır ("Hatırlatma SMS'leri (günlük)").
+         *     Sekmenin açılışı denetime yazılır (View, changes.section = Credits). İzin: platform.brands.view.
+         */
+        get: operations["adminListBrandCreditTransactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/payment-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Marka havale bildirimleri ("Ödemeler" sekmesi)
+         * @description Markanın abonelik ve kontör havale bildirimleri (bütün durumlar), yeniden eskiye. Sekmenin açılışı denetime yazılır (View, changes.section = Payments).
+         *     İzin: platform.brands.view.
+         */
+        get: operations["adminListBrandPaymentNotices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/credits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Kontör ekle ("Kontör ekle")
+         * @description Hediye veya düzeltme kontörü (CreditTransaction, Grant; eksi değer düzeltmedir ve bakiyeyi sıfırın altına indiremez: 409 insufficient_credits).
+         *     Messaging modülünün Contracts arayüzü üzerinden yazılır (K4). Denetime yazılır (Create, CreditTransaction; neden ve miktar).
+         *     İzin: platform.credits.grant (yalnız PlatformAdmin); Destek ve Finans 403 forbidden.
+         */
+        post: operations["adminGrantCredits"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Markayı askıya al veya yeniden aç
+         * @description Brand.Status Active ↔ Suspended. Askıdaki markanın paneli ve rezervasyon sayfası kapanır (public uçlar 403 booking_disabled), veriler silinmez.
+         *     Onboarding veya Archived markada ya da durum zaten istenen değerdeyse 409 invalid_state_transition. Identity modülünün Contracts arayüzü üzerinden
+         *     yazılır (K4). Neden zorunludur; denetime yazılır (Update, Brand). İzin: platform.brands.manage (yalnız PlatformAdmin); diğer roller 403.
+         */
+        post: operations["adminChangeBrandStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/brands/{brandId}/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Planı değiştir ("Planı değiştir")
+         * @description Markanın planı (ve isteğe bağlı fatura dönemi) hemen değişir; yeni fiyat bir sonraki faturadan uygulanır, açık fatura değişmez.
+         *     Markanın etkin personel veya şube sayısı yeni planın sınırını aşıyorsa 409 plan_limit_exceeded (meta.staffCount, meta.staffLimit, meta.branchCount,
+         *     meta.includedBranchCount); ek şube ücretli plana geçişte şube sınırı yerine ek şube ücreti uygulanır. Etkin olmayan plan 400 (errors.planCode = [invalid_format]).
+         *     Denetime yazılır (Update, Subscription). İzin: platform.brands.manage (yalnız PlatformAdmin); diğer roller 403.
+         */
+        post: operations["adminChangePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/approval-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Onay kuyrukları (havale bildirimi, SMS başlığı)
+         * @description POnay / POnayBos: "7 bekleyen · en eskisi 2 gün", sekmeler "Havale bildirimi 5" ve "SMS başlığı 2". Yalnız bekleyen kayıtlar (PaymentNotice Pending,
+         *     BrandSmsSender Pending), en eskiden yeniye. Müşteri kaporaları bu kuyruğa düşmez; onları salon işaretler.
+         *     Havale satırındaki candidate en iyi eşleşme adayıdır (adminGetPaymentNotice'taki ilk aday): verdict CodeMatches = açıklamada markanın kodu var ve tutar tutuyor
+         *     ("Bankada eşleşen hareket var", "tutar ve açıklama tutuyor"); CheckRequired = kod yok veya tutar farklı ("Kontrol edin: açıklama kodu yok; tutar ve gönderen adıyla eşleştirin");
+         *     aday yoksa candidate null. SMS başlığı satırları yalnız platform.sms-senders.decide izninde döner (Finans rolünde smsSenders sayısı 0 ve satır yok).
+         *     İzin: platform.payments.match (bütün platform rolleri).
+         */
+        get: operations["adminListApprovalQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-notices/{noticeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Havale bildirimi ve eşleşme adayları
+         * @description POnayDetay: "Markanın bildirimi" (Ne için, Beklenen tutar, Açıklama kodu, Gönderen, Bildirim), "Dekont" ve "OMVILA hesabına gelen havaleler".
+         *     Adaylar: eşleşmemiş banka hareketlerinden değer tarihi bildirimden 7 gün önce ile 3 gün sonrası arasında olanlar (candidateWindow); sıralama: kodu bulunan,
+         *     sonra tutarı tutan, sonra tarihe yakın olan. codeFound: açıklamada kod var (büyük/küçük harf, boşluk ve tire farkı yok sayılır); amountMatches: tutar beklenen
+         *     tutara eşit. verdict CodeMatches ("Kod tutuyor") ikisi de doğruysa, aksi hâlde CheckRequired ("Kontrol edin"). Beklenen tutar tanımlı değilse amountMatches false.
+         *     Açılış denetime yazılır (View, PaymentNotice). Dekont adminGetPaymentNoticeReceipt ile indirilir. İzin: platform.payments.match (bütün platform rolleri).
+         */
+        get: operations["adminGetPaymentNotice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-notices/{noticeId}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Dekontu indir ("Aç")
+         * @description Dekont dosyası (PDF, JPG veya PNG). Dekont yoksa 404. Cache-Control: private, no-store; indirme denetime yazılır (View, changes.section = Receipt).
+         *     İzin: platform.payments.match.
+         */
+        get: operations["adminGetPaymentNoticeReceipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-notices/{noticeId}/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Seçili hareketle eşleştir ("Seçili hareketle eşleştir", "Eşleştir")
+         * @description Bildirim Matched olur, banka hareketi bildirime bağlanır (PlatformBankTransaction.MatchedNoticeId). Abonelikte bildirimin dönemi ödendi sayılır: fatura kesilir
+         *     veya açık fatura Paid olur (PaidVia BankTransfer), abonelik Active'e döner. Kontörde paketin kontörü eklenir (CreditTransaction Purchase, Messaging Contracts
+         *     arayüzü üzerinden, K4). Markanın Owner kullanıcılarına owner.payment_notice_matched gider. Denetime yazılır (Match, PaymentNotice).
+         *     Tutar uyuşmasa da operatör eşleştirebilir (uyarı istemcidedir). Bildirim Pending değilse 409 invalid_state_transition; hareket başka bildirime bağlıysa
+         *     409 bank_transaction_already_matched. İzin: platform.payments.match (bütün platform rolleri).
+         */
+        post: operations["adminMatchPaymentNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-notices/{noticeId}/not-found": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulunamadı, markaya yaz ("Bulunamadı, markaya yaz")
+         * @description Bildirim NotFound olur; markanın Owner kullanıcılarına owner.payment_notice_not_found gider (message varsa bildirime eklenir). Salon yeniden bildirebilir.
+         *     Abonelik durumu değişmez. Bildirim Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, PaymentNotice).
+         *     İzin: platform.payments.match (bütün platform rolleri).
+         */
+        post: operations["adminMarkPaymentNoticeNotFound"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/payment-notices/{noticeId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Havale bildirimini reddet
+         * @description Geçersiz veya yinelenen bildirim için: bildirim Rejected olur, markaya owner.payment_notice_rejected gider. message zorunludur
+         *     (yoksa 400 validation_failed, errors.message = [required]). Bildirim Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, PaymentNotice).
+         *     İzin: platform.payments.match (bütün platform rolleri).
+         */
+        post: operations["adminRejectPaymentNotice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sms-senders/{senderId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SMS gönderen adı başvurusu (BrandSmsSender) kimliği */
+                senderId: components["parameters"]["SenderIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS gönderen adını onayla ("Onayla")
+         * @description Operatör başvurusu onaylanınca çağrılır: BrandSmsSender Approved olur, markanın SMS'leri bu adla gitmeye başlar (effectiveName). Messaging modülünün
+         *     Contracts arayüzü üzerinden yazılır (K4). Başvuru Pending değilse 409 invalid_state_transition. Denetime yazılır (Approve, BrandSmsSender).
+         *     İzin: platform.sms-senders.decide (PlatformAdmin, PlatformSupport); Finans 403.
+         */
+        post: operations["adminApproveSmsSender"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sms-senders/{senderId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SMS gönderen adı başvurusu (BrandSmsSender) kimliği */
+                senderId: components["parameters"]["SenderIdPath"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * SMS gönderen adını reddet ("Reddet")
+         * @description BrandSmsSender Rejected olur; reason salonun AyarlarBildirim ekranında rejectionReason olarak görünür. Önceki onaylı ad (yoksa OMVILA) sürer.
+         *     Başvuru Pending değilse 409 invalid_state_transition. Denetime yazılır (Update, BrandSmsSender). İzin: platform.sms-senders.decide (PlatformAdmin, PlatformSupport).
+         */
+        post: operations["adminRejectSmsSender"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/bank-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * OMVILA hesabına gelen havaleler ("Banka hareketlerinde ara")
+         * @description İçe aktarılan ve elle girilen banka hareketleri (PlatformBankTransaction), değer tarihine göre yeniden eskiye. q gönderen adında, açıklamada ve banka
+         *     referansında arar; unmatchedOnly eşleşmemişleri süzer. Tarih aralığı en fazla 92 gün. İzin: platform.payments.match (bütün platform rolleri).
+         */
+        get: operations["adminListBankTransactions"];
+        put?: never;
+        /**
+         * Banka hareketini elle ekle
+         * @description CSV'de olmayan bir havaleyi elle girer (source = Manual). bankReference markalar arası benzersizdir; aynı referans varsa 409 bank_transaction_duplicate
+         *     (meta.bankTransactionId). Denetime yazılır (Create, PlatformBankTransaction). İzin: platform.billing.manage (PlatformAdmin, PlatformFinance); Destek 403.
+         */
+        post: operations["adminCreateBankTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/bank-transactions/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Banka hareketlerini CSV'den içe aktar
+         * @description Tek uç, iki kip: dryRun = true önizlemedir (hiçbir kayıt yazılmaz), dryRun = false aynı dosyayı uygular. Sütunlar başlıktan eşlenir
+         *     (Tarih, Tutar, Gönderen, Açıklama, Referans); yalnız gelen (artı) tutarlar alınır. Kendiliğinden idempotenttir: bankReference'ı zaten kayıtlı satır
+         *     duplicate sayılıp atlanır, aynı dosya ikinci kez gönderilirse yeni kayıt oluşmaz. Hatalı satırlar atlanır ve errors listesinde döner.
+         *     Dosya CSV değilse veya boyut/satır sınırı aşılırsa 400 validation_failed (errors.file = [invalid_format] / [too_large]); sınırlar yapılandırmadadır.
+         *     Uygulama denetime yazılır (Create, PlatformBankTransaction; satır sayıları). İzin: platform.billing.manage (PlatformAdmin, PlatformFinance); Destek 403.
+         */
+        post: operations["adminImportBankTransactions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Abonelikler
+         * @description PAbonelikler: "AKTİF 348 · ödeme düzenli", "DENEMEDE 64 · 9'u bu hafta bitiyor", "ÖDEME GECİKTİ 11 · 7 günlük hatırlatma süresinde",
+         *     "SALT OKUNUR 3 · online randevu kapalı", filtreler (Tümü, Denemede, Aktif, Ödeme gecikti, Salt okunur, İptal edildi, Kontörü azalan) ve tablo
+         *     (Marka, Plan, Durum, Sonraki adım, Kontör). CreditsLow = kontör LowCreditThreshold'un altında. nextStep satırın "Sonraki adım" sütunudur:
+         *     TrialEnds (deneme biter, date), ReadOnlyOn (salt okunura geçer, date), Renews (yenileme, date), ReactivatesOnPayment ("Ödeme gelince açılır"),
+         *     SmsStopped (kontör bitti, "SMS gönderilmiyor"), ArchivesOn (iptal; arşiv günü). Sıralama: aciliyete göre (ödeme gecikti ve salt okunur önce).
+         *     İzin: platform.brands.view (bütün platform rolleri).
+         */
+        get: operations["adminListSubscriptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Denetim kaydı
+         * @description PDenetim "Tüm platform işlemleri · silinemez": filtreler (Son 24 saat, Görüntüleme, Onay ve ret, Kontör ve plan, KVKK), "Marka veya kişi ara" ve tablo
+         *     (Zaman, Kim, İşlem, Marka, Ayrıntı). "Son 24 saat" istemcide fromUtc ile verilir; fromUtc verilmezse son 24 saat. Kategori eşlemesi: View = Action View;
+         *     ApproveReject = Approve, Match ve PaymentNotice/BrandSmsSender güncellemeleri; CreditsAndPlan = CreditTransaction ve Subscription kayıtları; Kvkk = Anonymize ve Export.
+         *     İşlem adı ("Marka görüntülendi", "Havale eşleştirildi", "Salt okunura geçti") istemcide action + entityType + changes'ten üretilir. changes'te telefon ve ad maskelidir.
+         *     Kayıtlar 2 yıl saklanır ve değiştirilemez. Yeniden eskiye. İzin: platform.audit.view (bütün platform rolleri).
+         */
+        get: operations["adminListAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-log/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Denetim kaydını CSV olarak dışa aktar ("Dışa aktar")
+         * @description adminListAuditLog ile aynı süzgeçler; aralık en fazla 92 gün (aşılırsa 400 validation_failed, errors.toUtc = [out_of_range]). Sütunlar: Zaman (Europe/Istanbul),
+         *     Kim, Rol, İşlem, Varlık, Marka, Ayrıntı (maskeli). Dışa aktarma da denetime yazılır (Export, AuditLog).
+         *     İzin: platform.audit.export (yalnız PlatformAdmin); Destek ve Finans 403.
+         */
+        get: operations["adminExportAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Planlar ve fiyat
+         * @description PPlanlar: plan kartları (Tekil, Salon, Salon Plus; "96 marka"), "Ortak kurallar" (Deneme süresi, Ödeme gecikmesinde, Deneme hediyesi, Kanallar).
+         *     Fiyat ve sınırlar S-14 çözülene kadar boş olabilir: boş fiyat "belirlenmedi", boş sınır "sınırsız" demektir; istemci köşeli parantezli yer tutucu yazmaz.
+         *     Ortak kurallar yapılandırmadan okunur ve bu uçtan değiştirilmez (trialCredits tanımlı değilse null). Özellik bayraklarının ekran metinleri istemcidedir.
+         *     İzin: platform.plans.view (bütün platform rolleri; Destek görüntüler, "Planı düzenle" kilitli).
+         */
+        get: operations["adminListPlans"];
+        /**
+         * Planları kaydet ("Planı düzenle")
+         * @description Planların ad, açıklama, fiyat, sınır ve özellik değerleri. Gönderilen her plan code ile eşleşir; olmayan code 400 (errors.plans[i].code = [invalid_format]).
+         *     Plan eklenmez ve silinmez; isActive = false yeni kayıtlarda planı gizler. Değişiklik yeni kayıtlar ve sonraki faturalar için geçerlidir, mevcut aboneler korunur
+         *     ("Yeni kayıtlar için geçerli · mevcut aboneler korunur"). Denetime yazılır (Update, Plan). İzin: platform.plans.manage (PlatformAdmin, PlatformFinance); Destek 403.
+         */
+        put: operations["adminUpdatePlans"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/credit-packages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kontör paketleri
+         * @description PPlanlar "Kontör paketleri" (Paket, SMS, Fiyat). Fiyat tanımlı değilse price null (S-14). İzin: platform.plans.view (bütün platform rolleri).
+         */
+        get: operations["adminListCreditPackages"];
+        /**
+         * Kontör paketlerini kaydet
+         * @description Paketlerin ad, kontör, fiyat ve etkinlik değerleri; code ile eşleşir, olmayan code 400. Paket eklenmez ve silinmez; isActive = false paketi satıştan kaldırır.
+         *     Bekleyen havale bildirimlerinin beklenen tutarı değişmez. Denetime yazılır (Update, CreditPackage). İzin: platform.plans.manage (PlatformAdmin, PlatformFinance); Destek 403.
+         */
+        put: operations["adminUpdateCreditPackages"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/sms/{provider}": {
         parameters: {
             query?: never;
@@ -2913,7 +4038,7 @@ export interface components {
          * @description docs/sozlesme/api-kurallari.md § Hata kodu kataloğu. İstemciler bilinmeyen değeri genel hata olarak ele alır.
          * @enum {string}
          */
-        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "slug_unavailable" | "deposit_unavailable_no_iban" | "deposit_required" | "deposit_reminder_already_sent" | "payment_total_mismatch" | "package_session_unavailable" | "cash_day_already_closed" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again";
+        ErrorCode: "validation_failed" | "unauthorized" | "token_expired" | "forbidden" | "booking_disabled" | "subscription_read_only" | "customer_blocked" | "not_found" | "access_code_invalid" | "slot_taken" | "invalid_state_transition" | "cutoff_passed" | "hold_expired" | "already_reviewed" | "phone_already_exists" | "slug_unavailable" | "deposit_unavailable_no_iban" | "deposit_required" | "deposit_reminder_already_sent" | "payment_total_mismatch" | "package_session_unavailable" | "cash_day_already_closed" | "outside_working_hours" | "staff_on_time_off" | "insufficient_credits" | "concurrency_conflict" | "idempotency_key_reused" | "otp_invalid" | "otp_expired" | "precondition_required" | "otp_attempts_exceeded" | "otp_resend_too_soon" | "rate_limited" | "try_again" | "payment_notice_already_pending" | "bank_transaction_already_matched" | "bank_transaction_duplicate" | "last_owner_required" | "plan_limit_exceeded";
         /** @description Kuruş cinsinden tutar */
         Money: {
             /**
@@ -4118,7 +5243,7 @@ export interface components {
          *     PascalCase'e çevrilmez; tek kaynak olay kataloğudur. İstemciler bilinmeyen değeri genel bildirim olarak gösterir.
          * @enum {string}
          */
-        StaffNotificationEvent: "staff.approval_needed" | "staff.appointment_created" | "staff.appointment_changed" | "staff.customer_checked_in" | "staff.deposit_reported" | "staff.review_received" | "staff.walkin_queue" | "staff.daily_summary" | "owner.credits_low" | "owner.subscription_payment_failed" | "owner.trial_ending";
+        StaffNotificationEvent: "staff.approval_needed" | "staff.appointment_created" | "staff.appointment_changed" | "staff.customer_checked_in" | "staff.deposit_reported" | "staff.review_received" | "staff.walkin_queue" | "staff.daily_summary" | "owner.credits_low" | "owner.subscription_payment_failed" | "owner.trial_ending" | "owner.payment_notice_matched" | "owner.payment_notice_not_found" | "owner.payment_notice_rejected";
         /** @description Bildirime dokununca açılacak ekran */
         NotificationTarget: {
             /**
@@ -6588,6 +7713,1779 @@ export interface components {
             /** @example 2 */
             unreadCount: number;
         };
+        /**
+         * @description Abonelik durumu (docs/alan/durum-makinesi.md § 8): Deneme, Aktif, Ödeme gecikti, Salt okunur, İptal edildi
+         * @enum {string}
+         */
+        SubscriptionStatus: "Trialing" | "Active" | "PastDue" | "ReadOnly" | "Cancelled";
+        /**
+         * @description Fatura dönemi (aylık, yıllık)
+         * @enum {string}
+         */
+        BillingCycle: "Monthly" | "Yearly";
+        /**
+         * @description Abonelik ödeme yolu. Card yalnız kart sağlayıcısı seçilince kullanılır (T-06)
+         * @enum {string}
+         */
+        SubscriptionPaymentMethod: "Card" | "BankTransfer";
+        /** @description Plan kısa bilgisi */
+        PlanRef: {
+            /**
+             * @description Plan kodu (solo, salon, salon_plus)
+             * @example salon
+             */
+            code: string;
+            /**
+             * @description Ekrandaki ad (Tekil, Salon, Salon Plus)
+             * @example Salon
+             */
+            name: string;
+        };
+        /** @description OMVILA'nın havale alacağı hesap (OmvilaBankAccount yapılandırması, S-14). Abonelik ve kontör havalesinde gösterilir */
+        OmvilaBankAccount: {
+            /** @description Alıcı (OMVILA şirket unvanı) */
+            accountHolderName: string;
+            /** @description Tam IBAN (TR ile başlar, boşluksuz) */
+            iban: string;
+            /** @description Banka adı */
+            bankName?: string | null;
+        };
+        /** @description Ayarlar → Abonelik ve fatura (AyarlarAbonelik) */
+        SubscriptionDetail: {
+            status: components["schemas"]["SubscriptionStatus"];
+            plan: components["schemas"]["PlanRef"];
+            billingCycle: components["schemas"]["BillingCycle"];
+            /** @description Son kullanılan ödeme yolu; henüz ödeme yoksa null */
+            paymentMethod: components["schemas"]["SubscriptionPaymentMethod"] | null;
+            /**
+             * Format: date
+             * @description Deneme bitiş günü (Trialing değilse null)
+             */
+            trialEndsOn: string | null;
+            /**
+             * Format: date
+             * @description Geçerli dönemin ilk günü
+             */
+            currentPeriodStart: string;
+            /**
+             * Format: date
+             * @description Geçerli dönemin son günü
+             */
+            currentPeriodEnd: string;
+            /**
+             * Format: date
+             * @description Ödeme gecikti başlangıcı
+             */
+            pastDueSince: string | null;
+            /**
+             * Format: date
+             * @description PastDue ise salt okunura geçeceği gün
+             */
+            readOnlyOn: string | null;
+            /**
+             * Format: date
+             * @description ReadOnly ise salt okunura geçtiği gün
+             */
+            readOnlySince: string | null;
+            /** @description "ŞUBE 2 · 1 dahil + 1 ek şube" */
+            branches: {
+                /**
+                 * @description Etkin şube sayısı
+                 * @example 2
+                 */
+                count: number;
+                /**
+                 * @description Planın içerdiği şube sayısı; null = sınırsız
+                 * @example 1
+                 */
+                included: number | null;
+                /**
+                 * @description Ücretli ek şube sayısı
+                 * @example 1
+                 */
+                extra: number;
+            };
+            /** @description "PERSONEL 5 · … dahil" */
+            staff: {
+                /**
+                 * @description Etkin personel sayısı
+                 * @example 5
+                 */
+                count: number;
+                /** @description Plan personel sınırı; null = sınırsız veya tanımlı değil */
+                limit: number | null;
+            };
+            /** @description Bir dönemin tutarı (plan fiyatı + ek şube ücreti, KDV dahil); fiyat tanımlı değilse null ("Tutar") */
+            amountDue: components["schemas"]["Money"] | null;
+            /**
+             * @description Markanın sabit abonelik havale kodu ("Açıklama")
+             * @example ABN-KE-1125
+             */
+            transferCode: string;
+            /** @description Alıcı ve IBAN; yapılandırma yoksa null */
+            omvilaBankAccount: components["schemas"]["OmvilaBankAccount"] | null;
+            /** @description Bekleyen abonelik havale bildirimi ("Havale bildirildi · eşleştirme bekliyor"); yoksa null */
+            pendingNotice: components["schemas"]["PaymentNoticeSummary"] | null;
+        };
+        /**
+         * @description Fatura durumu (kesildi, ödendi, ödenemedi, iptal)
+         * @enum {string}
+         */
+        SubscriptionInvoiceStatus: "Issued" | "Paid" | "Failed" | "Void";
+        /** @description Abonelik faturası (bilgi amaçlı, e-Arşiv değil) */
+        SubscriptionInvoice: {
+            /**
+             * Format: uuid
+             * @description Fatura kimliği
+             */
+            id: string;
+            /**
+             * @description Boşluksuz fatura numarası ("No")
+             * @example OMV-2026-000184
+             */
+            invoiceNumber: string;
+            /**
+             * Format: date
+             * @description Dönem başı ("Dönem")
+             */
+            periodStart: string;
+            /**
+             * Format: date
+             * @description Dönem sonu
+             */
+            periodEnd: string;
+            /** @description KDV hariç tutar */
+            amount: components["schemas"]["Money"];
+            /** @description KDV */
+            tax: components["schemas"]["Money"];
+            /** @description Toplam ("Tutar") */
+            total: components["schemas"]["Money"];
+            status: components["schemas"]["SubscriptionInvoiceStatus"];
+            /**
+             * Format: date-time
+             * @description Kesildiği an
+             */
+            issuedUtc: string;
+            /**
+             * Format: date-time
+             * @description Ödendiği an
+             */
+            paidUtc: string | null;
+            /** @description Ödeme yolu; ödenmediyse null */
+            paidVia: components["schemas"]["SubscriptionPaymentMethod"] | null;
+        };
+        /** @description Fatura sayfası */
+        SubscriptionInvoicePage: {
+            /** @description Yeniden eskiye */
+            items: components["schemas"]["SubscriptionInvoice"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /**
+         * @description Havale bildiriminin amacı (abonelik, SMS kontörü)
+         * @enum {string}
+         */
+        PaymentNoticePurpose: "Subscription" | "Credits";
+        /**
+         * @description Havale bildirimi durumu (bekliyor, eşleşti, bulunamadı, reddedildi)
+         * @enum {string}
+         */
+        PaymentNoticeStatus: "Pending" | "Matched" | "NotFound" | "Rejected";
+        /** @description "Havaleyi bildir" formu (multipart) */
+        PaymentNoticeCreate: {
+            purpose: components["schemas"]["PaymentNoticePurpose"];
+            /**
+             * Format: uuid
+             * @description purpose = Credits ise zorunlu; seçilen kontör paketi
+             */
+            creditPackageId?: string;
+            /** @description Havaleyi gönderen ad (dekonttaki ad); verilmezse boş */
+            senderName?: string;
+            /**
+             * Format: binary
+             * @description Dekont (isteğe bağlı): PDF, JPG veya PNG, en fazla 5 MB
+             */
+            receipt?: string;
+        };
+        /** @description Havale bildirimi özeti */
+        PaymentNoticeSummary: {
+            /**
+             * Format: uuid
+             * @description Bildirim kimliği
+             */
+            id: string;
+            purpose: components["schemas"]["PaymentNoticePurpose"];
+            /**
+             * @description Beklenen açıklama kodu (ABN-… veya KNT-…)
+             * @example ABN-KE-1125
+             */
+            transferCode: string;
+            /** @description Beklenen tutar; fiyat tanımlı değilse null */
+            expectedAmount: components["schemas"]["Money"] | null;
+            /**
+             * @description Kontör bildiriminde paketin kontörü; abonelikte null
+             * @example 5000
+             */
+            credits: number | null;
+            /** @description Gönderen adı */
+            senderName: string | null;
+            /** @description Dekont yüklendi mi */
+            hasReceipt: boolean;
+            status: components["schemas"]["PaymentNoticeStatus"];
+            /**
+             * Format: date-time
+             * @description Bildirim anı
+             */
+            notifiedUtc: string;
+            /**
+             * Format: date-time
+             * @description Sonuçlandığı an (eşleşti, bulunamadı, reddedildi)
+             */
+            resolvedUtc?: string | null;
+        };
+        /** @description SMS kontör paketi */
+        CreditPackage: {
+            /**
+             * Format: uuid
+             * @description Paket kimliği
+             */
+            id: string;
+            /**
+             * @description Paket kodu
+             * @example medium
+             */
+            code: string;
+            /**
+             * @description Ekrandaki ad (Başlangıç, Orta, Büyük)
+             * @example Orta
+             */
+            name: string;
+            /**
+             * @description Kontör (SMS) sayısı
+             * @example 5000
+             */
+            credits: number;
+            /** @description Fiyat (KDV dahil); tanımlı değilse null */
+            price: components["schemas"]["Money"] | null;
+        };
+        /** @description Satıştaki kontör paketleri */
+        CreditPackageList: {
+            /** @description Kontöre göre artan */
+            items: components["schemas"]["CreditPackage"][];
+        };
+        /** @description Kontör paketi seçimi */
+        CreditPurchaseRequest: {
+            /**
+             * Format: uuid
+             * @description Seçilen paket
+             */
+            creditPackageId: string;
+        };
+        /** @description Kontör havalesi bilgisi (K1; kartla kontör yok) */
+        CreditPurchaseInstructions: {
+            /**
+             * Format: uuid
+             * @description Seçilen paket
+             */
+            creditPackageId: string;
+            /**
+             * @description Paketin kontörü
+             * @example 5000
+             */
+            credits: number;
+            /** @description Havale tutarı; fiyat tanımlı değilse null */
+            amount: components["schemas"]["Money"] | null;
+            /**
+             * @description Markanın sabit kontör havale kodu (açıklamaya yazılır)
+             * @example KNT-SM-0412
+             */
+            transferCode: string;
+            /** @description Alıcı ve IBAN; yapılandırma yoksa null */
+            omvilaBankAccount: components["schemas"]["OmvilaBankAccount"] | null;
+        };
+        /** @description Genel bakış bento kartları ve haftalık doluluk */
+        ManageOverview: {
+            /**
+             * Format: uuid
+             * @description Şube
+             */
+            branchId: string;
+            /**
+             * @description Şube adı
+             * @example Kadıköy
+             */
+            branchName: string;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /**
+             * Format: date
+             * @description Şubenin yerel bugünü
+             */
+            date: string;
+            /**
+             * Format: date-time
+             * @description Yanıtın üretildiği an; kalan süreler buna göre
+             */
+            generatedUtc: string;
+            /** @description "BUGÜNKÜ CİRO": bugünkü tahsilat toplamı (iade düşülmüş) */
+            todayRevenue: components["schemas"]["Money"];
+            /**
+             * @description "16 randevu": bugünün iptal ve taslak dışı randevuları
+             * @example 16
+             */
+            todayAppointmentCount: number;
+            /** @description "ONAY BEKLİYOR"; appointment.approve izni yoksa null */
+            pendingApproval: null | {
+                /**
+                 * @description Bekleyen talep sayısı
+                 * @example 2
+                 */
+                count: number;
+                /**
+                 * Format: date-time
+                 * @description "ilki 1 sa 35 dk içinde iptal olur"
+                 */
+                earliestHoldExpiresUtc: string | null;
+            };
+            /** @description "KAPIDA SIRADA"; walkin.manage izni yoksa null */
+            walkIns: null | {
+                /**
+                 * @description Sırada bekleyen
+                 * @example 3
+                 */
+                waitingCount: number;
+                /**
+                 * @description "~35 dk bekleme"
+                 * @example 35
+                 */
+                estimatedWaitMinutesForNew: number | null;
+            };
+            /** @description "BU HAFTA DOLULUK" ve "Bu hafta doluluk · personel bazında" */
+            weeklyOccupancy: {
+                /**
+                 * Format: date
+                 * @description Haftanın Pazartesi'si (yerel)
+                 */
+                weekStart: string;
+                /**
+                 * @description Şube doluluk yüzdesi; çalışma dakikası yoksa null
+                 * @example 74
+                 */
+                percent: number | null;
+                /**
+                 * @description "geçen hafta %68"
+                 * @example 68
+                 */
+                previousWeekPercent: number | null;
+                /** @description Doluluğa göre azalan */
+                staff: {
+                    /**
+                     * Format: uuid
+                     * @description Personel
+                     */
+                    staffId: string;
+                    /**
+                     * @description Personel adı
+                     * @example Elif Kaya
+                     */
+                    staffName: string;
+                    /** @description Takvim rengi (satırdaki nokta) */
+                    calendarColor: string;
+                    /**
+                     * @description Personelin doluluk yüzdesi
+                     * @example 86
+                     */
+                    percent: number;
+                }[];
+            };
+        };
+        /** @description "Raporlar ve prim" üst kartları ve günlük tahsilat */
+        ReportOverview: {
+            /**
+             * Format: uuid
+             * @description Şube; null = erişilebilen bütün şubeler
+             */
+            branchId: string | null;
+            timeZone: components["schemas"]["TimeZoneId"];
+            /**
+             * Format: date
+             * @description Aralığın ilk günü
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Aralığın son günü
+             */
+            to: string;
+            /** @description "HAK EDİLEN GELİR" */
+            earnedRevenue: components["schemas"]["Money"];
+            /**
+             * @description "tamamlanan 118 randevu"
+             * @example 118
+             */
+            completedAppointmentCount: number;
+            /**
+             * @description "+%9": önceki eşit aralığa göre değişim; önceki aralıkta gelir yoksa null
+             * @example 9
+             */
+            earnedRevenueChangePercent: number | null;
+            /** @description "TAHSİLAT" (paket satışları ve kaporalar dahil, iadeler düşülmüş) */
+            collections: components["schemas"]["Money"];
+            /** @description "GELMEDİ 5 · %4 · 2.150 ₺ kayıp" */
+            noShow: {
+                /**
+                 * @description Gelmedi sayısı
+                 * @example 5
+                 */
+                count: number;
+                /**
+                 * @description Sonuçlanan randevulara oranı; sonuçlanan yoksa null
+                 * @example 4
+                 */
+                percent: number | null;
+                /** @description Kayıp (hizmet tutarı − alınmış kapora) */
+                lostRevenue: components["schemas"]["Money"];
+            };
+            /** @description "ONLİNE PAY %46 · 54 randevu online" */
+            online: {
+                /**
+                 * @description Online kanaldan gelen randevu
+                 * @example 54
+                 */
+                appointmentCount: number;
+                /**
+                 * @description Online oranı; randevu yoksa null
+                 * @example 46
+                 */
+                percent: number | null;
+            };
+            /** @description "Günlük tahsilat": aralıktaki her gün için bir satır */
+            dailyCollections: {
+                /**
+                 * Format: date
+                 * @description Yerel gün
+                 */
+                date: string;
+                /**
+                 * Format: int64
+                 * @description Günün net tahsilatı (kuruş; iade fazlaysa eksi olabilir)
+                 * @example 1120000
+                 */
+                amountMinor: number;
+                /** @description Şube o gün kapalı ("Pazartesi kapalı") */
+                isClosed: boolean;
+            }[];
+            /**
+             * @description dailyCollections tutarlarının para birimi
+             * @enum {string}
+             */
+            currency: "TRY";
+        };
+        /** @description "Personel ve prim" satırı */
+        CommissionReportRow: {
+            /**
+             * Format: uuid
+             * @description Personel
+             */
+            staffId: string;
+            /**
+             * @description Personel adı
+             * @example Elif Kaya
+             */
+            staffName: string;
+            /**
+             * @description "Randevu": tamamlanan randevu
+             * @example 38
+             */
+            appointmentCount: number;
+            /**
+             * Format: int64
+             * @description "Hizmet cirosu" (hizmet primi tabanı, kuruş)
+             * @example 2430000
+             */
+            serviceRevenueMinor: number;
+            /**
+             * @description "Oran": etkin hizmet prim oranı; ciro yoksa null
+             * @example 24
+             */
+            serviceCommissionPercent: number | null;
+            /**
+             * Format: int64
+             * @description Hizmet primi (ters kayıtlar dahil; eksi olabilir)
+             */
+            serviceCommissionMinor: number;
+            /**
+             * Format: int64
+             * @description Paket satış primi (ters kayıtlar dahil; eksi olabilir)
+             */
+            saleCommissionMinor: number;
+            /**
+             * Format: int64
+             * @description "Prim" toplamı
+             * @example 583200
+             */
+            totalCommissionMinor: number;
+        };
+        /** @description Personel bazında prim raporu */
+        CommissionReport: {
+            /**
+             * Format: uuid
+             * @description Şube; null = erişilebilen bütün şubeler
+             */
+            branchId: string | null;
+            /**
+             * Format: date
+             * @description Aralığın ilk günü
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Aralığın son günü
+             */
+            to: string;
+            /**
+             * @description Tutarların para birimi
+             * @enum {string}
+             */
+            currency: "TRY";
+            /** @description Toplam prime göre azalan */
+            items: components["schemas"]["CommissionReportRow"][];
+            /**
+             * Format: int64
+             * @description Tablonun alt toplamı ("15.665 ₺")
+             * @example 934100
+             */
+            totalCommissionMinor: number;
+        };
+        /**
+         * @description Salon rolü (İşletme sahibi, Şube yöneticisi, Personel)
+         * @enum {string}
+         */
+        MembershipRole: "Owner" | "BranchManager" | "Staff";
+        /** @description Markadaki kullanıcı (üyelik) satırı */
+        ManageUser: {
+            /**
+             * Format: uuid
+             * @description Kullanıcı
+             */
+            userId: string;
+            /**
+             * @description Ad
+             * @example Elif Kaya
+             */
+            fullName: string;
+            /**
+             * @description Maskeli telefon
+             * @example 0532 *** ** 05
+             */
+            phoneMasked: string;
+            role: components["schemas"]["MembershipRole"];
+            /** @description Şubeler; boş dizi = tüm şubeler ("Tümü", Owner) */
+            branchIds: string[];
+            /**
+             * @description "Aktif", "Davet gönderildi", pasif
+             * @enum {string}
+             */
+            status: "Invited" | "Active" | "Disabled";
+            /**
+             * Format: uuid
+             * @description Bağlı personel kaydı; yoksa null
+             */
+            staffId: string | null;
+            /** @description Oturumdaki kullanıcı */
+            isCurrentUser: boolean;
+            version: components["schemas"]["Version"];
+        };
+        /** @description Kullanıcılar */
+        ManageUserList: {
+            /** @description Ada göre sıralı */
+            items: components["schemas"]["ManageUser"][];
+        };
+        /** @description Rol ve şube düzenleme */
+        ManageUserUpdate: {
+            role: components["schemas"]["MembershipRole"];
+            /** @description Owner'da yok sayılır; diğer rollerde en az bir şube */
+            branchIds: string[];
+        };
+        /**
+         * @description Erişim düzeyi (All = tam, Branch = kendi şube(ler)i, Own = yalnız kendi kayıtları, None = yok)
+         * @enum {string}
+         */
+        RoleAccessLevel: "All" | "Branch" | "Own" | "None";
+        /** @description Salt okunur rol izinleri matrisi */
+        RoleMatrix: {
+            /** @description Ekrandaki sırayla */
+            rows: {
+                /**
+                 * @description Satır (Takvim ve randevu, Müşteri telefonu, Müşteri kartı ve notlar, Kasa ve ödeme alma, Raporlar ve prim, Hizmet ve fiyat düzenleme, Ayarlar)
+                 * @enum {string}
+                 */
+                group: "CalendarAndAppointments" | "CustomerPhone" | "CustomerCardAndNotes" | "CashAndPayments" | "ReportsAndCommission" | "ServicesAndPrices" | "Settings";
+                /** @description Satırın kapsadığı izin kodları */
+                permissions: components["schemas"]["Permission"][];
+                owner: components["schemas"]["RoleAccessLevel"];
+                branchManager: components["schemas"]["RoleAccessLevel"];
+                staff: components["schemas"]["RoleAccessLevel"];
+            }[];
+        };
+        /**
+         * @description Aydınlatma metni seçimi (OMVILA standart metni veya salonun kendi metni)
+         * @enum {string}
+         */
+        PrivacyNoticeMode: "Standard" | "Custom";
+        /** @description Ayarlar → KVKK ve veri */
+        PrivacySettings: {
+            noticeMode: components["schemas"]["PrivacyNoticeMode"];
+            /** @description "OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026" ve "Önizle" */
+            standardNotice: {
+                /**
+                 * @description PrivacyNoticeVersion
+                 * @example 2026-11-01
+                 */
+                version: string;
+                /**
+                 * Format: date
+                 * @description Son güncelleme günü
+                 */
+                updatedOn: string;
+                /** @description Markanın adı ve iletişim bilgisiyle doldurulmuş standart metin (düz metin) */
+                text: string;
+            };
+            /** @description Salonun kendi metni; yoksa null */
+            customNoticeText: string | null;
+            /**
+             * Format: date-time
+             * @description Salon metninin son değiştiği an
+             */
+            customNoticeUpdatedUtc: string | null;
+            /**
+             * @description "İşlem kayıtlarını saklama süresi" (TransactionRetentionYears)
+             * @example 3
+             */
+            transactionRetentionYears: number;
+            /**
+             * @description Seçilebilir süreler (yıl)
+             * @example [
+             *       3,
+             *       5,
+             *       10
+             *     ]
+             */
+            allowedRetentionYears: number[];
+            version: components["schemas"]["Version"];
+        };
+        /** @description KVKK ayarlarını kaydetme */
+        PrivacySettingsUpdate: {
+            noticeMode: components["schemas"]["PrivacyNoticeMode"];
+            /** @description noticeMode = Custom ise zorunlu; gönderilmezse değişmez, null ise silinir */
+            customNoticeText?: string | null;
+            /**
+             * @description 3, 5 veya 10
+             * @example 5
+             */
+            transactionRetentionYears: number;
+        };
+        /** @description "Tüm verileri dışa aktar" isteği */
+        DataExportRequest: {
+            /**
+             * Format: email
+             * @description Bağlantının gideceği adres; verilmezse kullanıcının kayıtlı e-postası
+             */
+            email?: string;
+        };
+        /** @description Dışa aktarma isteği */
+        DataExportRequestResult: {
+            /**
+             * Format: uuid
+             * @description İstek kimliği
+             */
+            exportId: string;
+            /**
+             * @description İsteğin durumu
+             * @enum {string}
+             */
+            status: "Queued" | "Processing" | "Sent" | "Failed";
+            /**
+             * Format: date-time
+             * @description İstek anı
+             */
+            requestedUtc: string;
+            /**
+             * @description Bağlantının gideceği maskeli adres
+             * @example el***@ornek.com
+             */
+            emailMasked: string;
+        };
+        /** @description Oturumdaki personelin Google Takvim bağlantısı (tek yönlü aktarım) */
+        GoogleCalendarConnection: {
+            /**
+             * @description NotConnected = bağlantı yok; TokenExpired = "Google Takvim bağlantısı koptu"
+             * @enum {string}
+             */
+            status: "NotConnected" | "Active" | "TokenExpired" | "Revoked";
+            /** @description Bağlı Google hesabı (maskeli) */
+            accountEmailMasked?: string | null;
+            /**
+             * Format: date-time
+             * @description Bağlandığı an
+             */
+            connectedUtc?: string | null;
+            /**
+             * Format: date-time
+             * @description Son başarılı aktarım
+             */
+            lastSyncedUtc?: string | null;
+        };
+        /** @description Sağlayıcı izin sayfası adresi */
+        GoogleCalendarConnectUrl: {
+            /**
+             * Format: uri
+             * @description Kullanıcının yönlendirileceği adres
+             */
+            url: string;
+            /** @description Tek kullanımlık state değeri */
+            state: string;
+            /**
+             * Format: date-time
+             * @description state'in geçerlilik sonu
+             */
+            expiresUtc: string;
+        };
+        /** @description Sağlayıcıdan dönen değerler */
+        GoogleCalendarCallbackRequest: {
+            /** @description Sağlayıcının yetki kodu */
+            code: string;
+            /** @description connect-url'deki state */
+            state: string;
+        };
+        /**
+         * @description Platform rolü (Yönetici, Destek, Finans; K3)
+         * @enum {string}
+         */
+        PlatformRole: "PlatformAdmin" | "PlatformSupport" | "PlatformFinance";
+        /**
+         * @description Platform izin kodu (docs/alan/roller-yetkiler.md § Platform rolleri)
+         * @enum {string}
+         */
+        AdminPermission: "platform.brands.view" | "platform.brands.manage" | "platform.payments.match" | "platform.sms-senders.decide" | "platform.credits.grant" | "platform.plans.view" | "platform.plans.manage" | "platform.billing.manage" | "platform.audit.view" | "platform.audit.export";
+        /** @description Platform girişi kod isteği */
+        AdminOtpRequest: {
+            phone: components["schemas"]["PhoneInput"];
+        };
+        /** @description Platform oturumu (aud=admin). Jetonlar gövdede (admin yüzeyi çerez kullanmaz) */
+        AdminAuthResult: {
+            /** @description Erişim jetonu */
+            accessToken: string;
+            /**
+             * @description Erişim jetonunun ömrü (sn)
+             * @example 900
+             */
+            expiresInSeconds: number;
+            /** @description Yenileme jetonu (her kullanımda döndürülür) */
+            refreshToken: string;
+        };
+        /** @description Platform jetonu yenileme veya çıkış */
+        AdminRefreshRequest: {
+            /** @description Saklanan yenileme jetonu */
+            refreshToken: string;
+        };
+        /** @description Platform oturumu */
+        AdminSession: {
+            /** @description Oturumdaki platform kullanıcısı */
+            user: {
+                /**
+                 * Format: uuid
+                 * @description Kullanıcı
+                 */
+                id: string;
+                /**
+                 * @description Ad
+                 * @example Ayşe Demir
+                 */
+                fullName: string;
+                /** @description Maskeli telefon */
+                phoneMasked: string;
+            };
+            role: components["schemas"]["PlatformRole"];
+            /** @description Rolün izinleri */
+            permissions: components["schemas"]["AdminPermission"][];
+            /**
+             * @description Menüdeki "Onay kuyrukları" rozeti (kullanıcının görebildiği bekleyenler)
+             * @example 7
+             */
+            pendingApprovalCount: number;
+        };
+        /** @description Marka kısa bilgisi */
+        AdminBrandRef: {
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            id: string;
+            /**
+             * @description Marka adı
+             * @example Kuaför Elif
+             */
+            name: string;
+        };
+        /** @description "Dikkat isteyen markalar" satırı */
+        AdminAttentionBrand: {
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            brandId: string;
+            /**
+             * @description Marka adı
+             * @example Berber Kaan
+             */
+            brandName: string;
+            industryCode: components["schemas"]["IndustryCode"];
+            /**
+             * @description Ana şubenin ili
+             * @example Ankara
+             */
+            city: string | null;
+            /**
+             * @description Plan adı
+             * @example Salon
+             */
+            planName: string;
+            /**
+             * @description "Ödeme gecikti · 6 gün", "Kontör bitti", "Deneme · 2 gün"
+             * @enum {string}
+             */
+            reason: "PastDue" | "CreditsDepleted" | "TrialEnding";
+            /** @description Ödeme gecikti gün sayısı */
+            pastDueDays: number | null;
+            /** @description Denemenin bitmesine kalan gün */
+            trialDaysLeft: number | null;
+            /** @description Şube sayısı */
+            branchCount: number;
+            /** @description Bu ay randevu */
+            appointmentsThisMonth: number;
+        };
+        /** @description Platform genel bakış */
+        AdminOverview: {
+            /**
+             * Format: date-time
+             * @description Yanıtın üretildiği an
+             */
+            generatedUtc: string;
+            /** @description "AKTİF MARKA 412 · +18 bu ay" */
+            activeBrands: {
+                /** @description Aktif marka */
+                count: number;
+                /** @description Bu ay kaydolan */
+                newThisMonth: number;
+            };
+            /** @description "ONAY BEKLEYEN 7 · 5 havale bildirimi · 2 SMS başlığı" */
+            pendingApprovals: {
+                /** @description Toplam bekleyen */
+                total: number;
+                /** @description Bekleyen havale bildirimi */
+                paymentNotices: number;
+                /** @description Bekleyen SMS başlığı */
+                smsSenders: number;
+            };
+            /** @description "DENEMEDE 64 · 9'u bu hafta bitiyor" */
+            trialing: {
+                /** @description Denemedeki marka */
+                count: number;
+                /** @description Denemesi 7 gün içinde biten */
+                endingThisWeek: number;
+            };
+            /** @description "ÖDEME GECİKTİ 11 · 3'ü salt okunura geçmek üzere" */
+            pastDue: {
+                /** @description Ödemesi geciken marka */
+                count: number;
+                /** @description Salt okunur günü 2 gün içinde olan */
+                readOnlySoon: number;
+            };
+            /** @description "Aktivasyon hunisi · son 30 gün" */
+            funnel: {
+                /**
+                 * @description Pencere (gün)
+                 * @example 30
+                 */
+                windowDays: number;
+                /** @description Kaydoldu */
+                signedUp: number;
+                /** @description Hizmet ekledi */
+                addedServices: number;
+                /** @description Çalışma saatlerini girdi */
+                setWorkingHours: number;
+                /** @description İlk online randevu */
+                firstOnlineAppointment: number;
+            };
+            /** @description Aciliyete göre sıralı, en fazla 10 */
+            attentionBrands: components["schemas"]["AdminAttentionBrand"][];
+        };
+        /** @description Markalar tablosu satırı */
+        AdminBrandListItem: {
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            id: string;
+            /**
+             * @description Marka adı
+             * @example Kuaför Elif
+             */
+            name: string;
+            industryCode: components["schemas"]["IndustryCode"];
+            /** @description Ana şubenin ili */
+            city: string | null;
+            /**
+             * @description Marka durumu
+             * @enum {string}
+             */
+            brandStatus: "Onboarding" | "Active" | "Suspended" | "Archived";
+            /**
+             * @description Plan kodu
+             * @example salon
+             */
+            planCode: string;
+            /**
+             * @description Plan adı
+             * @example Salon
+             */
+            planName: string;
+            subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+            /** @description "Deneme · 9 gün" */
+            trialDaysLeft: number | null;
+            /** @description Ödeme gecikti gün sayısı */
+            pastDueDays: number | null;
+            /** @description "Şube" */
+            branchCount: number;
+            /** @description "Bu ay randevu" */
+            appointmentsThisMonth: number;
+            /** @description Kontör bakiyesi */
+            creditBalance: number;
+            /** @description "Kapora açık": etkin kapora IBAN hesabı var */
+            depositEnabled: boolean;
+        };
+        /** @description Marka sayfası */
+        AdminBrandPage: {
+            /** @description "412 aktif · 64 denemede" (süzgeçten bağımsız) */
+            counts: {
+                /** @description Aktif marka */
+                active: number;
+                /** @description Denemedeki marka */
+                trialing: number;
+            };
+            /** @description Ada göre sıralı */
+            items: components["schemas"]["AdminBrandListItem"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /**
+         * @description Kontör hareketi türü (paket satın alındı, gönderim, deneme hediyesi, platform ekleme veya düzeltme, iade)
+         * @enum {string}
+         */
+        CreditTransactionType: "Purchase" | "Usage" | "TrialGift" | "Grant" | "Refund";
+        /** @description "Kontör hareketleri" satırı */
+        AdminCreditTransaction: {
+            /**
+             * Format: uuid
+             * @description Hareket (günlük toplanmış gönderim satırında günün ilk hareketi)
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description "Tarih"
+             */
+            occurredUtc: string;
+            type: components["schemas"]["CreditTransactionType"];
+            /**
+             * @description "Miktar" (artı ekleme, eksi tüketim)
+             * @example 1000
+             */
+            credits: number;
+            /**
+             * @description "Bakiye"
+             * @example 1240
+             */
+            balanceAfter: number;
+            /** @description Platform eklemesinin nedeni; diğerlerinde null */
+            note: string | null;
+        };
+        /** @description Kontör hareketleri sayfası */
+        AdminCreditTransactionPage: {
+            /** @description Yeniden eskiye */
+            items: components["schemas"]["AdminCreditTransaction"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /** @description Havale bildirimi sayfası */
+        AdminPaymentNoticePage: {
+            /** @description Yeniden eskiye */
+            items: components["schemas"]["PaymentNoticeSummary"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /** @description Marka detayı "Özet" (telefonlar maskeli) */
+        AdminBrandDetail: {
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            id: string;
+            /**
+             * @description Marka adı
+             * @example Kuaför Elif
+             */
+            name: string;
+            /**
+             * @description Bağlantı adı
+             * @example kuafor-elif
+             */
+            slug: string;
+            industryCode: components["schemas"]["IndustryCode"];
+            /** @description Ana şubenin ili */
+            city: string | null;
+            /**
+             * @description Marka durumu
+             * @enum {string}
+             */
+            brandStatus: "Onboarding" | "Active" | "Suspended" | "Archived";
+            /**
+             * Format: date-time
+             * @description "kayıt 11 Kasım"
+             */
+            createdUtc: string;
+            /**
+             * Format: uri
+             * @description "Rezervasyon bağlantısı"
+             */
+            bookingUrl: string;
+            /** @description "Sahip" (telefon maskeli) */
+            owner: {
+                /**
+                 * @description Sahibin adı
+                 * @example Elif Kaya
+                 */
+                fullName: string;
+                /**
+                 * @description Maskeli telefon
+                 * @example 0532 *** ** 05
+                 */
+                phoneMasked: string;
+            };
+            /** @description "Şubeler" */
+            branches: components["schemas"]["BranchRef"][];
+            /** @description "Personel · 6 aktif" */
+            activeStaffCount: number;
+            /** @description "Müşteri kaydı" */
+            customerCount: number;
+            /** @description "Google Takvim · 3 personelde bağlı (tek yönlü)" */
+            googleCalendarConnectedStaffCount: number;
+            smsSender: components["schemas"]["SmsSender"];
+            /** @description "ABONELİK" ve "ABONELİK ÖDEMESİ" kartları */
+            subscription: {
+                status: components["schemas"]["SubscriptionStatus"];
+                /** @description Plan kodu */
+                planCode: string;
+                /** @description Plan adı */
+                planName: string;
+                billingCycle: components["schemas"]["BillingCycle"];
+                /** @description Ödeme yolu; henüz yoksa null */
+                paymentMethod: components["schemas"]["SubscriptionPaymentMethod"] | null;
+                /**
+                 * Format: date
+                 * @description Deneme bitişi
+                 */
+                trialEndsOn: string | null;
+                /** @description "9 gün kaldı" */
+                trialDaysLeft: number | null;
+                /**
+                 * Format: date
+                 * @description Ödeme gecikti başlangıcı
+                 */
+                pastDueSince: string | null;
+                /**
+                 * Format: date
+                 * @description Salt okunura geçeceği gün
+                 */
+                readOnlyOn: string | null;
+                /**
+                 * @description Abonelik havale kodu
+                 * @example ABN-KE-1125
+                 */
+                transferCode: string;
+                /**
+                 * Format: uuid
+                 * @description "Kasım bildirildi · eşleştirme bekliyor"
+                 */
+                pendingNoticeId: string | null;
+                /**
+                 * Format: date-time
+                 * @description Bekleyen bildirimin anı
+                 */
+                pendingNoticeNotifiedUtc: string | null;
+            };
+            /** @description "KONTÖR 1.240 · tahmini 26 gün yeter" */
+            credits: {
+                /** @description Bakiye */
+                balance: number;
+                /** @description Son 30 günün tüketimine göre; hesaplanamazsa null */
+                estimatedDaysLeft: number | null;
+            };
+            /** @description "BU AY RANDEVU 412 · %61'i online" */
+            appointmentsThisMonth: {
+                /** @description Bu ay randevu */
+                count: number;
+                /** @description Online oranı */
+                onlinePercent: number | null;
+            };
+            /** @description Son 30 günün kontör hareketleri (en fazla 10) */
+            recentCreditTransactions: components["schemas"]["AdminCreditTransaction"][];
+            version: components["schemas"]["Version"];
+        };
+        /** @description Kontör ekleme veya düzeltme */
+        AdminCreditGrant: {
+            /**
+             * @description Eklenecek kontör (eksi = düzeltme; 0 olamaz)
+             * @example 500
+             */
+            credits: number;
+            /** @description Neden (ör. "Destek talebi #4821"); denetime yazılır */
+            reason: string;
+        };
+        /** @description Kontör eklendi */
+        AdminCreditGrantResult: {
+            transaction: components["schemas"]["AdminCreditTransaction"];
+            /** @description Güncel bakiye */
+            balance: number;
+        };
+        /** @description Marka durumu değişikliği */
+        AdminBrandStatusChange: {
+            /**
+             * @description Yeni durum
+             * @enum {string}
+             */
+            status: "Active" | "Suspended";
+            /** @description Neden; denetime yazılır */
+            reason: string;
+        };
+        /** @description Plan değişikliği */
+        AdminPlanChange: {
+            /**
+             * @description Yeni plan kodu
+             * @example salon_plus
+             */
+            planCode: string;
+            billingCycle?: components["schemas"]["BillingCycle"];
+            /** @description Neden; denetime yazılır */
+            reason: string;
+        };
+        /**
+         * @description CodeMatches = "Kod tutuyor" (kod var ve tutar tutuyor); CheckRequired = "Kontrol edin" (kod yok veya tutar farklı)
+         * @enum {string}
+         */
+        MatchVerdict: "CodeMatches" | "CheckRequired";
+        /** @description Onay kuyruğu satırı (type'a göre paymentNotice veya smsSender dolu) */
+        AdminApprovalQueueItem: {
+            /**
+             * @description Satır türü
+             * @enum {string}
+             */
+            type: "PaymentNotice" | "SmsSender";
+            /**
+             * Format: uuid
+             * @description PaymentNotice veya BrandSmsSender kimliği
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            brandId: string;
+            /**
+             * @description Marka adı
+             * @example Kuaför Elif
+             */
+            brandName: string;
+            /**
+             * Format: date-time
+             * @description Bildirim veya başvuru anı ("2 gündür bekliyor")
+             */
+            submittedUtc: string;
+            /** @description Havale bildirimi ayrıntısı; SMS satırında null */
+            paymentNotice: null | {
+                purpose: components["schemas"]["PaymentNoticePurpose"];
+                /**
+                 * Format: date
+                 * @description Abonelikte ödenen dönemin ilk günü ("Kasım"); kontörde null
+                 */
+                periodStart: string | null;
+                /** @description Kontörde paket kontörü ("5.000") */
+                credits: number | null;
+                /** @description Beklenen tutar; tanımlı değilse null */
+                expectedAmount: components["schemas"]["Money"] | null;
+                /** @description Beklenen açıklama kodu */
+                transferCode: string;
+                /** @description Gönderen adı */
+                senderName: string | null;
+                /** @description "dekont yüklendi" */
+                hasReceipt: boolean;
+                version: components["schemas"]["Version"];
+                /** @description En iyi eşleşme adayı; yoksa null */
+                candidate: null | {
+                    /**
+                     * Format: uuid
+                     * @description Aday banka hareketi ("Eşleştir" bununla çağrılır)
+                     */
+                    bankTransactionId: string;
+                    verdict: components["schemas"]["MatchVerdict"];
+                    /** @description Açıklamada kod var */
+                    codeFound: boolean;
+                    /** @description Tutar beklenene eşit */
+                    amountMatches: boolean;
+                };
+            };
+            /** @description SMS başlığı başvurusu; havale satırında null */
+            smsSender: null | {
+                /**
+                 * @description Başvurulan ad
+                 * @example NAILSTUDIO
+                 */
+                requestedName: string;
+                /**
+                 * @description SMS'lerin şu an gittiği ad
+                 * @example OMVILA
+                 */
+                currentEffectiveName: string;
+                version: components["schemas"]["Version"];
+            };
+        };
+        /** @description Onay kuyrukları */
+        AdminApprovalQueue: {
+            /** @description "Havale bildirimi 5" */
+            paymentNoticeCount: number;
+            /** @description "SMS başlığı 2" */
+            smsSenderCount: number;
+            /**
+             * Format: date-time
+             * @description "en eskisi 2 gün"; kuyruk boşsa null
+             */
+            oldestSubmittedUtc: string | null;
+            /** @description En eskiden yeniye */
+            items: components["schemas"]["AdminApprovalQueueItem"][];
+        };
+        /** @description Eşleşme adayı banka hareketi ("OMVILA hesabına gelen havaleler") */
+        BankTransactionCandidate: {
+            /**
+             * Format: uuid
+             * @description Banka hareketi
+             */
+            bankTransactionId: string;
+            /**
+             * Format: date
+             * @description Değer tarihi
+             */
+            valueDate: string;
+            /**
+             * Format: date-time
+             * @description Dökümde saat varsa hareketin anı ("18 Kas 14:05")
+             */
+            receivedUtc: string | null;
+            amount: components["schemas"]["Money"];
+            /**
+             * @description Gönderen (dökümdeki gibi)
+             * @example ELİF KAYA
+             */
+            senderName: string;
+            /** @description "açıklama"; boşsa null ("açıklama: —") */
+            description: string | null;
+            /** @description Açıklamada markanın kodu var */
+            codeFound: boolean;
+            /** @description Tutar beklenene eşit */
+            amountMatches: boolean;
+            verdict: components["schemas"]["MatchVerdict"];
+        };
+        /** @description Havale bildirimi ayrıntısı ve adaylar */
+        AdminPaymentNoticeDetail: {
+            /**
+             * Format: uuid
+             * @description Bildirim
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            brandId: string;
+            /** @description Marka adı */
+            brandName: string;
+            purpose: components["schemas"]["PaymentNoticePurpose"];
+            /** @description Abonelikte plan adı ("Salon planı · Kasım 2026"); kontörde null */
+            planName: string | null;
+            /**
+             * Format: date
+             * @description Abonelikte dönem başı
+             */
+            periodStart: string | null;
+            /**
+             * Format: date
+             * @description Abonelikte dönem sonu
+             */
+            periodEnd: string | null;
+            /** @description Kontörde paket kontörü */
+            credits: number | null;
+            /** @description "Beklenen tutar"; tanımlı değilse null */
+            expectedAmount: components["schemas"]["Money"] | null;
+            /**
+             * @description "Açıklama kodu"
+             * @example ABN-KE-1125
+             */
+            transferCode: string;
+            /** @description "Gönderen" */
+            senderName: string | null;
+            /**
+             * Format: date-time
+             * @description "Bildirim"
+             */
+            notifiedUtc: string;
+            /**
+             * @description "panelden" / uygulamadan
+             * @enum {string}
+             */
+            channel: "Panel" | "App";
+            status: components["schemas"]["PaymentNoticeStatus"];
+            /** @description "Dekont"; yüklenmediyse null */
+            receipt: null | {
+                /** @description Dosya adı */
+                fileName: string;
+                /**
+                 * @description Dosya türü
+                 * @enum {string}
+                 */
+                contentType: "application/pdf" | "image/jpeg" | "image/png";
+                /** @description Boyut (bayt) */
+                sizeBytes: number;
+                /**
+                 * Format: date-time
+                 * @description Yüklendiği an
+                 */
+                uploadedUtc: string;
+            };
+            /** @description Sonuç (Pending'de null) */
+            resolution: null | {
+                /**
+                 * Format: date-time
+                 * @description Sonuçlandığı an
+                 */
+                resolvedUtc: string;
+                /** @description İşlemi yapan platform kullanıcısı */
+                resolvedByName: string;
+                /**
+                 * Format: uuid
+                 * @description Eşleşen banka hareketi (Matched)
+                 */
+                matchedBankTransactionId: string | null;
+                /** @description Markaya yazılan not (NotFound, Rejected) */
+                message: string | null;
+            };
+            /** @description Aday aralığı ("16–18 Kasım") */
+            candidateWindow: {
+                /**
+                 * Format: date
+                 * @description İlk gün
+                 */
+                from: string;
+                /**
+                 * Format: date
+                 * @description Son gün
+                 */
+                to: string;
+            };
+            /** @description Eşleşmemiş adaylar; en olası önce. Bildirim sonuçlandıysa boş */
+            candidates: components["schemas"]["BankTransactionCandidate"][];
+            version: components["schemas"]["Version"];
+        };
+        /** @description Eşleştirilecek banka hareketi */
+        AdminPaymentNoticeMatch: {
+            /**
+             * Format: uuid
+             * @description Seçili banka hareketi
+             */
+            bankTransactionId: string;
+        };
+        /** @description Markaya yazılacak not (Bulunamadı için isteğe bağlı, ret için zorunlu) */
+        AdminPaymentNoticeResolution: {
+            /** @description Markanın bildiriminde gösterilecek not */
+            message?: string;
+        };
+        /** @description Gönderen adı kararı */
+        AdminSmsSenderDecision: {
+            /**
+             * Format: uuid
+             * @description Başvuru
+             */
+            senderId: string;
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            brandId: string;
+            /**
+             * @description Başvurulan ad
+             * @example NAILSTUDIO
+             */
+            name: string;
+            status: components["schemas"]["SmsSenderStatus"];
+            /**
+             * Format: date-time
+             * @description Karar anı
+             */
+            decidedUtc: string;
+            /** @description Ret nedeni */
+            rejectionReason: string | null;
+        };
+        /** @description Gönderen adı reddi */
+        AdminSmsSenderRejection: {
+            /** @description Salonun göreceği ret nedeni */
+            reason: string;
+        };
+        /** @description OMVILA hesabına gelen havale (PlatformBankTransaction) */
+        BankTransaction: {
+            /**
+             * Format: uuid
+             * @description Hareket
+             */
+            id: string;
+            /**
+             * Format: date
+             * @description Değer tarihi
+             */
+            valueDate: string;
+            /**
+             * Format: date-time
+             * @description Dökümde saat varsa hareketin anı
+             */
+            receivedUtc: string | null;
+            amount: components["schemas"]["Money"];
+            /** @description Gönderen */
+            senderName: string;
+            /** @description Açıklama */
+            description: string | null;
+            /** @description Bankanın hareket referansı (benzersiz) */
+            bankReference: string;
+            /**
+             * @description CSV ile içe aktarıldı veya elle girildi
+             * @enum {string}
+             */
+            source: "Import" | "Manual";
+            /**
+             * Format: uuid
+             * @description Eşleştiği bildirim
+             */
+            matchedNoticeId: string | null;
+            /** @description Eşleştiği marka */
+            matchedBrandName: string | null;
+        };
+        /** @description Banka hareketi sayfası */
+        BankTransactionPage: {
+            /** @description Değer tarihine göre yeniden eskiye */
+            items: components["schemas"]["BankTransaction"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /** @description Elle banka hareketi */
+        BankTransactionCreate: {
+            /**
+             * Format: date
+             * @description Değer tarihi
+             */
+            valueDate: string;
+            amount: components["schemas"]["Money"];
+            /** @description Gönderen */
+            senderName: string;
+            /** @description Açıklama */
+            description?: string | null;
+            /** @description Bankanın hareket referansı */
+            bankReference: string;
+        };
+        /** @description Banka dökümü CSV yükleme (multipart) */
+        BankTransactionImportRequest: {
+            /**
+             * Format: binary
+             * @description UTF-8 CSV (virgül veya noktalı virgül ayraçlı), ilk satır başlık
+             */
+            file: string;
+            /**
+             * @description true = önizleme (kayıt yazılmaz), false = uygula
+             * @default true
+             */
+            dryRun?: boolean;
+        };
+        /** @description İçe aktarma önizlemesi veya sonucu */
+        BankTransactionImportResult: {
+            /** @description Önizleme mi */
+            dryRun: boolean;
+            /** @description Yüklenen dosya adı */
+            fileName: string;
+            /** @description Başlık dışı satır */
+            totalRows: number;
+            /** @description Eklenen (önizlemede eklenecek) hareket */
+            imported: number;
+            /** @description Referansı zaten kayıtlı olduğu için atlanan */
+            duplicates: number;
+            /** @description Giden (eksi) tutarlı olduğu için atlanan */
+            skippedOutgoing: number;
+            /** @description Hatalı satır */
+            invalidRows: number;
+            /** @description Hatalı satırlar (en fazla 100) */
+            errors: {
+                /** @description Satır numarası (başlık 1) */
+                rowNumber: number;
+                /** @description Sütun başlığı */
+                column: string;
+                /** @description Hata kodu (required, invalid_format, out_of_range) */
+                code: string;
+            }[];
+        };
+        /** @description Abonelikler tablosu satırı */
+        AdminSubscriptionListItem: {
+            /**
+             * Format: uuid
+             * @description Marka
+             */
+            brandId: string;
+            /** @description Marka adı */
+            brandName: string;
+            /** @description Plan adı */
+            planName: string;
+            status: components["schemas"]["SubscriptionStatus"];
+            /** @description "Ödeme gecikti · 6. gün" */
+            pastDueDays: number | null;
+            /** @description Denemenin bitmesine kalan gün */
+            trialDaysLeft: number | null;
+            /** @description "Kontör" */
+            creditBalance: number;
+            /** @description Kontör eşiğin altında ("Aktif · kontör bitti" bakiye 0 iken) */
+            creditsLow: boolean;
+            /** @description "Sonraki adım" */
+            nextStep: {
+                /**
+                 * @description Adım türü
+                 * @enum {string}
+                 */
+                type: "TrialEnds" | "ReadOnlyOn" | "Renews" | "ReactivatesOnPayment" | "SmsStopped" | "ArchivesOn";
+                /**
+                 * Format: date
+                 * @description Adımın günü (ReactivatesOnPayment ve SmsStopped'da null)
+                 */
+                date: string | null;
+            };
+        };
+        /** @description Abonelik sayfası */
+        AdminSubscriptionPage: {
+            /** @description Üst kartlar (süzgeçten bağımsız) */
+            counts: {
+                /** @description "AKTİF" */
+                active: number;
+                /** @description "DENEMEDE" */
+                trialing: number;
+                /** @description "9'u bu hafta bitiyor" */
+                trialEndingThisWeek: number;
+                /** @description "ÖDEME GECİKTİ" */
+                pastDue: number;
+                /** @description "SALT OKUNUR" */
+                readOnly: number;
+            };
+            /** @description Aciliyete göre sıralı */
+            items: components["schemas"]["AdminSubscriptionListItem"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /** @description Denetim kaydı satırı (değiştirilemez) */
+        AuditLogEntry: {
+            /**
+             * Format: int64
+             * @description Kayıt numarası
+             */
+            id: number;
+            /**
+             * Format: date-time
+             * @description "Zaman"
+             */
+            occurredUtc: string;
+            /** @description "Kim" */
+            actor: {
+                /**
+                 * @description İşlemi yapan türü ("Sistem · Otomatik")
+                 * @enum {string}
+                 */
+                type: "User" | "PlatformUser" | "Customer" | "System";
+                /**
+                 * Format: uuid
+                 * @description İşlemi yapan; System'de null
+                 */
+                id: string | null;
+                /** @description Ad (müşteride maskeli); System'de null */
+                name: string | null;
+                /** @description Platform kullanıcısında rol ("Destek", "Yönetici"); diğerlerinde null */
+                platformRole: components["schemas"]["PlatformRole"] | null;
+            };
+            /**
+             * @description Eylem
+             * @enum {string}
+             */
+            action: "Create" | "Update" | "Delete" | "View" | "Approve" | "Match" | "Export" | "Anonymize";
+            /**
+             * @description Varlık türü (Brand, PaymentNotice, CreditTransaction, Subscription, BrandSmsSender, BrandCustomer…)
+             * @example Brand
+             */
+            entityType: string;
+            /** @description Varlık kimliği */
+            entityId: string | null;
+            /** @description "Marka"; marka dışı kayıtta null */
+            brand: components["schemas"]["AdminBrandRef"] | null;
+            /** @description "Ayrıntı": değişen alanlar ve bağlam (telefon ve ad maskeli) */
+            changes: {
+                [key: string]: unknown;
+            };
+        };
+        /** @description Denetim kaydı sayfası */
+        AuditLogPage: {
+            /** @description Yeniden eskiye */
+            items: components["schemas"]["AuditLogEntry"][];
+            /** @description Sonraki sayfa imleci */
+            nextCursor: string | null;
+        };
+        /** @description Plan özellik bayrakları (ekran metinleri istemcide) */
+        PlanFeatures: {
+            /** @description Kapıda sıra */
+            walkInQueue: boolean;
+            /** @description Bekleme listesi */
+            waitlist: boolean;
+            /** @description Paketler ve prim raporu */
+            packages: boolean;
+            /** @description Şubeler arası rapor */
+            crossBranchReports: boolean;
+            /** @description Öncelikli destek */
+            prioritySupport: boolean;
+        };
+        /** @description Plan kartı */
+        AdminPlan: {
+            /**
+             * @description Plan kodu
+             * @example salon
+             */
+            code: string;
+            /**
+             * @description Plan adı
+             * @example Salon
+             */
+            name: string;
+            /** @description "Küçük ve orta salonlar" */
+            description: string | null;
+            /** @description Aylık fiyat; tanımlı değilse null */
+            monthlyPrice: components["schemas"]["Money"] | null;
+            /** @description Yıllık fiyat; tanımlı değilse null */
+            yearlyPrice: components["schemas"]["Money"] | null;
+            /** @description Dahil şube; null = sınırsız */
+            includedBranchCount: number | null;
+            /** @description Ek şube ücreti (aylık); null = ek şube yok veya tanımlı değil */
+            extraBranchPrice: components["schemas"]["Money"] | null;
+            /** @description Personel sınırı; null = sınırsız */
+            staffLimit: number | null;
+            /** @description Dönem başına dahil SMS; tanımlı değilse null */
+            includedSmsCredits: number | null;
+            features: components["schemas"]["PlanFeatures"];
+            /** @description Tanıtım sitesinde ve kayıtta gösterilir */
+            isPublic: boolean;
+            /** @description Yeni kayıtlarda seçilebilir */
+            isActive: boolean;
+            /** @description "241 marka": bu plandaki iptal edilmemiş abonelik */
+            brandCount: number;
+        };
+        /** @description Plan düzenleme (code ile eşleşir) */
+        AdminPlanUpdate: {
+            /** @description Düzenlenen plan */
+            code: string;
+            /** @description Plan adı */
+            name: string;
+            /** @description Kısa açıklama */
+            description: string | null;
+            /** @description Aylık fiyat; null = belirlenmedi */
+            monthlyPrice: components["schemas"]["Money"] | null;
+            /** @description Yıllık fiyat; null = yok */
+            yearlyPrice: components["schemas"]["Money"] | null;
+            /** @description Dahil şube; null = sınırsız */
+            includedBranchCount: number | null;
+            /** @description Ek şube ücreti; null = ek şube yok */
+            extraBranchPrice: components["schemas"]["Money"] | null;
+            /** @description Personel sınırı; null = sınırsız */
+            staffLimit: number | null;
+            /** @description Dahil SMS */
+            includedSmsCredits: number | null;
+            features: components["schemas"]["PlanFeatures"];
+            /** @description Tanıtım sitesinde gösterilir */
+            isPublic: boolean;
+            /** @description Yeni kayıtlarda seçilebilir */
+            isActive: boolean;
+        };
+        /** @description Planlar ve ortak kurallar */
+        AdminPlanCatalog: {
+            /** @description Plan kartları (Tekil, Salon, Salon Plus) */
+            plans: components["schemas"]["AdminPlan"][];
+            /** @description "Ortak kurallar" (yapılandırmadan, salt okunur) */
+            rules: {
+                /**
+                 * @description "Deneme süresi"
+                 * @example 14
+                 */
+                trialDays: number;
+                /**
+                 * @description "Ödeme gecikmesinde … gün hatırlatma, sonra salt okunur"
+                 * @example 7
+                 */
+                pastDueGraceDays: number;
+                /** @description "Deneme hediyesi" SMS; tanımlı değilse null */
+                trialCredits: number | null;
+            };
+            version: components["schemas"]["Version"];
+        };
+        /** @description Planları kaydetme */
+        AdminPlanCatalogUpdate: {
+            /** @description Düzenlenen planlar */
+            plans: components["schemas"]["AdminPlanUpdate"][];
+        };
+        /** @description Kontör paketi (platform) */
+        AdminCreditPackage: {
+            /**
+             * @description Paket kodu
+             * @example starter
+             */
+            code: string;
+            /**
+             * @description "Paket"
+             * @example Başlangıç
+             */
+            name: string;
+            /**
+             * @description "SMS"
+             * @example 1000
+             */
+            credits: number;
+            /** @description "Fiyat"; null = belirlenmedi */
+            price: components["schemas"]["Money"] | null;
+            /** @description Satışta */
+            isActive: boolean;
+        };
+        /** @description Kontör paketleri */
+        AdminCreditPackageCatalog: {
+            /** @description Kontöre göre artan */
+            packages: components["schemas"]["AdminCreditPackage"][];
+            version: components["schemas"]["Version"];
+        };
+        /** @description Kontör paketlerini kaydetme */
+        AdminCreditPackageCatalogUpdate: {
+            /** @description Düzenlenen paketler (code ile eşleşir) */
+            packages: components["schemas"]["AdminCreditPackage"][];
+        };
     };
     responses: {
         /** @description Doğrulama hatası (validation_failed) */
@@ -6626,7 +9524,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, payment_total_mismatch, package_session_unavailable, cash_day_already_closed, insufficient_credits, already_reviewed) */
+        /** @description İş kuralı çakışması (slot_taken, invalid_state_transition, cutoff_passed, hold_expired, phone_already_exists, slug_unavailable, outside_working_hours, staff_on_time_off, deposit_unavailable_no_iban, deposit_required, deposit_reminder_already_sent, payment_total_mismatch, package_session_unavailable, cash_day_already_closed, insufficient_credits, already_reviewed, payment_notice_already_pending, bank_transaction_already_matched, bank_transaction_duplicate, last_owner_required, plan_limit_exceeded) */
         Conflict: {
             headers: {
                 [name: string]: unknown;
@@ -6706,6 +9604,30 @@ export interface components {
         AccessCodePath: string;
         Limit: number;
         Cursor: string;
+        /** @description Abonelik faturası kimliği */
+        InvoiceIdPath: string;
+        /** @description Salon kullanıcısı kimliği */
+        UserIdPath: string;
+        /** @description Aralığın ilk günü (dahil, şubenin yerel takvimi) */
+        ReportFrom: string;
+        /** @description Aralığın son günü (dahil); from ile arası en fazla 31 gün */
+        ReportTo: string;
+        /** @description Marka kimliği */
+        BrandIdPath: string;
+        /** @description Havale bildirimi (PaymentNotice) kimliği */
+        NoticeIdPath: string;
+        /** @description SMS gönderen adı başvurusu (BrandSmsSender) kimliği */
+        SenderIdPath: string;
+        /** @description Görüntüleme, Onay ve ret, Kontör ve plan, KVKK */
+        AuditCategory: "All" | "View" | "ApproveReject" | "CreditsAndPlan" | "Kvkk";
+        /** @description "Marka veya kişi ara": marka adı veya işlemi yapanın adı */
+        AuditQuery: string;
+        /** @description Yalnız bu markanın kayıtları (marka detayı "Denetim kaydı" sekmesi) */
+        AuditBrandId: string;
+        /** @description Alt sınır (dahil); verilmezse son 24 saat */
+        AuditFromUtc: string;
+        /** @description Üst sınır (hariç); verilmezse şimdi */
+        AuditToUtc: string;
     };
     requestBodies: never;
     headers: {
@@ -10781,6 +13703,901 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    manageGetSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Abonelik */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": "Trialing",
+                     *       "plan": {
+                     *         "code": "salon",
+                     *         "name": "Salon"
+                     *       },
+                     *       "billingCycle": "Monthly",
+                     *       "paymentMethod": null,
+                     *       "trialEndsOn": "2026-12-04",
+                     *       "currentPeriodStart": "2026-11-20",
+                     *       "currentPeriodEnd": "2026-12-04",
+                     *       "pastDueSince": null,
+                     *       "readOnlyOn": null,
+                     *       "readOnlySince": null,
+                     *       "branches": {
+                     *         "count": 2,
+                     *         "included": 1,
+                     *         "extra": 1
+                     *       },
+                     *       "staff": {
+                     *         "count": 5,
+                     *         "limit": null
+                     *       },
+                     *       "amountDue": null,
+                     *       "transferCode": "ABN-KE-1125",
+                     *       "omvilaBankAccount": null,
+                     *       "pendingNotice": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageListInvoices: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fatura sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9a01",
+                     *           "invoiceNumber": "OMV-2026-000184",
+                     *           "periodStart": "2026-10-01",
+                     *           "periodEnd": "2026-10-31",
+                     *           "amount": {
+                     *             "amountMinor": 100000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "tax": {
+                     *             "amountMinor": 20000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "total": {
+                     *             "amountMinor": 120000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "status": "Paid",
+                     *           "issuedUtc": "2026-10-01T06:00:00Z",
+                     *           "paidUtc": "2026-10-03T09:12:00Z",
+                     *           "paidVia": "BankTransfer"
+                     *         }
+                     *       ],
+                     *       "nextCursor": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SubscriptionInvoicePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageGetInvoicePdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Abonelik faturası kimliği */
+                invoiceId: components["parameters"]["InvoiceIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description PDF dosyası (Content-Disposition attachment) */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageNotifyTransfer: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["PaymentNoticeCreate"];
+            };
+        };
+        responses: {
+            /** @description Bildirim alındı */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01",
+                     *       "purpose": "Subscription",
+                     *       "transferCode": "ABN-KE-1125",
+                     *       "expectedAmount": null,
+                     *       "credits": null,
+                     *       "senderName": "Elif Kaya",
+                     *       "hasReceipt": true,
+                     *       "status": "Pending",
+                     *       "notifiedUtc": "2026-11-18T11:20:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PaymentNoticeSummary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    manageListCreditPackages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paketler */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c01",
+                     *           "code": "starter",
+                     *           "name": "Başlangıç",
+                     *           "credits": 1000,
+                     *           "price": null
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02",
+                     *           "code": "medium",
+                     *           "name": "Orta",
+                     *           "credits": 5000,
+                     *           "price": null
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c03",
+                     *           "code": "large",
+                     *           "name": "Büyük",
+                     *           "credits": 20000,
+                     *           "price": null
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CreditPackageList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    managePurchaseCredits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "creditPackageId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreditPurchaseRequest"];
+            };
+        };
+        responses: {
+            /** @description Havale bilgisi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "creditPackageId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9c02",
+                     *       "credits": 5000,
+                     *       "amount": null,
+                     *       "transferCode": "KNT-KE-1125",
+                     *       "omvilaBankAccount": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CreditPurchaseInstructions"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageGetOverview: {
+        parameters: {
+            query?: {
+                branchId?: components["parameters"]["BranchIdQueryOptional"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Genel bakış */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *       "branchName": "Kadıköy",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "date": "2026-11-25",
+                     *       "generatedUtc": "2026-11-25T09:10:00Z",
+                     *       "todayRevenue": {
+                     *         "amountMinor": 984000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "todayAppointmentCount": 16,
+                     *       "pendingApproval": {
+                     *         "count": 2,
+                     *         "earliestHoldExpiresUtc": "2026-11-25T10:45:00Z"
+                     *       },
+                     *       "walkIns": {
+                     *         "waitingCount": 3,
+                     *         "estimatedWaitMinutesForNew": 35
+                     *       },
+                     *       "weeklyOccupancy": {
+                     *         "weekStart": "2026-11-24",
+                     *         "percent": 74,
+                     *         "previousWeekPercent": 68,
+                     *         "staff": [
+                     *           {
+                     *             "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *             "staffName": "Elif Kaya",
+                     *             "calendarColor": "#0F6E5C",
+                     *             "percent": 86
+                     *           },
+                     *           {
+                     *             "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42",
+                     *             "staffName": "Mert Demir",
+                     *             "calendarColor": "#C2410C",
+                     *             "percent": 72
+                     *           },
+                     *           {
+                     *             "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e43",
+                     *             "staffName": "Can Yücel",
+                     *             "calendarColor": "#1D4ED8",
+                     *             "percent": 68
+                     *           },
+                     *           {
+                     *             "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e44",
+                     *             "staffName": "Zeynep Aksoy",
+                     *             "calendarColor": "#8B7355",
+                     *             "percent": 61
+                     *           }
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ManageOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageGetReportOverview: {
+        parameters: {
+            query: {
+                branchId?: components["parameters"]["BranchIdQueryOptional"];
+                /** @description Aralığın ilk günü (dahil, şubenin yerel takvimi) */
+                from: components["parameters"]["ReportFrom"];
+                /** @description Aralığın son günü (dahil); from ile arası en fazla 31 gün */
+                to: components["parameters"]["ReportTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rapor özeti */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *       "timeZone": "Europe/Istanbul",
+                     *       "from": "2026-11-18",
+                     *       "to": "2026-11-24",
+                     *       "earnedRevenue": {
+                     *         "amountMinor": 6120000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "completedAppointmentCount": 118,
+                     *       "earnedRevenueChangePercent": 9,
+                     *       "collections": {
+                     *         "amountMinor": 6795000,
+                     *         "currency": "TRY"
+                     *       },
+                     *       "noShow": {
+                     *         "count": 5,
+                     *         "percent": 4,
+                     *         "lostRevenue": {
+                     *           "amountMinor": 215000,
+                     *           "currency": "TRY"
+                     *         }
+                     *       },
+                     *       "online": {
+                     *         "appointmentCount": 54,
+                     *         "percent": 46
+                     *       },
+                     *       "dailyCollections": [
+                     *         {
+                     *           "date": "2026-11-18",
+                     *           "amountMinor": 0,
+                     *           "isClosed": true
+                     *         },
+                     *         {
+                     *           "date": "2026-11-19",
+                     *           "amountMinor": 1120000,
+                     *           "isClosed": false
+                     *         },
+                     *         {
+                     *           "date": "2026-11-20",
+                     *           "amountMinor": 950000,
+                     *           "isClosed": false
+                     *         },
+                     *         {
+                     *           "date": "2026-11-21",
+                     *           "amountMinor": 1300000,
+                     *           "isClosed": false
+                     *         },
+                     *         {
+                     *           "date": "2026-11-22",
+                     *           "amountMinor": 1580000,
+                     *           "isClosed": false
+                     *         },
+                     *         {
+                     *           "date": "2026-11-23",
+                     *           "amountMinor": 1845000,
+                     *           "isClosed": false
+                     *         },
+                     *         {
+                     *           "date": "2026-11-24",
+                     *           "amountMinor": 0,
+                     *           "isClosed": true
+                     *         }
+                     *       ],
+                     *       "currency": "TRY"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ReportOverview"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageGetCommissionReport: {
+        parameters: {
+            query: {
+                branchId?: components["parameters"]["BranchIdQueryOptional"];
+                /** @description Aralığın ilk günü (dahil, şubenin yerel takvimi) */
+                from: components["parameters"]["ReportFrom"];
+                /** @description Aralığın son günü (dahil); from ile arası en fazla 31 gün */
+                to: components["parameters"]["ReportTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Prim raporu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "branchId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *       "from": "2026-11-18",
+                     *       "to": "2026-11-24",
+                     *       "currency": "TRY",
+                     *       "items": [
+                     *         {
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *           "staffName": "Elif Kaya",
+                     *           "appointmentCount": 38,
+                     *           "serviceRevenueMinor": 2430000,
+                     *           "serviceCommissionPercent": 24,
+                     *           "serviceCommissionMinor": 583200,
+                     *           "saleCommissionMinor": 0,
+                     *           "totalCommissionMinor": 583200
+                     *         },
+                     *         {
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e42",
+                     *           "staffName": "Mert Demir",
+                     *           "appointmentCount": 31,
+                     *           "serviceRevenueMinor": 1595000,
+                     *           "serviceCommissionPercent": 22,
+                     *           "serviceCommissionMinor": 350900,
+                     *           "saleCommissionMinor": 0,
+                     *           "totalCommissionMinor": 350900
+                     *         }
+                     *       ],
+                     *       "totalCommissionMinor": 934100
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CommissionReport"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageListUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kullanıcılar */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "userId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b01",
+                     *           "fullName": "Elif Kaya",
+                     *           "phoneMasked": "0532 *** ** 05",
+                     *           "role": "Owner",
+                     *           "branchIds": [],
+                     *           "status": "Active",
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e41",
+                     *           "isCurrentUser": true,
+                     *           "version": "W/\"8812\""
+                     *         },
+                     *         {
+                     *           "userId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5b04",
+                     *           "fullName": "Deniz Kara",
+                     *           "phoneMasked": "0533 *** ** 18",
+                     *           "role": "Staff",
+                     *           "branchIds": [
+                     *             "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01"
+                     *           ],
+                     *           "status": "Invited",
+                     *           "staffId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5e45",
+                     *           "isCurrentUser": false,
+                     *           "version": "W/\"9031\""
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ManageUserList"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageUpdateUser: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Salon kullanıcısı kimliği */
+                userId: components["parameters"]["UserIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "role": "BranchManager",
+                 *       "branchIds": [
+                 *         "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ManageUserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Güncellendi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManageUser"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageGetRoleMatrix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Rol matrisi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "rows": [
+                     *         {
+                     *           "group": "CalendarAndAppointments",
+                     *           "permissions": [
+                     *             "calendar.view",
+                     *             "appointment.create",
+                     *             "appointment.update"
+                     *           ],
+                     *           "owner": "All",
+                     *           "branchManager": "Branch",
+                     *           "staff": "Own"
+                     *         },
+                     *         {
+                     *           "group": "CustomerPhone",
+                     *           "permissions": [
+                     *             "customer.phone.view"
+                     *           ],
+                     *           "owner": "All",
+                     *           "branchManager": "All",
+                     *           "staff": "None"
+                     *         },
+                     *         {
+                     *           "group": "Settings",
+                     *           "permissions": [
+                     *             "settings.manage",
+                     *             "settings.payment",
+                     *             "settings.roles"
+                     *           ],
+                     *           "owner": "All",
+                     *           "branchManager": "None",
+                     *           "staff": "None"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RoleMatrix"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageGetPrivacySettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description KVKK ayarları */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "noticeMode": "Standard",
+                     *       "standardNotice": {
+                     *         "version": "2026-11-01",
+                     *         "updatedOn": "2026-11-01",
+                     *         "text": "Kuaför Elif olarak kişisel verilerinizi randevu hizmeti sunmak amacıyla işliyoruz."
+                     *       },
+                     *       "customNoticeText": null,
+                     *       "customNoticeUpdatedUtc": null,
+                     *       "transactionRetentionYears": 3,
+                     *       "allowedRetentionYears": [
+                     *         3,
+                     *         5,
+                     *         10
+                     *       ],
+                     *       "version": "W/\"4410\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PrivacySettings"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    manageUpdatePrivacySettings: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "noticeMode": "Standard",
+                 *       "customNoticeText": null,
+                 *       "transactionRetentionYears": 5
+                 *     }
+                 */
+                "application/json": components["schemas"]["PrivacySettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivacySettings"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    manageRequestDataExport: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DataExportRequest"];
+            };
+        };
+        responses: {
+            /** @description İstek alındı */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "exportId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9d01",
+                     *       "status": "Queued",
+                     *       "requestedUtc": "2026-11-22T10:00:00Z",
+                     *       "emailMasked": "el***@ornek.com"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DataExportRequestResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    manageGetGoogleCalendarStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlantı durumu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": "Active",
+                     *       "accountEmailMasked": "el***@gmail.com",
+                     *       "connectedUtc": "2026-11-12T08:30:00Z",
+                     *       "lastSyncedUtc": "2026-11-25T09:05:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["GoogleCalendarConnection"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageDisconnectGoogleCalendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlantı kesildi */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageGetGoogleCalendarConnectUrl: {
+        parameters: {
+            query?: {
+                /** @description Geri dönüş adresinin seçimi (web paneli veya işletme uygulaması) */
+                client?: "web" | "mobile";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bağlantı adresi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "url": "https://accounts.google.com/o/oauth2/v2/auth?client_id=ornek&state=ornek-state",
+                     *       "state": "ornek-state",
+                     *       "expiresUtc": "2026-11-25T09:20:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["GoogleCalendarConnectUrl"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    manageCompleteGoogleCalendarConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "code": "ornek-yetki-kodu",
+                 *       "state": "ornek-state"
+                 *     }
+                 */
+                "application/json": components["schemas"]["GoogleCalendarCallbackRequest"];
+            };
+        };
+        responses: {
+            /** @description Bağlandı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoogleCalendarConnection"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     publicGetBrand: {
         parameters: {
             query?: never;
@@ -12800,6 +16617,1547 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminRequestOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "phone": "0532 700 10 20"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminOtpRequest"];
+            };
+        };
+        responses: {
+            /** @description Kod gönderildi */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "otpId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa001",
+                     *       "expiresInSeconds": 180,
+                     *       "resendAfterSeconds": 60,
+                     *       "phoneMasked": "0532 *** ** 20"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OtpChallengeResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    adminVerifyOtp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OtpVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Oturum açıldı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "accessToken": "ornek-erisim-jetonu",
+                     *       "expiresInSeconds": 900,
+                     *       "refreshToken": "ornek-yenileme-jetonu"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminAuthResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    adminRefreshToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Yeni jetonlar (refreshToken her zaman dolu) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "accessToken": "ornek-erisim-jetonu",
+                     *       "expiresInSeconds": 900,
+                     *       "refreshToken": "ornek-yeni-yenileme-jetonu"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TokenPair"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminLogout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description Kapatıldı */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminGetSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Oturum */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "user": {
+                     *         "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101",
+                     *         "fullName": "Ayşe Demir",
+                     *         "phoneMasked": "0532 *** ** 20"
+                     *       },
+                     *       "role": "PlatformSupport",
+                     *       "permissions": [
+                     *         "platform.brands.view",
+                     *         "platform.payments.match",
+                     *         "platform.sms-senders.decide",
+                     *         "platform.plans.view",
+                     *         "platform.audit.view"
+                     *       ],
+                     *       "pendingApprovalCount": 7
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminSession"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    adminGetOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Genel bakış */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "generatedUtc": "2026-11-20T07:00:00Z",
+                     *       "activeBrands": {
+                     *         "count": 412,
+                     *         "newThisMonth": 18
+                     *       },
+                     *       "pendingApprovals": {
+                     *         "total": 7,
+                     *         "paymentNotices": 5,
+                     *         "smsSenders": 2
+                     *       },
+                     *       "trialing": {
+                     *         "count": 64,
+                     *         "endingThisWeek": 9
+                     *       },
+                     *       "pastDue": {
+                     *         "count": 11,
+                     *         "readOnlySoon": 3
+                     *       },
+                     *       "funnel": {
+                     *         "windowDays": 30,
+                     *         "signedUp": 120,
+                     *         "addedServices": 86,
+                     *         "setWorkingHours": 71,
+                     *         "firstOnlineAppointment": 44
+                     *       },
+                     *       "attentionBrands": [
+                     *         {
+                     *           "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa201",
+                     *           "brandName": "Berber Kaan",
+                     *           "industryCode": "barber",
+                     *           "city": "Ankara",
+                     *           "planName": "Salon",
+                     *           "reason": "PastDue",
+                     *           "pastDueDays": 6,
+                     *           "trialDaysLeft": null,
+                     *           "branchCount": 1,
+                     *           "appointmentsThisMonth": 0
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminOverview"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListBrands: {
+        parameters: {
+            query?: {
+                /** @description Tümü, Denemede, Ödeme gecikti, Salt okunur, Kapora açık */
+                filter?: "All" | "Trialing" | "PastDue" | "ReadOnly" | "DepositEnabled";
+                /** @description Marka adı, bağlantı adı veya sahip telefonunun son 4 hanesi */
+                q?: string;
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Marka sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "counts": {
+                     *         "active": 412,
+                     *         "trialing": 64
+                     *       },
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *           "name": "Kuaför Elif",
+                     *           "industryCode": "hair_salon",
+                     *           "city": "İstanbul",
+                     *           "brandStatus": "Active",
+                     *           "planCode": "salon",
+                     *           "planName": "Salon",
+                     *           "subscriptionStatus": "Trialing",
+                     *           "trialDaysLeft": 9,
+                     *           "pastDueDays": null,
+                     *           "branchCount": 2,
+                     *           "appointmentsThisMonth": 412,
+                     *           "creditBalance": 1240,
+                     *           "depositEnabled": true
+                     *         }
+                     *       ],
+                     *       "nextCursor": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminBrandPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminGetBrand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Marka detayı */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *       "name": "Kuaför Elif",
+                     *       "slug": "kuafor-elif",
+                     *       "industryCode": "hair_salon",
+                     *       "city": "İstanbul",
+                     *       "brandStatus": "Active",
+                     *       "createdUtc": "2026-11-11T09:00:00Z",
+                     *       "bookingUrl": "https://omvila.com/kuafor-elif",
+                     *       "owner": {
+                     *         "fullName": "Elif Kaya",
+                     *         "phoneMasked": "0532 *** ** 05"
+                     *       },
+                     *       "branches": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a01",
+                     *           "name": "Kadıköy"
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5a02",
+                     *           "name": "Moda"
+                     *         }
+                     *       ],
+                     *       "activeStaffCount": 6,
+                     *       "customerCount": 1284,
+                     *       "googleCalendarConnectedStaffCount": 3,
+                     *       "smsSender": {
+                     *         "name": "KUAFORELIF",
+                     *         "status": "None",
+                     *         "effectiveName": "OMVILA"
+                     *       },
+                     *       "subscription": {
+                     *         "status": "Trialing",
+                     *         "planCode": "salon",
+                     *         "planName": "Salon",
+                     *         "billingCycle": "Monthly",
+                     *         "paymentMethod": "BankTransfer",
+                     *         "trialEndsOn": "2026-11-29",
+                     *         "trialDaysLeft": 9,
+                     *         "pastDueSince": null,
+                     *         "readOnlyOn": null,
+                     *         "transferCode": "ABN-KE-1125",
+                     *         "pendingNoticeId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01",
+                     *         "pendingNoticeNotifiedUtc": "2026-11-18T11:20:00Z"
+                     *       },
+                     *       "credits": {
+                     *         "balance": 1240,
+                     *         "estimatedDaysLeft": 26
+                     *       },
+                     *       "appointmentsThisMonth": {
+                     *         "count": 412,
+                     *         "onlinePercent": 61
+                     *       },
+                     *       "recentCreditTransactions": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa301",
+                     *           "occurredUtc": "2026-11-18T12:00:00Z",
+                     *           "type": "Purchase",
+                     *           "credits": 1000,
+                     *           "balanceAfter": 1240,
+                     *           "note": null
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa302",
+                     *           "occurredUtc": "2026-11-18T06:00:00Z",
+                     *           "type": "Usage",
+                     *           "credits": -46,
+                     *           "balanceAfter": 240,
+                     *           "note": null
+                     *         },
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa303",
+                     *           "occurredUtc": "2026-11-11T09:00:00Z",
+                     *           "type": "TrialGift",
+                     *           "credits": 500,
+                     *           "balanceAfter": 500,
+                     *           "note": null
+                     *         }
+                     *       ],
+                     *       "version": "W/\"5120\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminBrandDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminListBrandInvoices: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fatura sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionInvoicePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminListBrandCreditTransactions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kontör hareketleri sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCreditTransactionPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminListBrandPaymentNotices: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Havale bildirimi sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentNoticePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminGrantCredits: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "credits": 500,
+                 *       "reason": "Destek talebi #4821"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminCreditGrant"];
+            };
+        };
+        responses: {
+            /** @description Eklendi */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "transaction": {
+                     *         "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa304",
+                     *         "occurredUtc": "2026-11-20T21:31:00Z",
+                     *         "type": "Grant",
+                     *         "credits": 500,
+                     *         "balanceAfter": 1740,
+                     *         "note": "Destek talebi #4821"
+                     *       },
+                     *       "balance": 1740
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminCreditGrantResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    adminChangeBrandStatus: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "status": "Suspended",
+                 *       "reason": "Kullanım koşulları ihlali"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminBrandStatusChange"];
+            };
+        };
+        responses: {
+            /** @description Durum değişti; güncel marka detayı */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBrandDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminChangePlan: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Marka kimliği */
+                brandId: components["parameters"]["BrandIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "planCode": "salon_plus",
+                 *       "billingCycle": "Monthly",
+                 *       "reason": "Şube sayısı arttı"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminPlanChange"];
+            };
+        };
+        responses: {
+            /** @description Plan değişti; güncel marka detayı */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBrandDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminListApprovalQueue: {
+        parameters: {
+            query?: {
+                /** @description Sekme; verilmezse ikisi birden */
+                type?: "PaymentNotice" | "SmsSender";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kuyruk */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "paymentNoticeCount": 1,
+                     *       "smsSenderCount": 1,
+                     *       "oldestSubmittedUtc": "2026-11-18T11:20:00Z",
+                     *       "items": [
+                     *         {
+                     *           "type": "PaymentNotice",
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01",
+                     *           "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *           "brandName": "Kuaför Elif",
+                     *           "submittedUtc": "2026-11-18T11:20:00Z",
+                     *           "paymentNotice": {
+                     *             "purpose": "Subscription",
+                     *             "periodStart": "2026-11-01",
+                     *             "credits": null,
+                     *             "expectedAmount": null,
+                     *             "transferCode": "ABN-KE-1125",
+                     *             "senderName": "Elif Kaya",
+                     *             "hasReceipt": true,
+                     *             "version": "W/\"7001\"",
+                     *             "candidate": {
+                     *               "bankTransactionId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401",
+                     *               "verdict": "CodeMatches",
+                     *               "codeFound": true,
+                     *               "amountMatches": true
+                     *             }
+                     *           },
+                     *           "smsSender": null
+                     *         },
+                     *         {
+                     *           "type": "SmsSender",
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa501",
+                     *           "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa202",
+                     *           "brandName": "Nail Studio Moda",
+                     *           "submittedUtc": "2026-11-19T15:00:00Z",
+                     *           "paymentNotice": null,
+                     *           "smsSender": {
+                     *             "requestedName": "NAILSTUDIO",
+                     *             "currentEffectiveName": "OMVILA",
+                     *             "version": "W/\"7002\""
+                     *           }
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminApprovalQueue"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminGetPaymentNotice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bildirim */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b01",
+                     *       "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *       "brandName": "Kuaför Elif",
+                     *       "purpose": "Subscription",
+                     *       "planName": "Salon",
+                     *       "periodStart": "2026-11-01",
+                     *       "periodEnd": "2026-11-30",
+                     *       "credits": null,
+                     *       "expectedAmount": null,
+                     *       "transferCode": "ABN-KE-1125",
+                     *       "senderName": "Elif Kaya",
+                     *       "notifiedUtc": "2026-11-18T11:20:00Z",
+                     *       "channel": "Panel",
+                     *       "status": "Pending",
+                     *       "receipt": {
+                     *         "fileName": "dekont-ziraat.pdf",
+                     *         "contentType": "application/pdf",
+                     *         "sizeBytes": 182400,
+                     *         "uploadedUtc": "2026-11-18T11:20:00Z"
+                     *       },
+                     *       "resolution": null,
+                     *       "candidateWindow": {
+                     *         "from": "2026-11-11",
+                     *         "to": "2026-11-21"
+                     *       },
+                     *       "candidates": [
+                     *         {
+                     *           "bankTransactionId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401",
+                     *           "valueDate": "2026-11-18",
+                     *           "receivedUtc": "2026-11-18T11:05:00Z",
+                     *           "amount": {
+                     *             "amountMinor": 100000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "senderName": "ELİF KAYA",
+                     *           "description": "ABN-KE-1125",
+                     *           "codeFound": true,
+                     *           "amountMatches": true,
+                     *           "verdict": "CodeMatches"
+                     *         },
+                     *         {
+                     *           "bankTransactionId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa402",
+                     *           "valueDate": "2026-11-18",
+                     *           "receivedUtc": "2026-11-18T08:42:00Z",
+                     *           "amount": {
+                     *             "amountMinor": 100000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "senderName": "KAAN ÖZTÜRK",
+                     *           "description": null,
+                     *           "codeFound": false,
+                     *           "amountMatches": true,
+                     *           "verdict": "CheckRequired"
+                     *         }
+                     *       ],
+                     *       "version": "W/\"7001\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminPaymentNoticeDetail"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminGetPaymentNoticeReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dekont dosyası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": string;
+                    "image/jpeg": string;
+                    "image/png": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    adminMatchPaymentNotice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "bankTransactionId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa401"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminPaymentNoticeMatch"];
+            };
+        };
+        responses: {
+            /** @description Eşleştirildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentNoticeDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminMarkPaymentNoticeNotFound: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                /**
+                 * @example {
+                 *       "message": "18 Kasım tarihli havaleyi hesabımızda göremedik. Dekontu kontrol edip yeniden bildirin."
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminPaymentNoticeResolution"];
+            };
+        };
+        responses: {
+            /** @description Bulunamadı olarak işaretlendi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentNoticeDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminRejectPaymentNotice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description Havale bildirimi (PaymentNotice) kimliği */
+                noticeId: components["parameters"]["NoticeIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "message": "Bu bildirim aynı havale için ikinci kez gönderildi."
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminPaymentNoticeResolution"];
+            };
+        };
+        responses: {
+            /** @description Reddedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPaymentNoticeDetail"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminApproveSmsSender: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description SMS gönderen adı başvurusu (BrandSmsSender) kimliği */
+                senderId: components["parameters"]["SenderIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Onaylandı */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "senderId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa501",
+                     *       "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa202",
+                     *       "name": "NAILSTUDIO",
+                     *       "status": "Approved",
+                     *       "decidedUtc": "2026-11-20T10:00:00Z",
+                     *       "rejectionReason": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminSmsSenderDecision"];
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminRejectSmsSender: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description SMS gönderen adı başvurusu (BrandSmsSender) kimliği */
+                senderId: components["parameters"]["SenderIdPath"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "reason": "Başlık işletme unvanıyla uyuşmuyor."
+                 *     }
+                 */
+                "application/json": components["schemas"]["AdminSmsSenderRejection"];
+            };
+        };
+        responses: {
+            /** @description Reddedildi */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSmsSenderDecision"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminListBankTransactions: {
+        parameters: {
+            query?: {
+                /** @description Gönderen adı, açıklama (ör. ABN-KE-1125) veya banka referansı */
+                q?: string;
+                /** @description Değer tarihi alt sınırı (dahil) */
+                from?: string;
+                /** @description Değer tarihi üst sınırı (dahil) */
+                to?: string;
+                /** @description Yalnız eşleşmemiş hareketler */
+                unmatchedOnly?: boolean;
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Banka hareketleri */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa403",
+                     *           "valueDate": "2026-11-17",
+                     *           "receivedUtc": "2026-11-17T13:10:00Z",
+                     *           "amount": {
+                     *             "amountMinor": 50000,
+                     *             "currency": "TRY"
+                     *           },
+                     *           "senderName": "SPA MODA GÜZ. LTD",
+                     *           "description": "KNT-SM-0412",
+                     *           "bankReference": "20261117-000913",
+                     *           "source": "Import",
+                     *           "matchedNoticeId": null,
+                     *           "matchedBrandName": null
+                     *         }
+                     *       ],
+                     *       "nextCursor": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BankTransactionPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminCreateBankTransaction: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat) */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "valueDate": "2026-11-18",
+                 *       "amount": {
+                 *         "amountMinor": 100000,
+                 *         "currency": "TRY"
+                 *       },
+                 *       "senderName": "ELİF KAYA",
+                 *       "description": "ABN-KE-1125",
+                 *       "bankReference": "20261118-001204"
+                 *     }
+                 */
+                "application/json": components["schemas"]["BankTransactionCreate"];
+            };
+        };
+        responses: {
+            /** @description Eklendi */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankTransaction"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    adminImportBankTransactions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["BankTransactionImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Önizleme veya içe aktarma sonucu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "dryRun": false,
+                     *       "fileName": "ekstre-2026-11-18.csv",
+                     *       "totalRows": 42,
+                     *       "imported": 38,
+                     *       "duplicates": 3,
+                     *       "skippedOutgoing": 0,
+                     *       "invalidRows": 1,
+                     *       "errors": [
+                     *         {
+                     *           "rowNumber": 17,
+                     *           "column": "Tutar",
+                     *           "code": "invalid_format"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BankTransactionImportResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListSubscriptions: {
+        parameters: {
+            query?: {
+                /** @description Tümü, Denemede, Aktif, Ödeme gecikti, Salt okunur, İptal edildi, Kontörü azalan */
+                filter?: "All" | "Trialing" | "Active" | "PastDue" | "ReadOnly" | "Cancelled" | "CreditsLow";
+                /** @description Marka adı */
+                q?: string;
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Abonelik sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "counts": {
+                     *         "active": 348,
+                     *         "trialing": 64,
+                     *         "trialEndingThisWeek": 9,
+                     *         "pastDue": 11,
+                     *         "readOnly": 3
+                     *       },
+                     *       "items": [
+                     *         {
+                     *           "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa201",
+                     *           "brandName": "Berber Kaan",
+                     *           "planName": "Salon",
+                     *           "status": "PastDue",
+                     *           "pastDueDays": 6,
+                     *           "trialDaysLeft": null,
+                     *           "creditBalance": 210,
+                     *           "creditsLow": false,
+                     *           "nextStep": {
+                     *             "type": "ReadOnlyOn",
+                     *             "date": "2026-11-21"
+                     *           }
+                     *         },
+                     *         {
+                     *           "brandId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *           "brandName": "Kuaför Elif",
+                     *           "planName": "Salon",
+                     *           "status": "Trialing",
+                     *           "pastDueDays": null,
+                     *           "trialDaysLeft": 9,
+                     *           "creditBalance": 1240,
+                     *           "creditsLow": false,
+                     *           "nextStep": {
+                     *             "type": "TrialEnds",
+                     *             "date": "2026-11-29"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "nextCursor": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminSubscriptionPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListAuditLog: {
+        parameters: {
+            query?: {
+                /** @description Görüntüleme, Onay ve ret, Kontör ve plan, KVKK */
+                category?: components["parameters"]["AuditCategory"];
+                /** @description "Marka veya kişi ara": marka adı veya işlemi yapanın adı */
+                q?: components["parameters"]["AuditQuery"];
+                /** @description Yalnız bu markanın kayıtları (marka detayı "Denetim kaydı" sekmesi) */
+                brandId?: components["parameters"]["AuditBrandId"];
+                /** @description Alt sınır (dahil); verilmezse son 24 saat */
+                fromUtc?: components["parameters"]["AuditFromUtc"];
+                /** @description Üst sınır (hariç); verilmezse şimdi */
+                toUtc?: components["parameters"]["AuditToUtc"];
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Denetim kaydı sayfası */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "items": [
+                     *         {
+                     *           "id": 918204,
+                     *           "occurredUtc": "2026-11-20T22:12:00Z",
+                     *           "actor": {
+                     *             "type": "PlatformUser",
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101",
+                     *             "name": "Ayşe Demir",
+                     *             "platformRole": "PlatformSupport"
+                     *           },
+                     *           "action": "View",
+                     *           "entityType": "Brand",
+                     *           "entityId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f5001",
+                     *             "name": "Kuaför Elif"
+                     *           },
+                     *           "changes": {
+                     *             "section": "Summary"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": 918203,
+                     *           "occurredUtc": "2026-11-20T21:58:00Z",
+                     *           "actor": {
+                     *             "type": "PlatformUser",
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa101",
+                     *             "name": "Ayşe Demir",
+                     *             "platformRole": "PlatformSupport"
+                     *           },
+                     *           "action": "Match",
+                     *           "entityType": "PaymentNotice",
+                     *           "entityId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9b02",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa203",
+                     *             "name": "Spa Moda"
+                     *           },
+                     *           "changes": {
+                     *             "purpose": "Credits",
+                     *             "credits": 5000,
+                     *             "transferCode": "KNT-SM-0412"
+                     *           }
+                     *         },
+                     *         {
+                     *           "id": 918190,
+                     *           "occurredUtc": "2026-11-20T20:40:00Z",
+                     *           "actor": {
+                     *             "type": "System",
+                     *             "id": null,
+                     *             "name": null,
+                     *             "platformRole": null
+                     *           },
+                     *           "action": "Update",
+                     *           "entityType": "Subscription",
+                     *           "entityId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa601",
+                     *           "brand": {
+                     *             "id": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4fa204",
+                     *             "name": "Saç Atölyesi"
+                     *           },
+                     *           "changes": {
+                     *             "status": "ReadOnly",
+                     *             "previousStatus": "PastDue"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "nextCursor": null
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuditLogPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminExportAuditLog: {
+        parameters: {
+            query?: {
+                /** @description Görüntüleme, Onay ve ret, Kontör ve plan, KVKK */
+                category?: components["parameters"]["AuditCategory"];
+                /** @description "Marka veya kişi ara": marka adı veya işlemi yapanın adı */
+                q?: components["parameters"]["AuditQuery"];
+                /** @description Yalnız bu markanın kayıtları (marka detayı "Denetim kaydı" sekmesi) */
+                brandId?: components["parameters"]["AuditBrandId"];
+                /** @description Alt sınır (dahil); verilmezse son 24 saat */
+                fromUtc?: components["parameters"]["AuditFromUtc"];
+                /** @description Üst sınır (hariç); verilmezse şimdi */
+                toUtc?: components["parameters"]["AuditToUtc"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV dosyası (UTF-8, BOM'lu; Content-Disposition attachment) */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminListPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planlar */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "plans": [
+                     *         {
+                     *           "code": "solo",
+                     *           "name": "Tekil",
+                     *           "description": "Tek başına çalışanlar",
+                     *           "monthlyPrice": null,
+                     *           "yearlyPrice": null,
+                     *           "includedBranchCount": 1,
+                     *           "extraBranchPrice": null,
+                     *           "staffLimit": 1,
+                     *           "includedSmsCredits": null,
+                     *           "features": {
+                     *             "walkInQueue": false,
+                     *             "waitlist": false,
+                     *             "packages": false,
+                     *             "crossBranchReports": false,
+                     *             "prioritySupport": false
+                     *           },
+                     *           "isPublic": true,
+                     *           "isActive": true,
+                     *           "brandCount": 96
+                     *         }
+                     *       ],
+                     *       "rules": {
+                     *         "trialDays": 14,
+                     *         "pastDueGraceDays": 7,
+                     *         "trialCredits": null
+                     *       },
+                     *       "version": "W/\"301\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminPlanCatalog"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminUpdatePlans: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminPlanCatalogUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPlanCatalog"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            412: components["responses"]["PreconditionFailed"];
+        };
+    };
+    adminListCreditPackages: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kontör paketleri */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "packages": [
+                     *         {
+                     *           "code": "starter",
+                     *           "name": "Başlangıç",
+                     *           "credits": 1000,
+                     *           "price": null,
+                     *           "isActive": true
+                     *         },
+                     *         {
+                     *           "code": "medium",
+                     *           "name": "Orta",
+                     *           "credits": 5000,
+                     *           "price": null,
+                     *           "isActive": true
+                     *         },
+                     *         {
+                     *           "code": "large",
+                     *           "name": "Büyük",
+                     *           "credits": 20000,
+                     *           "price": null,
+                     *           "isActive": true
+                     *         }
+                     *       ],
+                     *       "version": "W/\"302\""
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AdminCreditPackageCatalog"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    adminUpdateCreditPackages: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description GET yanıtındaki ETag değeri */
+                "If-Match": components["parameters"]["IfMatch"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminCreditPackageCatalogUpdate"];
+            };
+        };
+        responses: {
+            /** @description Kaydedildi */
+            200: {
+                headers: {
+                    ETag: components["headers"]["ETag"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminCreditPackageCatalog"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            412: components["responses"]["PreconditionFailed"];
         };
     };
     webhookSmsDeliveryReport: {

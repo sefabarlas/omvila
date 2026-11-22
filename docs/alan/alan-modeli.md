@@ -608,22 +608,25 @@ Google Takvim'e **tek yönlü** aktarım (OMVILA → Google). `CalendarLink`: `S
 
 ### Plan, CreditPackage
 `Plan`: `Code` (`solo`, `salon`, `salon_plus`; ekranda Tekil, Salon, Salon Plus), `Name`, `MonthlyPriceMinor`, `YearlyPriceMinor?`, `IncludedBranchCount`, `ExtraBranchPriceMinor`, `StaffLimit?`, `IncludedSmsCredits`, `Features` (jsonb bayraklar: `walkInQueue`, `waitlist`, `packages`, `crossBranchReports`, `prioritySupport`), `IsPublic`, `IsActive`.
-`CreditPackage`: `Code`, `Credits` (1.000 / 5.000 / 20.000), `PriceMinor`.
+`CreditPackage`: `Code`, `Name` (Başlangıç, Orta, Büyük), `Credits` (1.000 / 5.000 / 20.000), `PriceMinor?`, `IsActive`. `Plan` ayrıca `Description?` ("Küçük ve orta salonlar") taşır.
 Fiyat değerleri yer tutucudur (`[AYLIK FİYAT]`, `[FİYAT]`); kod sabit değer içermez, veriden okur.
 
 ### Subscription
-`BrandId`, `PlanId`, `BillingCycle` (`Monthly`, `Yearly`), `Status` (bkz. durum makinesi), `TrialEndsOn?`, `CurrentPeriodStart`, `CurrentPeriodEnd`, `PastDueSince?`, `ReadOnlySince?`, `CancelAtPeriodEnd`, `CancelledUtc?`, `PaymentMethod` (`Card`, `BankTransfer`), `BranchCount`, `StaffCount`, `TransferCode` (`ABN-KE-1125` biçiminde sabit marka kodu).
+`BrandId`, `PlanId`, `BillingCycle` (`Monthly`, `Yearly`), `Status` (bkz. durum makinesi), `TrialEndsOn?`, `CurrentPeriodStart`, `CurrentPeriodEnd`, `PastDueSince?`, `ReadOnlySince?`, `CancelAtPeriodEnd`, `CancelledUtc?`, `PaymentMethod` (`Card`, `BankTransfer`), `BranchCount`, `StaffCount`, `TransferCode` (`ABN-KE-1125` biçiminde sabit marka kodu), `CreditTransferCode` (`KNT-…` biçiminde sabit kontör havale kodu; kontör siparişi kaydı yoktur, paket havale bildiriminde seçilir, T-116).
 Kartla ödeme için kart bilgisi OMVILA'da tutulmaz; ödeme sağlayıcısının saklı kart referansı tutulur (sağlayıcı kararı açık soru).
 
 ### SubscriptionInvoice
-`SubscriptionId`, `InvoiceNumber` (boşluksuz sıra: PostgreSQL `SEQUENCE` + yıl öneki, `OMV-2026-000184`), `PeriodStart`, `PeriodEnd`, `AmountMinor`, `TaxMinor`, `Status` (`Issued`, `Paid`, `Failed`, `Void`), `PaidUtc?`, `PaidVia` (`Card`, `BankTransfer`), `PdfUrl?`. e-Fatura v1'de yoktur.
+`SubscriptionId`, `InvoiceNumber` (boşluksuz sıra: yıl başına kilitli sayaç satırı + yıl öneki, `OMV-2026-000184`; `SEQUENCE` boşluk bırakabildiği için kullanılmaz), `PeriodStart`, `PeriodEnd`, `AmountMinor`, `TaxMinor`, `Status` (`Issued`, `Paid`, `Failed`, `Void`), `PaidUtc?`, `PaidVia` (`Card`, `BankTransfer`), `PdfUrl?`. e-Fatura v1'de yoktur.
 
 ### PaymentNotice (Havale bildirimi)
 Salonun "Havaleyi bildir" ile yaptığı abonelik veya kontör ödemesi bildirimi.
-`BrandId`, `Purpose` (`Subscription`, `Credits`), `ExpectedAmountMinor`, `TransferCode` (`ABN-…` / `KNT-…`), `SenderName?`, `ReceiptFileUrl?` (dekont, isteğe bağlı), `NotifiedUtc`, `Status` (`Pending`, `Matched`, `NotFound`, `Rejected`), `MatchedBankTransactionId?`, `ResolvedByUserId?`, `ResolvedUtc?`.
+`BrandId`, `Purpose` (`Subscription`, `Credits`), `CreditPackageId?` (kontörde), `PeriodStart?` (abonelikte ödenen dönem), `ExpectedAmountMinor?` (fiyat tanımlı değilse boş), `Channel` (`Panel`, `App`), `TransferCode` (`ABN-…` / `KNT-…`), `SenderName?`, `ReceiptFileUrl?` (dekont, isteğe bağlı), `NotifiedUtc`, `Status` (`Pending`, `Matched`, `NotFound`, `Rejected`), `MatchedBankTransactionId?`, `ResolvedByUserId?`, `ResolvedUtc?`.
 
 ### PlatformBankTransaction
-OMVILA hesabına gelen havaleler: banka dökümünden CSV ile içe aktarılır veya elle girilir. `ValueDate`, `AmountMinor`, `SenderName`, `Description`, `BankReference` (UNIQUE), `MatchedNoticeId?`.
+OMVILA hesabına gelen havaleler: banka dökümünden CSV ile içe aktarılır veya elle girilir. `ValueDate`, `ReceivedUtc?`, `AmountMinor`, `SenderName`, `Description?`, `BankReference` (UNIQUE), `Source` (`Import`, `Manual`), `MatchedNoticeId?`.
+
+### BrandDataExport
+"Tüm verileri dışa aktar" isteği (AyarlarKvkk): `BrandId`, `RequestedByUserId`, `Email`, `Status` (`Queued`, `Processing`, `Sent`, `Failed`), `RequestedUtc`, `CompletedUtc?`. Müşteriler, randevular ve ödemeler CSV olarak hazırlanır; indirme bağlantısı e-postayla gider. Markada aynı anda tek açık istek olur.
 Eşleştirme sonucu: abonelikte fatura `Paid` olur, durum `Active`'e döner; kontörde `CreditTransaction(Purchase)` yazılır. Markaya bildirim gider, denetime yazılır.
 
 ### AuditLog
