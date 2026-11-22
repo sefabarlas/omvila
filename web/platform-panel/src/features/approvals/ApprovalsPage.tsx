@@ -152,31 +152,27 @@ function NoticeItem({ item, notice }: { item: ApprovalItem; notice: QueueNotice 
   const searchBank = () =>
     void navigate({ to: '/onay/banka-hareketleri', search: { q: notice.transferCode } });
 
-  const matchCandidate = () => {
+  // mutateAsync: başarıda satır kuyruktan düşer; çağrı başına geri çağrı kaybolmasın.
+  const matchCandidate = async () => {
     if (!candidate) {
       return;
     }
 
     setFailure(null);
-    match.mutate(
-      {
+    try {
+      await match.mutateAsync({
         noticeId: item.id,
         version: notice.version,
         bankTransactionId: candidate.bankTransactionId,
-      },
-      {
-        onSuccess: () => {
-          toast.show({
-            tone: 'basari',
-            title: 'Havale eşleştirildi',
-            message: `${item.brandName} markasına bildirim gitti.`,
-          });
-        },
-        onError: (problem) => {
-          setFailure(decisionError(problem));
-        },
-      },
-    );
+      });
+      toast.show({
+        tone: 'basari',
+        title: 'Havale eşleştirildi',
+        message: `${item.brandName} markasına bildirim gitti.`,
+      });
+    } catch (problem) {
+      setFailure(decisionError(problem));
+    }
   };
 
   return (
@@ -201,7 +197,7 @@ function NoticeItem({ item, notice }: { item: ApprovalItem; notice: QueueNotice 
                 icon={<Check size={14} aria-hidden="true" />}
                 loading={match.isPending}
                 loadingLabel="Eşleştiriliyor…"
-                onClick={matchCandidate}
+                onClick={() => void matchCandidate()}
                 aria-label={`${item.brandName} havalesini eşleştir`}
               >
                 Eşleştir
@@ -245,6 +241,19 @@ function SenderItem({ item, sender }: { item: ApprovalItem; sender: QueueSender 
   const approve = useApproveSender();
   const [rejecting, setRejecting] = useState(false);
   const [failure, setFailure] = useState<ReturnType<typeof decisionError> | null>(null);
+  const approveSender = async () => {
+    setFailure(null);
+    try {
+      await approve.mutateAsync({ senderId: item.id, version: sender.version });
+      toast.show({
+        tone: 'basari',
+        title: 'SMS gönderen adı onaylandı',
+        message: `${item.brandName} SMS'leri ${sender.requestedName} adıyla gidecek.`,
+      });
+    } catch (problem) {
+      setFailure(decisionError(problem));
+    }
+  };
 
   return (
     <li className={styles.item}>
@@ -275,24 +284,7 @@ function SenderItem({ item, sender }: { item: ApprovalItem; sender: QueueSender 
             loading={approve.isPending}
             loadingLabel="Onaylanıyor…"
             aria-label={`${sender.requestedName} adını onayla`}
-            onClick={() => {
-              setFailure(null);
-              approve.mutate(
-                { senderId: item.id, version: sender.version },
-                {
-                  onSuccess: () => {
-                    toast.show({
-                      tone: 'basari',
-                      title: 'SMS gönderen adı onaylandı',
-                      message: `${item.brandName} SMS'leri ${sender.requestedName} adıyla gidecek.`,
-                    });
-                  },
-                  onError: (problem) => {
-                    setFailure(decisionError(problem));
-                  },
-                },
-              );
-            }}
+            onClick={() => void approveSender()}
           >
             Onayla
           </Button>

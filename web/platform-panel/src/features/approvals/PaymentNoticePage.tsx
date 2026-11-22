@@ -176,28 +176,28 @@ function Decision({ notice, onRefresh }: { notice: NoticeDetail; onRefresh: () =
   const [failure, setFailure] = useState<ReturnType<typeof decisionError> | null>(null);
   const chosen = notice.candidates.find((c) => c.bankTransactionId === selected);
 
-  const submit = () => {
+  // mutateAsync: başarıda bildirim sonuçlanır ve bu kart kalkar; çağrı başına geri çağrı kaybolmasın.
+  const submit = async () => {
     if (!chosen) {
       return;
     }
 
     setFailure(null);
-    match.mutate(
-      { noticeId: notice.id, version: notice.version, bankTransactionId: chosen.bankTransactionId },
-      {
-        onSuccess: () => {
-          toast.show({
-            tone: 'basari',
-            title: 'Havale eşleştirildi',
-            message: `${notice.brandName} markasına bildirim gitti.`,
-          });
-          void navigate({ to: '/onay' });
-        },
-        onError: (problem) => {
-          setFailure(decisionError(problem));
-        },
-      },
-    );
+    try {
+      await match.mutateAsync({
+        noticeId: notice.id,
+        version: notice.version,
+        bankTransactionId: chosen.bankTransactionId,
+      });
+      toast.show({
+        tone: 'basari',
+        title: 'Havale eşleştirildi',
+        message: `${notice.brandName} markasına bildirim gitti.`,
+      });
+      void navigate({ to: '/onay' });
+    } catch (problem) {
+      setFailure(decisionError(problem));
+    }
   };
 
   return (
@@ -299,7 +299,7 @@ function Decision({ notice, onRefresh }: { notice: NoticeDetail; onRefresh: () =
             disabled={!chosen}
             loading={match.isPending}
             loadingLabel="Eşleştiriliyor…"
-            onClick={submit}
+            onClick={() => void submit()}
           >
             Seçili hareketle eşleştir
           </Button>

@@ -184,6 +184,7 @@ export function AuditPage({ filters }: { filters: AuditFilters }) {
           <Select
             label="Zaman"
             hideLabel
+            className={styles.period}
             options={auditPeriods.map(({ value, label }) => ({ value, label }))}
             value={filters.period}
             onChange={(event) => {

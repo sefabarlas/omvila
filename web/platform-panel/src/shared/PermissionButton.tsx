@@ -3,6 +3,7 @@ import type { ButtonProps } from '@omvila/ui-web/panel';
 import { Lock } from 'lucide-react';
 import type { AdminPermission } from '@/app/api';
 import { useSession } from '@/app/session';
+import styles from './PermissionButton.module.css';
 
 export interface PermissionButtonProps extends ButtonProps {
   permission: AdminPermission;
@@ -10,7 +11,10 @@ export interface PermissionButtonProps extends ButtonProps {
   lockedHint?: string;
 }
 
-/** İzinli kullanıcıda buton; izni olmayanda kilitli, pasif ve nedeni ipucunda (KK4). */
+/**
+ * İzinli kullanıcıda buton; izni olmayanda kilitli, pasif ve nedeni ipucunda (KK4). Butonlar sayfa ve kart başlığının
+ * sağında durduğundan ipucu sağa hizalanır (sayfa yatay kaymasın).
+ */
 export function PermissionButton({
   permission,
   lockedHint = 'Yönetici yetkisi ister',
@@ -23,11 +27,13 @@ export function PermissionButton({
   }
 
   return (
-    <Tooltip content={lockedHint}>
-      <Button size={button.size ?? 'md'} disabled icon={<Lock size={14} aria-hidden="true" />}>
-        {children}
-      </Button>
-    </Tooltip>
+    <span className={styles.end}>
+      <Tooltip content={lockedHint}>
+        <Button size={button.size ?? 'md'} disabled icon={<Lock size={14} aria-hidden="true" />}>
+          {children}
+        </Button>
+      </Tooltip>
+    </span>
   );
 }
 
