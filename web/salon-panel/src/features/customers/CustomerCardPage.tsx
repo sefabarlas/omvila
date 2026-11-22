@@ -16,7 +16,7 @@ import {
 import { displayStatus } from '@omvila/ui-web/status';
 import { branchToday } from '@omvila/ui-web/time';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { CalendarDays, CalendarPlus, GitMerge, Trash2 } from 'lucide-react';
+import { CalendarDays, CalendarPlus, GitMerge, ReceiptText, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useApi } from '@/app/api-context';
 import { useSelectedBranch } from '@/app/branch';
@@ -25,6 +25,7 @@ import { defaultTimeZone } from '@/app/config';
 import { useSession } from '@/app/session';
 import { NewAppointmentButton } from '@/features/appointments/NewAppointmentButton';
 import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal';
+import { SellPackageModal } from '@/features/packages/SellPackageModal';
 import { NotFoundPage } from '@/shared/NotFoundPage';
 import { Page } from '@/shared/Page';
 import { customerAppointmentsQuery, customerQuery } from './api';
@@ -43,7 +44,8 @@ const breadcrumb = 'Müşteriler / Müşteri kartı';
  * (Randevular, Paketler, Ödemeler: payment.collect, Değerlendirmeler: review.view), notlar ve "Kayıt işlemleri"
  * (birleştir: customer.merge, KVKK silme: customer.kvkk). "Randevu ver" yeni randevu ekranını müşteri seçili açar
  * (appointment.create, T-58). "Müşteri since", ilk kanal, tercih ettiği personel, KVKK izinleri ve "SMS gönder"
- * sözleşmede yok; gizli (acik-sorular.md T-57, T-99).
+ * sözleşmede yok; gizli (acik-sorular.md T-57, T-99). "Paket sat" (package.sell) tasarımda yok: "SMS gönder"in yerinde
+ * ikincil buton, satış penceresini müşteri seçili açar (T-102).
  */
 export function CustomerCardPage({ brandCustomerId }: { brandCustomerId: string }) {
   const api = useApi();
@@ -89,7 +91,7 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
   const api = useApi();
   const [booking, setBooking] = useState(false);
   const [tab, setTab] = useState('randevular');
-  const [dialog, setDialog] = useState<'merge' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'merge' | 'delete' | 'sell' | null>(null);
   const packages = useInfiniteQuery(customerPackagesQuery(api, customer.id));
   const active = activePackage(packages.data?.pages.flatMap((page) => page.items) ?? []);
   const tabs = [
@@ -100,6 +102,28 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
   ];
   const canMerge = can('customer.merge');
   const canDelete = can('customer.kvkk');
+  const sellButton =
+    can('package.sell') && branchId ? (
+      <Button
+        icon={<ReceiptText size={16} aria-hidden="true" />}
+        onClick={() => {
+          setDialog('sell');
+        }}
+      >
+        Paket sat
+      </Button>
+    ) : null;
+  const bookButton =
+    can('appointment.create') && branchId ? (
+      <NewAppointmentButton
+        label="Randevu ver"
+        icon={<CalendarPlus size={16} aria-hidden="true" />}
+        readOnly={session.subscription.status === 'ReadOnly'}
+        onClick={() => {
+          setBooking(true);
+        }}
+      />
+    ) : null;
   const today = branchToday(clock, defaultTimeZone);
   const phone = customerPhone(customer);
   const visits = customer.visitCount;
@@ -128,17 +152,13 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
     <Page
       title={customer.fullName}
       context={breadcrumb}
-      {...(can('appointment.create') && branchId
+      {...(sellButton || bookButton
         ? {
             action: (
-              <NewAppointmentButton
-                label="Randevu ver"
-                icon={<CalendarPlus size={16} aria-hidden="true" />}
-                readOnly={session.subscription.status === 'ReadOnly'}
-                onClick={() => {
-                  setBooking(true);
-                }}
-              />
+              <div className={styles.topActions}>
+                {sellButton}
+                {bookButton}
+              </div>
             ),
           }
         : {})}
@@ -154,6 +174,15 @@ function CustomerCard({ customer }: { customer: CustomerSummary }) {
       ) : null}
       {dialog === 'merge' ? (
         <MergeCustomersModal
+          customer={customer}
+          onClose={() => {
+            setDialog(null);
+          }}
+        />
+      ) : null}
+      {dialog === 'sell' ? (
+        <SellPackageModal
+          branchId={branchId}
           customer={customer}
           onClose={() => {
             setDialog(null);
