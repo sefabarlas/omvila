@@ -55,6 +55,11 @@ internal sealed class AppointmentSms(
         context.Customer is { AppointmentSmsEnabled: true, PhoneMasked: not null } customer
         && PhoneNumber.TryParse(customer.PhoneE164, out _);
 
+    /// <summary>
+    /// Müşteri mesajını yazar. Müşterinin global kaydı her zaman verilir (T-66 (5), T-103): olayın push metni varsa plan
+    /// [Push, Sms] olur ve uygulamada aktif cihaz varsa push gider, yoksa SMS; kapora mesajları ve push metni olmayanlar yalnız
+    /// SMS kalır (NotificationOutbox).
+    /// </summary>
     public Task EnqueueAsync(
         AppointmentSmsContext context,
         string eventCode,
@@ -72,7 +77,7 @@ internal sealed class AppointmentSms(
                 NotificationReference.ForAppointment(context.Appointment.AppointmentId),
                 scheduledUtc,
                 variant,
-                customerId),
+                customerId ?? context.Customer!.CustomerId),
             ct);
 
     /// <summary>"Değişiklik ve iptal" bağlantısı (/r/{kod}); kod yoksa null.</summary>
