@@ -136,7 +136,8 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
             [.. ordered.Select(i => i.ServiceNameSnapshot)],
             [.. staffIds.Where(staff.ContainsKey).Select(id => staff[id].DisplayName ?? staff[id].FullName).Distinct(StringComparer.Ordinal)],
             code,
-            AwaitedDeposit(appointment));
+            AwaitedDeposit(appointment),
+            staffIds);
     }
 
     public async Task<IReadOnlyDictionary<Guid, AppointmentPaymentContext>> GetPaymentContextsAsync(

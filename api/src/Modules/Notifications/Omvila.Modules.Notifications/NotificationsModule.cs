@@ -50,6 +50,7 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
         services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();
         services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, CancelRemindersOnCustomerCancel>();
+        services.AddIntegrationEventHandler<AppointmentCancelledByCustomer, NotifyAppointmentCancelledByCustomer>();
         services.AddIntegrationEventHandler<AppointmentRequested, NotifyAppointmentRequested>();
         services.AddIntegrationEventHandler<AppointmentApproved, NotifyAppointmentApproved>();
         services.AddIntegrationEventHandler<AppointmentDeclined, NotifyAppointmentDeclined>();

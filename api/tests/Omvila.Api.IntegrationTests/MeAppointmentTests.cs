@@ -191,6 +191,41 @@ public sealed class MeAppointmentTests(PostgresFixture db) : IAsyncLifetime
         upcoming[0].GetProperty("id").GetString().ShouldBe(soon, "başlangıca göre artan");
     }
 
+    // T-104: müşteri iptali salona staff.appointment_changed (ilgili personel + şube yöneticileri; kişisel tercih cancellationAndReschedule).
+    [Fact]
+    public async Task CustomerCancel_NotifiesStaffAndManagersOnce_AndPushRespectsThePersonalPreference()
+    {
+        var merve = await SignInAsync(MervePhone);
+        var first = (await BookAsync(merve, _fon, FridayAt1430)).Body.GetProperty("id").GetString()!;
+        var second = (await BookAsync(merve, _fon, "2026-11-28T08:00:00Z")).Body.GetProperty("id").GetString()!;
+
+        (await CancelAsync(merve, first, new { reason = "Sick" }, (await _api.GetAsync($"/api/v1/me/appointments/{first}", merve)).ETag)).Status.ShouldBe(200);
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        var owner = await _api.ScalarAsync<Guid>("SELECT user_id FROM identity.user_memberships LIMIT 1");
+        (await _api.ScalarAsync<string>(
+            "SELECT recipient_id::text || '|' || (payload->>'müşteri') || '|' || (payload->>'neden') || '|' || template_variant FROM notifications.notification_outbox WHERE event_code = 'staff.appointment_changed'"))
+            .ShouldBe($"{owner}|Merve Y.|Rahatsızlandım|cancelled", "Elif hem personel hem sahip: tek kez");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.in_app_notifications WHERE event_code = 'staff.appointment_changed'")).ShouldBe(1);
+
+        var preferences = new
+        {
+            newOnlineAppointment = true,
+            cancellationAndReschedule = false,
+            customerCheckedIn = false,
+            walkInQueue = true,
+            newReview = true,
+            dailySummary = false,
+            quietHoursEnabled = true,
+        };
+        (await _api.WriteAsync(HttpMethod.Put, "/api/v1/manage/me/notification-preferences", preferences, _owner, "W/\"0\"")).Status.ShouldBe(200);
+        (await CancelAsync(merve, second, new { reason = "PlanChanged" }, (await _api.GetAsync($"/api/v1/me/appointments/{second}", merve)).ETag)).Status.ShouldBe(200);
+        await _api.RunJobAsync(ManageApi.OutboxDispatcherJob);
+
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code = 'staff.appointment_changed'")).ShouldBe(1, "tercih kapalı: push yazılmaz");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.in_app_notifications WHERE event_code = 'staff.appointment_changed'")).ShouldBe(2, "panel kaydı tercihten bağımsız");
+    }
+
     // ───────── Saat değişikliği (A14) ─────────
 
     [Fact]

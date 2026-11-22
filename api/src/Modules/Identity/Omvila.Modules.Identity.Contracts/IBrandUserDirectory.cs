@@ -15,4 +15,10 @@ public interface IBrandUserDirectory
     /// <param name="branchId">Olayın şubesi.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<IReadOnlyList<Guid>> GetUserIdsWithPermissionAsync(Guid brandId, string permission, Guid? branchId, CancellationToken ct);
+
+    /// <summary>Personel kayıtlarına bağlı etkin kullanıcılar ("İlgili personel"); kullanıcısı olmayan personel yer almaz.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffIds">Personel kayıtları.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<Guid>> GetUserIdsForStaffAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct);
 }

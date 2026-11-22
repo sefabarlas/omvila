@@ -26,4 +26,18 @@ internal sealed class BrandUserDirectory(IdentityDbContext db) : IBrandUserDirec
             .Select(m => m.UserId)
             .Distinct()];
     }
+
+    public async Task<IReadOnlyList<Guid>> GetUserIdsForStaffAsync(Guid brandId, IReadOnlyCollection<Guid> staffIds, CancellationToken ct)
+    {
+        if (staffIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await (from m in db.Memberships.AsNoTracking()
+                      join u in db.Users.AsNoTracking() on m.UserId equals u.Id
+                      where m.BrandId == brandId && m.Status == MembershipStatus.Active && u.IsActive
+                            && m.StaffId != null && staffIds.Contains(m.StaffId.Value)
+                      select m.UserId).Distinct().ToListAsync(ct);
+    }
 }
