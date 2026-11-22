@@ -57,6 +57,7 @@ public static class IdentityModule
         services.AddScoped<PlatformUsers>();
         services.AddScoped<IPlatformUserProvisioning>(sp => sp.GetRequiredService<PlatformUsers>());
         services.AddScoped<IBrandOwnerDirectory>(sp => sp.GetRequiredService<PlatformUsers>());
+        services.AddScoped<IUserNameDirectory>(sp => sp.GetRequiredService<PlatformUsers>());
         // Demo verisi (--role=seed; T-74): kayıt akışının adımları ve --reset için markanın üyelik satırları.
         services.AddScoped(sp => new DemoData.IdentityDemoData(
             sp.GetRequiredService<IdentityDbContext>(), sp.GetRequiredService<IDbSession>(), sp.GetRequiredService<Tenancy.Contracts.ITenantProvisioning>(),

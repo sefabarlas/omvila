@@ -17,6 +17,7 @@ internal sealed class CreditPackageConfiguration : IEntityTypeConfiguration<Cred
         builder.Property(x => x.Id).ValueGeneratedNever();
         builder.Property(x => x.Code).HasMaxLength(40);
         builder.Property(x => x.Name).HasMaxLength(80);
+        builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => x.Code).IsUnique();
     }
 }

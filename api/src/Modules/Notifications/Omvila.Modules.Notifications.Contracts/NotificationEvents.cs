@@ -101,4 +101,19 @@ public static class NotificationEvents
 
     /// <summary>İşletme e-postası (Owner): "Abonelik ödemeniz alınamadı" (PastDue'ya geçiş; kart yok, havale bekleniyor).</summary>
     public const string OwnerSubscriptionPaymentFailed = "owner.subscription_payment_failed";
+
+    /// <summary>İşletme push'u, bildirim paneli ve e-posta (Owner): "Havaleniz eşleşti" (abonelik dönemi ödendi veya kontör eklendi; T-124).</summary>
+    public const string OwnerPaymentNoticeMatched = "owner.payment_notice_matched";
+
+    /// <summary>İşletme push'u, bildirim paneli ve e-posta (Owner): "Havaleniz bulunamadı" (T-124).</summary>
+    public const string OwnerPaymentNoticeNotFound = "owner.payment_notice_not_found";
+
+    /// <summary>İşletme push'u, bildirim paneli ve e-posta (Owner): "Havale bildiriminiz reddedildi" (T-124).</summary>
+    public const string OwnerPaymentNoticeRejected = "owner.payment_notice_rejected";
+
+    /// <summary>İşletme e-postası (Owner): SMS gönderen adı onaylandı (T-124; panel olay kodu sözleşmede yok).</summary>
+    public const string OwnerSmsSenderApproved = "owner.sms_sender_approved";
+
+    /// <summary>İşletme e-postası (Owner): SMS gönderen adı reddedildi (T-124).</summary>
+    public const string OwnerSmsSenderRejected = "owner.sms_sender_rejected";
 }

@@ -16,6 +16,7 @@ namespace Omvila.Modules.Notifications.Templates;
 internal static class EmailTemplates
 {
     public const string SubscriptionPath = "ayarlar/abonelik";
+    public const string SmsSettingsPath = "ayarlar/bildirimler";
     private const string Footer = "OMVILA · İşletme hesabınızla ilgili bilgilendirme.";
     private static readonly CultureInfo Turkish = CultureInfo.GetCultureInfo("tr-TR");
 
@@ -72,6 +73,64 @@ internal static class EmailTemplates
                 + "Uygulaması olan müşterilere push bildirimleri gitmeye devam eder.")
             .Button("Kontör paketi al", new Uri(panel, SubscriptionPath));
         return builder.Build(to, $"SMS kontörünüz azaldı: {remaining} kaldı", NotificationEvents.OwnerCreditsLow);
+    }
+
+    // Kural: bildirimler.md owner.payment_notice_matched (T-124)
+    public static EmailMessage PaymentNoticeMatched(string to, string brandName, int? credits, Uri panel)
+    {
+        const string title = "Havaleniz eşleşti";
+        var builder = credits is { } added
+            ? new EmailBuilder(title, $"{StaffText.Count(added)} SMS kontörü hesabınıza eklendi.")
+                .Paragraph($"Merhaba, {brandName} için bildirdiğiniz kontör havalesi OMVILA hesabındaki hareketle eşleşti.")
+                .Row("Eklenen", $"{StaffText.Count(added)} SMS")
+            : new EmailBuilder(title, "Abonelik ödemeniz alındı; aboneliğiniz aktif.")
+                .Paragraph($"Merhaba, {brandName} için bildirdiğiniz abonelik havalesi OMVILA hesabındaki hareketle eşleşti. "
+                    + "Aboneliğiniz aktif; faturanızı Abonelik sayfasında görebilirsiniz.");
+        builder.Button("Aboneliği aç", new Uri(panel, SubscriptionPath));
+        return builder.Build(to, title, NotificationEvents.OwnerPaymentNoticeMatched);
+    }
+
+    // Kural: bildirimler.md owner.payment_notice_not_found (T-124): platformun notu eklenir, salon yeniden bildirebilir.
+    public static EmailMessage PaymentNoticeNotFound(string to, string brandName, string? message, Uri panel)
+    {
+        const string title = "Havaleniz bulunamadı";
+        var builder = new EmailBuilder(title, "Bildirdiğiniz havale OMVILA hesabında görünmüyor.")
+            .Paragraph($"Merhaba, {brandName} için bildirdiğiniz havaleyi OMVILA hesabındaki hareketler arasında bulamadık.");
+        if (message is not null)
+        {
+            builder.Note($"OMVILA ekibinin notu: {message}");
+        }
+
+        builder.Paragraph("Dekontu ve açıklama kodunu kontrol edip havaleyi yeniden bildirebilirsiniz. Abonelik durumunuz değişmedi.")
+            .Button("Yeniden bildir", new Uri(panel, SubscriptionPath));
+        return builder.Build(to, title, NotificationEvents.OwnerPaymentNoticeNotFound);
+    }
+
+    // Kural: bildirimler.md owner.payment_notice_rejected (T-124): platformun notu eklenir.
+    public static EmailMessage PaymentNoticeRejected(string to, string brandName, string message, Uri panel)
+    {
+        const string title = "Havale bildiriminiz reddedildi";
+        var builder = new EmailBuilder(title, "Bildirim yinelenen veya geçersiz bulundu.")
+            .Paragraph($"Merhaba, {brandName} için gönderdiğiniz havale bildirimi işleme alınmadı.")
+            .Note($"OMVILA ekibinin notu: {message}")
+            .Paragraph("Ödemeniz henüz eşleşmediyse havaleyi doğru açıklama koduyla yeniden bildirebilirsiniz.")
+            .Button("Aboneliği aç", new Uri(panel, SubscriptionPath));
+        return builder.Build(to, title, NotificationEvents.OwnerPaymentNoticeRejected);
+    }
+
+    // Kural: bildirimler.md § E-posta owner.sms_sender_approved / owner.sms_sender_rejected (T-124)
+    public static EmailMessage SmsSenderDecided(string to, string brandName, string senderName, bool approved, string? reason, Uri panel)
+    {
+        var title = approved ? "SMS gönderen adınız onaylandı" : "SMS gönderen adınız onaylanmadı";
+        var builder = approved
+            ? new EmailBuilder(title, $"SMS'leriniz bundan sonra {senderName} adıyla gider.")
+                .Paragraph($"Merhaba, {brandName} için başvurduğunuz {senderName} gönderen adı onaylandı. Müşterilerinize giden SMS'ler bu adla gönderilir.")
+            : new EmailBuilder(title, "Önceki gönderen adınız kullanılmaya devam ediyor.")
+                .Paragraph($"Merhaba, {brandName} için başvurduğunuz {senderName} gönderen adı onaylanmadı. SMS'leriniz önceki adla gitmeye devam ediyor.")
+                .Note($"Neden: {reason}")
+                .Paragraph("Adı düzeltip Ayarlar → Bildirimler ve SMS'ten yeniden başvurabilirsiniz.");
+        builder.Button("Ayarları aç", new Uri(panel, SmsSettingsPath));
+        return builder.Build(to, title, approved ? NotificationEvents.OwnerSmsSenderApproved : NotificationEvents.OwnerSmsSenderRejected);
     }
 
     private static string Day(LocalDate date) => date.ToString("d MMMM", Turkish);

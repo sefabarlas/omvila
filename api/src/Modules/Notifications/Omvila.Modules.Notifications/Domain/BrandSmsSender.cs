@@ -31,6 +31,9 @@ internal sealed partial class BrandSmsSender
 
     public string? RejectionReason { get; private set; }
 
+    /// <summary>Satır sürümü (xmin; platform kararında If-Match).</summary>
+    public uint Version { get; private set; }
+
     /// <summary>SMS'lerin şu an gittiği ad: onaylı ad, yoksa platform varsayılanı.</summary>
     public static string EffectiveName(BrandSmsSender? sender, string defaultSender) =>
         sender?.ApprovedName is { Length: > 0 } approved ? approved : defaultSender;
