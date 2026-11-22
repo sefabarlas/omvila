@@ -46,6 +46,11 @@ public interface ITenantQueries
     /// <param name="ct">İptal belirteci.</param>
     Task<BrandNotificationSettings?> GetNotificationSettingsAsync(Guid brandId, CancellationToken ct);
 
+    /// <summary>İşlem kayıtlarını saklama süresi (yıl; sureler-ve-ayarlar.md TransactionRetentionYears); marka yoksa null.</summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<int?> GetTransactionRetentionYearsAsync(Guid brandId, CancellationToken ct);
+
     /// <summary>Markanın personel kartları (etkin olmasa da; geçmiş randevularda ad görünür). Bulunmayan kimlikler yer almaz.</summary>
     /// <param name="brandId">Marka.</param>
     /// <param name="staffIds">Personel kimlikleri.</param>

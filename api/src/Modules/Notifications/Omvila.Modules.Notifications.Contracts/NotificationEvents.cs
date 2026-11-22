@@ -101,4 +101,7 @@ public static class NotificationEvents
 
     /// <summary>İşletme e-postası (Owner): "Abonelik ödemeniz alınamadı" (PastDue'ya geçiş; kart yok, havale bekleniyor).</summary>
     public const string OwnerSubscriptionPaymentFailed = "owner.subscription_payment_failed";
+
+    /// <summary>İşletme e-postası (isteyen kullanıcı): "Verileriniz hazır" (Tüm verileri dışa aktar indirme bağlantısı; T-121).</summary>
+    public const string OwnerDataExportReady = "owner.data_export_ready";
 }

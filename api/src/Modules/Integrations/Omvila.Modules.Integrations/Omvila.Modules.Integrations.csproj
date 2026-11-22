@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Omvila.Modules.Integrations.Contracts\Omvila.Modules.Integrations.Contracts.csproj" />
+    <ProjectReference Include="..\..\Customers\Omvila.Modules.Customers.Contracts\Omvila.Modules.Customers.Contracts.csproj" />
+    <ProjectReference Include="..\..\Identity\Omvila.Modules.Identity.Contracts\Omvila.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\Scheduling\Omvila.Modules.Scheduling.Contracts\Omvila.Modules.Scheduling.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Omvila.Infrastructure\Omvila.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Uçtan uca testler sahte takvim sağlayıcısının deposunu okur (sahte SMS günlüğüne bakmak gibi). -->
+    <InternalsVisibleTo Include="Omvila.Api.IntegrationTests" />
+  </ItemGroup>
+</Project>

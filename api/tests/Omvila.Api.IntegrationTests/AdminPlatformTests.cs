@@ -264,6 +264,7 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
     {
         var support = (await AdminSignInAsync(SupportPhone)).Access;
         var supportId = await _api.ScalarAsync<Guid>($"SELECT id FROM identity.users WHERE phone_e164 = '{SupportPhone}'");
+        await SeedCalendarLinksAsync();
 
         var detail = await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}", support);
         detail.Status.ShouldBe(200, detail.Body.ToString());
@@ -279,6 +280,7 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         detail.Body.GetProperty("appointmentsThisMonth").GetProperty("onlinePercent").ValueKind.ShouldBe(JsonValueKind.Null);
         detail.Body.GetProperty("smsSender").GetProperty("status").GetString().ShouldBe("None");
         detail.Body.GetProperty("activeStaffCount").GetInt32().ShouldBe(1);
+        detail.Body.GetProperty("googleCalendarConnectedStaffCount").GetInt32().ShouldBe(1);
         detail.ETag.ShouldBe(detail.Body.GetProperty("version").GetString());
         await _api.GetAsync($"/api/v1/admin/brands/{_elifBrand}", support);
 
@@ -435,6 +437,14 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         verified.Body.GetProperty("expiresInSeconds").GetInt32().ShouldBe(36000);
         return (verified.Body.GetProperty("accessToken").GetString()!, verified.Body.GetProperty("refreshToken").GetString()!);
     }
+
+    // Google Takvim bağlantısı (Integrations, IPlatformCalendarLinks): bir etkin, bir kesilmiş bağlantı.
+    private Task<int> SeedCalendarLinksAsync() => _api.ScalarAsync<int>($"""
+        INSERT INTO integrations.calendar_links (id, brand_id, staff_id, user_id, provider, external_calendar_id, status, connected_utc, connect_nonce)
+        VALUES (gen_random_uuid(), '{_elifBrand}', gen_random_uuid(), gen_random_uuid(), 'Google', 'primary', 'Active', now(), gen_random_uuid()),
+               (gen_random_uuid(), '{_elifBrand}', gen_random_uuid(), gen_random_uuid(), 'Google', 'primary', 'Revoked', now(), gen_random_uuid())
+        RETURNING 1
+        """);
 
     private Task<string> LatestCodeAsync(string phone) => _api.ScalarAsync<string>($"""
         SELECT payload->>'kod' FROM notifications.notification_outbox

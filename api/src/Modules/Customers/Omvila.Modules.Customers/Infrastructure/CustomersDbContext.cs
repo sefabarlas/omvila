@@ -21,6 +21,9 @@ internal sealed class CustomersDbContext(DbContextOptions<CustomersDbContext> op
     /// <summary>Müşteri uygulamasında eklenen salonlar (RLS: marka veya müşterinin kendisi).</summary>
     public DbSet<CustomerSavedBrand> SavedBrands => Set<CustomerSavedBrand>();
 
+    /// <summary>"Tüm verileri dışa aktar" istekleri ve arşivleri (T-121).</summary>
+    public DbSet<DataExport> DataExports => Set<DataExport>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
