@@ -29,8 +29,7 @@ type PathsOf<Surface extends string> = {
 export type ManagePaths = PathsOf<'manage'>;
 export type PublicPaths = PathsOf<'public'>;
 export type MePaths = PathsOf<'me'>;
-// admin uçları Dilim 6'da sözleşmeye girer; o zamana kadar boş.
-// eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type
+// Platform paneli (aud=admin) uçları; Dilim 6.
 export type AdminPaths = PathsOf<'admin'>;
 
 /** Sunucunun döndürdüğü RFC 9457 hatası. Kullanıcıya `title`/`detail` değil, `code`'a göre metin gösterilir. */
