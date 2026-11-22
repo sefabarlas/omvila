@@ -9,7 +9,7 @@ environment:
 workspace:
   - packages/omvila_ui
   - packages/api-client-dart
-  # - mobile/isletme
+  - mobile/isletme
   # - mobile/musteri
 
 dev_dependencies:
@@ -20,10 +20,12 @@ melos:
   name: omvila
   sdkPath: .fvm/flutter_sdk
   scripts:
+    # --no-pub: bağımlılıklar kökte bir kez çözülür (dart pub get); flutter komutları paralel çalışırken
+    # her biri workspace'i yeniden çözmeye kalkıp başlangıç kilidinde çakışmasın.
     # Üretilmiş API istemcisi (omvila_api) biçim ve analiz dışındadır; derlenmesini contracts.yml denetler.
     analyze:
       description: Statik analiz, bilgi düzeyi dahil hata (docs/standartlar/kodlama-flutter.md)
-      exec: flutter analyze --fatal-infos
+      exec: flutter analyze --fatal-infos --no-pub
       packageFilters:
         ignore: omvila_api
     format:check:
@@ -33,6 +35,6 @@ melos:
         ignore: omvila_api
     test:
       description: Testler (test klasörü olan paketler)
-      exec: flutter test
+      exec: flutter test --no-pub
       packageFilters:
         dirExists: test
