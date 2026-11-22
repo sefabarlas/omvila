@@ -13,9 +13,16 @@ public static class SecurityEndpointExtensions
             .RequireAuthorization(policy => policy.AddRequirements(new PermissionRequirement(permission)))
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
-    /// <summary>Uç yalnız o yüzeyin geçerli oturumunu ister (izin gerektirmeyen işlemler, ör. çıkış).</summary>
-    public static RouteHandlerBuilder RequireAuthenticated(this RouteHandlerBuilder builder, string audience) =>
-        builder
-            .WithMetadata(new AuthenticatedOnlyMetadata(audience))
-            .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = audience });
+    /// <summary>
+    /// Uç yalnız verilen yüzeylerin geçerli oturumunu ister, izin istemez (ör. çıkış). Birden çok yüzey verilirse (ör. rezervasyon
+    /// jetonu veya müşteri uygulaması jetonu; sözleşmede iki security seçeneği) uç her birini kabul eder. Her şema kendi aud değeriyle doğrular; jeton yalnız birinde geçer.
+    /// </summary>
+    public static RouteHandlerBuilder RequireAuthenticated(this RouteHandlerBuilder builder, string audience, params string[] otherAudiences)
+    {
+        ArgumentNullException.ThrowIfNull(otherAudiences);
+        var schemes = string.Join(',', [audience, .. otherAudiences]);
+        return builder
+            .WithMetadata(new AuthenticatedOnlyMetadata(schemes))
+            .RequireAuthorization(new AuthorizeAttribute { AuthenticationSchemes = schemes });
+    }
 }

@@ -84,4 +84,7 @@ public static class PlatformDefaults
 
     /// <summary>sureler-ve-ayarlar.md § Paketler: PackageExpiringSoonDays 30 ("Süresi yaklaşan": 30 gün içinde biten Active paketler).</summary>
     public const int PackageExpiringSoonDays = 30;
+
+    /// <summary>sureler-ve-ayarlar.md § Paketler: PackageLowSessionThreshold 2 (Paketlerim "Az kaldı": kalan seans bu sayıyı geçmiyorsa; T-101).</summary>
+    public const int PackageLowSessionThreshold = 2;
 }

@@ -28,4 +28,14 @@ public interface IAppointmentReviewLinks
     /// <param name="code">Bağlantıdaki kod.</param>
     /// <param name="ct">İptal belirteci.</param>
     Task<AppointmentReviewSubject?> EnterByReviewCodeAsync(string? code, CancellationToken ct);
+
+    /// <summary>
+    /// Müşteri uygulamasından değerlendirme (sözleşme meCreateReview): randevu platform bağlamında müşterinin global kimliğiyle aranır;
+    /// müşterinin randevusuysa oturumun kiracı bağlamı randevunun markasına kurulur ve randevu döner. Başka müşterinin randevusu veya
+    /// taslak null (bağlam değişmez).
+    /// </summary>
+    /// <param name="customerId">Global müşteri (me jetonunun sub'ı).</param>
+    /// <param name="appointmentId">Randevu.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<AppointmentReviewSubject?> EnterForCustomerAsync(Guid customerId, Guid appointmentId, CancellationToken ct);
 }

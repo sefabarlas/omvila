@@ -38,7 +38,7 @@ internal static class WaitlistEndpoints
 
         var join = app.MapApiGroup("/api/v1/public/branches");
         join.MapPost("/{branchId:guid}/waitlist", JoinAsync).WithName("publicJoinWaitlist")
-            .RequireAuthenticated(Audiences.PublicBooking)
+            .RequireAuthenticated(Audiences.PublicBooking, Audiences.Me)
             .AddEndpointFilter<PublicBranchFilter>()
             .RequireIdempotencyKey();
 
@@ -97,21 +97,17 @@ internal static class WaitlistEndpoints
         return await RespondAsync(result, tenant.RequireBrandId(), access, http, waitlist, ct);
     }
 
-    private static async Task<IResult> JoinAsync(PublicWaitlistJoin body, HttpContext http, PublicWaitlist waitlist, CancellationToken ct)
+    // Müşteri uygulaması jetonuyla (meBearer) telefon ve ad global kayıttan gelir (sözleşme publicJoinWaitlist; T-104).
+    private static async Task<IResult> JoinAsync(
+        PublicWaitlistJoin body, HttpContext http, ICustomerAccounts accounts, PublicWaitlist waitlist, CancellationToken ct)
     {
-        if (!PhoneNumber.TryParse(http.User.FindFirst(OmvilaClaims.Phone)?.Value, out var phone))
+        if (await PublicBookingCaller.ResolveAsync(http, accounts, ct) is not { } caller)
         {
             return Error.Unauthorized().ToProblem();
         }
 
-        var customerApp = IsCustomerApp(http);
-        var context = new PublicBookingRequest(
-            PublicBranchFilter.ScopeOf(http),
-            phone,
-            customerApp ? ClientApp.CustomerApp : ClientApp.BookingPage,
-            customerApp ? ConsentChannel.CustomerApp : ConsentChannel.Web,
-            http.Connection.RemoteIpAddress?.ToString());
-        var joined = await waitlist.JoinAsync(context, body, ct);
+        var context = caller.Request(http, PublicBranchFilter.ScopeOf(http));
+        var joined = await waitlist.JoinAsync(context, body with { FullName = caller.NameOr(body.FullName) }, ct);
         if (!joined.IsSuccess)
         {
             return joined.Error.ToProblem();

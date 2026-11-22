@@ -18,6 +18,13 @@ internal static class JwtProblemEvents
         OnChallenge = async context =>
         {
             context.HandleResponse();
+
+            // Birden çok yüzey kabul eden uçta (ör. rezervasyon veya müşteri jetonu) her şema sırayla sorulur; yanıtı ilki yazar.
+            if (context.Response.HasStarted)
+            {
+                return;
+            }
+
             var code = context.AuthenticateFailure is SecurityTokenExpiredException
                 ? ErrorCodes.TokenExpired
                 : ErrorCodes.Unauthorized;

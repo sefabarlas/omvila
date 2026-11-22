@@ -26,6 +26,8 @@ public static class ReviewsModule
         services.AddScoped<IReviewInvitations, ReviewInvitations>();
         services.AddIntegrationEventHandler<AppointmentCompleted, IntegrationEventHandlers.ScheduleReviewInvite>();
         services.AddScoped<IReviewRatings, ReviewRatings>();
+        // Müşteri uygulaması randevu satırlarındaki değerlendirme özeti (T-104).
+        services.AddScoped<ICustomerReviewSummaries, CustomerReviewSummaries>();
         services.AddScoped<ReviewInviteViews>();
         services.AddScoped<ReviewReader>();
         // Müşteri birleştirmede değerlendirmeler kalan karta taşınır (T-92).
@@ -41,6 +43,7 @@ public static class ReviewsModule
     {
         PublicReviewEndpoints.Map(app);
         ManageReviewEndpoints.Map(app);
+        Features.MeReviews.MeReviewEndpoints.Map(app);
         return app;
     }
 }
