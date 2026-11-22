@@ -98,6 +98,17 @@ Kod tanımlayıcıları (sınıf, tablo, alan, API) **İngilizce**dir. Arayüz m
 | Kalıcı olarak anonimleştir (KVKK silme talebi) | `POST /manage/customers/{id}/deletion` |
 | Listeye katıl | `POST /public/branches/{branchId}/waitlist` |
 | Randevuyu al / Bu saat olmaz (teklif) | `POST /public/waitlist-offers/{code}/accept` / `decline` |
+| Kod gönder / Giriş (müşteri uygulaması) | `POST /me/auth/otp/request` / `…/otp/verify` |
+| Çıkış yap (müşteri uygulaması) | `POST /me/auth/logout` |
+| Kaydet (Profil bilgilerim) | `PATCH /me/profile` |
+| QR kodu okut / Bağlantıyı yapıştır | `POST /me/brands` |
+| Randevuyu iptal et / Saati değiştir (müşteri uygulaması) | `POST /me/appointments/{id}/cancel` / `…/{id}/reschedule` |
+| Havaleyi yaptım, salona bildir (müşteri uygulaması) | `POST /me/appointments/{id}/deposit/report` |
+| Aynısını tekrar al | `GET /me/appointments?scope=Past&limit=1` → rezervasyon akışı (`publicSearchDays`, `publicCreateAppointment`, `meBearer`) |
+| Değerlendir / Gönder (müşteri uygulaması) | `POST /me/reviews` |
+| Kampanya izni anahtarı (İzinlerim) | `PUT /me/consents` |
+| SMS koduyla onayla ve sil | `POST /me/account/deletion/otp` → `POST /me/account/deletion` |
+| Ara / SMS (maskeli numara, işletme uygulaması) | `POST /manage/customers/{id}/reveal-phone` |
 
 ## Müşteri listesi filtreleri (tanımlar)
 

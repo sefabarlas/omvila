@@ -31,7 +31,7 @@ class PublicBookingApi {
   const PublicBookingApi(this._dio);
 
   /// Randevuyu oluştur
-  /// Onay veya kapora gerekiyorsa randevu PendingApproval oluşur ve holdExpiresUtc döner. Kapora gerekiyorsa yanıtta depositInstructions (alıcı, IBAN, tutar, açıklama kodu, son zaman) bulunur. Saat dolmuşsa 409 slot_taken + meta.alternatives. 
+  /// Onay veya kapora gerekiyorsa randevu PendingApproval oluşur ve holdExpiresUtc döner. Kapora gerekiyorsa yanıtta depositInstructions (alıcı, IBAN, tutar, açıklama kodu, son zaman) bulunur. Saat dolmuşsa 409 slot_taken + meta.alternatives. Müşteri uygulaması (YROnay) aynı ucu müşteri jetonuyla (meBearer, X-Client customer-app) çağırır: telefon jetondan gelir, kod adımı yoktur; fullName profildeki adla doldurulur (profilde ad yoksa bu istekle profile de yazılır). Markada müşteri kaydı yoksa açılır ve marka \&quot;Salonlarım\&quot;a (CustomerSavedBrand, Source Booking) eklenir. Oluşan randevu meListAppointments ve meGetAppointment&#39;ta görünür. 
   ///
   /// Parameters:
   /// * [idempotencyKey] - İstemcinin ürettiği UUID; aynı anahtarla tekrar gelen istek ilk yanıtı alır (24 saat)

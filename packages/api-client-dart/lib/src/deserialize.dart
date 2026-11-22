@@ -28,6 +28,8 @@ import 'package:omvila_api/src/model/cash_day_close_request.dart';
 import 'package:omvila_api/src/model/cash_day_closing.dart';
 import 'package:omvila_api/src/model/cash_day_transfer.dart';
 import 'package:omvila_api/src/model/cash_method_total.dart';
+import 'package:omvila_api/src/model/commission_day_amount.dart';
+import 'package:omvila_api/src/model/commission_week_day.dart';
 import 'package:omvila_api/src/model/completion_payment.dart';
 import 'package:omvila_api/src/model/customer_appointment_row.dart';
 import 'package:omvila_api/src/model/customer_cancel_request.dart';
@@ -87,9 +89,48 @@ import 'package:omvila_api/src/model/manage_session_membership.dart';
 import 'package:omvila_api/src/model/manage_session_sms_credits.dart';
 import 'package:omvila_api/src/model/manage_session_user.dart';
 import 'package:omvila_api/src/model/manage_set_staff_services_request.dart';
+import 'package:omvila_api/src/model/manage_today.dart';
 import 'package:omvila_api/src/model/manage_waitlist_create.dart';
 import 'package:omvila_api/src/model/mark_notifications_read_request.dart';
+import 'package:omvila_api/src/model/me_account_deletion_confirm.dart';
+import 'package:omvila_api/src/model/me_account_deletion_result.dart';
+import 'package:omvila_api/src/model/me_appointment.dart';
+import 'package:omvila_api/src/model/me_appointment_branch.dart';
+import 'package:omvila_api/src/model/me_appointment_deposit.dart';
+import 'package:omvila_api/src/model/me_appointment_item.dart';
+import 'package:omvila_api/src/model/me_appointment_page.dart';
+import 'package:omvila_api/src/model/me_appointment_review.dart';
+import 'package:omvila_api/src/model/me_appointment_summary.dart';
+import 'package:omvila_api/src/model/me_auth_result.dart';
+import 'package:omvila_api/src/model/me_branch_ref.dart';
+import 'package:omvila_api/src/model/me_brand.dart';
+import 'package:omvila_api/src/model/me_brand_list.dart';
+import 'package:omvila_api/src/model/me_brand_package_badge.dart';
+import 'package:omvila_api/src/model/me_brand_ref.dart';
+import 'package:omvila_api/src/model/me_consent.dart';
+import 'package:omvila_api/src/model/me_consent_list.dart';
+import 'package:omvila_api/src/model/me_logout_request.dart';
+import 'package:omvila_api/src/model/me_marketing_consent_update.dart';
+import 'package:omvila_api/src/model/me_notification.dart';
+import 'package:omvila_api/src/model/me_notification_page.dart';
+import 'package:omvila_api/src/model/me_notification_target.dart';
+import 'package:omvila_api/src/model/me_otp_request.dart';
+import 'package:omvila_api/src/model/me_package.dart';
+import 'package:omvila_api/src/model/me_package_list.dart';
+import 'package:omvila_api/src/model/me_payment_page.dart';
+import 'package:omvila_api/src/model/me_payment_row.dart';
+import 'package:omvila_api/src/model/me_profile.dart';
+import 'package:omvila_api/src/model/me_profile_update.dart';
+import 'package:omvila_api/src/model/me_refresh_request.dart';
+import 'package:omvila_api/src/model/me_reschedule_request.dart';
+import 'package:omvila_api/src/model/me_reschedule_slot_search.dart';
+import 'package:omvila_api/src/model/me_review.dart';
+import 'package:omvila_api/src/model/me_review_create.dart';
+import 'package:omvila_api/src/model/me_save_brand_request.dart';
 import 'package:omvila_api/src/model/money.dart';
+import 'package:omvila_api/src/model/my_commission_entry.dart';
+import 'package:omvila_api/src/model/my_commission_summary.dart';
+import 'package:omvila_api/src/model/my_commission_summary_next_accrual.dart';
 import 'package:omvila_api/src/model/my_notification_preferences.dart';
 import 'package:omvila_api/src/model/notification_settings.dart';
 import 'package:omvila_api/src/model/notification_settings_update.dart';
@@ -113,6 +154,7 @@ import 'package:omvila_api/src/model/package_write.dart';
 import 'package:omvila_api/src/model/payment_view.dart';
 import 'package:omvila_api/src/model/pending_approval_item.dart';
 import 'package:omvila_api/src/model/pending_approval_list.dart';
+import 'package:omvila_api/src/model/phone_reveal_request.dart';
 import 'package:omvila_api/src/model/problem.dart';
 import 'package:omvila_api/src/model/public_appointment.dart';
 import 'package:omvila_api/src/model/public_appointment_branch.dart';
@@ -149,6 +191,7 @@ import 'package:omvila_api/src/model/public_waitlist_offer_items_inner.dart';
 import 'package:omvila_api/src/model/recurrence_request.dart';
 import 'package:omvila_api/src/model/refresh_request.dart';
 import 'package:omvila_api/src/model/registered_device.dart';
+import 'package:omvila_api/src/model/revealed_phone.dart';
 import 'package:omvila_api/src/model/review_overview.dart';
 import 'package:omvila_api/src/model/review_overview_top_staff.dart';
 import 'package:omvila_api/src/model/review_page.dart';
@@ -182,6 +225,9 @@ import 'package:omvila_api/src/model/time_interval.dart';
 import 'package:omvila_api/src/model/time_off.dart';
 import 'package:omvila_api/src/model/time_off_create.dart';
 import 'package:omvila_api/src/model/time_off_created.dart';
+import 'package:omvila_api/src/model/today_appointment.dart';
+import 'package:omvila_api/src/model/today_commission.dart';
+import 'package:omvila_api/src/model/today_walk_in_summary.dart';
 import 'package:omvila_api/src/model/token_pair.dart';
 import 'package:omvila_api/src/model/unread_notification_count.dart';
 import 'package:omvila_api/src/model/usable_package_item.dart';
@@ -291,6 +337,16 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
         case 'CollectedPaymentMethod':
           
           
+        case 'CommissionDayAmount':
+          return CommissionDayAmount.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'CommissionEntryStatus':
+          
+          
+        case 'CommissionEntryType':
+          
+          
+        case 'CommissionWeekDay':
+          return CommissionWeekDay.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CompletionPayment':
           return CompletionPayment.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'CustomerAppointmentRow':
@@ -430,12 +486,102 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return ManageSessionUser.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ManageSetStaffServicesRequest':
           return ManageSetStaffServicesRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'ManageToday':
+          return ManageToday.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ManageWaitlistCreate':
           return ManageWaitlistCreate.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MarkNotificationsReadRequest':
           return MarkNotificationsReadRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAccountDeletionConfirm':
+          return MeAccountDeletionConfirm.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAccountDeletionResult':
+          return MeAccountDeletionResult.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointment':
+          return MeAppointment.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentBranch':
+          return MeAppointmentBranch.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentDeposit':
+          return MeAppointmentDeposit.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentItem':
+          return MeAppointmentItem.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentPage':
+          return MeAppointmentPage.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentReview':
+          return MeAppointmentReview.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAppointmentSummary':
+          return MeAppointmentSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeAuthResult':
+          return MeAuthResult.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeBranchRef':
+          return MeBranchRef.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeBrand':
+          return MeBrand.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeBrandList':
+          return MeBrandList.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeBrandPackageBadge':
+          return MeBrandPackageBadge.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeBrandRef':
+          return MeBrandRef.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeConsent':
+          return MeConsent.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeConsentList':
+          return MeConsentList.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeLanguage':
+          
+          
+        case 'MeLogoutRequest':
+          return MeLogoutRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeMarketingConsentUpdate':
+          return MeMarketingConsentUpdate.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeNotification':
+          return MeNotification.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeNotificationEvent':
+          
+          
+        case 'MeNotificationPage':
+          return MeNotificationPage.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeNotificationTarget':
+          return MeNotificationTarget.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeOtpRequest':
+          return MeOtpRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MePackage':
+          return MePackage.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MePackageList':
+          return MePackageList.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MePaymentKind':
+          
+          
+        case 'MePaymentPage':
+          return MePaymentPage.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MePaymentRow':
+          return MePaymentRow.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MePaymentStatus':
+          
+          
+        case 'MeProfile':
+          return MeProfile.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeProfileUpdate':
+          return MeProfileUpdate.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeRefreshRequest':
+          return MeRefreshRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeRescheduleRequest':
+          return MeRescheduleRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeRescheduleSlotSearch':
+          return MeRescheduleSlotSearch.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeReview':
+          return MeReview.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeReviewCreate':
+          return MeReviewCreate.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MeSaveBrandRequest':
+          return MeSaveBrandRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'Money':
           return Money.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MyCommissionEntry':
+          return MyCommissionEntry.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MyCommissionSummary':
+          return MyCommissionSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'MyCommissionSummaryNextAccrual':
+          return MyCommissionSummaryNextAccrual.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'MyNotificationPreferences':
           return MyNotificationPreferences.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'NotificationSettings':
@@ -491,6 +637,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return PendingApprovalItem.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PendingApprovalList':
           return PendingApprovalList.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'PhoneRevealRequest':
+          return PhoneRevealRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'Problem':
           return Problem.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'PublicAppointment':
@@ -563,6 +711,8 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return RefreshRequest.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'RegisteredDevice':
           return RegisteredDevice.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'RevealedPhone':
+          return RevealedPhone.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ReviewOverview':
           return ReviewOverview.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'ReviewOverviewTopStaff':
@@ -635,6 +785,12 @@ final _regMap = RegExp(r'^Map<String,(.*)>$');
           return TimeOffCreate.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'TimeOffCreated':
           return TimeOffCreated.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'TodayAppointment':
+          return TodayAppointment.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'TodayCommission':
+          return TodayCommission.fromJson(value as Map<String, dynamic>) as ReturnType;
+        case 'TodayWalkInSummary':
+          return TodayWalkInSummary.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'TokenPair':
           return TokenPair.fromJson(value as Map<String, dynamic>) as ReturnType;
         case 'UnreadNotificationCount':

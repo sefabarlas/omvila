@@ -19,8 +19,15 @@ import 'package:omvila_api/src/api/manage_reviews_api.dart';
 import 'package:omvila_api/src/api/manage_sales_api.dart';
 import 'package:omvila_api/src/api/manage_session_api.dart';
 import 'package:omvila_api/src/api/manage_staff_api.dart';
+import 'package:omvila_api/src/api/manage_today_api.dart';
 import 'package:omvila_api/src/api/manage_waitlist_api.dart';
 import 'package:omvila_api/src/api/manage_walk_ins_api.dart';
+import 'package:omvila_api/src/api/me_appointments_api.dart';
+import 'package:omvila_api/src/api/me_auth_api.dart';
+import 'package:omvila_api/src/api/me_brands_api.dart';
+import 'package:omvila_api/src/api/me_notifications_api.dart';
+import 'package:omvila_api/src/api/me_profile_api.dart';
+import 'package:omvila_api/src/api/me_wallet_api.dart';
 import 'package:omvila_api/src/api/public_appointment_link_api.dart';
 import 'package:omvila_api/src/api/public_booking_api.dart';
 import 'package:omvila_api/src/api/public_review_api.dart';
@@ -190,6 +197,12 @@ class OmvilaApi {
     return ManageStaffApi(dio);
   }
 
+  /// Get ManageTodayApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  ManageTodayApi getManageTodayApi() {
+    return ManageTodayApi(dio);
+  }
+
   /// Get ManageWaitlistApi instance, base route and serializer can be overridden by a given but be careful,
   /// by doing that all interceptors will not be executed
   ManageWaitlistApi getManageWaitlistApi() {
@@ -200,6 +213,42 @@ class OmvilaApi {
   /// by doing that all interceptors will not be executed
   ManageWalkInsApi getManageWalkInsApi() {
     return ManageWalkInsApi(dio);
+  }
+
+  /// Get MeAppointmentsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeAppointmentsApi getMeAppointmentsApi() {
+    return MeAppointmentsApi(dio);
+  }
+
+  /// Get MeAuthApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeAuthApi getMeAuthApi() {
+    return MeAuthApi(dio);
+  }
+
+  /// Get MeBrandsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeBrandsApi getMeBrandsApi() {
+    return MeBrandsApi(dio);
+  }
+
+  /// Get MeNotificationsApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeNotificationsApi getMeNotificationsApi() {
+    return MeNotificationsApi(dio);
+  }
+
+  /// Get MeProfileApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeProfileApi getMeProfileApi() {
+    return MeProfileApi(dio);
+  }
+
+  /// Get MeWalletApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  MeWalletApi getMeWalletApi() {
+    return MeWalletApi(dio);
   }
 
   /// Get PublicAppointmentLinkApi instance, base route and serializer can be overridden by a given but be careful,
