@@ -5,6 +5,7 @@ final class AppConfig {
     required this.apiUrl,
     this.privacyNoticeUrl,
     this.linkHosts = defaultLinkHosts,
+    this.privacyNoticeVersion = defaultPrivacyNoticeVersion,
   });
 
   /// `--dart-define` değerlerinden.
@@ -26,6 +27,14 @@ final class AppConfig {
     'omvila.com',
   };
 
+  /// Rezervasyon sayfasıyla aynı varsayılan sürüm (web/rezervasyon
+  /// lib/legal.ts).
+  static const defaultPrivacyNoticeVersion = 'musteri-v1';
+
+  /// Girişte gösterilen aydınlatma metninin sürümü; randevu isteğinde
+  /// `privacyNoticeVersion`.
+  final String privacyNoticeVersion;
+
   /// API kökü (Prism: Android emülatörden `http://10.0.2.2:4010`).
   final String apiUrl;
 
@@ -36,6 +45,10 @@ final class AppConfig {
   final Set<String> linkHosts;
 
   /// Aydınlatma metni adresiyle kopya.
-  AppConfig copyWithPrivacy(String? url) =>
-      AppConfig(apiUrl: apiUrl, privacyNoticeUrl: url, linkHosts: linkHosts);
+  AppConfig copyWithPrivacy(String? url) => AppConfig(
+    apiUrl: apiUrl,
+    privacyNoticeUrl: url,
+    linkHosts: linkHosts,
+    privacyNoticeVersion: privacyNoticeVersion,
+  );
 }

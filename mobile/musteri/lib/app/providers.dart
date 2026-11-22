@@ -5,6 +5,7 @@ import 'package:omvila_musteri/features/appointments/data/appointments_repositor
 import 'package:omvila_musteri/features/auth/data/auth_repository.dart';
 import 'package:omvila_musteri/features/auth/data/customer_session.dart';
 import 'package:omvila_musteri/features/auth/data/sms_code_retriever.dart';
+import 'package:omvila_musteri/features/booking/data/booking_repository.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/device_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/push_service.dart';
@@ -72,6 +73,11 @@ final authRepositoryProvider = Provider<AuthRepository>(
 /// Randevular.
 final appointmentsRepositoryProvider = Provider<AppointmentsRepository>(
   (ref) => ApiAppointmentsRepository(ref.watch(omvilaApiProvider)),
+);
+
+/// Randevu alma (public uçlar, müşteri jetonuyla).
+final bookingRepositoryProvider = Provider<BookingRepository>(
+  (ref) => ApiBookingRepository(ref.watch(omvilaApiProvider)),
 );
 
 /// Salonlar.
