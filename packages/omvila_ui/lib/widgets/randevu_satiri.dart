@@ -46,6 +46,11 @@ class RandevuSatiri extends StatelessWidget {
     final r = context.omvilaRenkler;
     final status = durum;
     final action = eylem;
+    // Büyük yazıda (≥ 1.2×) eylem ayrıntının altına iner; müşteri adı
+    // sıkışıp kelime kelime kırılmaz.
+    final actionBelow =
+        MediaQuery.textScalerOf(context).scale(OmvilaYazi.govde.fontSize!) >=
+        OmvilaYazi.govde.fontSize! * 1.2;
     final radius = BorderRadius.circular(OmvilaKose.koseLg);
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -110,10 +115,14 @@ class RandevuSatiri extends StatelessWidget {
                         const SizedBox(height: OmvilaBosluk.bosluk1),
                         OmvilaDurumRozeti(durum: status),
                       ],
+                      if (action != null && actionBelow) ...[
+                        const SizedBox(height: OmvilaBosluk.bosluk2),
+                        action,
+                      ],
                     ],
                   ),
                 ),
-                if (action != null) ...[
+                if (action != null && !actionBelow) ...[
                   const SizedBox(width: OmvilaBosluk.bosluk2),
                   action,
                 ],
