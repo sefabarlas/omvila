@@ -23,5 +23,9 @@ pnpm --filter @omvila/platform-panel e2e    # Playwright, Prism mock'a karşı (
 ## Yapı notları (T-123)
 - Oturum: erişim jetonu bellekte, yenileme jetonu gövdede gelir ve yalnız `sessionStorage`'da durur (sekme ömrü; `src/app/auth.ts`). Çerez yok.
 - İzin kancası: `useSession().can('platform.credits.grant')` (`AdminPermission`). İzinsiz eylem butonu kilitli ve pasif; ipucu "Yönetici yetkisi ister".
-- Menü: `src/app/menu.ts`; henüz yapılmamış bölümler `available: false` ve rotasız.
+- Menü: `src/app/menu.ts`; öğe izinle süzülür, rota aynı izni `shared/RequirePermission` ile denetler (adres elle yazılsa da yetki sayfası).
+- Kilitli eylem butonu: `shared/PermissionButton` (ipucu sağa hizalı; Yönetici + Finans izinlerinde `adminOrFinanceHint`).
+- Karar uçları (eşleştir, bulunamadı, reddet, SMS adı) If-Match ile; 412 ve 409 metinleri `features/approvals/decision-error.ts`. Sonuçlanan kayıt ekrandan kalktığından `mutateAsync` kullanılır.
+- Denetim kaydı satır metinleri (işlem adı, ayrıntı, kim) `features/audit/labels.ts`; marka detayı sekmesi de kullanır.
+- Testte PP2 uçları `src/test/fake-platform.ts`; e2e tasarım verisi `e2e/approvals-demo.ts` (tarayıcı saati ekran anına sabit).
 - Giriş bileşenleri (`AuthLayout`, `CodeStep`) ve filtre çipleri salon paneliyle ortak (`@omvila/ui-web/panel`).

@@ -216,6 +216,7 @@ export const ownerPermissions = [
   'review.reply',
   'package.manage',
   'package.sell',
+  'subscription.manage',
 ];
 
 export const ownerMembership = { role: 'Owner', branchIds: [], staffId: demoStaff[0]?.staffId };

@@ -13,8 +13,10 @@ namespace Omvila.Modules.Identity.Security;
 /// istisna). Platform kullanıcısı ile marka üyeliği birbirini dışlar (alan-modeli.md § User.PlatformRole).
 /// </summary>
 internal sealed class PlatformUsers(IdentityDbContext db, ITenantContext tenant, IIdGenerator ids, IClock clock)
-    : IPlatformUserProvisioning, IBrandOwnerDirectory
+    : IPlatformUserProvisioning, IBrandOwnerDirectory, IUserNameDirectory
 {
+    private const int NameSearchLimit = 200;
+
     public async Task<Result<ProvisionedPlatformUser>> EnsureAsync(PhoneNumber phone, string fullName, string platformRole, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(phone);
@@ -63,6 +65,30 @@ internal sealed class PlatformUsers(IdentityDbContext db, ITenantContext tenant,
         // Birden çok sahip olursa (v1'de olmaz) ilk eklenen gösterilir.
         return rows.GroupBy(r => r.BrandId)
             .ToDictionary(g => g.Key, g => g.OrderBy(r => r.CreatedUtc).Select(r => new BrandOwnerInfo(r.FullName ?? string.Empty, r.PhoneE164)).First());
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, UserNameInfo>> GetAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(userIds);
+        RequirePlatformScope();
+        var rows = await db.Users.AsNoTracking()
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.FullName, u.PlatformRole })
+            .ToListAsync(ct);
+        return rows.ToDictionary(r => r.Id, r => new UserNameInfo(r.FullName ?? string.Empty, r.PlatformRole?.ToString()));
+    }
+
+    public async Task<IReadOnlyList<Guid>> FindByNameAsync(string query, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        RequirePlatformScope();
+        var pattern = $"%{query.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal)}%";
+        return await db.Users.AsNoTracking()
+            .Where(u => u.FullName != null && EF.Functions.ILike(u.FullName, pattern))
+            .OrderBy(u => u.Id)
+            .Select(u => u.Id)
+            .Take(NameSearchLimit)
+            .ToListAsync(ct);
     }
 
     /// <summary>Oturumdaki etkin platform kullanıcısı (yoksa veya rolü kaldırıldıysa null).</summary>

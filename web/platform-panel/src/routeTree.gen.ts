@@ -13,8 +13,14 @@ import { Route as PanelRouteImport } from './routes/_panel'
 import { Route as GirisRouteImport } from './routes/giris'
 import { Route as PanelIndexRouteImport } from './routes/_panel/index'
 import { Route as PanelSplatRouteImport } from './routes/_panel/$'
+import { Route as PanelAboneliklerRouteImport } from './routes/_panel/abonelikler'
+import { Route as PanelDenetimRouteImport } from './routes/_panel/denetim'
+import { Route as PanelPlanlarRouteImport } from './routes/_panel/planlar'
 import { Route as PanelMarkalarIndexRouteImport } from './routes/_panel/markalar/index'
 import { Route as PanelMarkalarBrandIdRouteImport } from './routes/_panel/markalar/$brandId'
+import { Route as PanelOnayIndexRouteImport } from './routes/_panel/onay/index'
+import { Route as PanelOnayBankaHareketleriRouteImport } from './routes/_panel/onay/banka-hareketleri'
+import { Route as PanelOnayHavaleNoticeIdRouteImport } from './routes/_panel/onay/havale/$noticeId'
 
 const PanelRoute = PanelRouteImport.update({
   id: '/_panel',
@@ -35,6 +41,21 @@ const PanelSplatRoute = PanelSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelAboneliklerRoute = PanelAboneliklerRouteImport.update({
+  id: '/abonelikler',
+  path: '/abonelikler',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelDenetimRoute = PanelDenetimRouteImport.update({
+  id: '/denetim',
+  path: '/denetim',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelPlanlarRoute = PanelPlanlarRouteImport.update({
+  id: '/planlar',
+  path: '/planlar',
+  getParentRoute: () => PanelRoute,
+} as any)
 const PanelMarkalarIndexRoute = PanelMarkalarIndexRouteImport.update({
   id: '/markalar/',
   path: '/markalar/',
@@ -45,43 +66,105 @@ const PanelMarkalarBrandIdRoute = PanelMarkalarBrandIdRouteImport.update({
   path: '/markalar/$brandId',
   getParentRoute: () => PanelRoute,
 } as any)
+const PanelOnayIndexRoute = PanelOnayIndexRouteImport.update({
+  id: '/onay/',
+  path: '/onay/',
+  getParentRoute: () => PanelRoute,
+} as any)
+const PanelOnayBankaHareketleriRoute =
+  PanelOnayBankaHareketleriRouteImport.update({
+    id: '/onay/banka-hareketleri',
+    path: '/onay/banka-hareketleri',
+    getParentRoute: () => PanelRoute,
+  } as any)
+const PanelOnayHavaleNoticeIdRoute = PanelOnayHavaleNoticeIdRouteImport.update({
+  id: '/onay/havale/$noticeId',
+  path: '/onay/havale/$noticeId',
+  getParentRoute: () => PanelRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PanelIndexRoute
   '/giris': typeof GirisRoute
   '/$': typeof PanelSplatRoute
+  '/abonelikler': typeof PanelAboneliklerRoute
+  '/denetim': typeof PanelDenetimRoute
+  '/planlar': typeof PanelPlanlarRoute
   '/markalar/$brandId': typeof PanelMarkalarBrandIdRoute
+  '/onay/banka-hareketleri': typeof PanelOnayBankaHareketleriRoute
   '/markalar/': typeof PanelMarkalarIndexRoute
+  '/onay/': typeof PanelOnayIndexRoute
+  '/onay/havale/$noticeId': typeof PanelOnayHavaleNoticeIdRoute
 }
 export interface FileRoutesByTo {
   '/giris': typeof GirisRoute
   '/$': typeof PanelSplatRoute
+  '/abonelikler': typeof PanelAboneliklerRoute
+  '/denetim': typeof PanelDenetimRoute
+  '/planlar': typeof PanelPlanlarRoute
   '/': typeof PanelIndexRoute
   '/markalar/$brandId': typeof PanelMarkalarBrandIdRoute
+  '/onay/banka-hareketleri': typeof PanelOnayBankaHareketleriRoute
   '/markalar': typeof PanelMarkalarIndexRoute
+  '/onay': typeof PanelOnayIndexRoute
+  '/onay/havale/$noticeId': typeof PanelOnayHavaleNoticeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_panel': typeof PanelRouteWithChildren
   '/giris': typeof GirisRoute
   '/_panel/$': typeof PanelSplatRoute
+  '/_panel/abonelikler': typeof PanelAboneliklerRoute
+  '/_panel/denetim': typeof PanelDenetimRoute
+  '/_panel/planlar': typeof PanelPlanlarRoute
   '/_panel/': typeof PanelIndexRoute
   '/_panel/markalar/$brandId': typeof PanelMarkalarBrandIdRoute
+  '/_panel/onay/banka-hareketleri': typeof PanelOnayBankaHareketleriRoute
   '/_panel/markalar/': typeof PanelMarkalarIndexRoute
+  '/_panel/onay/': typeof PanelOnayIndexRoute
+  '/_panel/onay/havale/$noticeId': typeof PanelOnayHavaleNoticeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/giris' | '/$' | '/markalar/$brandId' | '/markalar/'
+  fullPaths:
+    | '/'
+    | '/giris'
+    | '/$'
+    | '/abonelikler'
+    | '/denetim'
+    | '/planlar'
+    | '/markalar/$brandId'
+    | '/onay/banka-hareketleri'
+    | '/markalar/'
+    | '/onay/'
+    | '/onay/havale/$noticeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/giris' | '/$' | '/' | '/markalar/$brandId' | '/markalar'
+  to:
+    | '/giris'
+    | '/$'
+    | '/abonelikler'
+    | '/denetim'
+    | '/planlar'
+    | '/'
+    | '/markalar/$brandId'
+    | '/onay/banka-hareketleri'
+    | '/markalar'
+    | '/onay'
+    | '/onay/havale/$noticeId'
   id:
     | '__root__'
     | '/_panel'
     | '/giris'
     | '/_panel/$'
+    | '/_panel/abonelikler'
+    | '/_panel/denetim'
+    | '/_panel/planlar'
     | '/_panel/'
     | '/_panel/markalar/$brandId'
+    | '/_panel/onay/banka-hareketleri'
     | '/_panel/markalar/'
+    | '/_panel/onay/'
+    | '/_panel/onay/havale/$noticeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +202,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelSplatRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/abonelikler': {
+      id: '/_panel/abonelikler'
+      path: '/abonelikler'
+      fullPath: '/abonelikler'
+      preLoaderRoute: typeof PanelAboneliklerRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/denetim': {
+      id: '/_panel/denetim'
+      path: '/denetim'
+      fullPath: '/denetim'
+      preLoaderRoute: typeof PanelDenetimRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/planlar': {
+      id: '/_panel/planlar'
+      path: '/planlar'
+      fullPath: '/planlar'
+      preLoaderRoute: typeof PanelPlanlarRouteImport
+      parentRoute: typeof PanelRoute
+    }
     '/_panel/markalar/': {
       id: '/_panel/markalar/'
       path: '/markalar'
@@ -133,21 +237,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PanelMarkalarBrandIdRouteImport
       parentRoute: typeof PanelRoute
     }
+    '/_panel/onay/': {
+      id: '/_panel/onay/'
+      path: '/onay'
+      fullPath: '/onay/'
+      preLoaderRoute: typeof PanelOnayIndexRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/onay/banka-hareketleri': {
+      id: '/_panel/onay/banka-hareketleri'
+      path: '/onay/banka-hareketleri'
+      fullPath: '/onay/banka-hareketleri'
+      preLoaderRoute: typeof PanelOnayBankaHareketleriRouteImport
+      parentRoute: typeof PanelRoute
+    }
+    '/_panel/onay/havale/$noticeId': {
+      id: '/_panel/onay/havale/$noticeId'
+      path: '/onay/havale/$noticeId'
+      fullPath: '/onay/havale/$noticeId'
+      preLoaderRoute: typeof PanelOnayHavaleNoticeIdRouteImport
+      parentRoute: typeof PanelRoute
+    }
   }
 }
 
 interface PanelRouteChildren {
   PanelSplatRoute: typeof PanelSplatRoute
+  PanelAboneliklerRoute: typeof PanelAboneliklerRoute
+  PanelDenetimRoute: typeof PanelDenetimRoute
+  PanelPlanlarRoute: typeof PanelPlanlarRoute
   PanelIndexRoute: typeof PanelIndexRoute
   PanelMarkalarBrandIdRoute: typeof PanelMarkalarBrandIdRoute
+  PanelOnayBankaHareketleriRoute: typeof PanelOnayBankaHareketleriRoute
   PanelMarkalarIndexRoute: typeof PanelMarkalarIndexRoute
+  PanelOnayIndexRoute: typeof PanelOnayIndexRoute
+  PanelOnayHavaleNoticeIdRoute: typeof PanelOnayHavaleNoticeIdRoute
 }
 
 const PanelRouteChildren: PanelRouteChildren = {
   PanelSplatRoute: PanelSplatRoute,
+  PanelAboneliklerRoute: PanelAboneliklerRoute,
+  PanelDenetimRoute: PanelDenetimRoute,
+  PanelPlanlarRoute: PanelPlanlarRoute,
   PanelIndexRoute: PanelIndexRoute,
   PanelMarkalarBrandIdRoute: PanelMarkalarBrandIdRoute,
+  PanelOnayBankaHareketleriRoute: PanelOnayBankaHareketleriRoute,
   PanelMarkalarIndexRoute: PanelMarkalarIndexRoute,
+  PanelOnayIndexRoute: PanelOnayIndexRoute,
+  PanelOnayHavaleNoticeIdRoute: PanelOnayHavaleNoticeIdRoute,
 }
 
 const PanelRouteWithChildren = PanelRoute._addFileChildren(PanelRouteChildren)

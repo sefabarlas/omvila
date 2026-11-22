@@ -9,6 +9,7 @@ import { packagesDemo } from './packages-demo';
 import { queuesDemo } from './queues-demo';
 import { myCommissionDemo, reportsDemo } from './reports-demo';
 import { reviewsDemo } from './reviews-demo';
+import { subscriptionDemo, subscriptionSession } from './subscription-demo';
 import { depositSetup } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
@@ -610,6 +611,112 @@ const screens: ScreenCase[] = [
     heading: 'Personel',
     setup: staffDemo,
     act: (page) => expect(page.getByText('Google Takvim · bağlı')).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/abonelik',
+    name: 'AyarlarAbonelik',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page),
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Faturalar' }).getByText('OMV-2026-000121'),
+      ).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/abonelik',
+    name: 'AyarlarAbonelikTanimsiz',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page, false),
+    act: (page) =>
+      expect(
+        page
+          .getByRole('region', { name: 'Havale / EFT ile öde' })
+          .getByText(/OMVILA hesap bilgisi henüz tanımlı değil/),
+      ).toBeVisible(),
+  },
+  {
+    path: '/ayarlar/abonelik',
+    name: 'AyarlarAbonelik899',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page),
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Faturalar' }).getByText('OMV-2026-000121'),
+      ).toBeVisible(),
+    viewport: { width: 899, height: 1300 },
+  },
+  {
+    path: '/ayarlar/abonelik',
+    name: 'HavaleBildir',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page),
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Havaleyi bildir (dekont isteğe bağlı)' }).click();
+      await expect(page.getByRole('dialog', { name: 'Havaleyi bildir' })).toBeVisible();
+      await settle(page);
+    },
+  },
+  {
+    path: '/ayarlar/bildirimler',
+    name: 'KontorAl',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page),
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Kontör al' }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'Kontör al' });
+      await expect(dialog.getByText('20.000 SMS')).toBeVisible();
+      await settle(page);
+    },
+  },
+  {
+    path: '/ayarlar/bildirimler',
+    name: 'KontorAlHavale',
+    heading: 'Ayarlar',
+    setup: (page) => subscriptionDemo(page),
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Kontör al' }).first().click();
+      const dialog = page.getByRole('dialog', { name: 'Kontör al' });
+      await dialog.getByRole('radio', { name: /Orta/ }).check();
+      await dialog.getByRole('button', { name: 'Havale bilgisini göster' }).click();
+      await expect(dialog.getByText('KNT-KE-1125')).toBeVisible();
+      await settle(page);
+    },
+  },
+  {
+    path: '/',
+    name: 'GenelBakisGecikti',
+    heading: 'İyi günler, Elif',
+    setup: async (page) => {
+      await overviewDemo(page);
+      await subscriptionSession(page, {
+        status: 'PastDue',
+        trialEndsOn: null,
+        pastDueSince: '2026-11-23',
+        readOnlyOn: '2026-11-30',
+      });
+    },
+    act: (page) =>
+      expect(page.getByRole('status').filter({ hasText: 'Abonelik ödemesi' })).toContainText(
+        '3. gün',
+      ),
+  },
+  {
+    path: '/takvim',
+    name: 'TakvimSaltOkunur',
+    heading: 'Takvim',
+    setup: async (page) => {
+      await calendarDemo(page);
+      await subscriptionSession(page, {
+        status: 'ReadOnly',
+        trialEndsOn: null,
+        pastDueSince: '2026-11-18',
+        readOnlyOn: null,
+      });
+    },
+    act: async (page) => {
+      await dayCalendar(page);
+      await expect(page.getByRole('button', { name: 'Randevu ekle', exact: true })).toBeDisabled();
+    },
   },
 ];
 

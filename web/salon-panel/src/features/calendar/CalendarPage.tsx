@@ -20,6 +20,7 @@ import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { isPersonalView } from '@/app/menu';
 import { useSession } from '@/app/session';
+import { blocksNewWork } from '@/app/SubscriptionBanner';
 import { NewAppointmentButton } from '@/features/appointments/NewAppointmentButton';
 import { NewAppointmentModal } from '@/features/appointments/NewAppointmentModal';
 import type { NewAppointmentPrefill } from '@/features/appointments/NewAppointmentModal';
@@ -122,7 +123,7 @@ export function CalendarPage({ search }: { search: CalendarSearch }) {
     ...walkInsQuery(api, branchId),
     enabled: managesWalkIns && branchId !== '',
   });
-  const readOnly = session.subscription.status === 'ReadOnly';
+  const readOnly = blocksNewWork(session.subscription.status);
 
   // Bloğa tıklama yerel seçimdir; bildirimden gelen ?randevu= de yan paneli açar (kapanınca adresten silinir).
   const openAppointment = selected ?? search.randevu ?? null;

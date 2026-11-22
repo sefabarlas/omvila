@@ -19,6 +19,8 @@ import { createReportsFake } from './fake-reports';
 import type { ReportsFakeOptions } from './fake-reports';
 import { createReviewsFake } from './fake-reviews';
 import type { ReviewsFakeOptions } from './fake-reviews';
+import { createSubscriptionFake } from './fake-subscription';
+import type { SubscriptionFakeOptions } from './fake-subscription';
 
 // Test için sahte API: üretilmiş istemcinin fetch'i yerine geçer (gerçek ağ yok). Veriler sözleşme örnekleriyle aynı.
 export const ownerPermissions = [
@@ -54,6 +56,7 @@ export const ownerPermissions = [
   'package.sell',
   'package.manage',
   'settings.roles',
+  'subscription.manage',
 ];
 export const staffPermissions = [
   'calendar.view',
@@ -135,6 +138,8 @@ export interface FakeApiOptions {
   reports?: ReportsFakeOptions;
   /** Kullanıcılar ve roller, KVKK ayarları, veri dışa aktarma, Google Takvim. */
   access?: AccessFakeOptions;
+  /** Abonelik, fatura, havale bildirimi ve kontör satın alma. */
+  subscription?: SubscriptionFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -426,6 +431,7 @@ export function fakeFetch({
   packages = {},
   reports = {},
   access = {},
+  subscription = {},
 }: FakeApiOptions = {}) {
   const accessFake = createAccessFake(access);
   const queuesFake = createQueuesFake(queues);
@@ -437,6 +443,7 @@ export function fakeFetch({
   const notificationSettingsFake = createNotificationSettingsFake(notificationSettings);
   const reviewsFake = createReviewsFake(reviews);
   const reportsFake = createReportsFake(session, reports);
+  const subscriptionFake = createSubscriptionFake(session, subscription);
   const json = (status: number, body: unknown) =>
     Promise.resolve(
       new Response(JSON.stringify(body), {
@@ -493,6 +500,11 @@ export function fakeFetch({
     const customersResponse = await customersFake(request);
     if (customersResponse) {
       return customersResponse;
+    }
+
+    const subscriptionResponse = await subscriptionFake(request);
+    if (subscriptionResponse) {
+      return subscriptionResponse;
     }
 
     const reportsResponse = reportsFake(request);

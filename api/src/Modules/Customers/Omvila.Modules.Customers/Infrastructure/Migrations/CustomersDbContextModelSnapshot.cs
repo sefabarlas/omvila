@@ -471,6 +471,74 @@ namespace Omvila.Modules.Customers.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Omvila.Modules.Customers.Domain.DataExport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BrandId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("brand_id");
+
+                    b.Property<Instant?>("CompletedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_utc");
+
+                    b.Property<byte[]>("Content")
+                        .HasColumnType("bytea")
+                        .HasColumnName("content");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("email");
+
+                    b.Property<Instant?>("ExpiresUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_utc");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<string>("FileName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("file_name");
+
+                    b.Property<Guid?>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<Instant>("RequestedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_data_exports");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_data_exports_status")
+                        .HasFilter("status IN ('Queued', 'Processing')");
+
+                    b.HasIndex("BrandId", "RequestedUtc")
+                        .HasDatabaseName("ix_data_exports_brand_id_requested_utc");
+
+                    b.ToTable("data_exports", "customers", t =>
+                        {
+                            t.HasCheckConstraint("ck_data_exports_status", "status IN ('Queued', 'Processing', 'Ready', 'Sent', 'Failed')");
+                        });
+                });
+
             modelBuilder.Entity("Omvila.Modules.Customers.Domain.BrandCustomer", b =>
                 {
                     b.HasOne("Omvila.Modules.Customers.Domain.Customer", null)

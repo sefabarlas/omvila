@@ -29,6 +29,7 @@ describe('İşletme bilgileri', () => {
       'Bildirimler ve SMS',
       'Kapora ve IBAN',
       'Roller ve yetkiler',
+      'Abonelik ve fatura',
       'KVKK ve veri',
     ]);
     expect(

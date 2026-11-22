@@ -85,6 +85,15 @@ public static class PlatformDefaults
     /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: DeletionRequestDueDays 30 (silme talepleri 30 gün içinde tamamlanır).</summary>
     public const int DeletionRequestDueDays = 30;
 
+    /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: TransactionRetentionYears izinli değerleri (3, 5, 10; varsayılan ilki).</summary>
+    public static readonly IReadOnlyList<int> TransactionRetentionYearsAllowed = [3, 5, 10];
+
+    /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: DataExportLinkValidityDays 7 (dışa aktarma indirme bağlantısı).</summary>
+    public const int DataExportLinkValidityDays = 7;
+
+    /// <summary>sureler-ve-ayarlar.md § KVKK ve saklama: AuditLogRetentionYears 2 (denetim kaydının kişisel ayrıntıları; T-121).</summary>
+    public const int AuditLogRetentionYears = 2;
+
     /// <summary>sureler-ve-ayarlar.md § Paketler: PackageExpiringSoonDays 30 ("Süresi yaklaşan": 30 gün içinde biten Active paketler).</summary>
     public const int PackageExpiringSoonDays = 30;
 

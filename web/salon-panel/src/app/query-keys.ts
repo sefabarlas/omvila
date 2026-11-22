@@ -77,4 +77,9 @@ export const queryKeys = {
   privacySettings: () => ['privacy-settings'] as const,
   /** Oturumdaki personelin Google Takvim bağlantısı (manageGetGoogleCalendarStatus). */
   googleCalendar: () => ['google-calendar'] as const,
+  /** OMVILA aboneliği (manageGetSubscription); önek ['subscription'] faturaları da kapsar. */
+  subscription: () => ['subscription'] as const,
+  invoices: () => ['subscription', 'invoices'] as const,
+  /** SMS kontör paketleri (manageListCreditPackages). */
+  creditPackages: () => ['credit-packages'] as const,
 };

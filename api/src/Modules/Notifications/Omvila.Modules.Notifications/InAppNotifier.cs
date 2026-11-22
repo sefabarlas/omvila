@@ -18,6 +18,9 @@ internal sealed class InAppNotifier(NotificationsDbContext db, IClock clock, IId
 
     public const string SmsCreditsTarget = "SmsCredits";
 
+    /// <summary>Ayarlar → Abonelik (owner.payment_notice_*).</summary>
+    public const string SubscriptionTarget = "Subscription";
+
     /// <summary>"Kapora geldi mi?" (staff.deposit_reported; id randevu).</summary>
     public const string DepositTarget = "Deposit";
 

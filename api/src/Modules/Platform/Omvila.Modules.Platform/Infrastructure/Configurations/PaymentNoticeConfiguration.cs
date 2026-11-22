@@ -28,6 +28,9 @@ internal sealed class PaymentNoticeConfiguration : IEntityTypeConfiguration<Paym
         builder.Property(x => x.SenderName).HasMaxLength(PaymentNotice.SenderNameMaxLength);
         builder.Property(x => x.ReceiptFileKey).HasMaxLength(PaymentNotice.ReceiptKeyMaxLength);
         builder.Property(x => x.ReceiptContentType).HasMaxLength(PaymentNotice.ReceiptContentTypeMaxLength);
+        builder.Property(x => x.ReceiptFileName).HasMaxLength(PaymentNotice.ReceiptFileNameMaxLength);
+        builder.Property(x => x.ResolutionMessage).HasMaxLength(PaymentNotice.ResolutionMessageMaxLength);
+        builder.Property(x => x.Version).IsRowVersion();
         builder.HasIndex(x => new { x.BrandId, x.NotifiedUtc });
         builder.HasIndex(x => new { x.Status, x.NotifiedUtc });
         builder.HasIndex(x => new { x.BrandId, x.Purpose, x.CreditPackageId })

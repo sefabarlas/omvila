@@ -32,6 +32,7 @@ internal sealed class AdminBrandReader(
     IPlatformCustomerStats customers,
     IBrandOwnerDirectory owners,
     IPendingApprovalCounts approvals,
+    Integrations.Contracts.IPlatformCalendarLinks calendars,
     IClock clock,
     IOptions<PlatformOptions> options)
 {
@@ -179,8 +180,7 @@ internal sealed class AdminBrandReader(
             [.. profile.Branches.Select(b => new AdminBrandDetail.BranchRef(b.Id, b.Name))],
             profile.Brand.ActiveStaffCount,
             await customers.CountBrandCustomersAsync(brandId, ct),
-            // Google Takvim bağlantısı (CalendarLink) Integrations PR'ında gelir; o zamana kadar 0 (T-119).
-            0,
+            await calendars.CountConnectedStaffAsync(brandId, ct),
             new AdminBrandDetail.SmsSenderInfo(sender.Name, sender.Status, sender.EffectiveName, sender.SubmittedUtc, sender.DecidedUtc, sender.RejectionReason),
             new AdminBrandDetail.SubscriptionCard(
                 subscription.Status.ToString(),

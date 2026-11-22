@@ -25,14 +25,15 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
         await using var command = new NpgsqlCommand("""
             TRUNCATE identity.otp_challenges, identity.trusted_devices, identity.refresh_tokens, identity.terms_acceptances, identity.user_memberships, identity.users CASCADE;
             TRUNCATE notifications.notification_outbox, notifications.credit_transactions, notifications.brand_sms_senders, notifications.devices, notifications.in_app_notifications, notifications.customer_notifications;
-            TRUNCATE platform.payment_notices, platform.subscription_invoices, platform.invoice_number_counters, platform.subscriptions, platform.audit_logs;
-            TRUNCATE customers.customer_imports, customers.customer_saved_brands;
+            TRUNCATE platform.payment_notices, platform.subscription_invoices, platform.invoice_number_counters, platform.subscriptions, platform.audit_logs, platform.bank_transactions;
+            TRUNCATE customers.customer_imports, customers.customer_saved_brands, customers.data_exports;
             TRUNCATE tenancy.brands CASCADE;
             TRUNCATE catalog.service_categories CASCADE;
             TRUNCATE customers.customers CASCADE;
             TRUNCATE scheduling.waitlist_offers, scheduling.waitlist_entries, scheduling.appointment_access_codes, scheduling.appointment_item_segments, scheduling.appointment_items, scheduling.appointments, scheduling.appointment_series, scheduling.branch_daily_summaries;
             TRUNCATE sales.payment_allocations, sales.payments, sales.commission_entries, sales.package_session_usages, sales.customer_package_items, sales.customer_packages, sales.package_items, sales.packages, sales.cash_day_closes;
             TRUNCATE reviews.reviews, reviews.review_invitations;
+            TRUNCATE integrations.appointment_calendar_syncs, integrations.calendar_links;
             TRUNCATE infra.outbox_events CASCADE;
             """, connection);
         await command.ExecuteNonQueryAsync(Ct);

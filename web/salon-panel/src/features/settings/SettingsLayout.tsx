@@ -6,9 +6,10 @@ import { useSession } from '@/app/session';
 import { Page } from '@/shared/Page';
 import styles from './Settings.module.css';
 
-// Bölüm menüsü. Abonelik (D6) ilgili PR gelince eklenir; yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
-// Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment; Roller ve yetkiler: settings.roles; KVKK ve veri:
-// customer.kvkk) yalnız o izinle görünür. KVKK ve veri D5'te "Silme talepleri" ile açıldı (T-99), D6'da tamamlandı (T-127).
+// Bölüm menüsü. Yapılmamış bölüm menüde görünmez (acik-sorular.md T-38, T-41).
+// Ek izin isteyen bölüm (Kapora ve IBAN: settings.payment; Roller ve yetkiler: settings.roles; Abonelik ve fatura:
+// subscription.manage; KVKK ve veri: customer.kvkk) yalnız o izinle görünür. KVKK ve veri D5'te "Silme talepleri" ile
+// açıldı (T-99), D6'da tamamlandı (T-127); Roller (T-127) ve Abonelik ve fatura (T-125) D6'da.
 const sections: readonly { to: string; label: string; permission?: string }[] = [
   { to: '/ayarlar/isletme', label: 'İşletme bilgileri' },
   { to: '/ayarlar/sube', label: 'Şubeler ve saatler' },
@@ -17,6 +18,7 @@ const sections: readonly { to: string; label: string; permission?: string }[] = 
   { to: '/ayarlar/bildirimler', label: 'Bildirimler ve SMS' },
   { to: '/ayarlar/kapora', label: 'Kapora ve IBAN', permission: 'settings.payment' },
   { to: '/ayarlar/roller', label: 'Roller ve yetkiler', permission: 'settings.roles' },
+  { to: '/ayarlar/abonelik', label: 'Abonelik ve fatura', permission: 'subscription.manage' },
   { to: '/ayarlar/kvkk', label: 'KVKK ve veri', permission: 'customer.kvkk' },
 ];
 
@@ -29,6 +31,8 @@ export interface SettingsLayoutProps {
   saveLabel?: string;
   /** Kaydetmenin solunda ikincil eylem ("Şube ekle"). */
   extraAction?: ReactNode;
+  /** Abonelik ve fatura sayfası abonelik şeridini kendi çizer. */
+  hideSubscriptionBanner?: boolean;
   children: ReactNode;
 }
 
@@ -39,6 +43,7 @@ export function SettingsLayout({
   saving = false,
   saveLabel = 'Değişiklikleri kaydet',
   extraAction,
+  hideSubscriptionBanner = false,
   children,
 }: SettingsLayoutProps) {
   const { can } = useSession();
@@ -46,6 +51,7 @@ export function SettingsLayout({
     <Page
       title="Ayarlar"
       context={context}
+      hideSubscriptionBanner={hideSubscriptionBanner}
       action={
         <>
           {extraAction}

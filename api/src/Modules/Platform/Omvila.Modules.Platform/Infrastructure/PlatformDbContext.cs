@@ -21,6 +21,8 @@ internal sealed class PlatformDbContext(DbContextOptions<PlatformDbContext> opti
 
     public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
 
+    public DbSet<PlatformBankTransaction> BankTransactions => Set<PlatformBankTransaction>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

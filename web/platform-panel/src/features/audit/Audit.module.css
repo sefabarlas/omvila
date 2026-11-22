@@ -1,0 +1,70 @@
+/* platform-paneli/PDenetim. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+}
+
+.actor {
+  display: inline-flex;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.actorText {
+  display: flex;
+  flex-direction: column;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.actorText strong {
+  color: var(--metin);
+  font-size: var(--yazi-govde-boyut);
+}
+
+.brandButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.brandButton:hover {
+  color: var(--metin-marka);
+  text-decoration: underline;
+}
+
+.brandButton:focus-visible {
+  border-radius: var(--kose-sm);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.detail {
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.period {
+  flex: none;
+}
+
+@media (width <= 899px) {
+  .controls {
+    flex-wrap: wrap;
+  }
+}

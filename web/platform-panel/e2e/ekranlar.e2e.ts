@@ -1,5 +1,15 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import {
+  auditDemo,
+  bankDemo,
+  elifNoticeId,
+  emptyQueueDemo,
+  noticeDetailDemo,
+  plansDemo,
+  queueDemo,
+  subscriptionsDemo,
+} from './approvals-demo';
 import { brandDetailDemo, brandsDemo, demoBrandId, overviewDemo } from './platform-demo';
 import { asAdmin, signedIn } from './support';
 
@@ -89,6 +99,78 @@ const screens: ScreenCase[] = [
     name: 'PMarkaDetayKontor',
     heading: 'Kuaför Elif',
     act: (page) => expect(page.getByRole('table', { name: 'Kontör hareketleri' })).toBeVisible(),
+  },
+  {
+    path: '/onay',
+    name: 'POnay',
+    heading: 'Onay kuyrukları',
+    setup: queueDemo,
+    act: (page) => expect(page.getByText('Bankada eşleşen hareket var')).toHaveCount(2),
+  },
+  {
+    path: '/onay?sekme=sms',
+    name: 'POnaySms',
+    heading: 'Onay kuyrukları',
+    setup: queueDemo,
+    act: (page) => expect(page.getByText(/NAILSTUDIO · şu an OMVILA/)).toBeVisible(),
+  },
+  {
+    path: '/onay',
+    name: 'POnayBos',
+    heading: 'Onay kuyrukları',
+    setup: emptyQueueDemo,
+    act: (page) => expect(page.getByRole('heading', { name: 'Bekleyen onay yok' })).toBeVisible(),
+  },
+  {
+    path: `/onay/havale/${elifNoticeId}`,
+    name: 'POnayDetay',
+    heading: 'Kuaför Elif · havale bildirimi',
+    setup: noticeDetailDemo,
+    act: (page) => expect(page.getByRole('radio', { name: /ELİF KAYA/ })).toBeChecked(),
+  },
+  {
+    path: `/onay/havale/${elifNoticeId}`,
+    name: 'POnayDetayKontrol',
+    heading: 'Kuaför Elif · havale bildirimi',
+    setup: noticeDetailDemo,
+    act: async (page) => {
+      await page.getByRole('radio', { name: /KAAN ÖZTÜRK/ }).check();
+      await expect(page.getByText('Kontrol edin:')).toBeVisible();
+    },
+  },
+  {
+    path: '/onay/banka-hareketleri',
+    name: 'PBankaHareketleri',
+    heading: 'Banka hareketleri',
+    setup: bankDemo,
+    act: (page) => expect(page.getByText('Eşleşti · Spa Moda')).toBeVisible(),
+  },
+  {
+    path: '/abonelikler',
+    name: 'PAbonelikler',
+    heading: 'Abonelikler',
+    setup: subscriptionsDemo,
+    act: (page) => expect(page.getByText('Aktif · kontör bitti')).toBeVisible(),
+  },
+  {
+    path: '/denetim',
+    name: 'PDenetim',
+    heading: 'Denetim kaydı',
+    setup: auditDemo,
+    act: async (page) => {
+      await expect(page.getByText('KVKK silme tamamlandı')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Dışa aktar' })).toBeDisabled();
+    },
+  },
+  {
+    path: '/planlar',
+    name: 'PPlanlar',
+    heading: 'Planlar ve fiyat',
+    setup: plansDemo,
+    act: async (page) => {
+      await expect(page.getByText('241 marka')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Planı düzenle' })).toBeDisabled();
+    },
   },
 ];
 

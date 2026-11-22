@@ -20,4 +20,10 @@ public static class TestSigningKey
 
     /// <summary>IBAN şifreleme anahtarı (AES-256, base64, 32 bayt); çalışma başına üretilir.</summary>
     public static string IbanEncryptionKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>Dışa aktarma indirme bağlantısı imza anahtarı (HMAC, base64, 32 bayt); çalışma başına üretilir.</summary>
+    public static string DataExportLinkKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>Takvim jetonu şifreleme anahtarı (AES-256, base64, 32 bayt); çalışma başına üretilir.</summary>
+    public static string CalendarTokenKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 }

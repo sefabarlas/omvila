@@ -125,6 +125,12 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("price_minor");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.HasKey("Id")
                         .HasName("pk_credit_packages");
 
@@ -219,6 +225,20 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("receipt_file_key");
 
+                    b.Property<string>("ReceiptFileName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("receipt_file_name");
+
+                    b.Property<long?>("ReceiptSizeBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("receipt_size_bytes");
+
+                    b.Property<string>("ResolutionMessage")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("resolution_message");
+
                     b.Property<Guid?>("ResolvedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("resolved_by_user_id");
@@ -243,6 +263,12 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("transfer_code");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id")
                         .HasName("pk_payment_notices");
@@ -287,9 +313,21 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("code");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("description");
+
                     b.Property<long?>("ExtraBranchPriceMinor")
                         .HasColumnType("bigint")
                         .HasColumnName("extra_branch_price_minor");
+
+                    b.Property<string>("Features")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("features")
+                        .HasDefaultValueSql("'{\"walkInQueue\":false,\"waitlist\":false,\"packages\":false,\"crossBranchReports\":false,\"prioritySupport\":false}'::jsonb");
 
                     b.Property<int?>("IncludedBranchCount")
                         .HasColumnType("integer")
@@ -321,6 +359,12 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("staff_limit");
 
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
                     b.Property<long?>("YearlyPriceMinor")
                         .HasColumnType("bigint")
                         .HasColumnName("yearly_price_minor");
@@ -333,6 +377,81 @@ namespace Omvila.Modules.Platform.Infrastructure.Migrations
                         .HasDatabaseName("ix_plans_code");
 
                     b.ToTable("plans", "platform");
+                });
+
+            modelBuilder.Entity("Omvila.Modules.Platform.Domain.PlatformBankTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountMinor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_minor");
+
+                    b.Property<string>("BankReference")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("bank_reference");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Instant>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_utc");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid?>("MatchedNoticeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("matched_notice_id");
+
+                    b.Property<Instant?>("ReceivedUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("received_utc");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("sender_name");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("source");
+
+                    b.Property<LocalDate>("ValueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("value_date");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bank_transactions");
+
+                    b.HasIndex("BankReference")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bank_transactions_bank_reference");
+
+                    b.HasIndex("MatchedNoticeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bank_transactions_matched_notice_id");
+
+                    b.HasIndex("ValueDate", "Id")
+                        .HasDatabaseName("ix_bank_transactions_value_date_id");
+
+                    b.ToTable("bank_transactions", "platform", t =>
+                        {
+                            t.HasCheckConstraint("ck_bank_transactions_amount", "amount_minor > 0");
+
+                            t.HasCheckConstraint("ck_bank_transactions_source", "source IN ('Import', 'Manual')");
+                        });
                 });
 
             modelBuilder.Entity("Omvila.Modules.Platform.Domain.Subscription", b =>
