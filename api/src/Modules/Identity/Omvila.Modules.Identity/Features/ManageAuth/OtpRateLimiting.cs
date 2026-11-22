@@ -25,6 +25,8 @@ internal static class OtpRateLimiting
             options.AddPolicy(PublicOtpEndpoints.RateLimitPolicy, PerIp);
             // Müşteri uygulaması girişi ayrı sayılır (aynı sınır; T-103).
             options.AddPolicy(MeAuth.MeAuthEndpoints.OtpRateLimitPolicy, PerIp);
+            // Platform paneli girişi ayrı sayılır (aynı sınır; T-119).
+            options.AddPolicy(AdminAuth.AdminAuthEndpoints.OtpRateLimitPolicy, PerIp);
             options.OnRejected = async (context, ct) =>
             {
                 var http = context.HttpContext;

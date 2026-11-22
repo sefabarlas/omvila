@@ -23,6 +23,9 @@ internal sealed class User
 
     public bool IsActive { get; private set; } = true;
 
+    /// <summary>Doluysa platform kullanıcısıdır (OMVILA ekibi; K3) ve marka üyeliği olamaz (alan-modeli.md § User).</summary>
+    public PlatformRole? PlatformRole { get; private set; }
+
     public Instant CreatedUtc { get; private set; }
 
     public Instant? LastLoginUtc { get; private set; }
@@ -36,4 +39,15 @@ internal sealed class User
     };
 
     public void RecordLogin(Instant now) => LastLoginUtc = now;
+
+    /// <summary>Platform kullanıcısı (sunucu komutuyla; K2). Ad verilirse güncellenir; hesap etkinleşir.</summary>
+    public void AssignPlatformRole(PlatformRole role, string? fullName)
+    {
+        PlatformRole = role;
+        IsActive = true;
+        if (!string.IsNullOrWhiteSpace(fullName))
+        {
+            FullName = fullName.Trim();
+        }
+    }
 }

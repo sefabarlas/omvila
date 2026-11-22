@@ -58,6 +58,16 @@ internal sealed class AccessTokenIssuer(SigningKeyStore keys, IClock clock, IOpt
             new ClaimsIdentity([new Claim(OmvilaClaims.Subject, customerId.ToString())]),
             Duration.FromMinutes(options.Value.AccessTokenMinutes));
 
+    /// <summary>
+    /// Platform paneli jetonu (ADR-0007 admin: sub + platform_role). Kiracı bağlamı TenantScope.Platform; marka iddiası yoktur.
+    /// Rol her yenilemede veritabanından okunur (rolü kaldırılan kullanıcının oturumu yenilenmez).
+    /// </summary>
+    public (string Token, int ExpiresInSeconds) IssueAdmin(Guid userId, string platformRole) =>
+        Issue(
+            Audiences.Admin,
+            new ClaimsIdentity([new Claim(OmvilaClaims.Subject, userId.ToString()), new Claim(OmvilaClaims.PlatformRole, platformRole)]),
+            Duration.FromMinutes(options.Value.AccessTokenMinutes));
+
     private (string Token, int ExpiresInSeconds) Issue(string audience, ClaimsIdentity identity, Duration lifetime)
     {
         var now = clock.GetCurrentInstant();

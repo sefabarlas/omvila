@@ -14,6 +14,16 @@ public static class SecurityEndpointExtensions
             .ProducesProblem(StatusCodes.Status403Forbidden);
 
     /// <summary>
+    /// Admin ucu bir platform izni ister (roller-yetkiler.md § Platform rolleri; jetondaki platform_role). Yoksa 403. Uç
+    /// "/api/v1/admin" grubunda (aud=admin) eşlenir; izin metadata'sı işaretsiz uç denetiminde (EndpointAudit) sayılır.
+    /// </summary>
+    public static RouteHandlerBuilder RequireAdminPermission(this RouteHandlerBuilder builder, string permission) =>
+        builder
+            .WithMetadata(new PermissionMetadata(permission))
+            .RequireAuthorization(policy => policy.AddRequirements(new AdminPermissionRequirement(permission)))
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+    /// <summary>
     /// Uç yalnız verilen yüzeylerin geçerli oturumunu ister, izin istemez (ör. çıkış). Birden çok yüzey verilirse (ör. rezervasyon
     /// jetonu veya müşteri uygulaması jetonu; sözleşmede iki security seçeneği) uç her birini kabul eder. Her şema kendi aud değeriyle doğrular; jeton yalnız birinde geçer.
     /// </summary>
