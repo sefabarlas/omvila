@@ -49,6 +49,9 @@ internal sealed partial class DispatchNotifications(
 
     private const string NoDevice = "no_device";
 
+    /// <summary>İşletme kullanıcısı olayın push'unu gönderim anındaki tercihiyle kapatmış (sözleşme MyNotificationPreferences).</summary>
+    public const string PreferenceOff = "preference_off";
+
     public string Key => "DispatchNotifications";
 
     public async Task RunAsync(CancellationToken ct)
@@ -66,6 +69,7 @@ internal sealed partial class DispatchNotifications(
         var brandIds = due.Where(m => m.BrandId is not null).Select(m => m.BrandId!.Value).Distinct().ToList();
         var senders = await db.SmsSenders.AsNoTracking().Where(s => brandIds.Contains(s.BrandId)).ToDictionaryAsync(s => s.BrandId, ct);
         var run = new RunState();
+        await LoadPreferencesAsync(due, run, ct);
 
         foreach (var message in due)
         {
@@ -85,9 +89,36 @@ internal sealed partial class DispatchNotifications(
         }
     }
 
+    // Sessiz saatte ertelenmiş push gönderim anındaki tercihe göre süzülür (sözleşme manageUpdateMyNotificationPreferences).
+    private async Task LoadPreferencesAsync(List<NotificationMessage> due, RunState run, CancellationToken ct)
+    {
+        var userIds = due.Where(IsUserMessage).Select(m => m.RecipientId!.Value).Distinct().ToList();
+        if (userIds.Count == 0)
+        {
+            return;
+        }
+
+        var preferences = await db.NotificationPreferences.AsNoTracking().Where(p => userIds.Contains(p.UserId)).ToListAsync(ct);
+        foreach (var preference in preferences)
+        {
+            run.Preferences[(preference.BrandId, preference.UserId)] = preference;
+        }
+    }
+
+    private static bool IsUserMessage(NotificationMessage message) =>
+        string.Equals(message.RecipientType, Device.UserOwner, StringComparison.Ordinal) && message.RecipientId is not null && message.BrandId is not null;
+
     private async Task DispatchAsync(
         NotificationMessage message, Dictionary<Guid, BrandSmsSender> senders, RunState run, Instant now, CancellationToken ct)
     {
+        if (IsUserMessage(message)
+            && run.Preferences.TryGetValue((message.BrandId!.Value, message.RecipientId!.Value), out var preference)
+            && !StaffPushPreferences.AllowsPush(preference, message.EventCode))
+        {
+            message.MarkSkipped(PreferenceOff);
+            return;
+        }
+
         if (message.PushFirst)
         {
             var pushed = await TryPushAsync(message, now, ct);
@@ -330,5 +361,7 @@ internal sealed partial class DispatchNotifications(
         public Dictionary<Guid, int> Skipped { get; } = [];
 
         public HashSet<Guid> CrossedLow { get; } = [];
+
+        public Dictionary<(Guid BrandId, Guid UserId), NotificationPreference> Preferences { get; } = [];
     }
 }

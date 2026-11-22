@@ -10,8 +10,9 @@ public interface INotificationOutbox
     Task EnqueueSmsAsync(SmsNotification notification, CancellationToken ct);
 
     /// <summary>
-    /// İşletme kullanıcılarına push kuyruğa ekler (kullanıcı başına bir satır). Sessiz saatte (şube yerel 22:00–08:00)
-    /// yazılan satır sabaha ertelenir (bildirimler.md § Sessiz saatler). Alıcıları çağıran seçer (rol, ilgili personel).
+    /// İşletme kullanıcılarına push kuyruğa ekler (kullanıcı başına bir satır). Alıcıları çağıran seçer (rol, ilgili personel);
+    /// kullanıcının kişisel tercihi (NotificationPreference) olayı kapatıyorsa satır yazılmaz, sessiz saati açıksa (varsayılan)
+    /// şube yerel 22:00–08:00 arasında yazılan satır sabaha ertelenir (bildirimler.md § Sessiz saatler).
     /// </summary>
     Task EnqueueStaffPushAsync(StaffPushNotification notification, CancellationToken ct);
 

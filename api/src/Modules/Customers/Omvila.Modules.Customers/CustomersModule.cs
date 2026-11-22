@@ -10,6 +10,7 @@ using Omvila.Modules.Customers.Features.Export;
 using Omvila.Modules.Customers.Features.Imports;
 using Omvila.Modules.Customers.Features.Me;
 using Omvila.Modules.Customers.Features.Merge;
+using Omvila.Modules.Customers.Features.PhoneReveal;
 using Omvila.Modules.Customers.Infrastructure;
 using Omvila.Modules.Customers.Infrastructure.Configurations;
 using Omvila.SharedKernel;
@@ -49,6 +50,7 @@ public static class CustomersModule
     {
         CustomerEndpoints.Map(app);
         CustomerRecordsEndpoints.Map(app);
+        PhoneRevealEndpoints.Map(app);
         Features.Me.MeProfileEndpoints.Map(app);
         Features.Me.MeBrandEndpoints.Map(app);
         return app;

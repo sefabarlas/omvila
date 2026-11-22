@@ -18,7 +18,7 @@ internal static partial class PushTemplates
     /// <summary>staff.appointment_changed: saat değişikliği metni.</summary>
     public const string RescheduledVariant = "rescheduled";
 
-    /// <summary>owner.credits_low: tüketim geçmişi yokken tahmini gün yazılmaz.</summary>
+    /// <summary>owner.credits_low: tüketim geçmişi yokken tahmini gün yazılmaz; staff.walkin_queue: müsait personel yokken tahmini bekleme yazılmaz.</summary>
     public const string WithoutEstimateVariant = "without_estimate";
 
     private const int RegexTimeoutMilliseconds = 1000;
@@ -39,6 +39,9 @@ internal static partial class PushTemplates
         [Key(NotificationEvents.StaffDepositReported, null)] = ("Havale bildirildi", "{müşteri} · {tutar} kaporayı gönderdiğini söyledi. Kontrol edin."),
         [Key(NotificationEvents.StaffReviewReceived, null)] = ("Yeni değerlendirme", "{puan} yıldız · {müşteri}"),
         [Key(NotificationEvents.StaffWalkInQueue, null)] = ("Sırada {n} kişi", "Kapıda sıra · tahmini bekleme {dk} dk."),
+
+        // Katalog metninin tahminsiz hâli (şubede şu an çalışan personel yok; T-105).
+        [Key(NotificationEvents.StaffWalkInQueue, WithoutEstimateVariant)] = ("Sırada {n} kişi", "Kapıda sıra."),
         [Key(NotificationEvents.StaffDailySummary, null)] = ("Gün sonu özeti", "{n} randevu tamamlandı, {tutar} tahsilat."),
         [Key(NotificationEvents.OwnerCreditsLow, null)] = ("SMS kontörü azaldı", "{kalan} SMS kaldı, tahmini {gün} gün yeter."),
 

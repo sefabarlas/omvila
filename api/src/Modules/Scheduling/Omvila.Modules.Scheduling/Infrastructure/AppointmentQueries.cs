@@ -164,6 +164,36 @@ internal sealed class AppointmentQueries(SchedulingDbContext db, ITenantQueries 
         });
     }
 
+    public async Task<IReadOnlyDictionary<Guid, AppointmentItemContext>> GetItemContextsAsync(
+        Guid brandId, IReadOnlyCollection<Guid> appointmentItemIds, CancellationToken ct)
+    {
+        if (appointmentItemIds.Count == 0)
+        {
+            return new Dictionary<Guid, AppointmentItemContext>();
+        }
+
+        var appointments = await db.Appointments.AsNoTracking().Include(a => a.Items)
+            .Where(a => a.BrandId == brandId && a.Items.Any(i => appointmentItemIds.Contains(i.Id)))
+            .ToListAsync(ct);
+        return appointments
+            .SelectMany(a => a.Items.Where(i => appointmentItemIds.Contains(i.Id))
+                .Select(i => new AppointmentItemContext(i.Id, a.Id, a.StartUtc, a.BrandCustomerId, i.ServiceNameSnapshot)))
+            .ToDictionary(c => c.AppointmentItemId);
+    }
+
+    public async Task<IReadOnlyList<StaffAppointmentOutcome>> ListStaffOutcomesAsync(
+        Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct)
+    {
+        AppointmentStatus[] outcomes = [AppointmentStatus.Completed, AppointmentStatus.NoShow, AppointmentStatus.CheckedIn];
+        var rows = await db.Appointments.AsNoTracking()
+            .Where(a => a.BrandId == brandId && a.StartUtc >= fromUtc && a.StartUtc < toUtc && outcomes.Contains(a.Status)
+                && a.Items.Any(i => i.StaffId == staffId && i.Status != AppointmentItemStatus.Cancelled))
+            .OrderBy(a => a.StartUtc).ThenBy(a => a.Id)
+            .Select(a => new { a.Id, a.BrandCustomerId, a.StartUtc, a.Status })
+            .ToListAsync(ct);
+        return [.. rows.Select(r => new StaffAppointmentOutcome(r.Id, r.BrandCustomerId, r.StartUtc, r.Status.ToString()))];
+    }
+
     private static AwaitedDepositInfo? AwaitedDeposit(Appointment a) =>
         a is { DisplayStatus: DisplayStatus.DepositPending, DepositRequiredMinor: { } amount, DepositTransferCode: { } code, HoldExpiresUtc: { } due }
             ? new AwaitedDepositInfo(

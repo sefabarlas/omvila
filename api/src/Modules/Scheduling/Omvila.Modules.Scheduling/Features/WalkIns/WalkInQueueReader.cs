@@ -34,6 +34,9 @@ internal sealed class WalkInQueueReader(SchedulingDbContext db, AvailabilitySnap
         return queue is null ? Error.NotFound() : queue;
     }
 
+    /// <summary>Şubenin bugünkü sırası (kapsam denetimi çağıranda); şube markada yoksa null.</summary>
+    public Task<WalkInQueue?> LoadAsync(Guid brandId, Guid branchId, CancellationToken ct) => BuildAsync(brandId, branchId, ct);
+
     /// <summary>Tek biletin görünümü (oluşturma, başlatma, sıradan çıkarma yanıtları); sıradaysa tahmini beklemesiyle.</summary>
     public async Task<WalkInTicketView> ViewAsync(WalkInTicket ticket, CancellationToken ct)
     {

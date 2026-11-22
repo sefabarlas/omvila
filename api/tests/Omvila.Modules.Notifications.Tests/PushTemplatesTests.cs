@@ -27,6 +27,7 @@ public sealed class PushTemplatesTests
         [(NotificationEvents.StaffDepositReported, null)] = Values(("müşteri", Customer), ("tutar", "1.500 TL")),
         [(NotificationEvents.StaffReviewReceived, null)] = Values(("puan", "5"), ("müşteri", Customer)),
         [(NotificationEvents.StaffWalkInQueue, null)] = Values(("n", "12"), ("dk", "120")),
+        [(NotificationEvents.StaffWalkInQueue, PushTemplates.WithoutEstimateVariant)] = Values(("n", "12")),
         [(NotificationEvents.StaffDailySummary, null)] = Values(("n", "120"), ("tutar", "45.000 TL")),
         [(NotificationEvents.OwnerCreditsLow, null)] = Values(("kalan", "199"), ("gün", "1.000")),
         [(NotificationEvents.OwnerCreditsLow, PushTemplates.WithoutEstimateVariant)] = Values(("kalan", "199")),
