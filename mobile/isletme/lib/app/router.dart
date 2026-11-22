@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:omvila_api/omvila_api.dart';
+import 'package:omvila_isletme/features/appointments/presentation/appointment_detail_screen.dart';
 import 'package:omvila_isletme/features/auth/data/auth_controller.dart';
 import 'package:omvila_isletme/features/auth/presentation/login_code_screen.dart';
 import 'package:omvila_isletme/features/auth/presentation/login_screen.dart';
 import 'package:omvila_isletme/features/auth/presentation/splash_screen.dart';
+import 'package:omvila_isletme/features/calendar/presentation/calendar_screen.dart';
+import 'package:omvila_isletme/features/new_appointment/presentation/new_appointment_screen.dart';
+import 'package:omvila_isletme/features/new_appointment/presentation/reschedule_screen.dart';
 import 'package:omvila_isletme/features/placeholders/presentation/placeholder_screens.dart';
 import 'package:omvila_isletme/features/push/data/push_prompt_controller.dart';
 import 'package:omvila_isletme/features/push/presentation/notification_permission_screen.dart';
@@ -62,7 +66,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: Routes.calendar,
-            builder: (_, _) => const CalendarPlaceholder(),
+            builder: (_, _) => const CalendarScreen(),
           ),
           GoRoute(
             path: Routes.customers,
@@ -102,19 +106,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.newAppointment,
-        builder: (_, _) => const PagePlaceholderScreen(
-          title: 'Yeni randevu',
-          description: 'Randevu oluşturma sonraki sürümde bu ekranda açılacak.',
+        builder: (_, state) => NewAppointmentScreen(
+          initialDate: _localDate(state.uri.queryParameters['gun']),
         ),
       ),
       GoRoute(
         path: '/randevu/:id',
-        builder: (_, _) => const PagePlaceholderScreen(
-          title: 'Randevu',
-          description:
-              'Randevu ayrıntısı ve işlemleri sonraki sürümde bu ekranda '
-              'açılacak.',
-        ),
+        builder: (_, state) =>
+            AppointmentDetailScreen(appointmentId: state.pathParameters['id']!),
+        routes: [
+          GoRoute(
+            path: 'degistir',
+            builder: (_, state) =>
+                RescheduleScreen(appointmentId: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
   );
@@ -159,5 +165,15 @@ String? redirectFor({
     return Routes.today;
   }
 
+  if (location == Routes.newAppointment && !session.can('appointment.create')) {
+    return Routes.today;
+  }
+
   return null;
 }
+
+/// Sorgudaki gün yalnız "yyyy-aa-gg" ise kullanılır.
+String? _localDate(String? value) =>
+    value != null && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)
+    ? value
+    : null;
