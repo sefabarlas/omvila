@@ -305,7 +305,7 @@ String initialsOf(String fullName) {
   return toUpperTr(letters.join());
 }
 
-/// Baş harf avatarı.
+/// Baş harf avatarı; ton addan türetilir (`OmvilaAvatar`, web ile aynı).
 class InitialsAvatar extends StatelessWidget {
   /// Avatar.
   const InitialsAvatar({required this.name, this.size = 40, super.key});
@@ -317,24 +317,7 @@ class InitialsAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final r = context.omvilaRenkler;
-    return ExcludeSemantics(
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: r.avatar1Zemin,
-          shape: BoxShape.circle,
-        ),
-        child: Text(
-          initialsOf(name),
-          style: OmvilaYazi.etiket.copyWith(color: r.avatar1Metin),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => OmvilaAvatar(ad: name, boyut: size);
 }
 
 /// Sunucudan gelen personel takvim rengi ("#0F6E5C"; veri, sabit renk

@@ -50,7 +50,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   bool get _unreadOnly => _tab == NotificationTab.unread;
 
-  void _refresh() => ref.invalidate(notificationsProvider);
+  void _refresh() => ref
+    ..invalidate(notificationsProvider)
+    ..invalidate(unreadNotificationCountProvider);
 
   Future<void> _markAll() async {
     try {

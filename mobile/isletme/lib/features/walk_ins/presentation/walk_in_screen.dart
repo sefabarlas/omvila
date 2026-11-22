@@ -61,6 +61,7 @@ class WalkInScreen extends ConsumerWidget {
               eylemEtiketi: 'Sıraya ekle',
               eylemIkonu: LucideIcons.plus,
               onEylem: add,
+              eylemTuru: OmvilaButonTuru.birincil,
             )
           : _QueueContent(queue: data, branchId: branchId);
     } else if (queue.hasError) {
@@ -308,7 +309,12 @@ class _TicketCardState extends ConsumerState<_TicketCard> {
             height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: dark ? r.markaHover : r.zeminIkincil,
+              // Koyu kartta iki temada da `metin-ters` örtüsü (tasarım);
+              // `marka-hover` koyu temada açık nane olduğundan numara
+              // okunmuyordu.
+              color: dark
+                  ? r.metinTers.withValues(alpha: 0.16)
+                  : r.zeminIkincil,
               borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
             ),
             child: Text(
@@ -334,12 +340,13 @@ class _TicketCardState extends ConsumerState<_TicketCard> {
             ),
           ),
           if (dark)
-            // Koyu kart üstünde açık zeminli buton (tasarım).
+            // Koyu kart üstünde açık zeminli buton (tasarım); iki temada
+            // da açık kalan `metin-ters` zemin, `blok-marka` yazı.
             FilledButton(
               onPressed: _busy ? null : _start,
               style: FilledButton.styleFrom(
-                backgroundColor: r.zeminYukseltilmis,
-                foregroundColor: r.metin,
+                backgroundColor: r.metinTers,
+                foregroundColor: r.blokMarka,
                 minimumSize: const Size(0, OmvilaBoyut.kontrolSm),
                 textStyle: OmvilaYazi.etiket,
               ),

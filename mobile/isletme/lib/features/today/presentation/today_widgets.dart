@@ -9,13 +9,21 @@ import 'package:omvila_ui/omvila_ui.dart';
 /// "Salı 25 Kasım · Kadıköy" / "Bugün" ve "+ Randevu".
 class TodayHeader extends StatelessWidget {
   /// Başlık.
-  const TodayHeader({this.subtitle, this.onNewAppointment, super.key});
+  const TodayHeader({
+    this.subtitle,
+    this.onNewAppointment,
+    this.newAppointmentEnabled = true,
+    super.key,
+  });
 
   /// Tarih ve şube; veri gelene kadar null.
   final String? subtitle;
 
   /// "+ Randevu" (appointment.create izni yoksa null, buton gizli).
   final VoidCallback? onNewAppointment;
+
+  /// Salt okunur abonelikte false: buton görünür ama pasif (MainSaltOkunur).
+  final bool newAppointmentEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -51,10 +59,63 @@ class TodayHeader extends StatelessWidget {
           OmvilaButon(
             etiket: 'Randevu',
             ikon: LucideIcons.plus,
+            tur: OmvilaButonTuru.koyu,
             boyut: OmvilaButonBoyutu.sm,
-            onPressed: onNew,
+            onPressed: newAppointmentEnabled ? onNew : null,
           ),
       ],
+    );
+  }
+}
+
+/// Salt okunur abonelik şeridi (MainSaltOkunur); kapatılamaz.
+class ReadOnlyBanner extends StatelessWidget {
+  /// Şerit.
+  const ReadOnlyBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = context.omvilaRenkler;
+    final style = OmvilaYazi.ikincil.copyWith(color: r.metin);
+    return Semantics(
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.all(OmvilaBosluk.bosluk4),
+        decoration: BoxDecoration(
+          color: r.hataZemin,
+          borderRadius: BorderRadius.circular(OmvilaKose.koseLg),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(LucideIcons.lock, size: 20, color: r.hata),
+            ),
+            const SizedBox(width: OmvilaBosluk.bosluk3),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Salon salt okunur. ',
+                      style: style.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const TextSpan(
+                      text:
+                          'Abonelik ödemesi alınamadı. Randevuları '
+                          'görebilirsiniz; yeni randevu, sıra ve SMS kapalı. '
+                          'İşletme sahibinin salon panelinden ödemeyi '
+                          'tamamlaması gerekir.',
+                    ),
+                  ],
+                ),
+                style: style,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -197,13 +258,15 @@ class TodayBento extends StatelessWidget {
               ),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: r.zeminMarkaYumusak,
+                color: r.blokMarkaHap,
                 borderRadius: BorderRadius.circular(OmvilaKose.koseSm),
               ),
               child: Text(
                 startsIn(next.startUtc, now),
                 textAlign: TextAlign.center,
-                style: OmvilaYazi.etiketKucuk.copyWith(color: r.metinMarka),
+                style: OmvilaYazi.etiketKucuk.copyWith(
+                  color: r.blokMarkaHapMetin,
+                ),
               ),
             ),
           );

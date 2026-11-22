@@ -153,6 +153,44 @@ void main() {
     expect(find.bySemanticsLabel('Bildirimler'), findsNothing);
   });
 
+  // MainSaltOkunur: kırmızı şerit; "+ Randevu" görünür ama pasif.
+  testWidgets('salt okunur abonelik: şerit ve pasif + Randevu', (
+    tester,
+  ) async {
+    final h = Harness()
+      ..signIn(
+        session: {
+          ...ownerSessionJson,
+          'subscription': {'status': 'ReadOnly'},
+        },
+      );
+    h.api.reply('GET', todayPath, todayJson());
+    await h.pumpApp(tester);
+    expect(
+      find.textContaining('Salon salt okunur.', findRichText: true),
+      findsOneWidget,
+    );
+    final button = tester.widget<OmvilaButon>(
+      find.widgetWithText(OmvilaButon, 'Randevu'),
+    );
+    expect(button.onPressed, isNull);
+    expect(find.text('Derya Şahin'), findsOneWidget);
+  });
+
+  testWidgets('etkin abonelikte şerit yok', (tester) async {
+    final h = Harness()..signIn();
+    h.api.reply('GET', todayPath, todayJson());
+    await h.pumpApp(tester);
+    expect(
+      find.textContaining('Salon salt okunur.', findRichText: true),
+      findsNothing,
+    );
+    final button = tester.widget<OmvilaButon>(
+      find.widgetWithText(OmvilaButon, 'Randevu'),
+    );
+    expect(button.onPressed, isNotNull);
+  });
+
   testWidgets('prim kartı null ise gizli', (tester) async {
     final h = Harness()..signIn();
     h.api.reply('GET', todayPath, {...todayJson(), 'commission': null});

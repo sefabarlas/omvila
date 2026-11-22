@@ -16,7 +16,10 @@ Future<Harness> openTab(
   h.api.reply('GET', '/api/v1/manage/today', todayJson());
   setup?.call(h.api);
   await h.pumpApp(tester);
-  await tester.tap(find.bySemanticsLabel(tab));
+  // Rozetli sekmenin etiketi "Bildirimler, 3 okunmamış" olur.
+  await tester.tap(
+    find.bySemanticsLabel(RegExp('^${RegExp.escape(tab)}(,|\$)')),
+  );
   if (settle) {
     await tester.pumpAndSettle();
   } else {
