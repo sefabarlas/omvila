@@ -26,10 +26,17 @@ const _visibleServices = 3;
 /// rolünde yalnız kendine randevu ekler. Salt okunur abonelikte pasif.
 class NewAppointmentScreen extends ConsumerStatefulWidget {
   /// Yeni randevu.
-  const NewAppointmentScreen({this.initialDate, super.key});
+  const NewAppointmentScreen({
+    this.initialDate,
+    this.initialCustomer,
+    super.key,
+  });
 
   /// Takvimden gelindiyse seçili gün.
   final String? initialDate;
+
+  /// Müşteri kartından ("Randevu ver") gelindiyse seçili müşteri.
+  final CustomerSummary? initialCustomer;
 
   @override
   ConsumerState<NewAppointmentScreen> createState() =>
@@ -39,7 +46,7 @@ class NewAppointmentScreen extends ConsumerStatefulWidget {
 class _NewAppointmentScreenState extends ConsumerState<NewAppointmentScreen> {
   ManageAppointmentCreateChannelEnum _channel =
       ManageAppointmentCreateChannelEnum.phone;
-  CustomerSummary? _customer;
+  late CustomerSummary? _customer = widget.initialCustomer;
   bool _newCustomer = false;
   final _search = TextEditingController();
   final _name = TextEditingController();

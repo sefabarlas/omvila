@@ -21,12 +21,17 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(authControllerProvider).value;
     final tabs = session == null ? const <AppTab>[] : tabsFor(session);
-    final selected = tabs.indexWhere((t) => location.startsWith(t.path));
+    // Kabuk içinde push edilen sayfada (yöneticide Sıra) `location` alttaki
+    // sekmenin adresi kalır; görünen sayfa yönlendiricinin son adresidir.
+    final current =
+        GoRouter.maybeOf(context)?.state.matchedLocation ?? location;
+    final selected = tabs.indexWhere((t) => current.startsWith(t.path));
     return Scaffold(
       body: Stack(
         children: [
           Positioned.fill(child: child),
-          if (tabs.isNotEmpty)
+          // Sekme olmayan kabuk sayfasında (yönetici için Sıra) çubuk yok.
+          if (selected >= 0)
             Positioned(
               left: 0,
               right: 0,
