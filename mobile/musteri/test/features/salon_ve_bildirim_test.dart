@@ -103,7 +103,8 @@ void main() {
         screenApp(const SalonSecimiEkrani(), TestDeps()),
       );
       await tester.pump();
-      expect(find.text('Henüz salonunuz yok'), findsOneWidget);
+      expect(find.text('Henüz bir salonunuz yok'), findsOneWidget);
+      expect(find.text('Bağlantıyı yapıştır'), findsOneWidget);
     });
 
     testWidgets('hata', (tester) async {

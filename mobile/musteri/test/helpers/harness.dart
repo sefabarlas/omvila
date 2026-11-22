@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:omvila_musteri/app/app.dart';
 import 'package:omvila_musteri/app/config.dart';
 import 'package:omvila_musteri/app/providers.dart';
+import 'package:omvila_musteri/features/booking/domain/booking_draft.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import 'fakes.dart';
@@ -20,6 +22,7 @@ class TestDeps {
     FakeAuthRepository? auth,
     FakeAppointmentsRepository? appointments,
     FakeBrandsRepository? brands,
+    FakeBookingRepository? booking,
     FakePush? push,
     Clock? clock,
     this.config = const AppConfig(apiUrl: 'http://test'),
@@ -27,6 +30,7 @@ class TestDeps {
        appointments =
            appointments ?? FakeAppointmentsRepository(home: doluHome),
        brands = brands ?? FakeBrandsRepository(),
+       booking = booking ?? FakeBookingRepository(),
        push = push ?? FakePush(),
        clock = clock ?? testClock {
     this.auth = auth ?? FakeAuthRepository(store: this.store);
@@ -36,6 +40,7 @@ class TestDeps {
   late final FakeAuthRepository auth;
   final FakeAppointmentsRepository appointments;
   final FakeBrandsRepository brands;
+  final FakeBookingRepository booking;
   final FakePush push;
   final AppConfig config;
   final Clock clock;
@@ -50,6 +55,7 @@ class TestDeps {
     authRepositoryProvider.overrideWithValue(auth),
     appointmentsRepositoryProvider.overrideWithValue(appointments),
     brandsRepositoryProvider.overrideWithValue(brands),
+    bookingRepositoryProvider.overrideWithValue(booking),
     deviceRepositoryProvider.overrideWithValue(device),
     pushServiceProvider.overrideWithValue(push),
     smsCodeRetrieverProvider.overrideWithValue(sms),
@@ -133,11 +139,18 @@ Future<void> screenGoldenTest(
   required Widget Function() screen,
   required TestDeps Function() deps,
   PumpAction pumpBeforeTest = onlyPumpAndSettle,
+  List<Override> overrides = const [],
 }) {
   Widget scenario(ThemeData theme, double scale) => SizedBox(
     width: OmvilaBoyut.ekranGenislik,
     height: 844,
-    child: screenApp(screen(), deps(), theme: theme, textScale: scale),
+    child: screenApp(
+      screen(),
+      deps(),
+      theme: theme,
+      textScale: scale,
+      extraOverrides: overrides,
+    ),
   );
 
   return goldenTest(
@@ -171,3 +184,16 @@ void usePhone(WidgetTester tester) {
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 }
+
+class _SeededBooking extends BookingController {
+  _SeededBooking(this.draft);
+
+  final BookingDraft draft;
+
+  @override
+  BookingDraft? build() => draft;
+}
+
+/// Randevu alma akışını [draft] ile başlatılmış sayar.
+Override seedBooking(BookingDraft draft) =>
+    bookingProvider.overrideWith(() => _SeededBooking(draft));

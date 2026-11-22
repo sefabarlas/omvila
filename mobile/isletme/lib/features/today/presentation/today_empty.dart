@@ -59,7 +59,7 @@ class TodayEmpty extends ConsumerWidget {
             icon: LucideIcons.users,
             title: 'Kapıdan gelen müşteriyi sıraya al',
             subtitle: 'Randevusuz gelenler için',
-            onTap: () => context.go(Routes.walkIns),
+            onTap: () => context.push(Routes.walkIns),
           ),
       ],
     );

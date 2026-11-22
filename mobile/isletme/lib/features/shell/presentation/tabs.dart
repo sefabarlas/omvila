@@ -51,6 +51,12 @@ abstract final class Routes {
   /// Profil (Primim dahil).
   static const profile = '/profil';
 
+  /// Bildirim ayarları (BildirimAyar).
+  static const notificationSettings = '/profil/bildirim-ayarlari';
+
+  /// Müşteri kartı.
+  static String customer(String id) => '$customers/$id';
+
   /// Yeni randevu.
   static const newAppointment = '/yeni-randevu';
 

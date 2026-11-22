@@ -9,6 +9,8 @@ import 'package:omvila_musteri/features/appointments/data/appointments_repositor
 import 'package:omvila_musteri/features/appointments/domain/randevu_metinleri.dart';
 import 'package:omvila_musteri/features/appointments/presentation/home_provider.dart';
 import 'package:omvila_musteri/features/appointments/presentation/kahraman_karti.dart';
+import 'package:omvila_musteri/features/booking/domain/booking_draft.dart';
+import 'package:omvila_musteri/features/booking/presentation/booking_controller.dart';
 import 'package:omvila_musteri/features/brands/presentation/salon_ekleme.dart';
 import 'package:omvila_musteri/features/notifications/presentation/bildirim_kapali_seridi.dart';
 import 'package:omvila_musteri/features/notifications/presentation/notification_prefs_controller.dart';
@@ -17,7 +19,8 @@ import 'package:omvila_musteri/shared/widgets/durum_desenleri.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 /// Randevularım (Main, MainBos, MainYaklasanYok, MainBildirimKapali).
-/// Randevu detayı, Geçmiş ve Bildirimler ekranları sonraki PR'larda (T-106).
+/// Kart randevu detayına, "Geçmiş" Geçmiş'e, "Aynısını tekrar al" (KK2)
+/// önceki randevuyla dolu randevu alma akışına gider.
 class RandevularimEkrani extends ConsumerWidget {
   /// Ekran.
   const RandevularimEkrani({super.key});
@@ -78,39 +81,69 @@ class RandevularimEkrani extends ConsumerWidget {
       ];
     }
 
+    void gecmis() => context.push(Routes.gecmis);
     final upcoming = data.upcoming;
+    final last = data.last;
     if (upcoming.isEmpty) {
       return [
         YaklasanYok(
-          son: data.last,
-          onRebook: yeniRandevu,
+          son: last,
+          onRebook: last == null
+              ? yeniRandevu
+              : () => aynisiniTekrarAl(
+                  context,
+                  ref,
+                  BookingDraft.rebook(
+                    brand: last.brand,
+                    branchId: last.branch.id,
+                    branchName: last.branch.name,
+                    items: last.items,
+                  ),
+                ),
           onNew: yeniRandevu,
         ),
+        if (last != null)
+          Align(
+            child: TextButton(
+              onPressed: gecmis,
+              child: const Text('Geçmiş randevular'),
+            ),
+          ),
       ];
     }
 
     final clock = ref.watch(clockProvider);
     return [
-      KahramanKarti(randevu: upcoming.first, clock: clock),
+      KahramanKarti(
+        randevu: upcoming.first,
+        clock: clock,
+        onTap: () => context.push(Routes.randevu(upcoming.first.id)),
+      ),
       const SizedBox(height: OmvilaBosluk.bosluk3),
       _YeniRandevuButonu(onPressed: yeniRandevu),
-      if (upcoming.length > 1) ...[
-        const SizedBox(height: OmvilaBosluk.bosluk6),
-        Semantics(
-          header: true,
-          child: Text(
-            'Yaklaşan',
-            style: OmvilaYazi.baslik3.copyWith(
-              color: context.omvilaRenkler.metin,
-              fontWeight: FontWeight.w800,
-            ),
+      const SizedBox(height: OmvilaBosluk.bosluk4),
+      Row(
+        children: [
+          Expanded(
+            child: upcoming.length > 1
+                ? Semantics(
+                    header: true,
+                    child: Text(
+                      'Yaklaşan',
+                      style: OmvilaYazi.baslik3.copyWith(
+                        color: context.omvilaRenkler.metin,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
           ),
-        ),
-        const SizedBox(height: OmvilaBosluk.bosluk3),
-        for (final a in upcoming.skip(1)) ...[
-          _RandevuKartiSatiri(randevu: a),
-          const SizedBox(height: OmvilaBosluk.bosluk2),
+          TextButton(onPressed: gecmis, child: const Text('Geçmiş')),
         ],
+      ),
+      for (final a in upcoming.skip(1)) ...[
+        _RandevuKartiSatiri(randevu: a),
+        const SizedBox(height: OmvilaBosluk.bosluk2),
       ],
     ];
   }
@@ -152,6 +185,7 @@ class _RandevuKartiSatiri extends ConsumerWidget {
     final a = randevu;
     final status = RandevuDurumu.fromDisplayStatus(a.displayStatus);
     return RandevuKarti(
+      onTap: () => context.push(Routes.randevu(a.id)),
       salonAdi: a.brand.name,
       hizmetVePersonel: ozetSatiri([
         hizmetlerMetni(a.items),
@@ -174,7 +208,21 @@ class _RandevuKartiSatiri extends ConsumerWidget {
 /// İlk giriş kartı (MainBos, KK1): salon keşfi yok; QR veya bağlantı.
 class IlkSalonKarti extends StatelessWidget {
   /// Kart.
-  const IlkSalonKarti({required this.onQr, required this.onPaste, super.key});
+  const IlkSalonKarti({
+    required this.onQr,
+    required this.onPaste,
+    this.baslik = 'İlk randevunuzu alın',
+    this.aciklama =
+        'Randevu almak için salonunuzun bağlantısını açın ya da '
+        'salondaki QR kodu okutun.',
+    super.key,
+  });
+
+  /// Başlık.
+  final String baslik;
+
+  /// Açıklama.
+  final String aciklama;
 
   /// "QR kodu okut".
   final VoidCallback onQr;
@@ -213,14 +261,13 @@ class IlkSalonKarti extends StatelessWidget {
           Semantics(
             header: true,
             child: Text(
-              'İlk randevunuzu alın',
+              baslik,
               style: OmvilaYazi.baslik2.copyWith(color: r.blokKumMetin),
             ),
           ),
           const SizedBox(height: OmvilaBosluk.bosluk2),
           Text(
-            'Randevu almak için salonunuzun bağlantısını açın ya da '
-            'salondaki QR kodu okutun.',
+            aciklama,
             style: OmvilaYazi.ikincil.copyWith(color: r.blokKumMetin),
           ),
           const SizedBox(height: OmvilaBosluk.bosluk4),

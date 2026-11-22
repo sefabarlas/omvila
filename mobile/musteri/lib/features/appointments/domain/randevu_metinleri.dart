@@ -72,3 +72,19 @@ String _bulunmaEki(String name) {
   final consonant = 'fstkçşhp'.contains(last) ? 't' : 'd';
   return '$consonant${'aıou'.contains(lastVowel) ? 'a' : 'e'}';
 }
+
+/// Saatin bulunma eki, okunuşun son sözcüğüne göre: "15:45" (kırk beş) →
+/// "te", "16:30" (otuz) → "da", "12:00" (on iki) → "de".
+String saatEki(String clock) {
+  final [h, m] = clock.split(':').map(int.parse).toList();
+  final n = m == 0 ? h : m;
+  const birler = ['da', 'de', 'de', 'te', 'te', 'te', 'da', 'de', 'de', 'da'];
+  const onlar = ['da', 'da', 'de', 'da', 'ta', 'de'];
+  return n % 10 == 0 ? onlar[n ~/ 10] : birler[n % 10];
+}
+
+/// "15:45'te biter".
+String bitisSaati(DateTime endUtc, String timeZone) {
+  final t = formatTime(endUtc, timeZone);
+  return "$t'${saatEki(t)} biter";
+}

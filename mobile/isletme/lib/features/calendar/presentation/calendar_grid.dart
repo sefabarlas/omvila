@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_isletme/features/calendar/presentation/day_strip.dart';
-import 'package:omvila_isletme/shared/local_date.dart';
 import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 

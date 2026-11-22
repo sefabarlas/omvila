@@ -106,7 +106,7 @@ final FutureProviderFamily<SlotSearchResult, SlotQuery> slotsProvider =
                       staffId: query.staffId,
                     ),
                 ],
-                date: DateTime.parse(query.date),
+                date: parseLocalDate(query.date),
               ),
             ),
       );

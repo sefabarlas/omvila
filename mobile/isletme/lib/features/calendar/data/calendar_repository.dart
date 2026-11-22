@@ -29,8 +29,8 @@ final FutureProviderFamily<CalendarView, CalendarRange> calendarProvider =
             .getManageCalendarApi()
             .manageGetCalendar(
               branchId: range.branchId,
-              from: DateTime.parse(range.from),
-              to: DateTime.parse(range.to),
+              from: parseLocalDate(range.from),
+              to: parseLocalDate(range.to),
               staffIds: range.staffIds?.split(','),
             );
         return response.data!;

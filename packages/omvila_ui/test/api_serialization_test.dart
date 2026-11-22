@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omvila_api/omvila_api.dart';
+import 'package:omvila_ui/format.dart';
 
 // Üretilmiş Dart istemcisinin (packages/api-client-dart) tarih ve dizi sorgu
 // parametresi biçimi. Şablonlar: contracts/templates/dart-dio (T-110).
@@ -91,6 +92,18 @@ void main() {
       final sent = jsonDecode(adapter.requests.single.data as String) as Map;
       expect(sent['fromDate'], '2026-11-25');
     });
+  });
+
+  test('parseLocalDate ve localDateOf aynı günü taşır', () {
+    final body = DaySearchRequest(
+      items: [AppointmentItemRequest(serviceId: 's1')],
+      from: parseLocalDate('2026-11-24'),
+      to: parseLocalDate('2026-12-24'),
+    ).toJson();
+    expect(body['from'], '2026-11-24');
+    expect(body['to'], '2026-12-24');
+    expect(localDateOf(DateTime.parse('2026-11-26')), '2026-11-26');
+    expect(localDateOf(parseLocalDate('2026-02-03')), '2026-02-03');
   });
 
   test('date-time alanları UTC ISO 8601 olarak kalır', () {
