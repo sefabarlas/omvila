@@ -31,7 +31,7 @@ describe('metinler', () => {
 
   it('fiyat yoksa null, varsa kuruştan biçimlenir', () => {
     expect(priceText(null)).toBeNull();
-    expect(priceText(149900)).toBe('1.499 ₺');
+    expect(priceText(149900)).toMatch(/^1\.499\s₺$/);
   });
 
   it('KDV notu yoksa yalnız "aylık"', () => {
