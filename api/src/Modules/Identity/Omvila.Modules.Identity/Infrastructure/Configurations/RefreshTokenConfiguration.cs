@@ -11,7 +11,7 @@ internal sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<Refre
         builder.ToTable("refresh_tokens", table =>
         {
             table.HasCheckConstraint("ck_refresh_tokens_client_type", "client_type IN ('Web', 'Mobile')");
-            table.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me')");
+            table.HasCheckConstraint("ck_refresh_tokens_audience", "audience IN ('manage', 'me', 'admin')");
         });
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Id).ValueGeneratedNever();

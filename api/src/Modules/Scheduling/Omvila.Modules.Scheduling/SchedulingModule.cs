@@ -77,9 +77,7 @@ public static class SchedulingModule
         services.AddPeriodicJob<ExpireWaitlistEntries, SchedulingOptions>(o => Duration.FromMinutes(o.ExpireWaitlistEntriesIntervalMinutes));
         services.AddPeriodicJob<ExpireAppointmentHolds, SchedulingOptions>(
             o => Duration.FromSeconds(o.ExpireAppointmentHoldsIntervalSeconds));
-        services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
-        services.AddPeriodicJob<ExtendRecurringSeries, SchedulingOptions>(
-            o => Duration.FromMinutes(o.ExtendRecurringSeriesIntervalMinutes));
+        AddJobsAndReporting(services);
         // Demo verisi (--role=seed; T-74, T-114): randevular AppointmentWriter ile, bekleme kaydı ve kapıda sıra; --reset'te markanın satırları.
         services.AddScoped(sp => new DemoData.SchedulingDemoData(
             sp.GetRequiredService<SchedulingDbContext>(), sp.GetRequiredService<AppointmentWriter>(),
@@ -90,11 +88,23 @@ public static class SchedulingModule
         return services;
     }
 
+    // Gelmedi ve seri işleri; Dilim 6 (T-120): Genel bakış ve gün sonu özeti.
+    private static void AddJobsAndReporting(IServiceCollection services)
+    {
+        services.AddPeriodicJob<MarkNoShows, SchedulingOptions>(o => Duration.FromSeconds(o.MarkNoShowsIntervalSeconds));
+        services.AddPeriodicJob<ExtendRecurringSeries, SchedulingOptions>(
+            o => Duration.FromMinutes(o.ExtendRecurringSeriesIntervalMinutes));
+        services.AddScoped<Features.Overview.OverviewReader>();
+        services.AddPeriodicJob<SendDailySummaries, SchedulingOptions>(o => Duration.FromSeconds(o.SendDailySummariesIntervalSeconds));
+    }
+
     // Diğer modüllere açılan sözleşmelerin uygulamaları. Müşteri birleştirme ve KVKK silmesi (T-92): randevular, seriler,
     // bekleme kayıtları ve kapıda sıra biletleri.
     private static void AddContractImplementations(IServiceCollection services)
     {
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        // Platform paneli randevu sayıları (yalnız platform bağlamında).
+        services.AddScoped<IPlatformAppointmentStats, Infrastructure.PlatformAppointmentStats>();
         services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
         // D5 müşteri uygulaması Randevularım (T-104).
         services.AddScoped<Features.Me.MeAppointmentReader>();
@@ -118,6 +128,7 @@ public static class SchedulingModule
         PublicAppointmentLinkEndpoints.Map(app);
         Features.Me.MeAppointmentEndpoints.Map(app);
         WaitlistEndpoints.Map(app);
+        Features.Overview.OverviewEndpoints.Map(app);
         return app;
     }
 }

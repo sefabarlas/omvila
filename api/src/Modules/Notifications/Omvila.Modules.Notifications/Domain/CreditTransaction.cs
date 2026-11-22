@@ -9,6 +9,12 @@ internal sealed class CreditTransaction
     /// <summary>Düşüm ve iadenin kaynak türü (notification_outbox satırı).</summary>
     public const string NotificationReferenceType = "Notification";
 
+    /// <summary>Platform eklemesinin kaynak türü (neden Platform'un denetim kaydındadır).</summary>
+    public const string PlatformGrantReferenceType = "PlatformGrant";
+
+    /// <summary>Deneme hediyesinin kaynak türü (ISubscriptionProvisioning: Platform'un Subscription'ı).</summary>
+    public const string TrialGiftReferenceType = "Subscription";
+
     private CreditTransaction()
     {
     }
@@ -74,6 +80,34 @@ internal sealed class CreditTransaction
             ReferenceType = referenceType,
             ReferenceId = referenceId,
             UnitPriceMinor = unitPriceMinor,
+            CreatedUtc = now,
+        };
+    }
+
+    /// <summary>
+    /// Platform eklemesi veya düzeltmesi (sözleşme adminGrantCredits; tür Grant, eksi değer düzeltme). Bakiye sıfırın altına inemez;
+    /// çağıran önceden denetler, CHECK kısıtı son savunmadır.
+    /// </summary>
+    public static CreditTransaction PlatformGrant(Guid id, Guid brandId, int credits, int balanceBefore, Instant now)
+    {
+        if (credits == 0)
+        {
+            throw new DomainException("Eklenen kontör sıfır olamaz.");
+        }
+
+        if (checked(balanceBefore + credits) < 0)
+        {
+            throw new DomainException("Kontör bakiyesi negatif olamaz.");
+        }
+
+        return new CreditTransaction
+        {
+            Id = id,
+            BrandId = brandId,
+            Type = CreditTransactionType.Grant,
+            Amount = credits,
+            BalanceAfter = balanceBefore + credits,
+            ReferenceType = PlatformGrantReferenceType,
             CreatedUtc = now,
         };
     }

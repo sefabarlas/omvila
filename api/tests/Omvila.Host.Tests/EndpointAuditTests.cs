@@ -13,4 +13,13 @@ public sealed class EndpointAuditTests(WebApplicationFactory<Program> factory) :
 
         EndpointAudit.FindUnmarkedApiEndpoints(factory.Services).ShouldBeEmpty();
     }
+
+    // Kural: roller-yetkiler.md § Platform rolleri, ADR-0007 — admin uçları platform izni ve admin şeması ister; salon uçları platform izni istemez.
+    [Fact]
+    public void AdminEndpoints_DeclarePlatformPermissionOnAdminSurface()
+    {
+        using var client = factory.CreateClient();
+
+        EndpointAudit.FindMisdeclaredAdminEndpoints(factory.Services).ShouldBeEmpty();
+    }
 }

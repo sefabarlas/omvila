@@ -34,6 +34,8 @@ public static class NotificationsModule
         services.AddModuleDbContext<NotificationsDbContext>(NotificationsDbContext.Schema);
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
         services.AddScoped<ICreditLedger, CreditLedger>();
+        // Platform paneli: bakiyeler, kontör hareketleri, gönderen adı ve platform kontör eklemesi (K4).
+        services.AddScoped<IPlatformCredits, Infrastructure.PlatformCredits>();
         services.AddPeriodicJob<DispatchNotifications, NotificationsOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
         services.AddScoped<SmsDeliveryReportHandler>();
         services.AddScoped<AppointmentSms>();
@@ -44,12 +46,10 @@ public static class NotificationsModule
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
         services.AddBrandDataEraser<NotificationsDbContext>();
+        services.AddIntegrationEventHandler<BranchDailySummaryReady, NotifyDailySummary>();
         services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
-        // İşletme e-postaları (bildirimler.md § E-posta; T-118): kontör azaldı, deneme bitiyor, abonelik ödemesi alınamadı.
-        services.AddIntegrationEventHandler<SmsCreditsLow, EmailCreditsLow>();
-        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionTrialEnding, EmailOwnerAboutSubscription>();
-        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionPastDue, EmailOwnerAboutSubscription>();
+        AddOwnerEmails(services);
         services.AddIntegrationEventHandler<AppointmentConfirmed, SendAppointmentConfirmation>();
         services.AddIntegrationEventHandler<AppointmentRescheduled, NotifyAppointmentRescheduled>();
         services.AddIntegrationEventHandler<AppointmentCancelledBySalon, NotifyAppointmentCancelledBySalon>();
@@ -75,6 +75,14 @@ public static class NotificationsModule
     }
 
     /// <summary>Notifications uçları: SMS teslim raporu webhook'u, cihaz kaydı, bildirim paneli, SMS özeti ve gönderen adı.</summary>
+    // İşletme e-postaları (bildirimler.md § E-posta; T-118): kontör azaldı, deneme bitiyor, abonelik ödemesi alınamadı.
+    private static void AddOwnerEmails(IServiceCollection services)
+    {
+        services.AddIntegrationEventHandler<SmsCreditsLow, EmailCreditsLow>();
+        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionTrialEnding, EmailOwnerAboutSubscription>();
+        services.AddIntegrationEventHandler<Platform.Contracts.SubscriptionPastDue, EmailOwnerAboutSubscription>();
+    }
+
     public static IEndpointRouteBuilder MapNotificationsEndpoints(this IEndpointRouteBuilder app)
     {
         SmsDeliveryReportEndpoints.Map(app);

@@ -34,14 +34,15 @@
 - Global `customers.customers` tablosunda `brand_id` yoktur. Marka bağlamı bu tabloyu yalnız `brand_customers` üzerinden bağlı satırlar için okur (politika `EXISTS`). Bir marka, telefonla arama yaparken başka markanın müşterisinin varlığını öğrenemez: arama `brand_customers` üzerinden yapılır; yeni müşteri eklerken global kayıt sunucuda bulunur veya oluşturulur ve yanıtta yalnız markanın kendi görünümü döner.
 - Kapsam dışı kayıt → `404`.
 
-**İstisna K4: platformun başka modüllere yazması (2026-11-22, ürün sahibi kararı)**
+**İstisna K4: platformun başka modüllere yazması ve platform paneli okumaları (2026-11-22, ürün sahibi kararı; T-118, T-119)**
 
-Platform paneli ve abonelik işleri bazı durumlarda başka modülün verisini değiştirmek zorundadır: havale eşleşince kontör eklemek (Notifications), SMS gönderen adını onaylamak (Notifications), markayı askıya almak veya iptalden sonra arşive almak (Tenancy). Bu yazımlar:
+Platform paneli ve abonelik işleri bazı durumlarda başka modülün verisini okumak veya değiştirmek zorundadır: markaları ve sayıları listelemek, havale eşleşince veya Yönetici eklediğinde kontör yazmak (Notifications), SMS gönderen adını onaylamak (Notifications), markayı askıya almak, yeniden açmak veya iptalden sonra arşive almak (Tenancy). Kurallar:
 
-1. Yalnız **o modülün Contracts arayüzü** üzerinden yapılır (ör. `ICreditLedger.PurchaseAsync`, Tenancy `IBrandBilling.ArchiveAsync`). Platform başka modülün tablosuna veya iç sınıfına dokunmaz; kural, doğrulama ve kayıt şekli sahibi modülde kalır.
-2. Çağrı, işin kendi transaction'ında yapılır; mümkünse oturum o markanın bağlamına geçirilir (`TenantScope.ForBrand`), böylece RLS yine çalışır. Marka ötesi tarama yapan iş (`AdvanceSubscriptionStatuses`) platform bağlamında kalır ve yalnız Contracts arayüzünü çağırır.
-3. Platform kullanıcısının yaptığı her yazım denetim kaydına (`IAuditLog`, `ActorType = PlatformUser`) yazılır.
-4. Platform kullanıcısı salonun iş verisini (randevu, müşteri, tahsilat) değiştiremez; istisna yalnız abonelik, kontör, SMS gönderen adı ve marka durumu içindir (guvenlik-kvkk.md § Platform erişimi).
+1. **Okuma:** admin isteği platform bağlamında açılır (`TenantScope.Platform`). Platform modülü başka modülün tablosunu doğrudan okumaz; her modül Contracts'ta işaretli bir platform okuma servisi sunar (ör. `IPlatformBrandDirectory`, `IPlatformCredits`) ve servis platform bağlamı dışında çağrılırsa istisna atar. Yalnız sayılar ve platform ekranının gösterdiği alanlar döner; telefon maskelenir.
+2. **Yazma:** yalnız **o modülün Contracts arayüzü** üzerinden ve o modülün aggregate kurallarıyla yapılır (ör. `IPlatformCredits.GrantAsync`, `ICreditLedger.PurchaseAsync`, `IPlatformBrandDirectory.ChangeStatusAsync`, `IBrandBilling.ArchiveAsync`). Platform başka modülün tablosuna veya iç sınıfına dokunmaz.
+3. Çağrı işin kendi transaction'ında yapılır; tek markaya yazımda oturum mümkünse o markanın bağlamına geçirilir (`TenantScope.ForBrand`), böylece RLS yine çalışır. Marka ötesi tarama yapan iş (`AdvanceSubscriptionStatuses`) platform bağlamında kalır ve yalnız Contracts arayüzünü çağırır.
+4. Platform kullanıcısının her yazımı ve marka verisini her görüntülemesi denetim kaydına (`IAuditLog`, `ActorType = PlatformUser`) yazılır.
+5. Platform kullanıcısı salonun iş verisini (randevu, müşteri, tahsilat) değiştiremez; istisna yalnız abonelik, kontör, SMS gönderen adı ve marka durumu içindir (guvenlik-kvkk.md § Platform erişimi).
 
 ## Sonuçlar
 - Her yeni tablo için RLS politikası migration'da zorunludur. `Omvila.ArchitectureTests` içindeki veritabanı testi, `brand_id` sütunu olan ve politikası olmayan tablo bulursa başarısız olur.

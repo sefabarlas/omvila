@@ -64,6 +64,16 @@ internal sealed class Subscription
     public Instant CreatedUtc { get; private set; }
 
     /// <summary>
+    /// Plan değişikliği (sözleşme adminChangePlan): hemen geçerlidir, yeni fiyat bir sonraki faturadan uygulanır. Sınır denetimi
+    /// (personel, şube) çağıranda yapılır; etkin olmayan plan verilmez.
+    /// </summary>
+    public void ChangePlan(Guid planId, BillingCycle billingCycle)
+    {
+        PlanId = planId;
+        BillingCycle = billingCycle;
+    }
+
+    /// <summary>
     /// Deneme: bugün başlar, TrialEndsOn = bugün + trialDays; o gün deneme biter ve ilk ücretli dönem başlar (T-118).
     /// Bir şube, bir personel (sahip). Havale kodları markaya sabittir.
     /// </summary>

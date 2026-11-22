@@ -59,6 +59,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddExceptionHandler<DatabaseExceptionHandler>();
         services.AddAuthorization();
         services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationHandler, AdminPermissionAuthorizationHandler>();
         services.AddModuleDbContext<InfraDbContext>(InfraDbContext.Schema);
         services.AddTransient<MigrationRunner>();
 
