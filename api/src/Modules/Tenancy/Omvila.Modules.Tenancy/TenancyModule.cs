@@ -40,6 +40,7 @@ public static class TenancyModule
         services.AddScoped<IBranchScheduleQueries, BranchScheduleQueries>();
         services.AddScoped<PublicBookingQueries>();
         services.AddScoped<IPublicBookingQueries>(sp => sp.GetRequiredService<PublicBookingQueries>());
+        services.AddScoped<ICustomerBrandDirectory, CustomerBrandDirectory>();
         services.AddScoped<OnboardingService>();
         services.AddScoped<StaffReader>();
         services.AddScoped<StaffWriter>();

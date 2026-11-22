@@ -18,6 +18,9 @@ internal sealed class CustomersDbContext(DbContextOptions<CustomersDbContext> op
 
     public DbSet<CustomerImport> CustomerImports => Set<CustomerImport>();
 
+    /// <summary>Müşteri uygulamasında eklenen salonlar (RLS: marka veya müşterinin kendisi).</summary>
+    public DbSet<CustomerSavedBrand> SavedBrands => Set<CustomerSavedBrand>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);
