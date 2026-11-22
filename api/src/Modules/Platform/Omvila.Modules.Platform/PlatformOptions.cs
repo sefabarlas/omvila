@@ -26,6 +26,12 @@ public sealed class PlatformOptions
     /// <summary>AdvanceSubscriptionStatuses turu (dakika). Kurallar gün bazlıdır; saatlik tur yeterlidir.</summary>
     public int AdvanceSubscriptionStatusesIntervalMinutes { get; set; }
 
+    /// <summary>Banka dökümü CSV'sinin en büyük boyutu (bayt; adminImportBankTransactions errors.file = [too_large]; T-124).</summary>
+    public int BankImportMaxBytes { get; set; }
+
+    /// <summary>Banka dökümü CSV'sinde en çok satır (başlık hariç).</summary>
+    public int BankImportMaxRows { get; set; }
+
     /// <summary>Deneme aboneliğinin bağlandığı plan (Trialing'de her şey açıktır; durum-makinesi.md).</summary>
     public string TrialPlanCode { get; set; } = string.Empty;
 
@@ -47,6 +53,7 @@ public sealed class PlatformOptions
     internal bool IsValid() =>
         TrialDays > 0 && PastDueGraceDays > 0 && ReadOnlyToCancelledDays > 0 && CancelledArchiveDays > 0
         && TrialEndingNoticeDays > 0 && TrialEndingNoticeDays < TrialDays && AdvanceSubscriptionStatusesIntervalMinutes > 0
+        && BankImportMaxBytes > 0 && BankImportMaxRows > 0
         && !string.IsNullOrWhiteSpace(TrialPlanCode) && TrialCredits is null or > 0
         && VatRatePercent is null or (>= 0 and <= 100)
         && OmvilaBankAccount.IsEmptyOrValid()

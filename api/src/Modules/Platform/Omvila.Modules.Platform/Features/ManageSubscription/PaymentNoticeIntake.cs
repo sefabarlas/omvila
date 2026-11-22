@@ -61,7 +61,7 @@ internal sealed class PaymentNoticeIntake(
         {
             await using var content = receipt.OpenReadStream();
             var key = await files.SaveAsync(ReceiptArea, notice.Id, receiptType!.Value.Extension, content, ct);
-            notice.AttachReceipt(key, receiptType.Value.ContentType);
+            notice.AttachReceipt(key, receiptType.Value.ContentType, Path.GetFileName(receipt.FileName), receipt.Length);
         }
 
         db.PaymentNotices.Add(notice);

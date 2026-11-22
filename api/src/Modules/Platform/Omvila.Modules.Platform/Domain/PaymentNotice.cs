@@ -12,6 +12,8 @@ internal sealed class PaymentNotice
     public const int SenderNameMaxLength = 120;
     public const int ReceiptKeyMaxLength = 200;
     public const int ReceiptContentTypeMaxLength = 40;
+    public const int ReceiptFileNameMaxLength = 120;
+    public const int ResolutionMessageMaxLength = 300;
 
     private PaymentNotice()
     {
@@ -43,6 +45,11 @@ internal sealed class PaymentNotice
 
     public string? ReceiptContentType { get; private set; }
 
+    /// <summary>Dekontun yüklenirken verilen adı ("dekont-ziraat.pdf"); gösterim içindir, dosya anahtarı değildir.</summary>
+    public string? ReceiptFileName { get; private set; }
+
+    public long? ReceiptSizeBytes { get; private set; }
+
     public Guid? NotifiedByUserId { get; private set; }
 
     public Instant NotifiedUtc { get; private set; }
@@ -54,6 +61,12 @@ internal sealed class PaymentNotice
     public Guid? ResolvedByUserId { get; private set; }
 
     public Instant? ResolvedUtc { get; private set; }
+
+    /// <summary>Platform ekibinin markaya notu (NotFound, Rejected).</summary>
+    public string? ResolutionMessage { get; private set; }
+
+    /// <summary>Satır sürümü (xmin; If-Match).</summary>
+    public uint Version { get; private set; }
 
     /// <summary>Abonelik havalesi: ödenen dönem denemede deneme bitişinden başlayan ilk dönem, diğer durumlarda geçerli dönem.</summary>
     public static PaymentNotice ForSubscription(
@@ -99,7 +112,7 @@ internal sealed class PaymentNotice
         };
     }
 
-    public void AttachReceipt(string fileKey, string contentType)
+    public void AttachReceipt(string fileKey, string contentType, string? fileName = null, long? sizeBytes = null)
     {
         if (Status != PaymentNoticeStatus.Pending || string.IsNullOrWhiteSpace(fileKey))
         {
@@ -108,6 +121,8 @@ internal sealed class PaymentNotice
 
         ReceiptFileKey = fileKey;
         ReceiptContentType = contentType;
+        ReceiptFileName = Clean(fileName) is { } name ? (name.Length > ReceiptFileNameMaxLength ? name[^ReceiptFileNameMaxLength..] : name) : null;
+        ReceiptSizeBytes = sizeBytes;
     }
 
     // Kural: durum-makinesi.md § 10 PaymentNotice (Pending → Matched)
@@ -115,10 +130,12 @@ internal sealed class PaymentNotice
         Resolve(PaymentNoticeStatus.Matched, resolvedBy, now, bankTransactionId);
 
     // Kural: durum-makinesi.md § 10 PaymentNotice (Pending → NotFound, "Bulunamadı, markaya yaz")
-    public Result MarkNotFound(Guid resolvedBy, Instant now) => Resolve(PaymentNoticeStatus.NotFound, resolvedBy, now, null);
+    public Result MarkNotFound(Guid resolvedBy, Instant now, string? message = null) =>
+        Resolve(PaymentNoticeStatus.NotFound, resolvedBy, now, null, message);
 
     // Kural: durum-makinesi.md § 10 PaymentNotice (Pending → Rejected)
-    public Result Reject(Guid resolvedBy, Instant now) => Resolve(PaymentNoticeStatus.Rejected, resolvedBy, now, null);
+    public Result Reject(Guid resolvedBy, Instant now, string? message = null) =>
+        Resolve(PaymentNoticeStatus.Rejected, resolvedBy, now, null, message);
 
     internal static string? Clean(string? value)
     {
@@ -126,7 +143,7 @@ internal sealed class PaymentNotice
         return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
-    private Result Resolve(PaymentNoticeStatus status, Guid resolvedBy, Instant now, Guid? bankTransactionId)
+    private Result Resolve(PaymentNoticeStatus status, Guid resolvedBy, Instant now, Guid? bankTransactionId, string? message = null)
     {
         if (Status != PaymentNoticeStatus.Pending)
         {
@@ -137,6 +154,7 @@ internal sealed class PaymentNotice
         ResolvedByUserId = resolvedBy;
         ResolvedUtc = now;
         MatchedBankTransactionId = bankTransactionId;
+        ResolutionMessage = Clean(message);
         return Result.Success();
     }
 }

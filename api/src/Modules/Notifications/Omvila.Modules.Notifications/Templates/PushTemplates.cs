@@ -21,6 +21,12 @@ internal static partial class PushTemplates
     /// <summary>owner.credits_low: tüketim geçmişi yokken tahmini gün yazılmaz; staff.walkin_queue: müsait personel yokken tahmini bekleme yazılmaz.</summary>
     public const string WithoutEstimateVariant = "without_estimate";
 
+    /// <summary>owner.payment_notice_matched: abonelik dönemi ödendi.</summary>
+    public const string SubscriptionVariant = "subscription";
+
+    /// <summary>owner.payment_notice_matched: kontör eklendi.</summary>
+    public const string CreditsVariant = "credits";
+
     private const int RegexTimeoutMilliseconds = 1000;
 
     private static readonly Dictionary<string, (string Title, string Body)> Templates = new(StringComparer.Ordinal)
@@ -47,6 +53,12 @@ internal static partial class PushTemplates
 
         // Katalog metninin tahminsiz hâli (son 30 günde tüketim yok; T-71).
         [Key(NotificationEvents.OwnerCreditsLow, WithoutEstimateVariant)] = ("SMS kontörü azaldı", "{kalan} SMS kaldı."),
+
+        // Havale bildirimi sonuçları (T-124; platform ekibinin notu e-postadadır).
+        [Key(NotificationEvents.OwnerPaymentNoticeMatched, SubscriptionVariant)] = ("Havaleniz eşleşti", "Abonelik ödemeniz alındı; aboneliğiniz aktif."),
+        [Key(NotificationEvents.OwnerPaymentNoticeMatched, CreditsVariant)] = ("Havaleniz eşleşti", "{kontör} SMS kontörü hesabınıza eklendi."),
+        [Key(NotificationEvents.OwnerPaymentNoticeNotFound, null)] = ("Havaleniz bulunamadı", "Bildirdiğiniz havale OMVILA hesabında görünmüyor. Kontrol edip yeniden bildirin."),
+        [Key(NotificationEvents.OwnerPaymentNoticeRejected, null)] = ("Havale bildiriminiz reddedildi", "Bildirim yinelenen veya geçersiz bulundu. Nedeni e-postanızda."),
     };
 
     /// <summary>Tanımlı (olay kodu, çeşit) çiftleri.</summary>
