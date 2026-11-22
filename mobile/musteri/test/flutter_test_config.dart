@@ -3,18 +3,21 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:alchemist/alchemist.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omvila_ui/theme/omvila_theme.dart';
 
+/// packages/omvila_ui/test/flutter_test_config.dart ile aynı ayar (test
+/// dosyaları paketler arasında içe aktarılamaz; değişiklik ikisine birden).
 /// Golden ayarı (docs/standartlar/test-stratejisi.md: alchemist, açık/koyu,
-/// 1.3× yazı); packages/omvila_ui/test/flutter_test_config.dart ile aynı. Depoya yalnız CI goldenleri girer (`goldens/ci/`): metin blok
+/// 1.3× yazı). Depoya yalnız CI goldenleri girer (`goldens/ci/`): metin blok
 /// olarak çizilir, gölge çizilmez; yazı tipinden bağımsız. macOS ve Linux
 /// arasındaki kenar yumuşatma farkını [_AntiAliasTolerantComparator] tolere
 /// eder. Gerçek yazı tipiyle bakmak için `OMVILA_PLATFORM_GOLDENS=1 flutter
 /// test --update-goldens` (çıktı `goldens/macos/` gibi, depo dışı).
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
+  await _loadPackageFonts();
   if (goldenFileComparator case final LocalFileComparator local) {
     goldenFileComparator = _AntiAliasTolerantComparator(
       local.basedir.resolve('flutter_test_config.dart'),
@@ -32,6 +35,22 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   );
 }
 
+/// Tema yazı tipini paket önekiyle ister (`packages/omvila_ui/…`); test
+/// ortamı yazı tiplerini kendiliğinden yüklemediği için elle yüklenir.
+Future<void> _loadPackageFonts() async {
+  const files = {
+    OmvilaYazi.aile:
+        'packages/omvila_ui/fonts/PlusJakartaSans-Latin-Variable.ttf',
+    'PlusJakartaSansTR':
+        'packages/omvila_ui/fonts/PlusJakartaSans-LatinExt-Variable.ttf',
+  };
+  for (final MapEntry(key: family, value: file) in files.entries) {
+    final loader = FontLoader('packages/${OmvilaYazi.paket}/$family')
+      ..addFont(rootBundle.load(file));
+    await loader.load();
+  }
+}
+
 /// macOS ve Linux kenar yumuşatmayı (eğri kenar, nokta, ikon) birkaç tonla
 /// farklı çizer: CI'da ölçülen en büyük kanal farkı 17/255, farklı piksel oranı
 /// en çok %0,65. Bu yüzden iki koşul birlikte aranır: hiçbir kanal
@@ -44,6 +63,13 @@ class _AntiAliasTolerantComparator extends LocalFileComparator {
 
   static const _maxChannelDelta = 24;
   static const _maxDiffRatio = 0.01;
+
+  /// Ekran goldenlerine özgü (omvila_ui'de yok): CI golden yazı tipinde
+  /// olmayan Türkçe harfler (ç, ş, ğ, ı, ö, ü) platformun yedek yazı tipiyle
+  /// ölçülür; macOS ve Linux'ta metin bloğu kenarı 1 px kayar (CI'da ölçülen
+  /// en çok %0,10). Tam kontrastlı farklı piksel bu orana kadar kabul edilir;
+  /// bir rengin veya yerleşimin değişmesi çok daha fazla pikseli etkiler.
+  static const _maxStrongDiffRatio = 0.002;
 
   @override
   Future<bool> compare(Uint8List imageBytes, Uri golden) async {
@@ -65,6 +91,7 @@ class _AntiAliasTolerantComparator extends LocalFileComparator {
     }
 
     var differing = 0;
+    var strong = 0;
     for (var i = 0; i < a.length; i += 4) {
       var delta = 0;
       for (var c = 0; c < 4; c++) {
@@ -75,7 +102,7 @@ class _AntiAliasTolerantComparator extends LocalFileComparator {
       }
 
       if (delta > _maxChannelDelta) {
-        return false;
+        strong++;
       }
 
       if (delta > 0) {
@@ -83,7 +110,9 @@ class _AntiAliasTolerantComparator extends LocalFileComparator {
       }
     }
 
-    return differing <= (a.length ~/ 4) * _maxDiffRatio;
+    final pixels = a.length ~/ 4;
+    return strong <= pixels * _maxStrongDiffRatio &&
+        differing <= pixels * _maxDiffRatio;
   }
 
   static Future<({int width, int height, Uint8List bytes})> _rgba(
