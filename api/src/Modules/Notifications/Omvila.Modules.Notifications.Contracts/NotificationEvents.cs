@@ -116,4 +116,7 @@ public static class NotificationEvents
 
     /// <summary>İşletme e-postası (Owner): SMS gönderen adı reddedildi (T-124).</summary>
     public const string OwnerSmsSenderRejected = "owner.sms_sender_rejected";
+
+    /// <summary>İşletme e-postası (isteyen kullanıcı): "Verileriniz hazır" (Tüm verileri dışa aktar indirme bağlantısı; T-121).</summary>
+    public const string OwnerDataExportReady = "owner.data_export_ready";
 }

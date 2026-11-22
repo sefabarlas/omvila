@@ -74,6 +74,7 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.credits_low` | Kontör eşiğin altına inince (push ile birlikte) |
 | `owner.subscription_payment_failed` | Çekim başarısız / havale gelmedi |
 | `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte). Konu `Havaleniz eşleşti`; abonelikte "Aboneliğiniz aktif", kontörde eklenen SMS sayısı; buton `Aboneliği aç` (T-124) |
+| `owner.data_export_ready` | "Tüm verileri dışa aktar" arşivi hazır: indirme bağlantısı (`DataExportLinkValidityDays` geçerli; alıcı isteği yapanın verdiği adres; metin taslak, T-121) |
 | `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte). Konu `Havaleniz bulunamadı` / `Havale bildiriminiz reddedildi`; "OMVILA ekibinin notu: {not}"; buton `Yeniden bildir` / `Aboneliği aç` (T-124) |
 | `owner.sms_sender_approved` / `owner.sms_sender_rejected` | SMS gönderen adı onaylandı / onaylanmadı (yalnız e-posta; panel olay kodu sözleşmede yok, T-124). Konu `SMS gönderen adınız onaylandı` / `SMS gönderen adınız onaylanmadı`; retde "Neden: {neden}"; buton `Ayarları aç` |
 

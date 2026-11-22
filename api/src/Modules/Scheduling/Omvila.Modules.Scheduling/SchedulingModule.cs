@@ -111,6 +111,7 @@ public static class SchedulingModule
         services.AddScoped<CustomerDataParticipant>();
         services.AddScoped<Customers.Contracts.ICustomerMergeParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
         services.AddScoped<Customers.Contracts.ICustomerErasureParticipant>(sp => sp.GetRequiredService<CustomerDataParticipant>());
+        services.AddScoped<Customers.Contracts.IBrandDataExportParticipant, AppointmentsExportParticipant>();
     }
 
     public static IEndpointRouteBuilder MapSchedulingEndpoints(this IEndpointRouteBuilder app)

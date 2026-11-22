@@ -36,6 +36,7 @@ public static class PlatformModule
         services.AddScoped<ISubscriptionProvisioning, SubscriptionProvisioning>();
         services.AddScoped<ISubscriptionQueries, SubscriptionQueries>();
         services.AddScoped<IAuditLog, AuditLog>();
+        services.AddScoped<IAuditLogRetention, AuditLogRetention>();
         services.AddSingleton<PlanSeeder>();
         services.AddScoped<InvoiceNumberAllocator>();
         services.AddScoped<SubscriptionBilling>();

@@ -83,6 +83,18 @@ public interface IAppointmentQueries
         Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct);
 
     /// <summary>
+    /// Personelin takvim aktarımı için randevuları (Google Takvim, K7): başlangıcı aralıkta olan, taslak olmayan ve personelin
+    /// en az bir kalemi olan randevular (iptal edilenler dahil: takvimden silinir). Saat ve hizmetler yalnız personelin kalemlerinden.
+    /// </summary>
+    /// <param name="brandId">Marka.</param>
+    /// <param name="staffId">Personel.</param>
+    /// <param name="fromUtc">Aralık başı.</param>
+    /// <param name="toUtc">Aralık sonu (hariç).</param>
+    /// <param name="ct">İptal belirteci.</param>
+    Task<IReadOnlyList<StaffCalendarAppointment>> ListForStaffCalendarAsync(
+        Guid brandId, Guid staffId, Instant fromUtc, Instant toUtc, CancellationToken ct);
+
+    /// <summary>
     /// Raporların randevuları (Raporlar ve prim): [<paramref name="fromUtc"/>, <paramref name="toUtc"/>) aralığında başlayan,
     /// taslak ve iptal dışı randevular ve iptal edilmemiş kalemleri, başlangıca göre artan. Tek sorgu.
     /// </summary>

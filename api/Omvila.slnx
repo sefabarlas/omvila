@@ -25,6 +25,10 @@
     <Project Path="src/Modules/Platform/Omvila.Modules.Platform.Contracts/Omvila.Modules.Platform.Contracts.csproj" />
     <Project Path="src/Modules/Platform/Omvila.Modules.Platform/Omvila.Modules.Platform.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Integrations/">
+    <Project Path="src/Modules/Integrations/Omvila.Modules.Integrations.Contracts/Omvila.Modules.Integrations.Contracts.csproj" />
+    <Project Path="src/Modules/Integrations/Omvila.Modules.Integrations/Omvila.Modules.Integrations.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Reviews/">
     <Project Path="src/Modules/Reviews/Omvila.Modules.Reviews.Contracts/Omvila.Modules.Reviews.Contracts.csproj" />
     <Project Path="src/Modules/Reviews/Omvila.Modules.Reviews/Omvila.Modules.Reviews.csproj" />
