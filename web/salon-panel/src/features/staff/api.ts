@@ -22,10 +22,12 @@ export function staffDetailQuery(api: Api, staffId: string) {
 
 function useStaffInvalidation() {
   const queryClient = useQueryClient();
-  // Personel listesi, hizmetlerdeki "Kimler veriyor?" ve kurulumun "ekibiniz" adımı birlikte değişir.
+  // Personel listesi, hizmetlerdeki "Kimler veriyor?", kurulumun "ekibiniz" adımı ve Roller'deki kullanıcılar
+  // (davet edilen üyelik) birlikte değişir.
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.staff() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.users() }),
       queryClient.invalidateQueries({ queryKey: ['services'] }),
       queryClient.invalidateQueries({ queryKey: queryKeys.onboarding() }),
     ]);

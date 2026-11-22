@@ -1,4 +1,6 @@
 import type { ManageSession } from '@/app/api';
+import { createAccessFake } from './fake-access';
+import type { AccessFakeOptions } from './fake-access';
 import { createCalendarFake } from './fake-calendar';
 import type { CalendarFakeOptions } from './fake-calendar';
 import { createCustomersFake } from './fake-customers';
@@ -51,6 +53,7 @@ export const ownerPermissions = [
   'customer.kvkk',
   'package.sell',
   'package.manage',
+  'settings.roles',
 ];
 export const staffPermissions = [
   'calendar.view',
@@ -130,6 +133,8 @@ export interface FakeApiOptions {
   packages?: PackagesFakeOptions;
   /** Genel bakış, raporlar ve Primim uçları. */
   reports?: ReportsFakeOptions;
+  /** Kullanıcılar ve roller, KVKK ayarları, veri dışa aktarma, Google Takvim. */
+  access?: AccessFakeOptions;
 }
 
 export const branchId = '0193a8f0-0000-7000-8000-0000000000b1';
@@ -420,7 +425,9 @@ export function fakeFetch({
   reviews = {},
   packages = {},
   reports = {},
+  access = {},
 }: FakeApiOptions = {}) {
+  const accessFake = createAccessFake(access);
   const queuesFake = createQueuesFake(queues);
   const salesFake = createSalesFake(session, sales);
   const packagesFake = createPackagesFake(session, packages);
@@ -456,6 +463,11 @@ export function fakeFetch({
           .json()
           .catch(() => null),
       );
+    }
+
+    const accessResponse = await accessFake(request);
+    if (accessResponse) {
+      return accessResponse;
     }
 
     const queuesResponse = await queuesFake(request);

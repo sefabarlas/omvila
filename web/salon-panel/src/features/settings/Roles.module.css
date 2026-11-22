@@ -1,0 +1,64 @@
+/* Ayarlar → Roller ve yetkiler (salon-paneli/AyarlarRoller) ve kullanıcı düzenleme penceresi. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.groupTitle {
+  padding: 0;
+  font-size: var(--yazi-govde-guclu-boyut);
+  font-weight: 700;
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--hata);
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.person {
+  display: inline-flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  font-weight: 700;
+}
+
+.you {
+  color: var(--metin-ikincil);
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.level {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 64px;
+  color: var(--metin-ikincil);
+}
+
+.allowed {
+  color: var(--basari);
+}
+
+.footnote {
+  margin: 0;
+  padding: var(--bosluk-3) var(--bosluk-4) var(--bosluk-4);
+  border-top: 1px solid var(--cizgi);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+}
