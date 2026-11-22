@@ -13,6 +13,9 @@ Future<T?> showOmvilaSheet<T>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    // Sekme kabuğundaki ekranlarda (Sıra, Müşteriler) yüzen sekme çubuğunun
+    // üstünde açılır.
+    useRootNavigator: true,
     backgroundColor: r.zeminYukseltilmis,
     barrierColor: r.ustKatman,
     shape: const RoundedRectangleBorder(
