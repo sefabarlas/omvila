@@ -132,7 +132,7 @@ void main() {
         find.text('Fön paketi · 5 seans · 2 Eki · Havale'),
         findsOneWidget,
       );
-      expect(find.text('1.240 ₺'), findsOneWidget);
+      expect(find.text('1.240\u00a0₺'), findsOneWidget);
       // Kart formu yok: yalnız kayıt.
       expect(find.byType(TextField), findsNothing);
     });

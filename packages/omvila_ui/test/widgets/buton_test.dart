@@ -77,6 +77,49 @@ void main() {
     expect(material.color, OmvilaRenkler.acik.hata);
   });
 
+  // Tasarım: secondary dolu nötr zemin (`zemin-ikincil`), çerçevesiz; koyu
+  // hap `metin` zemininde `zemin` rengi yazı.
+  testWidgets('ikincil dolu ve çerçevesiz, koyu hap metin renginde', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      omvilaApp(
+        const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OmvilaButon(
+              key: Key('ikincil'),
+              etiket: 'Başka saat seç',
+              tur: OmvilaButonTuru.ikincil,
+              onPressed: _noop,
+            ),
+            OmvilaButon(
+              key: Key('koyu'),
+              etiket: 'Randevu',
+              tur: OmvilaButonTuru.koyu,
+              onPressed: _noop,
+            ),
+          ],
+        ),
+      ),
+    );
+    Material materialOf(String key) => tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byKey(Key(key)),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    final ikincil = materialOf('ikincil');
+    expect(ikincil.color, OmvilaRenkler.acik.zeminIkincil);
+    expect(ikincil.shape, isA<RoundedRectangleBorder>());
+    expect((ikincil.shape! as RoundedRectangleBorder).side, BorderSide.none);
+    expect(ikincil.textStyle?.color, OmvilaRenkler.acik.metin);
+    expect(materialOf('koyu').color, OmvilaRenkler.acik.metin);
+    expect(materialOf('koyu').textStyle?.color, OmvilaRenkler.acik.zemin);
+  });
+
   omvilaGoldenTest(
     'OmvilaButon',
     fileName: 'buton',
@@ -95,6 +138,13 @@ void main() {
         OmvilaButon(
           etiket: 'Başka saat seç',
           tur: OmvilaButonTuru.ikincil,
+          onPressed: () {},
+        ),
+        OmvilaButon(
+          etiket: 'Randevu',
+          tur: OmvilaButonTuru.koyu,
+          ikon: Icons.add,
+          boyut: OmvilaButonBoyutu.sm,
           onPressed: () {},
         ),
         OmvilaButon(
@@ -128,3 +178,5 @@ void main() {
     ),
   );
 }
+
+void _noop() {}

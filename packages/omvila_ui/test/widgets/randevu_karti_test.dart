@@ -28,7 +28,7 @@ void main() {
     expect(find.text('Onay bekliyor'), findsOneWidget);
     expect(find.text('Per 3 Ara'), findsOneWidget);
     expect(find.text('40 dk'), findsOneWidget);
-    expect(find.text('350 ₺ salonda'), findsOneWidget);
+    expect(find.text('350\u00a0₺ salonda'), findsOneWidget);
     expect(
       find.text('Salon onaylayınca SMS ile bildireceğiz'),
       findsOneWidget,

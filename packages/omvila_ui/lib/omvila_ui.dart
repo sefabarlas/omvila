@@ -9,6 +9,7 @@ export 'format.dart';
 export 'motion.dart';
 export 'theme/omvila_theme.dart';
 export 'time.dart';
+export 'widgets/avatar.dart';
 export 'widgets/bento_blok.dart';
 export 'widgets/bos_durum.dart';
 export 'widgets/buton.dart';

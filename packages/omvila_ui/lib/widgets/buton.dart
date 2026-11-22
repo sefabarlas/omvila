@@ -6,8 +6,12 @@ enum OmvilaButonTuru {
   /// Ekranın asıl işi; bir ekranda tek.
   birincil,
 
-  /// Alternatif eylem.
+  /// Alternatif eylem: dolu nötr zemin (`zemin-ikincil`), çerçevesiz.
   ikincil,
+
+  /// Koyu hap (`metin` zemin, `zemin` metin; bundle.css `om-btn-koyu`): başlıktaki "+ Randevu" gibi
+  /// ekranın ana eylemi olmayan ama öne çıkan kısa eylem.
+  koyu,
 
   /// Düşük öncelik.
   hayalet,
@@ -102,6 +106,7 @@ class OmvilaButon extends StatelessWidget {
     final foreground = switch (tur) {
       OmvilaButonTuru.birincil || OmvilaButonTuru.tehlike => r.markaUstu,
       OmvilaButonTuru.ikincil => r.metin,
+      OmvilaButonTuru.koyu => r.zemin,
       OmvilaButonTuru.hayalet => r.metinMarka,
     };
     final child = Row(
@@ -135,9 +140,36 @@ class OmvilaButon extends StatelessWidget {
         ),
         child: child,
       ),
-      OmvilaButonTuru.ikincil => OutlinedButton(
+      OmvilaButonTuru.ikincil => FilledButton(
         onPressed: pressed,
-        style: style,
+        style: style.copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.disabled)
+                ? r.zeminDevreDisi
+                : r.zeminIkincil,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (s) =>
+                s.contains(WidgetState.disabled) ? r.metinDevreDisi : r.metin,
+          ),
+          overlayColor: WidgetStatePropertyAll(r.zeminHover),
+        ),
+        child: child,
+      ),
+      OmvilaButonTuru.koyu => FilledButton(
+        onPressed: pressed,
+        style: style.copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (s) =>
+                s.contains(WidgetState.disabled) ? r.zeminDevreDisi : r.metin,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (s) =>
+                s.contains(WidgetState.disabled) ? r.metinDevreDisi : r.zemin,
+          ),
+          // Tasarımdaki koyu hap (`kose-tam`).
+          shape: const WidgetStatePropertyAll(StadiumBorder()),
+        ),
         child: child,
       ),
       OmvilaButonTuru.hayalet => TextButton(

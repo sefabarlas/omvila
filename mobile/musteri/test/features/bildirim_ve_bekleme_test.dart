@@ -281,7 +281,7 @@ void main() {
       expect(find.text('Cuma 27 Kasım · 16:00'), findsOneWidget);
       expect(find.text('Masaj · 1 sa'), findsOneWidget);
       expect(find.text('Seda Kurt'), findsOneWidget);
-      expect(find.text('900 ₺'), findsOneWidget);
+      expect(find.text('900\u00a0₺'), findsOneWidget);
     });
 
     testWidgets('süre dolunca BeklemeDoldu, "Listeden çık"', (tester) async {
