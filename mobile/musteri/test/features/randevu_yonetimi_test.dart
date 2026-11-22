@@ -143,7 +143,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('150\u00a0₺ kaporanın iadesi'), findsOneWidget);
+      expect(
+        find.textContaining('150\u00a0₺ kaporanın iadesi'),
+        findsOneWidget,
+      );
       expect(find.text('Hastayım'), findsNothing);
       final cancel = find.widgetWithText(FilledButton, 'İptal et');
       expect(tester.widget<FilledButton>(cancel).onPressed, isNull);
@@ -262,7 +265,8 @@ void main() {
       );
       expect(
         find.text(
-          '150\u00a0₺ kaporanız yeni saate aktarılır, tekrar ödeme yapmazsınız.',
+          '150\u00a0₺ kaporanız yeni saate aktarılır, tekrar ödeme '
+          'yapmazsınız.',
         ),
         findsOneWidget,
       );
@@ -471,6 +475,8 @@ void main() {
     testWidgets('boş (GecmisBos)', (tester) async {
       await _pump(tester, const GecmisEkrani(), FakeAppointmentsRepository());
       expect(find.text('Henüz geçmiş randevunuz yok'), findsOneWidget);
+      // GecmisBos'ta süzgeç (segment) yok.
+      expect(find.text('Değerlendirilmedi'), findsNothing);
     });
 
     testWidgets('hata', (tester) async {

@@ -196,8 +196,10 @@ class _SalonSatiri extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final r = context.omvilaRenkler;
     final (zemin, metin) = switch (brand.coverColor) {
+      // Kapak rengi avatar tonuna: kum → kum, mercan → mercan, petrol ve
+      // diğerleri → nane (tasarım Profil/YRSalon).
+      MeBrandCoverColorEnum.kum => (r.avatar2Zemin, r.avatar2Metin),
       MeBrandCoverColorEnum.mercan => (r.avatar3Zemin, r.avatar3Metin),
-      MeBrandCoverColorEnum.petrol => (r.avatar2Zemin, r.avatar2Metin),
       _ => (r.avatar1Zemin, r.avatar1Metin),
     };
     final lastVisit = brand.lastVisitOn;

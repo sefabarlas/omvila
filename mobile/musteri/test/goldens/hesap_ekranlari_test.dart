@@ -163,7 +163,7 @@ void main() {
   );
 
   screenGoldenTest(
-    'Durum desenleri (OTP sınırı, online randevu kapalı)',
+    'Durum desenleri (OTP sınırı, online randevu kapalı, bağlantı)',
     fileName: 'durumlar',
     screen: () => Builder(
       builder: (context) => Scaffold(
@@ -180,6 +180,16 @@ void main() {
             ),
             const SizedBox(height: OmvilaBosluk.bosluk4),
             OnlineRandevuKapaliKutusu(salonAdi: 'Kuaför Elif', onAra: () {}),
+            const SizedBox(height: OmvilaBosluk.bosluk4),
+            BaglantiGecersizKarti(onHome: () {}),
+            const SizedBox(height: OmvilaBosluk.bosluk4),
+            HataDurumu(
+              error: const ApiProblem(
+                status: 0,
+                code: ApiProblem.networkErrorCode,
+              ),
+              onRetry: () {},
+            ),
           ],
         ),
       ),

@@ -437,18 +437,21 @@ class SalonRozeti extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final r = context.omvilaRenkler;
+    // Ton addan türetilir (OmvilaAvatar ile aynı; hep nane değil).
+    final (zemin, metin) = OmvilaAvatarTonu.adiIcin(
+      ad,
+    ).renkler(context.omvilaRenkler);
     return Container(
       width: boyut,
       height: boyut,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: r.avatar1Zemin,
+        color: zemin,
         borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
       ),
       child: Text(
         initials(ad),
-        style: OmvilaYazi.govdeGuclu.copyWith(color: r.avatar1Metin),
+        style: OmvilaYazi.govdeGuclu.copyWith(color: metin),
       ),
     );
   }

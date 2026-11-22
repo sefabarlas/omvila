@@ -202,24 +202,20 @@ class _KisiSatiri extends StatelessWidget {
           : null,
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: ikon == null ? r.avatar1Zemin : r.zeminIkincil,
-              shape: ikon == null ? BoxShape.circle : BoxShape.rectangle,
-              borderRadius: ikon == null
-                  ? null
-                  : BorderRadius.circular(OmvilaKose.koseMd),
+          if (ikon == null)
+            // Ton addan türetilir (kişiden kişiye değişir; web ile aynı).
+            OmvilaAvatar(ad: ad)
+          else
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: r.zeminIkincil,
+                borderRadius: BorderRadius.circular(OmvilaKose.koseMd),
+              ),
+              child: Icon(ikon, size: 20, color: r.metin),
             ),
-            child: ikon == null
-                ? Text(
-                    initials(ad),
-                    style: OmvilaYazi.etiket.copyWith(color: r.avatar1Metin),
-                  )
-                : Icon(ikon, size: 20, color: r.metin),
-          ),
           const SizedBox(width: OmvilaBosluk.bosluk3),
           Expanded(
             child: Column(
