@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:omvila_api/omvila_api.dart';
 import 'package:omvila_isletme/app/providers.dart';
-import 'package:omvila_isletme/shared/api_date.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 /// Takvim penceresi: şube ve yerel gün aralığı ("2026-11-23" … "2026-12-06").

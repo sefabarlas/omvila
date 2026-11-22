@@ -10,7 +10,7 @@ Ekranlar: `design/ekranlar/musteri-uygulamasi/` (Acilis, Giris, GirisKod, Bildir
 
 | Yol | Ne |
 |---|---|
-| `lib/app/` | `providers.dart` (bütün bağımlılıklar; testler `ProviderScope` ile değiştirir), `router.dart` (adresler, oturum ve bildirim izni yönlendirmesi, derin bağlantılar), `app.dart`, `config.dart` (`--dart-define`: `API_URL`, `PRIVACY_NOTICE_URL`) |
+| `lib/app/` | `providers.dart` (bütün bağımlılıklar; testler `ProviderScope` ile değiştirir), `router.dart` (adresler, oturum ve bildirim izni yönlendirmesi, derin bağlantılar), `app.dart`, `config.dart` (`--dart-define`: `API_URL`, `PRIVACY_NOTICE_URL`, `PRIVACY_NOTICE_VERSION`) |
 | `lib/features/<özellik>/{data,domain,presentation}` | `auth` (oturum, giriş, kod), `notifications` (push arayüzü + sahte, izin, şerit), `appointments` (Randevularım), `brands` (salon ekleme, QR, derin bağlantı), `booking` (randevu alma akışı), `shell` (sekmeler) |
 | `lib/shared/` | API çağrısı (`apiCall` → `ApiProblem`), cihaz deposu, dış eylemler (harita, takvim), durum desenleri |
 | `test/helpers/` | Sahte depolar (`fakes.dart`), test verisi ve sabit saat (`fixtures.dart`), `screenApp`/`screenGoldenTest` (`harness.dart`) |

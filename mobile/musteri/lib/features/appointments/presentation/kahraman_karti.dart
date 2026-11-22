@@ -12,7 +12,15 @@ import 'package:omvila_ui/omvila_ui.dart';
 /// saat, salon, hizmet/personel/şube; "Yol tarifi" ve "Takvime ekle".
 class KahramanKarti extends ConsumerWidget {
   /// Kart.
-  const KahramanKarti({required this.randevu, required this.clock, super.key});
+  const KahramanKarti({
+    required this.randevu,
+    required this.clock,
+    this.onTap,
+    super.key,
+  });
+
+  /// Randevu detayına gider.
+  final VoidCallback? onTap;
 
   /// Sıradaki randevu.
   final MeAppointmentSummary randevu;
@@ -78,81 +86,86 @@ class KahramanKarti extends ConsumerWidget {
     ]);
     final remaining = kalanSureEtiketi(a.startUtc, clock);
     final onCard = r.metinTers;
-    return Container(
-      padding: const EdgeInsets.all(OmvilaBosluk.bosluk5),
-      decoration: BoxDecoration(
-        color: r.blokMarka,
-        borderRadius: BorderRadius.circular(OmvilaKose.koseXl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final radius = BorderRadius.circular(OmvilaKose.koseXl);
+    return Material(
+      color: r.blokMarka,
+      borderRadius: radius,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(OmvilaBosluk.bosluk5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  toUpperTr(top),
-                  style: OmvilaYazi.aciklama.copyWith(
-                    color: onCard,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.6,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      toUpperTr(top),
+                      style: OmvilaYazi.aciklama.copyWith(
+                        color: onCard,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
+                  if (remaining != null)
+                    Text(
+                      remaining,
+                      style: OmvilaYazi.aciklama.copyWith(
+                        color: onCard.withValues(alpha: 0.85),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: OmvilaBosluk.bosluk2),
+              Text(
+                formatTime(a.startUtc, a.timeZone),
+                style: OmvilaYazi.metrik.copyWith(color: onCard, fontSize: 48),
+              ),
+              Text(
+                a.brand.name,
+                style: OmvilaYazi.baslik3.copyWith(color: onCard),
+              ),
+              Text(
+                ozetSatiri([
+                  hizmetlerMetni(a.items),
+                  personelMetni(a.items),
+                  a.branch.district,
+                ]),
+                style: OmvilaYazi.ikincil.copyWith(
+                  color: onCard.withValues(alpha: 0.85),
                 ),
               ),
-              if (remaining != null)
-                Text(
-                  remaining,
-                  style: OmvilaYazi.aciklama.copyWith(
-                    color: onCard.withValues(alpha: 0.85),
+              const SizedBox(height: OmvilaBosluk.bosluk4),
+              Row(
+                children: [
+                  Expanded(
+                    child: _KartButonu(
+                      etiket: 'Yol tarifi',
+                      ikon: LucideIcons.mapPin,
+                      zemin: onCard,
+                      metin: r.blokMarka,
+                      onPressed: () => _directions(context, ref),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: OmvilaBosluk.bosluk2),
+                  Expanded(
+                    child: _KartButonu(
+                      etiket: 'Takvime ekle',
+                      ikon: LucideIcons.calendarPlus,
+                      zemin: onCard.withValues(alpha: 0.14),
+                      metin: onCard,
+                      onPressed: () => _calendar(ref),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: OmvilaBosluk.bosluk2),
-          Text(
-            formatTime(a.startUtc, a.timeZone),
-            style: OmvilaYazi.metrik.copyWith(color: onCard, fontSize: 48),
-          ),
-          Text(
-            a.brand.name,
-            style: OmvilaYazi.baslik3.copyWith(color: onCard),
-          ),
-          Text(
-            ozetSatiri([
-              hizmetlerMetni(a.items),
-              personelMetni(a.items),
-              a.branch.district,
-            ]),
-            style: OmvilaYazi.ikincil.copyWith(
-              color: onCard.withValues(alpha: 0.85),
-            ),
-          ),
-          const SizedBox(height: OmvilaBosluk.bosluk4),
-          Row(
-            children: [
-              Expanded(
-                child: _KartButonu(
-                  etiket: 'Yol tarifi',
-                  ikon: LucideIcons.mapPin,
-                  zemin: onCard,
-                  metin: r.blokMarka,
-                  onPressed: () => _directions(context, ref),
-                ),
-              ),
-              const SizedBox(width: OmvilaBosluk.bosluk2),
-              Expanded(
-                child: _KartButonu(
-                  etiket: 'Takvime ekle',
-                  ikon: LucideIcons.calendarPlus,
-                  zemin: onCard.withValues(alpha: 0.14),
-                  metin: onCard,
-                  onPressed: () => _calendar(ref),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
