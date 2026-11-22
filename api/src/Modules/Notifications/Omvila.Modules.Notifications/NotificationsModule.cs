@@ -34,6 +34,8 @@ public static class NotificationsModule
         services.AddModuleDbContext<NotificationsDbContext>(NotificationsDbContext.Schema);
         services.AddScoped<INotificationOutbox, NotificationOutbox>();
         services.AddScoped<ICreditLedger, CreditLedger>();
+        // Platform paneli: bakiyeler, kontör hareketleri, gönderen adı ve platform kontör eklemesi (K4).
+        services.AddScoped<IPlatformCredits, Infrastructure.PlatformCredits>();
         services.AddPeriodicJob<DispatchNotifications, NotificationsOptions>(o => Duration.FromSeconds(o.DispatchIntervalSeconds));
         services.AddScoped<SmsDeliveryReportHandler>();
         services.AddScoped<AppointmentSms>();

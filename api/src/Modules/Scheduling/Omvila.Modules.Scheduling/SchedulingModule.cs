@@ -95,6 +95,8 @@ public static class SchedulingModule
     private static void AddContractImplementations(IServiceCollection services)
     {
         services.AddScoped<IAppointmentQueries, AppointmentQueries>();
+        // Platform paneli randevu sayıları (yalnız platform bağlamında).
+        services.AddScoped<IPlatformAppointmentStats, Infrastructure.PlatformAppointmentStats>();
         services.AddScoped<IAppointmentReviewLinks, AppointmentReviewLinks>();
         // D5 müşteri uygulaması Randevularım (T-104).
         services.AddScoped<Features.Me.MeAppointmentReader>();
