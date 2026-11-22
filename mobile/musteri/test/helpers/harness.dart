@@ -14,6 +14,7 @@ import 'package:omvila_ui/omvila_ui.dart';
 
 import 'fakes.dart';
 import 'fixtures.dart';
+import 'hesap_fixtures.dart';
 
 /// Ekranın sahte bağımlılıkları.
 class TestDeps {
@@ -24,6 +25,10 @@ class TestDeps {
     FakeBrandsRepository? brands,
     FakeBookingRepository? booking,
     FakePush? push,
+    FakeWalletRepository? wallet,
+    FakeProfileRepository? profile,
+    FakeNotificationsRepository? notifications,
+    FakeWaitlistRepository? waitlist,
     Clock? clock,
     this.config = const AppConfig(apiUrl: 'http://test'),
   }) : store = MemoryKeyValueStore(store),
@@ -32,6 +37,10 @@ class TestDeps {
        brands = brands ?? FakeBrandsRepository(),
        booking = booking ?? FakeBookingRepository(),
        push = push ?? FakePush(),
+       wallet = wallet ?? FakeWalletRepository(),
+       profile = profile ?? FakeProfileRepository(profile: profil()),
+       notifications = notifications ?? FakeNotificationsRepository(),
+       waitlist = waitlist ?? FakeWaitlistRepository(),
        clock = clock ?? testClock {
     this.auth = auth ?? FakeAuthRepository(store: this.store);
   }
@@ -42,6 +51,10 @@ class TestDeps {
   final FakeBrandsRepository brands;
   final FakeBookingRepository booking;
   final FakePush push;
+  final FakeWalletRepository wallet;
+  final FakeProfileRepository profile;
+  final FakeNotificationsRepository notifications;
+  final FakeWaitlistRepository waitlist;
   final AppConfig config;
   final Clock clock;
   final device = FakeDeviceRepository();
@@ -58,6 +71,10 @@ class TestDeps {
     bookingRepositoryProvider.overrideWithValue(booking),
     deviceRepositoryProvider.overrideWithValue(device),
     pushServiceProvider.overrideWithValue(push),
+    walletRepositoryProvider.overrideWithValue(wallet),
+    profileRepositoryProvider.overrideWithValue(profile),
+    notificationsRepositoryProvider.overrideWithValue(notifications),
+    waitlistRepositoryProvider.overrideWithValue(waitlist),
     smsCodeRetrieverProvider.overrideWithValue(sms),
     externalActionsProvider.overrideWithValue(external),
   ];

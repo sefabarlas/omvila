@@ -8,7 +8,11 @@ import 'package:omvila_musteri/features/auth/data/sms_code_retriever.dart';
 import 'package:omvila_musteri/features/booking/data/booking_repository.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/device_repository.dart';
+import 'package:omvila_musteri/features/notifications/data/notifications_repository.dart';
 import 'package:omvila_musteri/features/notifications/data/push_service.dart';
+import 'package:omvila_musteri/features/profile/data/profile_repository.dart';
+import 'package:omvila_musteri/features/waitlist/data/waitlist_repository.dart';
+import 'package:omvila_musteri/features/wallet/data/wallet_repository.dart';
 import 'package:omvila_musteri/shared/external_actions.dart';
 import 'package:omvila_musteri/shared/key_value_store.dart';
 import 'package:omvila_ui/omvila_ui.dart';
@@ -79,6 +83,23 @@ final class FakeAuthRepository implements AuthRepository {
     verified.add(code);
     await _answer<void>(null, verifyError);
     store?.values.addAll(signedInStore(asked: false));
+  }
+
+  final logouts = <String?>[];
+  int forgets = 0;
+
+  @override
+  Future<void> logout({String? pushToken}) async {
+    logouts.add(pushToken);
+    store?.values.remove('me.accessToken');
+    store?.values.remove('me.refreshToken');
+  }
+
+  @override
+  Future<void> forget() async {
+    forgets++;
+    store?.values.remove('me.accessToken');
+    store?.values.remove('me.refreshToken');
   }
 }
 
@@ -381,4 +402,219 @@ final class MutableClock implements Clock {
 
   @override
   DateTime now() => _now;
+}
+
+final class FakeWalletRepository implements WalletRepository {
+  FakeWalletRepository({this.packageList, this.paymentPages = const {}});
+
+  MePackageList? packageList;
+  Object? packagesError;
+  bool packagesPending = false;
+
+  /// cursor → sayfa.
+  Map<String?, MePaymentPage> paymentPages;
+  Object? paymentsError;
+  bool paymentsPending = false;
+  final paymentRequests = <String?>[];
+
+  @override
+  Future<MePackageList> packages() => _answer(
+    packageList ?? MePackageList(activeCount: 0, items: const []),
+    packagesError,
+    pending: packagesPending,
+  );
+
+  @override
+  Future<MePaymentPage> payments({String? cursor}) {
+    paymentRequests.add(cursor);
+    return _answer(
+      paymentPages[cursor] ?? MePaymentPage(items: const [], nextCursor: null),
+      paymentsError,
+      pending: paymentsPending,
+    );
+  }
+}
+
+final class FakeProfileRepository implements ProfileRepository {
+  FakeProfileRepository({
+    MeProfile? profile,
+    this.consentList = const [],
+    this.preview,
+  }) : profileValue = profile;
+
+  MeProfile? profileValue;
+  Object? profileError;
+  bool profilePending = false;
+  Object? updateError;
+  final updates = <(String, String?, String)>[];
+
+  List<MeConsent> consentList;
+  Object? consentsError;
+  Object? consentUpdateError;
+  final consentUpdates = <(String, bool)>[];
+
+  DeletionPreview? preview;
+  Object? previewError;
+  OtpChallengeResponse? challenge;
+  Object? otpError;
+  int otpRequests = 0;
+  Object? deleteError;
+  final deletions = <(String, String)>[];
+
+  @override
+  Future<MeProfile> profile() =>
+      _answer(profileValue, profileError, pending: profilePending);
+
+  @override
+  Future<MeProfile> update(
+    MeProfile current, {
+    required String fullName,
+    required String? email,
+  }) {
+    updates.add((fullName, email, current.version));
+    return _answer(current, updateError);
+  }
+
+  @override
+  Future<List<MeConsent>> consents() => _answer(consentList, consentsError);
+
+  @override
+  Future<List<MeConsent>> setMarketing(
+    String brandId, {
+    required bool granted,
+  }) {
+    consentUpdates.add((brandId, granted));
+    if (consentUpdateError != null) {
+      return Future.error(consentUpdateError!);
+    }
+
+    consentList = [
+      for (final c in consentList)
+        if (c.brand.id == brandId)
+          MeConsent(
+            brand: c.brand,
+            marketingGranted: granted,
+            updatedUtc: c.updatedUtc,
+          )
+        else
+          c,
+    ];
+    return Future.value(consentList);
+  }
+
+  @override
+  Future<DeletionPreview> deletionPreview() => _answer(preview, previewError);
+
+  @override
+  Future<OtpChallengeResponse> requestDeletionOtp() {
+    otpRequests++;
+    return _answer(challenge, otpError);
+  }
+
+  @override
+  Future<MeAccountDeletionResult> deleteAccount({
+    required String otpId,
+    required String code,
+  }) {
+    deletions.add((otpId, code));
+    return _answer(
+      MeAccountDeletionResult(
+        deletedUtc: DateTime.parse('2026-11-24T17:30:00Z'),
+        cancelledAppointmentCount: 2,
+      ),
+      deleteError,
+    );
+  }
+}
+
+final class FakeNotificationsRepository implements NotificationsRepository {
+  FakeNotificationsRepository({this.page});
+
+  MeNotificationPage? page;
+  Object? error;
+  bool pending = false;
+  int markAll = 0;
+
+  @override
+  Future<MeNotificationPage> list({String? cursor, int? limit}) => _answer(
+    page ??
+        MeNotificationPage(items: const [], nextCursor: null, unreadCount: 0),
+    error,
+    pending: pending,
+  );
+
+  @override
+  Future<int> markAllRead() async {
+    markAll++;
+    return 0;
+  }
+}
+
+final class FakeWaitlistRepository implements WaitlistRepository {
+  FakeWaitlistRepository({this.offerValue, this.entry});
+
+  PublicWaitlistOffer? offerValue;
+  Object? offerError;
+  bool offerPending = false;
+  PublicWaitlistEntry? entry;
+  Object? joinError;
+  final joins = <(String, PublicWaitlistJoin, String)>[];
+  PublicAppointment? accepted;
+  Object? actionError;
+  final acceptVersions = <String>[];
+  final declines = <String>[];
+  final leaves = <String>[];
+
+  @override
+  Future<PublicWaitlistEntry> join(
+    String branchId,
+    PublicWaitlistJoin body, {
+    required String idempotencyKey,
+  }) {
+    joins.add((branchId, body, idempotencyKey));
+    return _answer(entry, joinError);
+  }
+
+  @override
+  Future<PublicWaitlistOffer> offer(String accessCode) =>
+      _answer(offerValue, offerError, pending: offerPending);
+
+  @override
+  Future<PublicAppointment> accept(String accessCode, PublicWaitlistOffer o) {
+    acceptVersions.add(o.version);
+    return _answer(accepted, actionError);
+  }
+
+  @override
+  Future<PublicWaitlistOffer> decline(
+    String accessCode,
+    PublicWaitlistOffer o,
+  ) {
+    declines.add(o.version);
+    return _answer(
+      PublicWaitlistOffer(
+        id: o.id,
+        status: WaitlistOfferStatus.declined,
+        brand: o.brand,
+        branch: o.branch,
+        startUtc: o.startUtc,
+        endUtc: o.endUtc,
+        timeZone: o.timeZone,
+        holdExpiresUtc: o.holdExpiresUtc,
+        generatedUtc: o.generatedUtc,
+        items: o.items,
+        total: o.total,
+        amountDue: o.amountDue,
+        waitlistAccessCode: o.waitlistAccessCode,
+        version: 'o2',
+      ),
+      actionError,
+    );
+  }
+
+  @override
+  Future<void> leave(String waitlistAccessCode) {
+    leaves.add(waitlistAccessCode);
+    return _answer<void>(null, actionError);
+  }
 }

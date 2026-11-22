@@ -6,6 +6,7 @@ final class AppConfig {
     this.privacyNoticeUrl,
     this.linkHosts = defaultLinkHosts,
     this.privacyNoticeVersion = defaultPrivacyNoticeVersion,
+    this.supportEmail,
   });
 
   /// `--dart-define` değerlerinden.
@@ -16,6 +17,7 @@ final class AppConfig {
         'API_URL',
         defaultValue: 'http://10.0.2.2:4010',
       ),
+      supportEmail: String.fromEnvironment('SUPPORT_EMAIL'),
     ).copyWithPrivacy(privacy.isEmpty ? null : privacy);
   }
 
@@ -44,11 +46,16 @@ final class AppConfig {
   /// Uygulamanın tanıdığı bağlantı alan adları.
   final Set<String> linkHosts;
 
+  /// "Yardım ve iletişim" e-posta adresi (`SUPPORT_EMAIL`); boşsa yalnız
+  /// bilgi metni gösterilir.
+  final String? supportEmail;
+
   /// Aydınlatma metni adresiyle kopya.
   AppConfig copyWithPrivacy(String? url) => AppConfig(
     apiUrl: apiUrl,
     privacyNoticeUrl: url,
     linkHosts: linkHosts,
     privacyNoticeVersion: privacyNoticeVersion,
+    supportEmail: supportEmail,
   );
 }
