@@ -7,6 +7,7 @@ import 'package:omvila_isletme/features/auth/presentation/login_code_screen.dart
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
 import 'package:omvila_isletme/shared/brand_backdrop.dart';
 import 'package:omvila_isletme/shared/full_height_scroll.dart';
+import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 /// Giriş (Giris): yalnız telefon + SMS kodu (ürün kuralı 7). Hesap
@@ -141,21 +142,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: OmvilaBosluk.bosluk6),
-                      TextField(
-                        controller: _phone,
-                        keyboardType: TextInputType.phone,
-                        autofillHints: const [AutofillHints.telephoneNumber],
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[\d ]')),
-                          LengthLimitingTextInputFormatter(14),
-                        ],
-                        onSubmitted: (_) => _send(),
-                        decoration: InputDecoration(
-                          labelText: 'Cep telefonu',
-                          prefixText: '+90 ',
-                          hintText: '532 418 77 05',
-                          errorText: error,
-                          errorMaxLines: 3,
+                      LabeledField(
+                        label: 'Cep telefonu',
+                        child: TextField(
+                          controller: _phone,
+                          keyboardType: TextInputType.phone,
+                          autofillHints: const [
+                            AutofillHints.telephoneNumber,
+                          ],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp(r'[\d ]'),
+                            ),
+                            LengthLimitingTextInputFormatter(14),
+                          ],
+                          onSubmitted: (_) => _send(),
+                          decoration: phoneDecoration(
+                            context,
+                            hintText: '532 418 77 05',
+                            errorText: error,
+                          ),
                         ),
                       ),
                       const Spacer(),

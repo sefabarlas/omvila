@@ -12,12 +12,12 @@ import { initials } from './name';
 // Kural: rezervasyon sayfası ekranlarındaki metinler birebir (design/ekranlar/rezervasyon-sayfasi).
 describe('formatPrice', () => {
   it('sabit ve "den başlayan" fiyat', () => {
-    expect(formatPrice({ amountMinor: 45000, currency: 'TRY' })).toBe('450 ₺');
+    expect(formatPrice({ amountMinor: 45000, currency: 'TRY' })).toBe('450\u00a0₺');
     expect(formatPrice({ amountMinor: 280000, currency: 'TRY' }, 'StartingFrom')).toBe(
-      "2.800 ₺'den",
+      "2.800\u00a0₺'den",
     );
     expect(formatPrice({ amountMinor: 110000, currency: 'TRY' }, 'StartingFrom')).toBe(
-      "1.100 ₺'den",
+      "1.100\u00a0₺'den",
     );
   });
 });

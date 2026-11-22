@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:omvila_ui/theme/omvila_theme.dart';
+import 'package:omvila_ui/widgets/buton.dart';
 
 /// Boş listenin davet ekranı (design/tasarim-sistemleri/mobil/README.md § Boş
 /// durumlar): 80'lik ikon kutusu, tek satır başlık ("Henüz … yok"), ne zaman
@@ -13,6 +14,7 @@ class OmvilaBosDurum extends StatelessWidget {
     this.eylemEtiketi,
     this.eylemIkonu,
     this.onEylem,
+    this.eylemTuru = OmvilaButonTuru.ikincil,
     super.key,
   });
 
@@ -33,6 +35,11 @@ class OmvilaBosDurum extends StatelessWidget {
 
   /// Eylem.
   final VoidCallback? onEylem;
+
+  /// Eylemin varyantı: ekranın tek işi boş listeyi doldurmaksa
+  /// (TakvimBos, SiraBos, MusterilerBos) birincil; "Tekrar dene" gibi
+  /// yardımcı eylemde ikincil.
+  final OmvilaButonTuru eylemTuru;
 
   @override
   Widget build(BuildContext context) {
@@ -74,18 +81,11 @@ class OmvilaBosDurum extends StatelessWidget {
           ),
           if (label != null) ...[
             const SizedBox(height: OmvilaBosluk.bosluk5),
-            FilledButton.icon(
+            OmvilaButon(
+              etiket: label,
+              ikon: eylemIkonu,
+              tur: eylemTuru,
               onPressed: onEylem,
-              icon: eylemIkonu == null ? null : Icon(eylemIkonu, size: 20),
-              label: Text(label),
-              style: FilledButton.styleFrom(
-                backgroundColor: r.zeminIkincil,
-                foregroundColor: r.metin,
-                minimumSize: const Size(64, OmvilaBoyut.kontrolMd),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: OmvilaBosluk.bosluk5,
-                ),
-              ),
             ),
           ],
         ],

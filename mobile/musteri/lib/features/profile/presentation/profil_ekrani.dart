@@ -73,13 +73,13 @@ class _Baslik extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 36,
-            backgroundColor: r.avatar2Zemin,
+            backgroundColor: r.avatar1Zemin,
             child: hasName
                 ? Text(
                     initials(name),
-                    style: OmvilaYazi.baslik2.copyWith(color: r.avatar2Metin),
+                    style: OmvilaYazi.baslik2.copyWith(color: r.avatar1Metin),
                   )
-                : Icon(LucideIcons.user, color: r.avatar2Metin),
+                : Icon(LucideIcons.user, color: r.avatar1Metin),
           ),
           const SizedBox(width: OmvilaBosluk.bosluk4),
           Expanded(
@@ -190,8 +190,10 @@ class _SalonKutusu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final r = context.omvilaRenkler;
     final (zemin, metin) = switch (brand.coverColor) {
+      // Kapak rengi avatar tonuna: kum → kum, mercan → mercan, petrol ve
+      // diğerleri → nane (tasarım Profil/YRSalon).
+      MeBrandCoverColorEnum.kum => (r.avatar2Zemin, r.avatar2Metin),
       MeBrandCoverColorEnum.mercan => (r.avatar3Zemin, r.avatar3Metin),
-      MeBrandCoverColorEnum.petrol => (r.avatar2Zemin, r.avatar2Metin),
       _ => (r.avatar1Zemin, r.avatar1Metin),
     };
     final enabled = brand.bookingEnabled && brand.branches.isNotEmpty;

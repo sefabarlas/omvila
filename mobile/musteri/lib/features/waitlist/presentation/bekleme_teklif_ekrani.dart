@@ -243,6 +243,7 @@ class _BeklemeTeklifEkraniState extends ConsumerState<BeklemeTeklifEkrani> {
       body = _Doldu(teklif: offer, neden: closed);
       bottom = _Eylemler(
         birincil: ('Başka saat seç', () => _otherTime(offer)),
+        birincilTuru: OmvilaButonTuru.ikincil,
         ikincil: ('Listeden çık', () => _act('leave', offer)),
         ikincilYukleniyor: _busy == 'leave',
       );
@@ -554,6 +555,7 @@ class _Eylemler extends StatelessWidget {
     this.ikincilYukleniyor = false,
     this.ikincilTehlike = true,
     this.kilitli = false,
+    this.birincilTuru = OmvilaButonTuru.birincil,
   });
 
   final (String, VoidCallback) birincil;
@@ -562,6 +564,9 @@ class _Eylemler extends StatelessWidget {
   final bool ikincilYukleniyor;
   final bool ikincilTehlike;
   final bool kilitli;
+
+  /// Süre dolunca "Başka saat seç" ikincil (BeklemeDoldu tasarımı).
+  final OmvilaButonTuru birincilTuru;
 
   @override
   Widget build(BuildContext context) {
@@ -580,6 +585,7 @@ class _Eylemler extends StatelessWidget {
           children: [
             OmvilaButon(
               etiket: birincil.$1,
+              tur: birincilTuru,
               boyut: OmvilaButonBoyutu.lg,
               tamGenislik: true,
               yukleniyor: birincilYukleniyor,

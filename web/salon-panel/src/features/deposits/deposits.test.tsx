@@ -81,7 +81,7 @@ describe('yan panel: kapora bekleyen randevu', () => {
   it('kapora bölümü; düz "Onayla" yok; "Kapora geldi" If-Match ve Idempotency-Key ile gider (KK5)', async () => {
     const { calls, drawer } = await openFromCalendar(/^Gizem Arslan/);
     const section = within(drawer).getByRole('region', { name: 'Kapora' });
-    expect(rowValue(section, 'Tutar')).toBe('150 ₺');
+    expect(rowValue(section, 'Tutar')).toBe('150\u00a0₺');
     expect(rowValue(section, 'Açıklama kodu')).toBe('OMV-7K2X');
     expect(rowValue(section, 'Müşteri bildirimi')).toBe('Yok');
     expect(rowValue(section, 'Kalan süre')).toBe('1 sa 20 dk');
@@ -212,11 +212,11 @@ describe('yan panel: kapora bekleyen randevu', () => {
 });
 
 describe('yan panel: alınmış kapora ve iade (V7)', () => {
-  it('"Salon iade etti": tutar alınanı aşamaz; kısmi iade ve not gider, sonra "Salon iade etti · 100 ₺"', async () => {
+  it('"Salon iade etti": tutar alınanı aşamaz; kısmi iade ve not gider, sonra "Salon iade etti · 100\u00a0₺"', async () => {
     const { calls, drawer } = await openFromCalendar(/^Nur Ateş/);
     expect(within(drawer).getByText('Kapora geldi')).toBeTruthy();
     await userEvent.click(
-      within(drawer).getByRole('button', { name: /Kapora 150 ₺ · havale ile alındı/ }),
+      within(drawer).getByRole('button', { name: /Kapora 150\u00a0₺ · havale ile alındı/ }),
     );
     const modal = await screen.findByRole('dialog', { name: 'Kapora iadesini işaretle' });
     const amount = within(modal).getByLabelText('İade edilen tutar');

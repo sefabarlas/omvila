@@ -96,7 +96,7 @@ void main() {
     expect(find.text('10:30–11:45 · Elif'), findsOneWidget);
     expect(find.text(formatMoney(125000)), findsOneWidget);
     expect(find.text(formatMoney(144000)), findsOneWidget);
-    expect(find.text('200 ₺ · havale ile alındı'), findsOneWidget);
+    expect(find.text('200\u00a0₺ · havale ile alındı'), findsOneWidget);
     expect(find.text(formatMoney(124000)), findsOneWidget);
     expect(
       find.text('Geçen sefer 7.1 kullanıldı, aynısı isteniyor.'),
@@ -173,7 +173,7 @@ void main() {
       session: staffSessionJson,
       json: depositJson(),
     );
-    expect(find.text('150 ₺ · havale bildirildi'), findsOneWidget);
+    expect(find.text('150\u00a0₺ · havale bildirildi'), findsOneWidget);
     expect(find.text('Kaporayı kontrol et'), findsNothing);
     expect(find.text('Onayla'), findsNothing);
   });
@@ -215,14 +215,14 @@ void main() {
       expect(find.text('Fön · Elif'), findsOneWidget);
       expect(find.text('Kapora (havale)'), findsOneWidget);
       expect(find.text('Kapora (online)'), findsNothing);
-      expect(find.text('−200 ₺'), findsOneWidget);
+      expect(find.text('−200\u00a0₺'), findsOneWidget);
       expect(find.text('Alınacak'), findsOneWidget);
       for (final m in ['Nakit', 'Kart', 'Havale']) {
         expect(find.text(m), findsOneWidget);
       }
 
       expect(find.text('Paketten'), findsNothing);
-      expect(find.text('1.240 ₺ al ve tamamla'), findsOneWidget);
+      expect(find.text('1.240\u00a0₺ al ve tamamla'), findsOneWidget);
       // OMVILA ödeme almaz: kart numarası alanı yok.
       expect(find.byType(TextField), findsNothing);
     });
@@ -234,7 +234,7 @@ void main() {
       h.api.reply('POST', path(checkedInId, '/complete'), checkedInJson());
       await tester.tap(find.text('Kart'));
       await tester.pump();
-      await tester.tap(find.text('1.240 ₺ al ve tamamla'));
+      await tester.tap(find.text('1.240\u00a0₺ al ve tamamla'));
       await tester.pumpAndSettle();
       final post = h.api.to('POST', path(checkedInId, '/complete')).single;
       expect(post.header('If-Match'), 'v3');
@@ -270,7 +270,7 @@ void main() {
       expect(fields, findsNWidgets(2));
       await tester.enterText(fields.first, '1000');
       await tester.enterText(fields.last, '240');
-      await tester.tap(find.text('1.240 ₺ al ve tamamla'));
+      await tester.tap(find.text('1.240\u00a0₺ al ve tamamla'));
       await tester.pumpAndSettle();
       final first = h.api.to('POST', path(checkedInId, '/complete')).single;
       expect(first.body, {
@@ -286,13 +286,15 @@ void main() {
         ],
       });
       expect(
-        find.text('Alınacak tutar 1.000 ₺ olmalı. Tutarları kontrol edin.'),
+        find.text(
+          'Alınacak tutar 1.000\u00a0₺ olmalı. Tutarları kontrol edin.',
+        ),
         findsOneWidget,
       );
 
       // Toplam tutmazsa istek gitmez.
       await tester.enterText(fields.last, '100');
-      await tester.tap(find.text('1.240 ₺ al ve tamamla'));
+      await tester.tap(find.text('1.240\u00a0₺ al ve tamamla'));
       await tester.pumpAndSettle();
       expect(h.api.to('POST', path(checkedInId, '/complete')), hasLength(1));
       expect(find.textContaining('aynı olmalı'), findsOneWidget);
@@ -304,8 +306,8 @@ void main() {
       await tester.tap(find.text('Paketten'));
       await tester.pumpAndSettle();
       expect(find.text('Paketten (Fön paketi)'), findsOneWidget);
-      expect(find.text('1.050 ₺ al ve tamamla'), findsOneWidget);
-      await tester.tap(find.text('1.050 ₺ al ve tamamla'));
+      expect(find.text('1.050\u00a0₺ al ve tamamla'), findsOneWidget);
+      await tester.tap(find.text('1.050\u00a0₺ al ve tamamla'));
       await tester.pumpAndSettle();
       final post = h.api.to('POST', path(checkedInId, '/complete')).single;
       expect(post.body, {
@@ -337,7 +339,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Gizem Arslan · 14:30'), findsOneWidget);
       expect(find.text('Fön · Mert Demir'), findsOneWidget);
-      expect(find.text('150 ₺'), findsOneWidget);
+      expect(find.text('150\u00a0₺'), findsOneWidget);
       expect(find.text('OMV-7K2X'), findsOneWidget);
       expect(find.text('“Havaleyi yaptım” · 11:52'), findsOneWidget);
       // Tutma 10:30Z, şimdi 09:10Z.

@@ -369,10 +369,19 @@ class BolumBasligi extends StatelessWidget {
 /// Ekran başlığı ("Hizmet seçin") ve isteğe bağlı açıklama.
 class EkranBasligi extends StatelessWidget {
   /// Başlık.
-  const EkranBasligi(this.baslik, {this.aciklama, super.key});
+  const EkranBasligi(
+    this.baslik, {
+    this.aciklama,
+    this.ikincil = false,
+    super.key,
+  });
 
   /// "Hizmet seçin".
   final String baslik;
+
+  /// Sayfanın ilk başlığı değilse (YRHavale'de kartın altı) `baslik-1` ve
+  /// açıklamayla arasında boşluk.
+  final bool ikincil;
 
   /// "Kadıköy şubesi · birden fazla seçebilirsiniz".
   final String? aciklama;
@@ -388,11 +397,14 @@ class EkranBasligi extends StatelessWidget {
           header: true,
           child: Text(
             baslik,
-            style: OmvilaYazi.buyukBaslik.copyWith(color: r.metin),
+            style: (ikincil ? OmvilaYazi.baslik1 : OmvilaYazi.buyukBaslik)
+                .copyWith(color: r.metin),
           ),
         ),
-        if (text != null)
+        if (text != null) ...[
+          if (ikincil) const SizedBox(height: OmvilaBosluk.bosluk2),
           Text(text, style: OmvilaYazi.ikincil.copyWith(color: r.metinIkincil)),
+        ],
       ],
     );
   }

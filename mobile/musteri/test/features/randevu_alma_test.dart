@@ -210,8 +210,8 @@ void main() {
         find.text('Kadıköy şubesi · birden fazla seçebilirsiniz'),
         findsOneWidget,
       );
-      expect(find.text('450 ₺'), findsOneWidget);
-      expect(find.text("1.100 ₺'den"), findsOneWidget);
+      expect(find.text('450\u00a0₺'), findsOneWidget);
+      expect(find.text("1.100\u00a0₺'den"), findsOneWidget);
       expect(find.text('Paketten'), findsOneWidget);
       expect(find.text("30 dk · 5 seansın 2'si kaldı"), findsOneWidget);
       expect(find.text('Devam et'), findsNothing);
@@ -222,7 +222,7 @@ void main() {
       await tester.pump();
       expect(find.text('2 hizmet · 1 sa 15 dk'), findsOneWidget);
       // Fön paketten: tutar yalnız saç kesimi.
-      expect(find.text('450 ₺'), findsNWidgets(2));
+      expect(find.text('450\u00a0₺'), findsNWidgets(2));
       final draft = _read(tester, HizmetEkrani);
       expect(draft.serviceIds, ['kesim', 'fon']);
       expect(draft.packageItems, {'fon': 'cpi-fon'});
@@ -250,7 +250,7 @@ void main() {
       );
       expect(find.text('Fark etmez'), findsOneWidget);
       expect(find.text('En erken uygun saat'), findsOneWidget);
-      expect(find.text('+50 ₺'), findsOneWidget);
+      expect(find.text('+50\u00a0₺'), findsOneWidget);
       expect(find.text('İki hizmet de aynı kişiden'), findsOneWidget);
       // Kişi seçilmeden ilerlenmez.
       final button = find.widgetWithText(FilledButton, 'Devam et');
@@ -258,7 +258,7 @@ void main() {
 
       await tester.tap(find.text('Zeynep Aksoy'));
       await tester.pump();
-      expect(find.text('750 ₺ · 1 sa 15 dk'), findsOneWidget);
+      expect(find.text('750\u00a0₺ · 1 sa 15 dk'), findsOneWidget);
       expect(_read(tester, PersonelEkrani).staff, {
         'kesim': 'zeynep',
         'fon': 'zeynep',
@@ -406,12 +406,12 @@ void main() {
       expect(find.text('14:30–15:45'), findsOneWidget);
       expect(find.text('Kuaför Elif · Kadıköy · Elif Kaya'), findsOneWidget);
       expect(find.text('Paketten'), findsOneWidget);
-      expect(find.text('-150 ₺'), findsOneWidget);
-      expect(find.text('300 ₺'), findsOneWidget);
+      expect(find.text('-150\u00a0₺'), findsOneWidget);
+      expect(find.text('300\u00a0₺'), findsOneWidget);
       expect(find.text('Fön paketinizden düşülsün'), findsOneWidget);
       expect(find.text("5 seansın 1'i kalacak"), findsOneWidget);
       expect(
-        find.textContaining('150 ₺ kapora ile kesinleşir'),
+        find.textContaining('150\u00a0₺ kapora ile kesinleşir'),
         findsOneWidget,
       );
       expect(
@@ -425,7 +425,7 @@ void main() {
 
       await tester.tap(find.byType(Switch));
       await tester.pump();
-      expect(find.text('250 ₺'), findsOneWidget);
+      expect(find.text('250\u00a0₺'), findsOneWidget);
       expect(find.text("5 seansın 2'si kaldı"), findsOneWidget);
       expect(_read(tester, OnayEkrani).packageItems, isEmpty);
     });

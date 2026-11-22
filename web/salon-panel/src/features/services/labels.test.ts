@@ -8,8 +8,8 @@ describe('hizmet etiketleri', () => {
     const price = { amountMinor: 180000, currency: 'TRY' as const };
     expect(
       formatServicePrice({ price: { amountMinor: 45000, currency: 'TRY' }, priceDisplay: 'Fixed' }),
-    ).toBe('450 ₺');
-    expect(formatServicePrice({ price, priceDisplay: 'StartingFrom' })).toBe("1.800 ₺'den");
+    ).toBe('450\u00a0₺');
+    expect(formatServicePrice({ price, priceDisplay: 'StartingFrom' })).toBe("1.800\u00a0₺'den");
   });
 
   it('kapora', () => {
@@ -17,7 +17,7 @@ describe('hizmet etiketleri', () => {
     expect(depositLabel({ mode: 'Inherit' }, true)).toBe('Genel ayar');
     expect(
       depositLabel({ mode: 'Always', amount: { amountMinor: 30000, currency: 'TRY' } }, true),
-    ).toBe('Her zaman · 300 ₺');
+    ).toBe('Her zaman · 300\u00a0₺');
     expect(depositLabel({ mode: 'Always', percent: 30 }, true)).toBe('Her zaman · %30');
     expect(depositLabel({ mode: 'Always', percent: 30 }, false)).toBe('Yok');
   });

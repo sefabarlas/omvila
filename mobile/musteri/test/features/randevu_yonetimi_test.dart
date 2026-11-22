@@ -111,8 +111,8 @@ void main() {
       expect(find.text("1 sa 15 dk · 15:45'te biter"), findsOneWidget);
       expect(find.text('Moda Cad. 42, Kadıköy'), findsOneWidget);
       expect(find.text('Saç kesimi · Elif'), findsOneWidget);
-      expect(find.text('150 ₺ alındı · havale'), findsOneWidget);
-      expect(find.text('500 ₺'), findsOneWidget);
+      expect(find.text('150\u00a0₺ alındı · havale'), findsOneWidget);
+      expect(find.text('500\u00a0₺'), findsOneWidget);
       expect(
         find.text('İptal 24 saat, saat değişikliği 12 saat öncesine kadar.'),
         findsOneWidget,
@@ -143,7 +143,10 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('150 ₺ kaporanın iadesi'), findsOneWidget);
+      expect(
+        find.textContaining('150\u00a0₺ kaporanın iadesi'),
+        findsOneWidget,
+      );
       expect(find.text('Hastayım'), findsNothing);
       final cancel = find.widgetWithText(FilledButton, 'İptal et');
       expect(tester.widget<FilledButton>(cancel).onPressed, isNull);
@@ -236,7 +239,7 @@ void main() {
         ),
       );
       expect(find.text('Kapora bekleniyor'), findsOneWidget);
-      expect(find.text('150 ₺ · bekleniyor'), findsOneWidget);
+      expect(find.text('150\u00a0₺ · bekleniyor'), findsOneWidget);
       await tester.tap(find.text('Kaporayı gönder'));
       await tester.pumpAndSettle();
       expect(find.text('adres:/randevu/a1/havale'), findsOneWidget);
@@ -262,7 +265,8 @@ void main() {
       );
       expect(
         find.text(
-          '150 ₺ kaporanız yeni saate aktarılır, tekrar ödeme yapmazsınız.',
+          '150\u00a0₺ kaporanız yeni saate aktarılır, tekrar ödeme '
+          'yapmazsınız.',
         ),
         findsOneWidget,
       );
@@ -437,7 +441,7 @@ void main() {
         const BasariEkrani(id: 'a1'),
         FakeAppointmentsRepository(detail: detay()),
       );
-      expect(find.text('500 ₺ salonda'), findsOneWidget);
+      expect(find.text('500\u00a0₺ salonda'), findsOneWidget);
       await tester.tap(find.text('Takvime ekle'));
       await tester.tap(find.text('Yol tarifi'));
       await tester.tap(find.text('Paylaş'));
@@ -471,6 +475,8 @@ void main() {
     testWidgets('boş (GecmisBos)', (tester) async {
       await _pump(tester, const GecmisEkrani(), FakeAppointmentsRepository());
       expect(find.text('Henüz geçmiş randevunuz yok'), findsOneWidget);
+      // GecmisBos'ta süzgeç (segment) yok.
+      expect(find.text('Değerlendirilmedi'), findsNothing);
     });
 
     testWidgets('hata', (tester) async {
@@ -500,7 +506,7 @@ void main() {
       await _pump(tester, const GecmisEkrani(), repo);
       expect(find.text('Kasım'), findsOneWidget);
       expect(find.text('Ekim'), findsOneWidget);
-      expect(find.text('Boya ve fön · 12 Kas · 1.440 ₺'), findsOneWidget);
+      expect(find.text('Boya ve fön · 12 Kas · 1.440\u00a0₺'), findsOneWidget);
       expect(
         tester.widgetList<Yildizlar>(find.byType(Yildizlar)).map((y) => y.puan),
         [5, 4],
