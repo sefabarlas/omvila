@@ -158,6 +158,8 @@ public sealed class PostgresFixture : IAsyncLifetime
         ["Platform:CancelledArchiveDays"] = "30",
         ["Platform:TrialEndingNoticeDays"] = "3",
         ["Platform:AdvanceSubscriptionStatusesIntervalMinutes"] = "60",
+        ["Platform:BankImportMaxBytes"] = "65536",
+        ["Platform:BankImportMaxRows"] = "50",
         ["Platform:SeedCreditPackages:0:Code"] = "starter",
         ["Platform:SeedCreditPackages:0:Name"] = "Başlangıç",
         ["Platform:SeedCreditPackages:0:Credits"] = "1000",

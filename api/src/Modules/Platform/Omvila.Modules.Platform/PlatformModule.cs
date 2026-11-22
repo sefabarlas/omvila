@@ -6,7 +6,11 @@ using Omvila.Infrastructure.Http;
 using Omvila.Infrastructure.Jobs;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Platform.Contracts;
+using Omvila.Modules.Platform.Features.AdminApprovals;
+using Omvila.Modules.Platform.Features.AdminAudit;
 using Omvila.Modules.Platform.Features.AdminBrands;
+using Omvila.Modules.Platform.Features.AdminFinance;
+using Omvila.Modules.Platform.Features.AdminPlans;
 using Omvila.Modules.Platform.Features.ManageSubscription;
 using Omvila.Modules.Platform.Features.PaymentNotices;
 using Omvila.Modules.Platform.Infrastructure;
@@ -18,7 +22,8 @@ namespace Omvila.Modules.Platform;
 
 /// <summary>
 /// Platform modülü girişi (D1: plan ve deneme aboneliği; D5: denetim kaydı IAuditLog; D6: platform paneli, abonelik durum makinesi ve
-/// AdvanceSubscriptionStatuses işi, fatura, havale bildirimi, salonun abonelik uçları, eşleştirme servisi IPaymentNoticeSettlement).
+/// AdvanceSubscriptionStatuses işi, fatura, havale bildirimi, salonun abonelik uçları, eşleştirme servisi IPaymentNoticeSettlement; onay
+/// kuyrukları, banka hareketleri, abonelikler, denetim kaydı ve planlar).
 /// </summary>
 public static class PlatformModule
 {
@@ -44,15 +49,27 @@ public static class PlatformModule
         // Platform paneli (admin yüzeyi; T-119): onay sayıları, genel bakış ve markalar okuma modeli.
         services.AddScoped<IPendingApprovalCounts, PendingApprovals>();
         services.AddScoped<AdminBrandReader>();
+        // Onay kuyrukları, banka hareketleri, abonelikler, denetim kaydı ve planlar (T-124).
+        services.AddScoped<PaymentNoticeReview>();
+        services.AddScoped<BankTransactionBook>();
+        services.AddScoped<AdminSubscriptionReader>();
+        services.AddScoped<AuditLogReader>();
+        services.AddScoped<PlanCatalog>();
+        services.AddUniqueConstraintError(PlatformBankTransactionConfiguration.ReferenceIndex, ErrorCodes.BankTransactionDuplicate);
+        services.AddUniqueConstraintError(PlatformBankTransactionConfiguration.MatchedNoticeIndex, ErrorCodes.BankTransactionAlreadyMatched);
         // Demo verisi --reset (T-74): markanın aboneliği.
         services.AddBrandDataEraser<PlatformDbContext>();
         return services;
     }
 
-    /// <summary>Platform uçlarını eşler (admin-overview, admin-brands, manage-subscription).</summary>
+    /// <summary>Platform uçlarını eşler (admin-overview, admin-brands, admin-approvals, admin-finance, admin-audit, admin-plans, manage-subscription).</summary>
     public static IEndpointRouteBuilder MapPlatformEndpoints(this IEndpointRouteBuilder app)
     {
         AdminBrandEndpoints.Map(app);
+        AdminApprovalEndpoints.Map(app);
+        AdminFinanceEndpoints.Map(app);
+        AdminAuditEndpoints.Map(app);
+        AdminPlanEndpoints.Map(app);
         ManageSubscriptionEndpoints.Map(app);
         return app;
     }
