@@ -6,6 +6,7 @@ import { customersDemo, demoCustomerId } from './customers-demo';
 import { newAppointmentDemo } from './new-appointment-demo';
 import { packagesDemo } from './packages-demo';
 import { queuesDemo } from './queues-demo';
+import { myCommissionDemo, reportsDemo } from './reports-demo';
 import { reviewsDemo } from './reviews-demo';
 import { depositSetup } from './support';
 
@@ -42,6 +43,9 @@ const screens: ScreenCase[] = [
     act: async (page) => {
       await expect(page.getByText('2 online talep onay bekliyor')).toBeVisible();
       await expect(page.getByText('Gizem Arslan kapora bekliyor')).toBeVisible();
+      await expect(
+        page.getByRole('region', { name: 'Bu hafta doluluk' }).getByText('Zeynep Aksoy'),
+      ).toBeVisible();
     },
   },
   { path: '/hizmetler', name: 'Hizmetler', heading: 'Hizmetler' },
@@ -508,6 +512,56 @@ const screens: ScreenCase[] = [
       await expect(dialog.getByRole('button', { name: '1.242 kaydı içe aktar' })).toBeVisible();
       await settle(page);
     },
+  },
+  {
+    path: '/raporlar',
+    name: 'Raporlar',
+    heading: 'Raporlar ve prim',
+    setup: (page) => reportsDemo(page),
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Personel ve prim' }).getByText('15.665 ₺'),
+      ).toBeVisible(),
+  },
+  {
+    path: '/raporlar',
+    name: 'Raporlar1199',
+    heading: 'Raporlar ve prim',
+    setup: (page) => reportsDemo(page),
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Personel ve prim' }).getByText('15.665 ₺'),
+      ).toBeVisible(),
+    viewport: { width: 1199, height: 900 },
+  },
+  {
+    path: '/raporlar',
+    name: 'Raporlar899',
+    heading: 'Raporlar ve prim',
+    setup: (page) => reportsDemo(page),
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Personel ve prim' }).getByText('15.665 ₺'),
+      ).toBeVisible(),
+    viewport: { width: 899, height: 1100 },
+  },
+  {
+    path: '/raporlar',
+    name: 'RaporlarBos',
+    heading: 'Raporlar ve prim',
+    setup: (page) => reportsDemo(page, true),
+    act: (page) =>
+      expect(page.getByRole('heading', { name: 'Rapor için henüz veri yok' })).toBeVisible(),
+  },
+  {
+    path: '/primim',
+    name: 'Primim',
+    heading: 'Primim',
+    setup: myCommissionDemo,
+    act: (page) =>
+      expect(
+        page.getByRole('region', { name: 'Son primler' }).getByText('Buse Kaya'),
+      ).toBeVisible(),
   },
   {
     path: '/ayarlar/kvkk',

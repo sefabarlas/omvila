@@ -31,6 +31,7 @@ describe('oturum', () => {
       'Hizmetler',
       'Personel',
       'Paketler',
+      'Raporlar ve prim',
       'Ayarlar',
     ]);
     expect(
@@ -53,7 +54,7 @@ describe('oturum', () => {
       within(nav)
         .getAllByRole('link')
         .map((a) => a.textContent),
-    ).toEqual(['Takvimim', 'Müşteriler', 'Kapıda sıra']);
+    ).toEqual(['Takvimim', 'Müşteriler', 'Kapıda sıra', 'Primim']);
     expect(within(nav).getByText('Benim')).toBeTruthy();
     expect(within(nav).queryByText('Yönetim')).toBeNull();
     expect(within(nav).getByText('Personel')).toBeTruthy();
@@ -108,11 +109,16 @@ describe('menü', () => {
       'hizmetler',
       'personel',
       'paketler',
+      'raporlar',
       'ayarlar',
     ]);
     // Paketler: package.manage veya package.sell (şube müdürü yalnız satar).
     const manager = new Set(['report.view', 'package.sell']);
-    expect(visibleMenu((p) => manager.has(p)).map((e) => e.key)).toEqual(['genel', 'paketler']);
+    expect(visibleMenu((p) => manager.has(p)).map((e) => e.key)).toEqual([
+      'genel',
+      'paketler',
+      'raporlar',
+    ]);
     // Raporları görmeyen kullanıcı (personel) kişisel menüyü görür; izne göre Takvimim (calendar.view), Müşteriler.
     expect(visibleMenu((p) => p === 'calendar.view').map((e) => e.key)).toEqual(['takvimim']);
     expect(visibleMenu(() => false)).toEqual([]);
