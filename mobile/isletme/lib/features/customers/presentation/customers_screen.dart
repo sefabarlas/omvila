@@ -12,7 +12,6 @@ import 'package:omvila_isletme/features/customers/data/customer_repository.dart'
 import 'package:omvila_isletme/features/customers/presentation/new_customer_sheet.dart';
 import 'package:omvila_isletme/features/shell/presentation/app_shell.dart';
 import 'package:omvila_isletme/features/shell/presentation/tabs.dart';
-import 'package:omvila_isletme/shared/api_date.dart';
 import 'package:omvila_isletme/shared/ui.dart';
 import 'package:omvila_isletme/shared/widgets.dart';
 import 'package:omvila_ui/omvila_ui.dart';
