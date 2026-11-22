@@ -1,0 +1,40 @@
+# OMVILA İşletme (salon çalışanının uygulaması). Kurallar: mobile/isletme/AGENTS.md.
+name: omvila_isletme
+description: OMVILA İşletme
+publish_to: none
+version: 0.1.0+1
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
+
+dependencies:
+  dio: ^5.7.0
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.5.0
+  flutter_secure_storage: ^11.2.0
+  flutter_svg: ^2.5.0
+  go_router: ^18.1.4
+  # mobile/isletme/AGENTS.md "lucide_icons" diyor; o paket 2023'ten beri güncellenmiyor (Dart 2 sınırı).
+  # Aynı Lucide setinin bakımı süren Flutter paketi.
+  lucide_icons_flutter: ^4.0.3
+  omvila_api:
+    path: ../../packages/api-client-dart
+  omvila_ui:
+    path: ../../packages/omvila_ui
+  # MainBos "Rezervasyon bağlantısını paylaş": sistem paylaşım sayfası (iOS/Android yerel paylaşım).
+  share_plus: ^13.3.1
+
+dev_dependencies:
+  alchemist: ^0.12.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/

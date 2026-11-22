@@ -6,7 +6,9 @@ Zorunlu okuma: [kodlama-flutter.md](../../docs/standartlar/kodlama-flutter.md), 
 Ekranlar: `design/ekranlar/isletme-uygulamasi/` (Acilis, Giris, GirisKod, BildirimIzni → Main(Bugün), MainBos, MainBildirimKapali, MainSaltOkunur → Takvim, TakvimBos, TakvimKapali → RandevuDetay, RandevuIslem, KaporaOnay, OdemeAl, YeniRandevu → Sira, SiraEkle, SiraBos → Musteriler, MusterilerAramaYok, MusterilerBos, MusteriKarti, MusteriKartiYeni → Bildirimler, BildirimlerBos, Profil, BildirimAyar).
 
 ## Yapı ve yığın
-Flutter 3.27+, Riverpod, go_router, `omvila_ui` (tema + ortak widget'lar), `omvila_api` (`packages/api-client-dart`), `flutter_secure_storage`, `firebase_messaging`, `lucide_icons`, `sms_autofill`. Uygulama kimliği `com.omvila.isletme`; ad "OMVILA İşletme"; ikon koyu petrol zemin (`packages/design-tokens/assets/app-icon-isletme.svg`).
+Flutter 3.27+, Riverpod (elle sağlayıcı; kod üretimi neden yok: T-107), go_router, `omvila_ui` (tema + ortak widget'lar), `omvila_api` (`packages/api-client-dart`), `flutter_secure_storage`, `lucide_icons_flutter`, `flutter_svg`, `share_plus`. `firebase_messaging` mağaza/Firebase hesapları açılınca (K4; o zamana kadar `PushService` + `FakePushService`), `sms_autofill` imzalı Android derlemesiyle eklenir.
+
+Yapı: `lib/app/` (uygulama, router, sağlayıcılar: `apiProvider`, `clockProvider`, `keyValueStoreProvider`, `pushServiceProvider`), `lib/features/<özellik>/{data,presentation}`, `lib/shared/`. Testler `test/helpers/fake_api.dart` (`Harness`: sözleşme uçlarını taklit eden HTTP bağdaştırıcısı, bellekte depo, sahte push, sabit saat) ve `test/helpers/screen_golden.dart` (390×844, açık/koyu/1.3×; `test/goldens/ci/`). Uygulama kimliği `com.omvila.isletme`; ad "OMVILA İşletme"; ikon koyu petrol zemin (`packages/design-tokens/assets/app-icon-isletme.svg`).
 
 ## Özel kurallar
 - API yüzeyi `/api/v1/manage` (salon paneliyle aynı uçlar ve izinler). Menü ve eylemler `session.permissions` ile.
