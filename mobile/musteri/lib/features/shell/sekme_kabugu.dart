@@ -57,8 +57,12 @@ class SekmeSayfasi extends StatelessWidget {
     required this.children,
     this.ustBaslik,
     this.onRefresh,
+    this.eylem,
     super.key,
   });
+
+  /// Başlığın sağındaki eylem (Randevularım'da bildirim zili).
+  final Widget? eylem;
 
   /// "Randevularım".
   final String baslik;
@@ -96,12 +100,19 @@ class SekmeSayfasi extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-        Semantics(
-          header: true,
-          child: Text(
-            baslik,
-            style: OmvilaYazi.buyukBaslik.copyWith(color: r.metin),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  baslik,
+                  style: OmvilaYazi.buyukBaslik.copyWith(color: r.metin),
+                ),
+              ),
+            ),
+            ?eylem,
+          ],
         ),
         const SizedBox(height: OmvilaBosluk.bosluk4),
         ...children,
@@ -119,46 +130,4 @@ class SekmeSayfasi extends StatelessWidget {
             ),
     );
   }
-}
-
-/// Paketlerim sekmesi. Paket listesi (Paketler, meListPackages) sonraki
-/// PR'da; bu PR'da başlık ve boş durum (T-106).
-class PaketlerSekmesi extends StatelessWidget {
-  /// Sekme.
-  const PaketlerSekmesi({super.key});
-
-  @override
-  Widget build(BuildContext context) => const SekmeSayfasi(
-    baslik: 'Paketlerim',
-    children: [
-      OmvilaBosDurum(
-        ikon: LucideIcons.package,
-        baslik: 'Henüz paketiniz yok',
-        aciklama:
-            'Salondan seanslı paket aldığınızda kalan seanslarınız burada '
-            'görünür.',
-      ),
-    ],
-  );
-}
-
-/// Profil sekmesi. Profil, izinler ve hesap ekranları sonraki PR'da; bu
-/// PR'da başlık ve boş durum (T-106).
-class ProfilSekmesi extends StatelessWidget {
-  /// Sekme.
-  const ProfilSekmesi({super.key});
-
-  @override
-  Widget build(BuildContext context) => const SekmeSayfasi(
-    baslik: 'Profil',
-    children: [
-      OmvilaBosDurum(
-        ikon: LucideIcons.user,
-        baslik: 'Profil bilgileriniz',
-        aciklama:
-            'Adınız, salonlarınız ve bildirim izinleriniz bu sekmede yer '
-            'alır.',
-      ),
-    ],
-  );
 }

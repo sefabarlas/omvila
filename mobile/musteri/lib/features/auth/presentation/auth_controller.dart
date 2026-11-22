@@ -35,4 +35,17 @@ class AuthController extends Notifier<AuthStatus> {
 
   /// Oturum kapandı (yenileme reddedildi veya çıkış).
   void signedOut() => state = AuthStatus.signedOut;
+
+  /// "Çıkış yap" (meLogout): bu telefonun push jetonu da pasifleşir.
+  Future<void> logout() async {
+    String? pushToken;
+    try {
+      pushToken = await ref.read(pushServiceProvider).token();
+    } on Exception {
+      pushToken = null;
+    }
+
+    await ref.read(authRepositoryProvider).logout(pushToken: pushToken);
+    state = AuthStatus.signedOut;
+  }
 }

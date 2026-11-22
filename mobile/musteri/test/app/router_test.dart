@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:omvila_musteri/app/router.dart';
 import 'package:omvila_musteri/features/brands/data/brands_repository.dart';
+import 'package:omvila_musteri/features/notifications/presentation/bildirimler_ekrani.dart';
 import 'package:omvila_ui/omvila_ui.dart';
 
 import '../helpers/booking_fixtures.dart';
 import '../helpers/fakes.dart';
 import '../helpers/fixtures.dart';
 import '../helpers/harness.dart';
+import '../helpers/hesap_fixtures.dart';
 
 const _banner = 'Bildirimler kapalı. Hatırlatmalar SMS ile gelecek.';
 
@@ -17,12 +19,14 @@ Future<TestDeps> _start(
   String? location,
   FakeBrandsRepository? brands,
   FakeAppointmentsRepository? appointments,
+  FakeWaitlistRepository? waitlist,
 }) async {
   usePhone(tester);
   final deps = TestDeps(
     store: store,
     brands: brands,
     appointments: appointments,
+    waitlist: waitlist,
   );
   final container = deps.container();
   addTearDown(container.dispose);
@@ -70,11 +74,22 @@ void main() {
     expect(find.text('Merhaba Merve'), findsOneWidget);
   });
 
-  testWidgets('bekleme teklifi bağlantısı /b/ şimdilik Randevularım', (
-    tester,
-  ) async {
-    await _start(tester, store: signedInStore(), location: '/b/ABC123');
-    expect(find.text('Merhaba Merve'), findsOneWidget);
+  testWidgets('bekleme teklifi bağlantısı /b/ teklifi açar', (tester) async {
+    await _start(
+      tester,
+      store: signedInStore(),
+      location: '/b/ABC123',
+      waitlist: FakeWaitlistRepository(offerValue: teklif()),
+    );
+    expect(find.text('Beklediğiniz saat boşaldı'), findsOneWidget);
+    expect(find.text('12:48'), findsOneWidget);
+  });
+
+  testWidgets('zil Bildirimler ekranını açar', (tester) async {
+    await _start(tester, store: signedInStore());
+    await tester.tap(find.byType(BildirimZili));
+    await tester.pumpAndSettle();
+    expect(find.text('Bildiriminiz yok'), findsOneWidget);
   });
 
   testWidgets('/r/ müşterinin randevusunu açar', (tester) async {

@@ -33,6 +33,9 @@ final class CustomerSession implements AuthSession {
   /// Cihazda oturum var mı.
   bool get isSignedIn => _refresh != null;
 
+  /// Yenileme jetonu (çıkışta zinciri iptal etmek için).
+  String? get refreshToken => _refresh;
+
   /// Cihazdaki jetonları okur; oturum varsa true.
   Future<bool> load() async {
     _access = await store.read(_accessKey);
