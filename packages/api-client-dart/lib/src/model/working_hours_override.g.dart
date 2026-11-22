@@ -123,7 +123,10 @@ WorkingHoursOverride _$WorkingHoursOverrideFromJson(
   $checkKeys(json, requiredKeys: const ['id', 'date', 'kind', 'isClosed']);
   final val = WorkingHoursOverride(
     id: $checkedConvert('id', (v) => v as String),
-    date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+    date: $checkedConvert(
+      'date',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     kind: $checkedConvert(
       'kind',
       (v) => $enumDecode(
@@ -148,7 +151,7 @@ Map<String, dynamic> _$WorkingHoursOverrideToJson(
   WorkingHoursOverride instance,
 ) => <String, dynamic>{
   'id': instance.id,
-  'date': instance.date.toIso8601String(),
+  'date': const DateOnlyConverter().toJson(instance.date),
   'kind': _$WorkingHoursOverrideKindEnumEnumMap[instance.kind]!,
   'isClosed': instance.isClosed,
   'intervals': ?instance.intervals?.map((e) => e.toJson()).toList(),

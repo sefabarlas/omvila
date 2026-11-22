@@ -139,11 +139,17 @@ TimeOffCreate _$TimeOffCreateFromJson(Map<String, dynamic> json) =>
         isAllDay: $checkedConvert('isAllDay', (v) => v as bool),
         fromDate: $checkedConvert(
           'fromDate',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         toDate: $checkedConvert(
           'toDate',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         startUtc: $checkedConvert(
           'startUtc',
@@ -162,8 +168,14 @@ Map<String, dynamic> _$TimeOffCreateToJson(TimeOffCreate instance) =>
     <String, dynamic>{
       'type': _$TimeOffCreateTypeEnumEnumMap[instance.type]!,
       'isAllDay': instance.isAllDay,
-      'fromDate': ?instance.fromDate?.toIso8601String(),
-      'toDate': ?instance.toDate?.toIso8601String(),
+      'fromDate': ?_$JsonConverterToJson<String, DateTime>(
+        instance.fromDate,
+        const DateOnlyConverter().toJson,
+      ),
+      'toDate': ?_$JsonConverterToJson<String, DateTime>(
+        instance.toDate,
+        const DateOnlyConverter().toJson,
+      ),
       'startUtc': ?instance.startUtc?.toIso8601String(),
       'endUtc': ?instance.endUtc?.toIso8601String(),
       'note': ?instance.note,
@@ -177,3 +189,13 @@ const _$TimeOffCreateTypeEnumEnumMap = {
   TimeOffCreateTypeEnum.other: 'Other',
   TimeOffCreateTypeEnum.unknownDefaultOpenApi: 'unknown_default_open_api',
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

@@ -90,7 +90,10 @@ CommissionWeekDay _$CommissionWeekDayFromJson(Map<String, dynamic> json) =>
         requiredKeys: const ['date', 'amountMinor', 'appointmentCount'],
       );
       final val = CommissionWeekDay(
-        date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+        date: $checkedConvert(
+          'date',
+          (v) => const DateOnlyConverter().fromJson(v as String),
+        ),
         amountMinor: $checkedConvert('amountMinor', (v) => (v as num).toInt()),
         appointmentCount: $checkedConvert(
           'appointmentCount',
@@ -102,7 +105,7 @@ CommissionWeekDay _$CommissionWeekDayFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$CommissionWeekDayToJson(CommissionWeekDay instance) =>
     <String, dynamic>{
-      'date': instance.date.toIso8601String(),
+      'date': const DateOnlyConverter().toJson(instance.date),
       'amountMinor': instance.amountMinor,
       'appointmentCount': instance.appointmentCount,
     };

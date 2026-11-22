@@ -5,6 +5,8 @@
 // ignore_for_file: unused_element
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'recurrence_request.g.dart';
 
@@ -59,6 +61,7 @@ class RecurrenceRequest {
     required: false,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime? endsOn;

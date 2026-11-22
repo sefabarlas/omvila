@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/working_hours_override.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'manage_list_branch_overrides200_response.g.dart';
 

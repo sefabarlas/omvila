@@ -99,7 +99,10 @@ DaySearchResult _$DaySearchResultFromJson(Map<String, dynamic> json) =>
         timeZone: $checkedConvert('timeZone', (v) => v as String),
         maxDate: $checkedConvert(
           'maxDate',
-          (v) => v == null ? null : DateTime.parse(v as String),
+          (v) => _$JsonConverterFromJson<String, DateTime>(
+            v,
+            const DateOnlyConverter().fromJson,
+          ),
         ),
         days: $checkedConvert(
           'days',
@@ -122,7 +125,20 @@ DaySearchResult _$DaySearchResultFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$DaySearchResultToJson(DaySearchResult instance) =>
     <String, dynamic>{
       'timeZone': instance.timeZone,
-      'maxDate': ?instance.maxDate?.toIso8601String(),
+      'maxDate': ?_$JsonConverterToJson<String, DateTime>(
+        instance.maxDate,
+        const DateOnlyConverter().toJson,
+      ),
       'days': instance.days.map((e) => e.toJson()).toList(),
       'nextAvailableUtc': ?instance.nextAvailableUtc?.toIso8601String(),
     };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

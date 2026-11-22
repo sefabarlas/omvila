@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/customer_deletion_preview_active_packages_inner.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'customer_deletion_preview.g.dart';
 

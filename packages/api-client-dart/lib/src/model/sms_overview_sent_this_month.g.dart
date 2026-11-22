@@ -108,7 +108,10 @@ SmsOverviewSentThisMonth _$SmsOverviewSentThisMonthFromJson(
     ],
   );
   final val = SmsOverviewSentThisMonth(
-    month: $checkedConvert('month', (v) => DateTime.parse(v as String)),
+    month: $checkedConvert(
+      'month',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     smsCount: $checkedConvert('smsCount', (v) => (v as num).toInt()),
     creditsUsed: $checkedConvert('creditsUsed', (v) => (v as num).toInt()),
     notificationCount: $checkedConvert(
@@ -122,7 +125,7 @@ SmsOverviewSentThisMonth _$SmsOverviewSentThisMonthFromJson(
 Map<String, dynamic> _$SmsOverviewSentThisMonthToJson(
   SmsOverviewSentThisMonth instance,
 ) => <String, dynamic>{
-  'month': instance.month.toIso8601String(),
+  'month': const DateOnlyConverter().toJson(instance.month),
   'smsCount': instance.smsCount,
   'creditsUsed': instance.creditsUsed,
   'notificationCount': instance.notificationCount,

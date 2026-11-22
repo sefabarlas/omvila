@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/notification_settings_update_templates_inner.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'notification_settings_update.g.dart';
 

@@ -177,8 +177,8 @@ final class ApiAppointmentsRepository implements AppointmentsRepository {
             AppointmentItemRequest(serviceId: i.serviceId, staffId: i.staffId),
         ],
         sameStaffForAll: staff.length == 1,
-        from: ApiDate(from),
-        to: ApiDate(to),
+        from: parseLocalDate(from),
+        to: parseLocalDate(to),
       ),
     );
     return response.data!;
@@ -190,7 +190,7 @@ final class ApiAppointmentsRepository implements AppointmentsRepository {
       final response = await api.getMeAppointmentsApi().meSearchRescheduleSlots(
         appointmentId: id,
         meRescheduleSlotSearch: MeRescheduleSlotSearch(
-          date: ApiDate(date),
+          date: parseLocalDate(date),
         ),
       );
       return response.data!;

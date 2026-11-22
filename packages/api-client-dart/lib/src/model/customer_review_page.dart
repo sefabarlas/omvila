@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/review_view.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'customer_review_page.g.dart';
 

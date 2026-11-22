@@ -124,10 +124,16 @@ WorkingHoursOverrideCreate _$WorkingHoursOverrideCreateFromJson(
 ) => $checkedCreate('WorkingHoursOverrideCreate', json, ($checkedConvert) {
   $checkKeys(json, requiredKeys: const ['fromDate', 'kind', 'isClosed']);
   final val = WorkingHoursOverrideCreate(
-    fromDate: $checkedConvert('fromDate', (v) => DateTime.parse(v as String)),
+    fromDate: $checkedConvert(
+      'fromDate',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     toDate: $checkedConvert(
       'toDate',
-      (v) => v == null ? null : DateTime.parse(v as String),
+      (v) => _$JsonConverterFromJson<String, DateTime>(
+        v,
+        const DateOnlyConverter().fromJson,
+      ),
     ),
     kind: $checkedConvert(
       'kind',
@@ -152,13 +158,21 @@ WorkingHoursOverrideCreate _$WorkingHoursOverrideCreateFromJson(
 Map<String, dynamic> _$WorkingHoursOverrideCreateToJson(
   WorkingHoursOverrideCreate instance,
 ) => <String, dynamic>{
-  'fromDate': instance.fromDate.toIso8601String(),
-  'toDate': ?instance.toDate?.toIso8601String(),
+  'fromDate': const DateOnlyConverter().toJson(instance.fromDate),
+  'toDate': ?_$JsonConverterToJson<String, DateTime>(
+    instance.toDate,
+    const DateOnlyConverter().toJson,
+  ),
   'kind': _$WorkingHoursOverrideCreateKindEnumEnumMap[instance.kind]!,
   'isClosed': instance.isClosed,
   'intervals': ?instance.intervals?.map((e) => e.toJson()).toList(),
   'note': ?instance.note,
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
 
 const _$WorkingHoursOverrideCreateKindEnumEnumMap = {
   WorkingHoursOverrideCreateKindEnum.holiday: 'Holiday',
@@ -168,3 +182,8 @@ const _$WorkingHoursOverrideCreateKindEnumEnumMap = {
   WorkingHoursOverrideCreateKindEnum.unknownDefaultOpenApi:
       'unknown_default_open_api',
 };
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

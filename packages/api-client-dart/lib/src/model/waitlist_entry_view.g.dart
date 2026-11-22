@@ -284,8 +284,9 @@ WaitlistEntryView _$WaitlistEntryViewFromJson(
     acceptOtherStaff: $checkedConvert('acceptOtherStaff', (v) => v as bool),
     dates: $checkedConvert(
       'dates',
-      (v) =>
-          (v as List<dynamic>).map((e) => DateTime.parse(e as String)).toList(),
+      (v) => (v as List<dynamic>)
+          .map((e) => const DateOnlyConverter().fromJson(e as String))
+          .toList(),
     ),
     timeWindows: $checkedConvert(
       'timeWindows',
@@ -331,7 +332,7 @@ Map<String, dynamic> _$WaitlistEntryViewToJson(WaitlistEntryView instance) =>
       'preferredStaffId': ?instance.preferredStaffId,
       'preferredStaffName': ?instance.preferredStaffName,
       'acceptOtherStaff': instance.acceptOtherStaff,
-      'dates': instance.dates.map((e) => e.toIso8601String()).toList(),
+      'dates': instance.dates.map(const DateOnlyConverter().toJson).toList(),
       'timeWindows': instance.timeWindows
           .map((e) => _$WaitlistTimeWindowEnumMap[e]!)
           .toList(),

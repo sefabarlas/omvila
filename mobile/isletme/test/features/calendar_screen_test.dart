@@ -110,16 +110,44 @@ void main() {
     expect(find.text('Derya Şahin'), findsOneWidget);
   });
 
-  testWidgets('filtre: personel gizlenir', (tester) async {
-    await openCalendar(tester);
+  testWidgets('filtre: staffIds sunucuya virgülle gider, personel gizlenir', (
+    tester,
+  ) async {
+    final h = Harness()..signIn();
+    h.api
+      ..reply('GET', '/api/v1/manage/today', todayJson())
+      ..on('GET', calendarPath, (request) {
+        final ids = request.options.uri.queryParameters['staffIds'];
+        return FakeResponse(
+          200,
+          calendarJson(onlyStaff: ids?.split(',').toSet()),
+        );
+      });
+    await h.pumpApp(tester);
+    await tester.tap(find.bySemanticsLabel('Takvim'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byTooltip('Personeli filtrele'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Can Yücel'));
     await tester.tap(find.text('Uygula'));
     await tester.pumpAndSettle();
+
+    final request = h.api.to('GET', calendarPath).last.options;
+    expect(
+      request.uri.queryParametersAll['staffIds'],
+      [
+        ([elifId, zeynepId]..sort()).join(','),
+      ],
+    );
     expect(find.text('Can'), findsNothing);
     expect(find.bySemanticsLabel(RegExp('Gizem Arslan')), findsNothing);
     expect(find.text('Elif'), findsOneWidget);
+
+    // Filtre sayfası filtreli yanıtta da bütün personeli listeler.
+    await tester.tap(find.byTooltip('Personeli filtrele'));
+    await tester.pumpAndSettle();
+    expect(find.text('Can Yücel'), findsOneWidget);
   });
 
   testWidgets('boş gün: TakvimBos ve Randevu ekle', (tester) async {

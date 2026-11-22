@@ -77,8 +77,8 @@ final class ApiBookingRepository implements BookingRepository {
       daySearchRequest: DaySearchRequest(
         items: items,
         sameStaffForAll: sameStaffForAll,
-        from: ApiDate(from),
-        to: ApiDate(to),
+        from: parseLocalDate(from),
+        to: parseLocalDate(to),
       ),
     );
     return response.data!;
@@ -96,7 +96,7 @@ final class ApiBookingRepository implements BookingRepository {
       slotSearchRequest: SlotSearchRequest(
         items: items,
         sameStaffForAll: sameStaffForAll,
-        date: ApiDate(date),
+        date: parseLocalDate(date),
       ),
     );
     return response.data!;

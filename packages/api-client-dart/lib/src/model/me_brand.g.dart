@@ -212,7 +212,10 @@ MeBrand _$MeBrandFromJson(Map<String, dynamic> json) => $checkedCreate(
       ),
       lastVisitOn: $checkedConvert(
         'lastVisitOn',
-        (v) => v == null ? null : DateTime.parse(v as String),
+        (v) => _$JsonConverterFromJson<String, DateTime>(
+          v,
+          const DateOnlyConverter().fromJson,
+        ),
       ),
       branches: $checkedConvert(
         'branches',
@@ -240,7 +243,10 @@ Map<String, dynamic> _$MeBrandToJson(MeBrand instance) => <String, dynamic>{
   'bookingEnabled': instance.bookingEnabled,
   'hasBooked': instance.hasBooked,
   'savedUtc': instance.savedUtc?.toIso8601String(),
-  'lastVisitOn': instance.lastVisitOn?.toIso8601String(),
+  'lastVisitOn': _$JsonConverterToJson<String, DateTime>(
+    instance.lastVisitOn,
+    const DateOnlyConverter().toJson,
+  ),
   'branches': instance.branches.map((e) => e.toJson()).toList(),
   'activePackages': instance.activePackages.map((e) => e.toJson()).toList(),
 };
@@ -251,3 +257,13 @@ const _$MeBrandCoverColorEnumEnumMap = {
   MeBrandCoverColorEnum.kum: 'kum',
   MeBrandCoverColorEnum.unknownDefaultOpenApi: 'unknown_default_open_api',
 };
+
+Value? _$JsonConverterFromJson<Json, Value>(
+  Object? json,
+  Value? Function(Json json) fromJson,
+) => json == null ? null : fromJson(json as Json);
+
+Json? _$JsonConverterToJson<Json, Value>(
+  Value? value,
+  Json? Function(Value value) toJson,
+) => value == null ? null : toJson(value);

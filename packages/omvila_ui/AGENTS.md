@@ -8,7 +8,7 @@
 | `lib/theme/omvila_theme.dart` | `packages/design-tokens`'dan **üretilir** (`pnpm --filter @omvila/design-tokens build`), elle düzenlenmez: `OmvilaRenkler`, `OmvilaGolgeler`, `OmvilaBosluk`, `OmvilaKose`, `OmvilaBoyut`, `OmvilaHareket`, `OmvilaYazi`, `OmvilaTema.acik()/koyu()`, `context.omvilaRenkler` |
 | `fonts/` | Plus Jakarta Sans değişken TTF (Latin + Latin Ext; `design-tokens/fonts` woff2 dosyalarından dönüştürüldü, OFL). Tema aileyi `package: 'omvila_ui'` ile ister |
 | `lib/widgets/` | Var: `OmvilaDurumRozeti` (+ `RandevuDurumu.fromDisplayStatus`), `OmvilaButon`, `OmvilaBosDurum`, `BentoBlok`, `RandevuKarti`, `RandevuSatiri`, `OtpGirisi`, `YuzenSekmeCubugu`, `GunSeridi`, `SaatIzgarasi`. Uygulama PR'larında eklenecek: `OmvilaRozet`, `PaketKarti`, `HizmetSecimi`, `PersonelSecici`, `RezervasyonAdimlari`, `SalonBasligi`, `PuanSecici`, `AltOzetCubugu`, `KopyalanabilirAlan`, `BilgiSeridi` |
-| `lib/format.dart` | Para, tarih, süre, telefon, IBAN, sayı biçimleri; `packages/ui-web/src/format` ile aynı kurallar ve test örnekleri |
+| `lib/format.dart` | Para, tarih, süre, telefon, IBAN, sayı biçimleri; `parseLocalDate` / `localDateOf` (API'nin `format: date` alanı ↔ "2026-11-25"); `packages/ui-web/src/format` ile aynı kurallar ve test örnekleri |
 | `lib/time.dart` | `Clock` / `SystemClock` / `FixedClock` ("şimdi" yalnız buradan) ve şube saat dilimiyle dönüşüm (`timezone` paketi); `packages/ui-web/src/time` ile aynı işlevler |
 | `lib/motion.dart` | Azaltılmış hareket (`reduceMotion`, `motionDuration`); süre ve eğri sabitleri temadaki `OmvilaHareket` |
 | `lib/errors/tr.dart` | `ErrorCode` → Türkçe mesaj; metinler `packages/ui-web/src/errors/tr.ts` ile birebir (test denetler) |

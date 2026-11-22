@@ -13,6 +13,8 @@ import 'package:omvila_api/src/model/public_appointment_deposit.dart';
 import 'package:omvila_api/src/model/display_status.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'public_appointment.g.dart';
 

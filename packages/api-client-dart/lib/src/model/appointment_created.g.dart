@@ -72,28 +72,31 @@ extension $AppointmentCreatedCopyWith on AppointmentCreated {
 // JsonSerializableGenerator
 // **************************************************************************
 
-AppointmentCreated _$AppointmentCreatedFromJson(
-  Map<String, dynamic> json,
-) => $checkedCreate('AppointmentCreated', json, ($checkedConvert) {
-  $checkKeys(json, requiredKeys: const ['appointment', 'skippedOccurrences']);
-  final val = AppointmentCreated(
-    appointment: $checkedConvert(
-      'appointment',
-      (v) => AppointmentDetail.fromJson(v as Map<String, dynamic>),
-    ),
-    skippedOccurrences: $checkedConvert(
-      'skippedOccurrences',
-      (v) =>
-          (v as List<dynamic>).map((e) => DateTime.parse(e as String)).toList(),
-    ),
-  );
-  return val;
-});
+AppointmentCreated _$AppointmentCreatedFromJson(Map<String, dynamic> json) =>
+    $checkedCreate('AppointmentCreated', json, ($checkedConvert) {
+      $checkKeys(
+        json,
+        requiredKeys: const ['appointment', 'skippedOccurrences'],
+      );
+      final val = AppointmentCreated(
+        appointment: $checkedConvert(
+          'appointment',
+          (v) => AppointmentDetail.fromJson(v as Map<String, dynamic>),
+        ),
+        skippedOccurrences: $checkedConvert(
+          'skippedOccurrences',
+          (v) => (v as List<dynamic>)
+              .map((e) => const DateOnlyConverter().fromJson(e as String))
+              .toList(),
+        ),
+      );
+      return val;
+    });
 
 Map<String, dynamic> _$AppointmentCreatedToJson(AppointmentCreated instance) =>
     <String, dynamic>{
       'appointment': instance.appointment.toJson(),
       'skippedOccurrences': instance.skippedOccurrences
-          .map((e) => e.toIso8601String())
+          .map(const DateOnlyConverter().toJson)
           .toList(),
     };

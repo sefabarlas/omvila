@@ -61,11 +61,14 @@ MeRescheduleSlotSearch _$MeRescheduleSlotSearchFromJson(
 ) => $checkedCreate('MeRescheduleSlotSearch', json, ($checkedConvert) {
   $checkKeys(json, requiredKeys: const ['date']);
   final val = MeRescheduleSlotSearch(
-    date: $checkedConvert('date', (v) => DateTime.parse(v as String)),
+    date: $checkedConvert(
+      'date',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
   );
   return val;
 });
 
 Map<String, dynamic> _$MeRescheduleSlotSearchToJson(
   MeRescheduleSlotSearch instance,
-) => <String, dynamic>{'date': instance.date.toIso8601String()};
+) => <String, dynamic>{'date': const DateOnlyConverter().toJson(instance.date)};

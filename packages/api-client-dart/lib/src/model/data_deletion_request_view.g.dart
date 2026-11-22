@@ -180,7 +180,10 @@ DataDeletionRequestView _$DataDeletionRequestViewFromJson(
       'requestedUtc',
       (v) => DateTime.parse(v as String),
     ),
-    dueOn: $checkedConvert('dueOn', (v) => DateTime.parse(v as String)),
+    dueOn: $checkedConvert(
+      'dueOn',
+      (v) => const DateOnlyConverter().fromJson(v as String),
+    ),
     status: $checkedConvert(
       'status',
       (v) => $enumDecode(
@@ -206,7 +209,7 @@ Map<String, dynamic> _$DataDeletionRequestViewToJson(
   'requestedVia':
       _$DataDeletionRequestViewRequestedViaEnumEnumMap[instance.requestedVia]!,
   'requestedUtc': instance.requestedUtc.toIso8601String(),
-  'dueOn': instance.dueOn.toIso8601String(),
+  'dueOn': const DateOnlyConverter().toJson(instance.dueOn),
   'status': _$DataDeletionRequestViewStatusEnumEnumMap[instance.status]!,
   'completedUtc': ?instance.completedUtc?.toIso8601String(),
 };

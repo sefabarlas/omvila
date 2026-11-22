@@ -6,6 +6,8 @@
 import 'package:omvila_api/src/model/appointment_item_request.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'day_search_request.g.dart';
 
@@ -61,6 +63,7 @@ class DaySearchRequest {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime from;
@@ -74,6 +77,7 @@ class DaySearchRequest {
     required: true,
     includeIfNull: false,
   )
+  @DateOnlyConverter()
 
 
   final DateTime to;

@@ -7,6 +7,8 @@ import 'package:omvila_api/src/model/me_branch_ref.dart';
 import 'package:omvila_api/src/model/me_brand_package_badge.dart';
 import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:json_annotation/json_annotation.dart';
+// ignore: unused_import
+import 'package:omvila_api/src/date_only.dart';
 
 part 'me_brand.g.dart';
 
@@ -153,6 +155,7 @@ class MeBrand {
     required: true,
     includeIfNull: true,
   )
+  @DateOnlyConverter()
 
 
   final DateTime? lastVisitOn;
