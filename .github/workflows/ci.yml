@@ -270,6 +270,27 @@ jobs:
           else
             echo "Test klasörü olan paket yok; atlandı."
           fi
+      # Uçtan uca akışlar (integration_test/) Prism mock'a karşı, flutter_tester'da (emülatör gerekmez).
+      - uses: pnpm/action-setup@v6
+        if: steps.guard.outputs.go == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.guard.outputs.go == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Prism mock
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @omvila/contracts mock > prism.log 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -s -o /dev/null http://127.0.0.1:4010/api/v1/public/brands/kuafor-elif && exit 0
+            sleep 1
+          done
+          cat prism.log; exit 1
+      - name: Uçtan uca testler (Flutter)
+        if: steps.guard.outputs.go == 'true'
+        run: dart run melos run integration --no-select
       # Uygulamanın yerel katmanı (Gradle, eklentiler, manifest) derleniyor mu; imzasız hata ayıklama APK'sı.
       - uses: actions/setup-java@v4
         if: steps.guard.outputs.go == 'true'
