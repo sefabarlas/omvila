@@ -1,0 +1,110 @@
+/* platform-paneli/PMarkalar ve PMarkaDetay. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.searchNote,
+.note {
+  margin: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--metin-marka);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.textButton:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.back {
+  display: inline-flex;
+  gap: var(--bosluk-1);
+  align-items: center;
+  align-self: flex-start;
+  color: var(--metin);
+  font-size: var(--yazi-kucuk-boyut);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back:focus-visible {
+  border-radius: var(--kose-sm);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  gap: var(--bosluk-2);
+}
+
+.facts {
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  gap: var(--bosluk-4);
+  justify-content: space-between;
+  padding: var(--bosluk-3) 0;
+  border-top: 1px solid var(--cizgi);
+}
+
+.fact dt {
+  color: var(--metin-ikincil);
+}
+
+.fact dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.auditNote {
+  display: flex;
+  gap: var(--bosluk-3);
+  padding: var(--bosluk-4) var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+}
+
+.auditNote p {
+  margin: 0;
+}
+
+.auditNote strong {
+  display: block;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
+
+.positive {
+  font-weight: 700;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-4);
+}
