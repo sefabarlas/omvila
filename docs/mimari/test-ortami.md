@@ -16,7 +16,7 @@
 | Adres | Ne | Erişim |
 |---|---|---|
 | `https://salon.test.omvila.com.tr` | Salon paneli | Basic auth, ardından telefon + SMS kodu |
-| `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth |
+| `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth; yalnız `/.well-known/apple-app-site-association` ve `/.well-known/assetlinks.json` açık (mağaza doğrulayıcıları parola göndermez) |
 | `https://api.test.omvila.com.tr` | API | Açık (tarayıcı çapraz köken isteğinde basic auth göndermez); SMS günlüğü yolu bu adreste 404 |
 | `https://sms.test.omvila.com.tr` | Sahte SMS günlüğü (giriş kodları burada) | Basic auth |
 | `https://posta.test.omvila.com.tr` | Mailpit (e-posta altyapısı gelince) | Basic auth |

@@ -1,6 +1,6 @@
 # Test ortamının kenar sunucusu: otomatik HTTPS (Let's Encrypt), alan adına göre yönlendirme.
 # Alan adları ve portlar ortamdan gelir (varsayılanlar test ortamı); yerel deneme: deploy/staging/compose.local.yml.
-# Basic auth: salon, randevu, sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
+# Basic auth: salon, randevu (derin bağlantı doğrulama dosyaları hariç), sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
 # (credentials: 'include' dahil) Authorization başlığını kendiliğinden göndermez, istekler 401 alırdı.
 {
 	http_port {$CADDY_HTTP_PORT:80}
@@ -36,8 +36,16 @@
 
 {$RANDEVU_HOST:randevu.test.omvila.com.tr} {
 	import common
-	import protected
-	reverse_proxy rezervasyon:3000
+	# Derin bağlantı doğrulama dosyaları basic auth dışında: Apple ve Google doğrulayıcıları parola göndermez,
+	# 401 alan doğrulama başarısız sayılır (K3, T-100). Dosyalarda kişisel veri yok; değer yoksa uygulama 404 döner.
+	@wellknown path /.well-known/apple-app-site-association /.well-known/assetlinks.json
+	handle @wellknown {
+		reverse_proxy rezervasyon:3000
+	}
+	handle {
+		import protected
+		reverse_proxy rezervasyon:3000
+	}
 }
 
 # SMS günlüğü sayfası API kapsayıcısında sunulur (sahte sağlayıcının infra.dev_sms_log kayıtları).
