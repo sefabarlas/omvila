@@ -294,27 +294,33 @@ void main() {
       expect(find.text('Bilgileriniz kaydedildi.'), findsOneWidget);
     });
 
-    testWidgets('doğrulama: ad, e-posta biçimi, e-postayı silme', (
+    testWidgets('doğrulama: ad, e-posta biçimi', (tester) async {
+      final repo = FakeProfileRepository(
+        profile: profil(email: 'eski@ornek.test'),
+      );
+      await _pump(tester, const ProfilDuzenleEkrani(), TestDeps(profile: repo));
+      await tester.enterText(find.byType(TextField).first, 'M');
+      await tester.enterText(find.byType(TextField).last, 'yanlis');
+      await tester.tap(find.text('Kaydet'));
+      await tester.pump();
+      expect(find.text('Adınızı ve soyadınızı yazın.'), findsOneWidget);
+      expect(find.text('Geçerli bir e-posta yazın.'), findsOneWidget);
+      expect(repo.updates, isEmpty);
+    });
+
+    testWidgets('e-posta alanı boşaltılınca e-posta silinir (null)', (
       tester,
     ) async {
       final repo = FakeProfileRepository(
         profile: profil(email: 'eski@ornek.test'),
       );
       await _pump(tester, const ProfilDuzenleEkrani(), TestDeps(profile: repo));
-      await tester.enterText(find.byType(TextField).first, 'M');
       await tester.enterText(find.byType(TextField).last, '');
       await tester.tap(find.text('Kaydet'));
-      await tester.pump();
-      expect(find.text('Adınızı ve soyadınızı yazın.'), findsOneWidget);
-      expect(
-        find.text('E-postayı kaldırmak için destekle görüşün.'),
-        findsOneWidget,
-      );
-      await tester.enterText(find.byType(TextField).last, 'yanlis');
-      await tester.tap(find.text('Kaydet'));
-      await tester.pump();
-      expect(find.text('Geçerli bir e-posta yazın.'), findsOneWidget);
-      expect(repo.updates, isEmpty);
+      await tester.pumpAndSettle();
+      expect(find.text('Geçerli bir e-posta yazın.'), findsNothing);
+      expect(repo.updates.single, ('Merve Yıldız', null, 'v1'));
+      expect(find.text('Bilgileriniz kaydedildi.'), findsOneWidget);
     });
 
     testWidgets('sunucu hatası kutuda', (tester) async {
