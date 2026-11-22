@@ -61,4 +61,13 @@ export const queryKeys = {
     ['customer-packages', branchId, filter, q] as const,
   /** Kapıda sıra (manageListWalkIns); önek ['walk-ins'] takvim ve Genel bakış sayısını da tazeler. */
   walkIns: (branchId: string) => ['walk-ins', branchId] as const,
+  /** Genel bakış bento ve doluluk (manageGetOverview); önek ['overview'] onay, sıra ve tahsilat değişince geçersizlenir. */
+  overview: (branchId: string) => ['overview', branchId] as const,
+  /** Raporlar (manageGetReportOverview, manageGetCommissionReport); önek ['reports']. */
+  reportOverview: (branchId: string, from: string, to: string) =>
+    ['reports', 'overview', branchId, from, to] as const,
+  commissionReport: (branchId: string, from: string, to: string) =>
+    ['reports', 'commissions', branchId, from, to] as const,
+  /** Primim (manageGetMyCommissionSummary); önek ['reports']. */
+  myCommission: (month: string) => ['reports', 'mine', month] as const,
 };

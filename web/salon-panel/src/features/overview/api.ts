@@ -14,3 +14,16 @@ export function onboardingQuery(api: Api) {
     queryFn: () => unwrap(api.GET('/api/v1/manage/onboarding')),
   });
 }
+
+export type ManageOverview = components['schemas']['ManageOverview'];
+
+/**
+ * Genel bakış bento ve "Bu hafta doluluk" (manageGetOverview; report.view). Gün ve hafta şubenin saat dilimindedir;
+ * kalan süreler generatedUtc'ye göre sayılır.
+ */
+export function overviewQuery(api: Api, branchId: string) {
+  return queryOptions({
+    queryKey: queryKeys.overview(branchId),
+    queryFn: () => unwrap(api.GET('/api/v1/manage/overview', { params: { query: { branchId } } })),
+  });
+}

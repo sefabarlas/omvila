@@ -91,3 +91,39 @@ describe('ilk hafta', () => {
     expect(calls['/api/v1/manage/onboarding/events']).toBeUndefined();
   });
 });
+
+// Kural: dilim-06 KK6, salon-paneli/GenelBakis ("BU HAFTA DOLULUK %74 · geçen hafta %68", "Bu hafta doluluk · personel
+// bazında"); manageGetOverview (T-120). "Hedefin %72'si" sözleşmede yok (T-116).
+describe('bu hafta doluluk', () => {
+  const active = sessionFixture({ brand: { ...sessionFixture().brand, status: 'Active' } });
+
+  it('bento ciro ve doluluk; personel satırları doluluğa göre', async () => {
+    renderApp('/', { session: active });
+    const summary = await screen.findByRole('group', { name: 'Özet' });
+    expect(await within(summary).findByText('%74')).toBeTruthy();
+    expect(within(summary).getByText('geçen hafta %68')).toBeTruthy();
+    expect(within(summary).getByText('3.340 ₺')).toBeTruthy();
+    expect(within(summary).queryByText(/hedefin/)).toBeNull();
+
+    const card = screen.getByRole('region', { name: 'Bu hafta doluluk' });
+    const meters = within(card).getAllByRole('meter');
+    expect(meters.map((m) => m.getAttribute('aria-label'))).toEqual([
+      'Elif Kaya doluluk',
+      'Mert Demir doluluk',
+      'Can Yücel doluluk',
+      'Zeynep Aksoy doluluk',
+    ]);
+    expect(meters[0]?.getAttribute('aria-valuenow')).toBe('86');
+    expect(within(card).getByText('%61')).toBeTruthy();
+  });
+
+  it('çalışma dakikası yoksa "—" ve açıklama', async () => {
+    renderApp('/', { session: active, reports: { noWorkingMinutes: true } });
+    const card = await screen.findByRole('region', { name: 'Bu hafta doluluk' });
+    expect(
+      await within(card).findByText('Bu hafta çalışma saati tanımlı personel yok.'),
+    ).toBeTruthy();
+    const summary = screen.getByRole('group', { name: 'Özet' });
+    expect(within(summary).getByText('çalışma saati yok')).toBeTruthy();
+  });
+});

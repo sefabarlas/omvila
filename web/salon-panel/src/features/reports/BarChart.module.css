@@ -1,0 +1,151 @@
+/* Günlük tutar grafiği (salon-paneli/Raporlar "Günlük tahsilat"); CSS ile çizilir, kütüphane yok. */
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bosluk-3);
+}
+
+.plot {
+  position: relative;
+  height: 220px;
+}
+
+.withAxis {
+  padding-right: var(--bosluk-12);
+}
+
+.grid {
+  position: absolute;
+  inset: 0 0 var(--bosluk-6);
+  pointer-events: none;
+}
+
+.gridLine {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--cizgi);
+}
+
+.gridLabel {
+  position: absolute;
+  top: calc(-1 * var(--bosluk-4));
+  right: 0;
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  font-variant-numeric: tabular-nums;
+}
+
+.bars {
+  display: flex;
+  gap: var(--bosluk-2);
+  height: 100%;
+}
+
+.column {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: var(--bosluk-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.barArea {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  border-bottom: 1px solid var(--cizgi);
+}
+
+.bar {
+  width: min(100%, 40px);
+  min-height: 2px;
+  border-radius: var(--kose-sm) var(--kose-sm) 0 0;
+  background: var(--marka);
+}
+
+/* Primim: çubuklar açık marka (marka rengi saydam), en yoğun gün tam marka. */
+.soft {
+  opacity: 0.4;
+}
+
+.soft.highlight {
+  opacity: 1;
+}
+
+.short {
+  height: 160px;
+}
+
+.future {
+  height: var(--bosluk-1);
+  background: var(--zemin-ikincil);
+  opacity: 1;
+}
+
+/* Kapalı gün: çubuk yok, taban çizgisi koyulaşır. */
+.closed {
+  width: min(100%, 40px);
+  height: 2px;
+  background: var(--cizgi-guclu);
+}
+
+.label {
+  min-height: var(--yazi-kucuk-satir);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-kucuk-boyut);
+  line-height: var(--yazi-kucuk-satir);
+  white-space: nowrap;
+}
+
+.details {
+  font-size: var(--yazi-kucuk-boyut);
+}
+
+.summary {
+  width: fit-content;
+  color: var(--metin-ikincil);
+  cursor: pointer;
+}
+
+.summary:focus-visible {
+  border-radius: var(--kose-sm);
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+.table {
+  width: 100%;
+  margin-top: var(--bosluk-2);
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: var(--bosluk-1) 0;
+  border-bottom: 1px solid var(--cizgi);
+  font-weight: 400;
+  text-align: start;
+}
+
+.table thead th {
+  color: var(--metin-ikincil);
+  font-weight: 600;
+}
+
+.table .numeric {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
