@@ -70,6 +70,13 @@ export const queryKeys = {
     ['reports', 'commissions', branchId, from, to] as const,
   /** Primim (manageGetMyCommissionSummary); önek ['reports']. */
   myCommission: (month: string) => ['reports', 'mine', month] as const,
+  /** Ayarlar → Roller ve yetkiler: kullanıcılar (manageListUsers) ve rol matrisi (manageGetRoleMatrix). */
+  users: () => ['users'] as const,
+  roleMatrix: () => ['role-matrix'] as const,
+  /** Ayarlar → KVKK ve veri: aydınlatma metni ve saklama süresi (manageGetPrivacySettings). */
+  privacySettings: () => ['privacy-settings'] as const,
+  /** Oturumdaki personelin Google Takvim bağlantısı (manageGetGoogleCalendarStatus). */
+  googleCalendar: () => ['google-calendar'] as const,
   /** OMVILA aboneliği (manageGetSubscription); önek ['subscription'] faturaları da kapsar. */
   subscription: () => ['subscription'] as const,
   invoices: () => ['subscription', 'invoices'] as const,

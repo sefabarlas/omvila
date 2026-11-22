@@ -167,6 +167,41 @@
   text-align: right;
 }
 
+/* "Google Takvim · bağlı" kartı (Personel); süresi dolunca uyarı zemini (Durumlar). */
+.google {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-5);
+  border-radius: var(--kose-xl);
+  background: var(--zemin-yukseltilmis);
+  box-shadow: var(--golge-sm);
+}
+
+.googleWarning {
+  background: var(--uyari-zemin);
+}
+
+.googleIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--kose-lg);
+  background: var(--zemin-marka-yumusak);
+  color: var(--marka);
+}
+
+.googleText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  min-width: 0;
+}
+
 .emptyCard {
   padding: var(--bosluk-8) var(--bosluk-6);
   border-radius: var(--kose-xl);

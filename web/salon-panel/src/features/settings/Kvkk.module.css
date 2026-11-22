@@ -29,3 +29,52 @@
 .strongLink:hover {
   text-decoration: underline;
 }
+
+/* Aydınlatma metni kutusu: belge simgesi, ad ve son güncelleme, "Önizle" ve "Kendi metnimi kullan". */
+.notice {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  padding: var(--bosluk-3) var(--bosluk-4);
+  border-radius: var(--kose-lg);
+  background: var(--zemin-ikincil);
+}
+
+.noticeIcon {
+  flex: none;
+  color: var(--metin-ikincil);
+}
+
+.noticeText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--bosluk-1);
+  min-width: 0;
+}
+
+.noticeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-2);
+  align-items: center;
+}
+
+.noticeBody {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.exportControl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-3);
+  align-items: center;
+  justify-content: flex-end;
+}
+
+@media (width <= 899px) {
+  .notice {
+    flex-wrap: wrap;
+  }
+}

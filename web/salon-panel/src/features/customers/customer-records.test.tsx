@@ -309,7 +309,8 @@ describe('Ayarlar → KVKK ve veri', () => {
     expect(within(table).getByRole('link', { name: 'Tülin Aksoy' }).getAttribute('href')).toBe(
       `/musteriler/${customerIds.tulin}`,
     );
-    expect(screen.queryByRole('button', { name: 'Değişiklikleri kaydet' })).toBeNull();
+    // Dilim 6: üst bardaki kaydetme aydınlatma metni ve saklama süresi formunundur (T-127).
+    expect(screen.getByRole('button', { name: 'Değişiklikleri kaydet' })).toBeTruthy();
     expect(
       within(screen.getByRole('navigation', { name: 'Ayar bölümleri' })).getByRole('link', {
         name: 'KVKK ve veri',

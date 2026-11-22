@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { rolesDemo, staffDemo } from './access-demo';
 import { calendarDemo, demoSunday, overviewDemo } from './calendar-demo';
 import { cashDemo, checkoutDemo } from './cash-demo';
 import { customersDemo, demoCustomerId } from './customers-demo';
@@ -32,6 +33,16 @@ const packageScreen = (page: Page) =>
   expect(
     page.getByRole('region', { name: 'Süresi yaklaşanlar' }).getByText('Melis Tunç'),
   ).toBeVisible();
+const kvkkScreen = async (page: Page) => {
+  await expect(page.getByText('OMVILA standart aydınlatma metni')).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Silme talepleri' })).toBeVisible();
+};
+const rolesScreen = async (page: Page) => {
+  await expect(
+    page.getByRole('table', { name: 'Kullanıcılar' }).getByText('Deniz Kara'),
+  ).toBeVisible();
+  await expect(page.getByRole('table', { name: 'Rol izinleri' })).toBeVisible();
+};
 const customerTable = (page: Page) =>
   expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible();
 
@@ -569,7 +580,37 @@ const screens: ScreenCase[] = [
     name: 'AyarlarKvkk',
     heading: 'Ayarlar',
     setup: customersDemo,
-    act: (page) => expect(page.getByRole('table', { name: 'Silme talepleri' })).toBeVisible(),
+    act: kvkkScreen,
+  },
+  {
+    path: '/ayarlar/kvkk',
+    name: 'AyarlarKvkk899',
+    heading: 'Ayarlar',
+    setup: customersDemo,
+    act: kvkkScreen,
+    viewport: { width: 899, height: 1100 },
+  },
+  {
+    path: '/ayarlar/roller',
+    name: 'AyarlarRoller',
+    heading: 'Ayarlar',
+    setup: rolesDemo,
+    act: rolesScreen,
+  },
+  {
+    path: '/ayarlar/roller',
+    name: 'AyarlarRoller899',
+    heading: 'Ayarlar',
+    setup: rolesDemo,
+    act: rolesScreen,
+    viewport: { width: 899, height: 1100 },
+  },
+  {
+    path: '/personel',
+    name: 'PersonelGoogle',
+    heading: 'Personel',
+    setup: staffDemo,
+    act: (page) => expect(page.getByText('Google Takvim · bağlı')).toBeVisible(),
   },
   {
     path: '/ayarlar/abonelik',

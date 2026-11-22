@@ -14,6 +14,7 @@ import type { Service } from '@/features/services/api';
 import { onboardingQuery } from '@/features/overview/api';
 import { Page } from '@/shared/Page';
 import { AddStaffDrawer } from './AddStaffDrawer';
+import { GoogleCalendarCard } from './GoogleCalendarCard';
 import { staffDetailQuery, useConfirmSolo } from './api';
 import type { StaffDetail, StaffSummary } from './api';
 import { roleLabel, workingSummary } from './labels';
@@ -252,6 +253,7 @@ function StaffDetailView({
       />
       <div className={styles.side}>
         <StaffServicesPanel staff={staff} services={services} onEdit={onEditServices} />
+        <GoogleCalendarCard staff={staff} />
         <section className={styles.panel} aria-label="Prim">
           <h2 className={styles.panelTitle}>Prim</h2>
           <ul className={styles.list}>
