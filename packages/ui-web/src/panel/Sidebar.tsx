@@ -1,6 +1,6 @@
 import emblemUrl from '@omvila/design-tokens/assets/logos/omvila-amblem-ters.svg';
 import logoUrl from '@omvila/design-tokens/assets/logos/omvila-logo-yatay-ters.svg';
-import { ChevronDown, LogOut, Store } from 'lucide-react';
+import { ChevronDown, LogOut, Moon, Store, Sun } from 'lucide-react';
 import { useId } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Avatar } from './Avatar';
@@ -39,6 +39,8 @@ export interface SidebarProps {
   user?: { name: string; role: string };
   /** Verilirse kullanıcı satırında "Çıkış yap" butonu çıkar. */
   onSignOut?: () => void;
+  /** Verilirse kullanıcı satırında açık/koyu tema geçişi çıkar. */
+  theme?: { dark: boolean; onToggle: () => void };
   /** Menü bölgesinin adı. */
   label?: string;
 }
@@ -53,6 +55,7 @@ export function Sidebar({
   onBranchChange,
   user,
   onSignOut,
+  theme,
   label = 'Ana menü',
 }: SidebarProps) {
   const branchSelectId = useId();
@@ -124,7 +127,7 @@ export function Sidebar({
           </div>
         ))}
       </div>
-      {user || onSignOut ? (
+      {user || onSignOut || theme ? (
         <div className={styles.user}>
           {user ? (
             <>
@@ -134,6 +137,21 @@ export function Sidebar({
                 <span className={styles.userRole}>{user.role}</span>
               </div>
             </>
+          ) : null}
+          {theme ? (
+            <button
+              type="button"
+              className={styles.signOut}
+              aria-label={theme.dark ? 'Açık temaya geç' : 'Koyu temaya geç'}
+              title={theme.dark ? 'Açık temaya geç' : 'Koyu temaya geç'}
+              onClick={theme.onToggle}
+            >
+              {theme.dark ? (
+                <Sun size={16} aria-hidden="true" />
+              ) : (
+                <Moon size={16} aria-hidden="true" />
+              )}
+            </button>
           ) : null}
           {onSignOut ? (
             <button

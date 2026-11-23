@@ -67,6 +67,17 @@ describe('Sidebar', () => {
     expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
+  it('tema geçişi etkin temanın tersini önerir ve tıklanınca çağrılır', async () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(
+      <Sidebar groups={groups} active="genel" theme={{ dark: false, onToggle }} />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Koyu temaya geç' }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    rerender(<Sidebar groups={groups} active="genel" theme={{ dark: true, onToggle }} />);
+    expect(screen.getByRole('button', { name: 'Açık temaya geç' })).toBeTruthy();
+  });
+
   it('şube seçici yalnız birden çok şubede', async () => {
     const onBranchChange = vi.fn();
     const { rerender } = render(

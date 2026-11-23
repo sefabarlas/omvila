@@ -27,6 +27,19 @@ describe('oturum', () => {
     expect(auth.getToken()).toBeNull();
   });
 
+  it('tema geçişi koyu temayı açar ve tercihi saklar (T-129)', async () => {
+    localStorage.removeItem('omvila.tema');
+    renderApp('/');
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: 'Koyu temaya geç' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('omvila.tema')).toBe('dark');
+    await userEvent.click(within(nav).getByRole('button', { name: 'Açık temaya geç' }));
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(localStorage.getItem('omvila.tema')).toBe('light');
+    localStorage.removeItem('omvila.tema');
+  });
+
   it('sayfa yenilenince çerezle oturum açılır; sahibin menüsü açılmış bölümler', async () => {
     renderApp('/');
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });

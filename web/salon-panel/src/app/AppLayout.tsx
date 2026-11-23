@@ -5,6 +5,7 @@ import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useApi } from './api-context';
 import { auth } from './auth';
+import { useTheme } from './theme';
 import { BranchContext } from './branch';
 import styles from './AppLayout.module.css';
 import { menuIcons } from './menu-icons';
@@ -23,6 +24,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const api = useApi();
   const queryClient = useQueryClient();
+  const theme = useTheme();
   const { pathname } = useLocation();
   const entries = visibleMenu(can);
   // Çıkış: sunucu yenileme çerezini siler ve zinciri iptal eder; istek başarısız olsa da yerel oturum kapanır.
@@ -72,6 +74,7 @@ export function AppLayout() {
               role: roleLabels[session.membership.role] ?? '',
             }}
             onSignOut={() => void signOut()}
+            theme={{ dark: theme.dark, onToggle: theme.toggle }}
           />
         </div>
         <main id="icerik" className={styles.main}>

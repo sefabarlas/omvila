@@ -178,6 +178,10 @@
   cursor: pointer;
 }
 
+.signOut + .signOut {
+  margin-left: 0;
+}
+
 .signOut:hover {
   color: var(--sidebar-metin-aktif);
 }
