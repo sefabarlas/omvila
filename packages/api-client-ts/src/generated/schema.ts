@@ -4121,8 +4121,14 @@ export interface components {
             /** @example Kuaför Elif */
             businessName: string;
             industryCode: components["schemas"]["IndustryCode"];
-            /** @example Elif Kaya */
-            ownerFullName?: string;
+            /**
+             * @description Kayıt ekranındaki "Adınız soyadınız": işletme sahibinin görünen adı (User.fullName ve sahip personel kaydı).
+             *     Tek değerdir, ad ve soyad ayrılmaz. Latin harfleri (Türkçe harfler dahil), kesme işareti, tire ve boşluk;
+             *     harfle başlar, rakam kabul edilmez. Sunucu baştaki ve sondaki boşluğu kırpar, aradaki çoklu boşluğu teke
+             *     indirir; sınırlar bu hâle uygulanır.
+             * @example Elif Kaya
+             */
+            ownerFullName: string;
             /**
              * @description Kullanım koşulları ve aydınlatma metni okundu
              * @constant

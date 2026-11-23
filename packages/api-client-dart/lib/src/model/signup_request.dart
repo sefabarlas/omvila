@@ -29,7 +29,7 @@ class SignupRequest {
 
     required  this.industryCode,
 
-     this.ownerFullName,
+    required  this.ownerFullName,
 
     required  this.acceptedTerms,
 
@@ -73,15 +73,16 @@ class SignupRequest {
 
 
 
+      /// Kayıt ekranındaki \"Adınız soyadınız\": işletme sahibinin görünen adı (User.fullName ve sahip personel kaydı). Tek değerdir, ad ve soyad ayrılmaz. Latin harfleri (Türkçe harfler dahil), kesme işareti, tire ve boşluk; harfle başlar, rakam kabul edilmez. Sunucu baştaki ve sondaki boşluğu kırpar, aradaki çoklu boşluğu teke indirir; sınırlar bu hâle uygulanır. 
   @JsonKey(
     
     name: r'ownerFullName',
-    required: false,
+    required: true,
     includeIfNull: false,
   )
 
 
-  final String? ownerFullName;
+  final String ownerFullName;
 
 
 
