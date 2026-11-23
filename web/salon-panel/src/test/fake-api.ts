@@ -810,6 +810,12 @@ export function fakeFetch({
       return json(201, { result: 'SignedIn', accessToken: 'jeton', expiresInSeconds: 900 });
     }
 
+    if (path === '/api/v1/manage/auth/logout') {
+      // Sunucu yenileme çerezini siler: sonraki yenileme 401.
+      signedIn = false;
+      return new Response(null, { status: 204 });
+    }
+
     if (path === '/api/v1/manage/auth/refresh') {
       return signedIn
         ? json(200, { accessToken: 'jeton', expiresInSeconds: 900 })
