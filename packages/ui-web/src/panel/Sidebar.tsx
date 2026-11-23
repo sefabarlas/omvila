@@ -1,7 +1,7 @@
 import emblemUrl from '@omvila/design-tokens/assets/logos/omvila-amblem-ters.svg';
 import logoUrl from '@omvila/design-tokens/assets/logos/omvila-logo-yatay-ters.svg';
-import { ChevronDown, LogOut, Store } from 'lucide-react';
-import { useId } from 'react';
+import { ChevronDown, ChevronUp, LogOut, Monitor, Moon, Store, Sun } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Avatar } from './Avatar';
 import styles from './Sidebar.module.css';
@@ -26,6 +26,14 @@ export interface SidebarBranch {
   name: string;
 }
 
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+const themeOptions: readonly { value: ThemePreference; label: string; icon: ReactNode }[] = [
+  { value: 'system', label: 'Sistem', icon: <Monitor size={14} aria-hidden="true" /> },
+  { value: 'light', label: 'Açık', icon: <Sun size={14} aria-hidden="true" /> },
+  { value: 'dark', label: 'Koyu', icon: <Moon size={14} aria-hidden="true" /> },
+];
+
 export interface SidebarProps {
   groups: readonly SidebarGroup[];
   /** Etkin öğenin anahtarı (aria-current="page"). */
@@ -39,6 +47,8 @@ export interface SidebarProps {
   user?: { name: string; role: string };
   /** Verilirse kullanıcı satırında "Çıkış yap" butonu çıkar. */
   onSignOut?: () => void;
+  /** Verilirse kullanıcı menüsünde tema seçici çıkar (Sistem / Açık / Koyu). */
+  theme?: { preference: ThemePreference; onChange: (preference: ThemePreference) => void };
   /** Menü bölgesinin adı. */
   label?: string;
 }
@@ -53,6 +63,7 @@ export function Sidebar({
   onBranchChange,
   user,
   onSignOut,
+  theme,
   label = 'Ana menü',
 }: SidebarProps) {
   const branchSelectId = useId();
@@ -124,30 +135,117 @@ export function Sidebar({
           </div>
         ))}
       </div>
-      {user || onSignOut ? (
-        <div className={styles.user}>
-          {user ? (
-            <>
-              <Avatar name={user.name} size="sm" />
-              <div className={styles.userText}>
-                <span className={styles.userName}>{user.name}</span>
-                <span className={styles.userRole}>{user.role}</span>
+      {user ? (
+        <UserMenu user={user} {...(onSignOut ? { onSignOut } : {})} {...(theme ? { theme } : {})} />
+      ) : null}
+    </nav>
+  );
+}
+
+interface UserMenuProps {
+  user: { name: string; role: string };
+  onSignOut?: () => void;
+  theme?: SidebarProps['theme'];
+}
+
+/** Kullanıcı satırı; menü varsa tıklayınca tema seçici ve "Çıkış yap" açılır (Esc ve dışarı tıklama kapatır). */
+function UserMenu({ user, onSignOut, theme }: UserMenuProps) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuId = useId();
+  const themeName = useId();
+  const hasMenu = onSignOut !== undefined || theme !== undefined;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  const identity = (
+    <>
+      <Avatar name={user.name} size="sm" />
+      <span className={styles.userText}>
+        <span className={styles.userName}>{user.name}</span>
+        <span className={styles.userRole}>{user.role}</span>
+      </span>
+    </>
+  );
+
+  if (!hasMenu) {
+    return <div className={styles.user}>{identity}</div>;
+  }
+
+  return (
+    <div className={styles.userMenu} ref={rootRef}>
+      {open ? (
+        <div id={menuId} className={styles.menu} role="group" aria-label="Hesap">
+          {theme ? (
+            <fieldset className={styles.themeGroup}>
+              <legend className={styles.menuLabel}>Tema</legend>
+              <div className={styles.segmented}>
+                {themeOptions.map((option) => (
+                  <label key={option.value} className={styles.segment}>
+                    <input
+                      type="radio"
+                      name={themeName}
+                      value={option.value}
+                      checked={theme.preference === option.value}
+                      onChange={() => {
+                        theme.onChange(option.value);
+                      }}
+                    />
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </label>
+                ))}
               </div>
-            </>
+            </fieldset>
           ) : null}
           {onSignOut ? (
-            <button
-              type="button"
-              className={styles.signOut}
-              aria-label="Çıkış yap"
-              title="Çıkış yap"
-              onClick={onSignOut}
-            >
+            <button type="button" className={styles.menuItem} onClick={onSignOut}>
               <LogOut size={16} aria-hidden="true" />
+              Çıkış yap
             </button>
           ) : null}
         </div>
       ) : null}
-    </nav>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={[styles.user, styles.userButton].join(' ')}
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        aria-label={`${user.name}, hesap menüsü`}
+        title={user.name}
+        onClick={() => {
+          setOpen((value) => !value);
+        }}
+      >
+        {identity}
+        <span className={styles.userChevron} aria-hidden="true">
+          <ChevronUp size={16} />
+        </span>
+      </button>
+    </div>
   );
 }

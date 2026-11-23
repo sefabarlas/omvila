@@ -35,7 +35,13 @@ export type { TooltipProps } from './Tooltip';
 export { DataTable, PersonCell } from './DataTable';
 export type { DataTableColumn, DataTableProps, PersonCellProps } from './DataTable';
 export { Sidebar } from './Sidebar';
-export type { SidebarBranch, SidebarGroup, SidebarItem, SidebarProps } from './Sidebar';
+export type {
+  SidebarBranch,
+  SidebarGroup,
+  SidebarItem,
+  SidebarProps,
+  ThemePreference,
+} from './Sidebar';
 export { Bento, BentoBlock, StatCard } from './StatCard';
 export type { BentoBlockProps, BentoProps, StatCardProps } from './StatCard';
 export { Topbar } from './Topbar';

@@ -50,6 +50,7 @@ describe('giriş ve oturum', () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/', { calls });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
     await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Platform paneline giriş' }),

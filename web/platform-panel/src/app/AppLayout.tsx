@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { useApi } from './api-context';
 import styles from './AppLayout.module.css';
 import { auth } from './auth';
+import { useTheme } from './theme';
 import { activeMenuKey, visibleMenu } from './menu';
 import { roleLabels, useSession } from './session';
 
@@ -26,6 +27,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const api = useApi();
   const queryClient = useQueryClient();
+  const theme = useTheme();
   const { pathname } = useLocation();
   const entries = visibleMenu(can);
   // Çıkış: yenileme jetonunun zinciri sunucuda iptal edilir; istek başarısız olsa da yerel oturum kapanır.
@@ -72,6 +74,7 @@ export function AppLayout() {
           onNavigate={(item) => void navigate({ to: item.href })}
           user={{ name: session.user.fullName, role: `${roleLabels[session.role]} · OMVILA` }}
           onSignOut={() => void signOut()}
+          theme={{ preference: theme.preference, onChange: theme.setPreference }}
         />
       </div>
       <main id="icerik" className={styles.main}>

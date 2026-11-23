@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { createContext, createElement, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 
 const storageKey = 'omvila.tema';
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -25,22 +26,61 @@ export function saveThemePreference(preference: ThemePreference): void {
   }
 }
 
+const darkQuery = '(prefers-color-scheme: dark)';
+
+function systemDark(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia(darkQuery).matches;
+}
+
 /**
  * Koyu tema data-theme="dark" ile açılır (design-tokens). Tercih yoksa işletim sisteminin teması izlenir.
- * Tema seçici Ayarlar'da gelir; o zamana kadar sistem teması veya kayıtlı tercih.
+ * Tema seçici kenar menüde (T-129): seçim bu tarayıcıda saklanır (localStorage).
  */
-export function useThemeEffect(preference: ThemePreference = readThemePreference()): void {
+export function useThemeEffect(preference: ThemePreference = readThemePreference()): boolean {
+  const [osDark, setOsDark] = useState(systemDark);
   useEffect(() => {
-    const root = document.documentElement;
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      const dark = preference === 'dark' || (preference === 'system' && media.matches);
-      root.dataset.theme = dark ? 'dark' : 'light';
+    const media = window.matchMedia(darkQuery);
+    const onChange = () => {
+      setOsDark(media.matches);
     };
-    apply();
-    media.addEventListener('change', apply);
+    media.addEventListener('change', onChange);
     return () => {
-      media.removeEventListener('change', apply);
+      media.removeEventListener('change', onChange);
     };
-  }, [preference]);
+  }, []);
+  const dark = preference === 'dark' || (preference === 'system' && osDark);
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  }, [dark]);
+  return dark;
+}
+
+interface ThemeApi {
+  preference: ThemePreference;
+  /** Seçimi uygular ve bu tarayıcıda saklar ("Sistem" kaydı siler). */
+  setPreference: (preference: ThemePreference) => void;
+}
+
+const ThemeContext = createContext<ThemeApi>({
+  preference: 'system',
+  setPreference: () => undefined,
+});
+
+/** Kök düzeyde tema tercihi; kenar menüdeki seçici `useTheme` ile değiştirir. */
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [preference, setPreference] = useState(readThemePreference);
+  useThemeEffect(preference);
+  const choose = (next: ThemePreference) => {
+    saveThemePreference(next);
+    setPreference(next);
+  };
+  return createElement(
+    ThemeContext.Provider,
+    { value: { preference, setPreference: choose } },
+    children,
+  );
+}
+
+export function useTheme(): ThemeApi {
+  return useContext(ThemeContext);
 }

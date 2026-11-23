@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import type { Api } from '@/app/api';
-import { useThemeEffect } from '@/app/theme';
+import { ThemeProvider } from '@/app/theme';
 import { NotFoundPage } from '@/shared/NotFoundPage';
 
 export interface RouterContext {
@@ -12,8 +12,11 @@ export interface RouterContext {
 }
 
 function Root() {
-  useThemeEffect();
-  return <Outlet />;
+  return (
+    <ThemeProvider>
+      <Outlet />
+    </ThemeProvider>
+  );
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({

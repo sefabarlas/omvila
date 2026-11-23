@@ -21,10 +21,27 @@ describe('oturum', () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/', { calls });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
     await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
     expect(await screen.findByRole('heading', { name: 'Panele giriş' })).toBeTruthy();
     expect(calls['/api/v1/manage/auth/logout']).toHaveLength(1);
     expect(auth.getToken()).toBeNull();
+  });
+
+  it('tema seçici: Koyu ve Açık saklanır, Sistem kaydı siler (T-129)', async () => {
+    localStorage.removeItem('omvila.tema');
+    renderApp('/');
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
+    await userEvent.click(within(nav).getByRole('radio', { name: 'Koyu' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('omvila.tema')).toBe('dark');
+    await userEvent.click(within(nav).getByRole('radio', { name: 'Açık' }));
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(localStorage.getItem('omvila.tema')).toBe('light');
+    await userEvent.click(within(nav).getByRole('radio', { name: 'Sistem' }));
+    expect(localStorage.getItem('omvila.tema')).toBeNull();
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 
   it('sayfa yenilenince çerezle oturum açılır; sahibin menüsü açılmış bölümler', async () => {
