@@ -15,7 +15,7 @@ import { Badge } from './Badge';
 import { Button } from './Button';
 import { DataTable, PersonCell } from './DataTable';
 import { Sidebar } from './Sidebar';
-import type { SidebarGroup } from './Sidebar';
+import type { SidebarGroup, ThemePreference } from './Sidebar';
 import { Bento, BentoBlock, StatCard } from './StatCard';
 import { Topbar } from './Topbar';
 
@@ -81,6 +81,7 @@ export const Panel = () => {
   const [active, setActive] = useState('genel');
   const [branch, setBranch] = useState('kadikoy');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [theme, setTheme] = useState<ThemePreference>('system');
   return (
     <div style={{ display: 'flex', minHeight: '720px', margin: 'calc(var(--bosluk-6) * -1)' }}>
       <Sidebar
@@ -96,6 +97,8 @@ export const Panel = () => {
         branchId={branch}
         onBranchChange={setBranch}
         user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
+        theme={{ preference: theme, onChange: setTheme }}
+        onSignOut={() => undefined}
       />
       <main style={{ flex: 1, minWidth: 0 }}>
         <Topbar

@@ -74,7 +74,7 @@ export function AppLayout() {
           onNavigate={(item) => void navigate({ to: item.href })}
           user={{ name: session.user.fullName, role: `${roleLabels[session.role]} · OMVILA` }}
           onSignOut={() => void signOut()}
-          theme={{ dark: theme.dark, onToggle: theme.toggle }}
+          theme={{ preference: theme.preference, onChange: theme.setPreference }}
         />
       </div>
       <main id="icerik" className={styles.main}>

@@ -56,23 +56,29 @@ export function useThemeEffect(preference: ThemePreference = readThemePreference
 }
 
 interface ThemeApi {
-  dark: boolean;
-  /** Etkin temanın tersini seçer ve saklar. */
-  toggle: () => void;
+  preference: ThemePreference;
+  /** Seçimi uygular ve bu tarayıcıda saklar ("Sistem" kaydı siler). */
+  setPreference: (preference: ThemePreference) => void;
 }
 
-const ThemeContext = createContext<ThemeApi>({ dark: false, toggle: () => undefined });
+const ThemeContext = createContext<ThemeApi>({
+  preference: 'system',
+  setPreference: () => undefined,
+});
 
 /** Kök düzeyde tema tercihi; kenar menüdeki seçici `useTheme` ile değiştirir. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreference] = useState(readThemePreference);
-  const dark = useThemeEffect(preference);
-  const toggle = () => {
-    const next: ThemePreference = dark ? 'light' : 'dark';
+  useThemeEffect(preference);
+  const choose = (next: ThemePreference) => {
     saveThemePreference(next);
     setPreference(next);
   };
-  return createElement(ThemeContext.Provider, { value: { dark, toggle } }, children);
+  return createElement(
+    ThemeContext.Provider,
+    { value: { preference, setPreference: choose } },
+    children,
+  );
 }
 
 export function useTheme(): ThemeApi {

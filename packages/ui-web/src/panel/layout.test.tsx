@@ -44,38 +44,51 @@ describe('Sidebar', () => {
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ key: 'hizmetler' }));
   });
 
-  it('"Çıkış yap" yalnız onSignOut verilince ve tıklanınca çağrılır', async () => {
+  it('kullanıcı menüsü: tema seçici ve "Çıkış yap"; Esc kapatır ve odağı geri verir', async () => {
     const onSignOut = vi.fn();
-    const { unmount } = render(
-      <Sidebar
-        groups={groups}
-        active="genel"
-        user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
-      />,
-    );
-    expect(screen.queryByRole('button', { name: 'Çıkış yap' })).toBeNull();
-    unmount();
+    const onChange = vi.fn();
     render(
       <Sidebar
         groups={groups}
         active="genel"
         user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
         onSignOut={onSignOut}
+        theme={{ preference: 'system', onChange }}
       />,
     );
+    const trigger = screen.getByRole('button', { name: 'Elif Kaya, hesap menüsü' });
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('button', { name: 'Çıkış yap' })).toBeNull();
+
+    await userEvent.click(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    const themeGroup = screen.getByRole('group', { name: 'Tema' });
+    expect(within(themeGroup).getByRole('radio', { name: 'Sistem' })).toHaveProperty(
+      'checked',
+      true,
+    );
+    await userEvent.click(within(themeGroup).getByRole('radio', { name: 'Koyu' }));
+    expect(onChange).toHaveBeenCalledWith('dark');
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'Tema' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    await userEvent.click(trigger);
     await userEvent.click(screen.getByRole('button', { name: 'Çıkış yap' }));
     expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
-  it('tema geçişi etkin temanın tersini önerir ve tıklanınca çağrılır', async () => {
-    const onToggle = vi.fn();
-    const { rerender } = render(
-      <Sidebar groups={groups} active="genel" theme={{ dark: false, onToggle }} />,
+  it('menü verilmezse kullanıcı satırı düğme değildir', () => {
+    render(
+      <Sidebar
+        groups={groups}
+        active="genel"
+        user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
+      />,
     );
-    await userEvent.click(screen.getByRole('button', { name: 'Koyu temaya geç' }));
-    expect(onToggle).toHaveBeenCalledTimes(1);
-    rerender(<Sidebar groups={groups} active="genel" theme={{ dark: true, onToggle }} />);
-    expect(screen.getByRole('button', { name: 'Açık temaya geç' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Elif Kaya, hesap menüsü' })).toBeNull();
+    expect(screen.getByText('Elif Kaya')).toBeTruthy();
   });
 
   it('şube seçici yalnız birden çok şubede', async () => {
