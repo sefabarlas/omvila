@@ -41,12 +41,6 @@ internal sealed class ManageSignupService(
         // Kullanıcı ve üyelik markalar üstüdür: telefonla süzülmüş okuma platform bağlamında (ADR-0006 § sistem süreçleri).
         await session.SetTenantAsync(TenantScope.Platform, ct);
         var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == phone.Value, ct);
-        if (user?.PlatformRole is not null)
-        {
-            // Platform kullanıcısının marka üyeliği olamaz (alan-modeli.md § User.PlatformRole).
-            return Error.Unauthorized();
-        }
-
         if (user is not null && await db.Memberships.AnyAsync(m => m.UserId == user.Id, ct))
         {
             var existing = await signIn.SignInAsync(phone.Value, clientType, rememberDevice: false, ct);

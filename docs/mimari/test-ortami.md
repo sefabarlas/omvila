@@ -124,7 +124,7 @@ Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com
 
 ## Platform kullanıcısı
 
-Platform paneli (iç ekip) hesapları web'den açılmaz; sunucuda komutla oluşturulur (K2, T-119). Komut idempotenttir: numara zaten platform kullanıcısıysa rolü ve adı güncellenir. Bir markanın üyesi olan numara platform kullanıcısı olamaz (ve tersi). Rol: `PlatformAdmin` (Yönetici), `PlatformSupport` (Destek) veya `PlatformFinance` (Finans).
+Platform paneli (iç ekip) hesapları web'den açılmaz; sunucuda komutla oluşturulur (K2, T-119). Komut idempotenttir: numara zaten platform kullanıcısıysa rolü ve adı güncellenir. Numara bir markanın üyesiyse de platform kullanıcısı olur; salon ve platform oturumları ayrıdır, salonda görünen adı değişmez (T-128). Rol: `PlatformAdmin` (Yönetici), `PlatformSupport` (Destek) veya `PlatformFinance` (Finans).
 
 ```bash
 dc --profile seed run --rm seed --role=platform-user --platform-phone=05550009901 --platform-name="Deniz Yılmaz" --platform-role=PlatformAdmin

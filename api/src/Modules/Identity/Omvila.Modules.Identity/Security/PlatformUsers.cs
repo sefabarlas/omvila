@@ -10,7 +10,7 @@ namespace Omvila.Modules.Identity.Security;
 
 /// <summary>
 /// Platform kullanıcısı oluşturma (K2) ve platform okuma servisleri (ADR-0006: yalnız platform bağlamında; başka bağlamda
-/// istisna). Platform kullanıcısı ile marka üyeliği birbirini dışlar (alan-modeli.md § User.PlatformRole).
+/// istisna). Aynı kullanıcı hem marka üyesi hem platform kullanıcısı olabilir; oturumlar ayrı audience'tır (T-128).
 /// </summary>
 internal sealed class PlatformUsers(IdentityDbContext db, ITenantContext tenant, IIdGenerator ids, IClock clock)
     : IPlatformUserProvisioning, IBrandOwnerDirectory, IUserNameDirectory
@@ -32,19 +32,16 @@ internal sealed class PlatformUsers(IdentityDbContext db, ITenantContext tenant,
         }
 
         var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == phone.E164, ct);
-        if (user is not null && await db.Memberships.AnyAsync(m => m.UserId == user.Id, ct))
-        {
-            return Error.Conflict(ErrorCodes.PhoneAlreadyExists);
-        }
-
         var created = user is null;
+        // Marka üyesinin salonda görünen adı komutla değişmez (T-128).
+        var keepName = user is not null && await db.Memberships.AnyAsync(m => m.UserId == user.Id, ct);
         if (user is null)
         {
             user = User.Create(ids.New(), phone.E164, fullName, clock.GetCurrentInstant());
             db.Users.Add(user);
         }
 
-        user.AssignPlatformRole(role, fullName);
+        user.AssignPlatformRole(role, keepName ? null : fullName);
         await db.SaveChangesAsync(ct);
         return new ProvisionedPlatformUser(user.Id, created);
     }

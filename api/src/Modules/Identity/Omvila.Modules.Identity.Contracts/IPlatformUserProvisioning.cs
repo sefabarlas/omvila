@@ -4,7 +4,7 @@ namespace Omvila.Modules.Identity.Contracts;
 
 /// <summary>
 /// Platform kullanıcısı oluşturma (K2: web'den kayıt yok, sunucuda komutla). İdempotent: numara zaten platform kullanıcısıysa
-/// rolü ve adı güncellenir. Marka üyeliği olan numara platform kullanıcısı olamaz (alan-modeli.md § User.PlatformRole).
+/// rolü ve adı güncellenir. Numara marka üyesiyse de olur; salondaki adı değişmez (T-128).
 /// Platform bağlamında, açık transaction içinde çağrılır.
 /// </summary>
 public interface IPlatformUserProvisioning
