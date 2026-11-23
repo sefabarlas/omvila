@@ -1,7 +1,7 @@
 # Test ortamının kenar sunucusu: otomatik HTTPS (Let's Encrypt), alan adına göre yönlendirme.
 # Alan adları ve portlar ortamdan gelir (varsayılanlar test ortamı); yerel deneme: deploy/staging/compose.local.yml.
-# Basic auth: salon, admin, randevu, www, sms, posta. API'de yok: tarayıcı çapraz köken fetch isteklerinde
-# (credentials: 'include' dahil) Authorization başlığını kendiliğinden göndermez, istekler 401 alırdı.
+# Basic auth yalnız geliştirici araçlarında (sms: giriş kodları, posta: Mailpit). Ürün yüzeyleri (salon, admin, randevu,
+# www) ürün sahibinin kararıyla açık; kendi girişleri (telefon + SMS kodu) korur, arama motorlarına noindex ile kapalı.
 {
 	http_port {$CADDY_HTTP_PORT:80}
 	https_port {$CADDY_HTTPS_PORT:443}
@@ -22,14 +22,12 @@
 
 {$SALON_HOST:salon.test.omvila.com.tr} {
 	import common
-	import protected
 	reverse_proxy salon-panel:8080
 }
 
-# Platform paneli (iç ekip; T-123): basic auth, ardından platform kullanıcısının telefonu + SMS kodu.
+# Platform paneli (iç ekip; T-123): platform kullanıcısının telefonu + SMS kodu.
 {$ADMIN_HOST:admin.test.omvila.com.tr} {
 	import common
-	import protected
 	reverse_proxy platform-panel:8080
 }
 
@@ -43,14 +41,12 @@
 
 {$RANDEVU_HOST:randevu.test.omvila.com.tr} {
 	import common
-	import protected
 	reverse_proxy rezervasyon:3000
 }
 
-# Tanıtım sitesi (statik). Test ortamında diğer web yüzeyleri gibi basic auth ve noindex.
+# Tanıtım sitesi (statik). Test ortamında noindex.
 {$WWW_HOST:www.test.omvila.com.tr} {
 	import common
-	import protected
 	reverse_proxy tanitim:8080
 }
 
