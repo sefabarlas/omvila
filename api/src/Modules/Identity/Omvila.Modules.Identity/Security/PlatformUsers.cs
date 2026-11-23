@@ -33,8 +33,9 @@ internal sealed class PlatformUsers(IdentityDbContext db, ITenantContext tenant,
 
         var user = await db.Users.SingleOrDefaultAsync(u => u.PhoneE164 == phone.E164, ct);
         var created = user is null;
-        // Marka üyesinin salonda görünen adı komutla değişmez (T-128).
-        var keepName = user is not null && await db.Memberships.AnyAsync(m => m.UserId == user.Id, ct);
+        // Marka üyesinin salonda görünen adı komutla değişmez (T-128); ad hiç girilmemişse komuttaki ad yazılır.
+        var keepName = user is not null && !string.IsNullOrWhiteSpace(user.FullName)
+            && await db.Memberships.AnyAsync(m => m.UserId == user.Id, ct);
         if (user is null)
         {
             user = User.Create(ids.New(), phone.E164, fullName, clock.GetCurrentInstant());
