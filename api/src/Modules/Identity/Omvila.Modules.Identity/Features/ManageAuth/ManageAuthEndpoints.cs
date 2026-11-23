@@ -122,7 +122,7 @@ internal static partial class ManageAuthEndpoints
             body.SignupToken!,
             body.BusinessName!.Trim(),
             body.IndustryCode!,
-            string.IsNullOrWhiteSpace(body.OwnerFullName) ? null : body.OwnerFullName.Trim(),
+            PersonName.Normalize(body.OwnerFullName),
             http.Connection.RemoteIpAddress?.ToString());
         var session = await signup.SignupAsync(command, client.Value, ct);
         return session.ToHttp(value => TypedResults.Json(
@@ -161,9 +161,10 @@ internal static partial class ManageAuthEndpoints
             errors["industryCode"] = ["invalid_format"];
         }
 
-        if (body.OwnerFullName?.Trim().Length > 120)
+        // Kayıt ekranındaki "Adınız soyadınız" (T-130): zorunlu; kurallar PersonName'de. Değer hataya yazılmaz.
+        if (PersonName.Validate(PersonName.Normalize(body.OwnerFullName)) is { } ownerNameError)
         {
-            errors["ownerFullName"] = ["too_long"];
+            errors["ownerFullName"] = [ownerNameError];
         }
 
         if (!body.AcceptedTerms)

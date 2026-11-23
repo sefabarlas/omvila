@@ -16,7 +16,10 @@ internal sealed class User
 
     public string PhoneE164 { get; private set; } = string.Empty;
 
-    /// <summary>Kayıtta sorulmaz (S-21); personel kaydından veya profilden gelir.</summary>
+    /// <summary>
+    /// Görünen ad. İşletme sahibinde kayıt ekranındaki "Adınız soyadınız" (T-130), personelde davetteki ad. T-130'dan
+    /// önce açılmış hesaplarda boş olabilir.
+    /// </summary>
     public string? FullName { get; private set; }
 
     public string LanguageCode { get; private set; } = "tr";
@@ -39,6 +42,13 @@ internal sealed class User
     };
 
     public void RecordLogin(Instant now) => LastLoginUtc = now;
+
+    /// <summary>Kullanıcının kendi yazdığı ad (kayıt ekranı, T-130). Kurallar <see cref="PersonName"/>'dedir.</summary>
+    public void Rename(string fullName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fullName);
+        FullName = fullName.Trim();
+    }
 
     /// <summary>Platform kullanıcısı (sunucu komutuyla; K2). Ad verilirse güncellenir; hesap etkinleşir.</summary>
     public void AssignPlatformRole(PlatformRole role, string? fullName)

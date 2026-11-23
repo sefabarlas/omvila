@@ -69,7 +69,7 @@ public sealed class AppointmentNotificationTests(PostgresFixture db) : IAsyncLif
             SELECT string_agg(recipient_phone || '|' || coalesce(reference_id::text, '') || '|' || (payload->>'salon') || '|' || (payload->>'tarih') || '|' || (payload->>'saat')
               || '|' || (payload->>'hizmet') || '|' || (payload->>'personel') || '|' || (payload->>'bağlantı'), ',')
             FROM notifications.notification_outbox WHERE event_code = 'appointment.confirmed'
-            """)).ShouldBe($"{SelinPhone}|{Id(notified)}|Kuaför Elif|Çar 2 Ara|14:30|Saç kesimi|Kuaför Elif|omvila.com/r/{code}");
+            """)).ShouldBe($"{SelinPhone}|{Id(notified)}|Kuaför Elif|Çar 2 Ara|14:30|Saç kesimi|Elif Kaya|omvila.com/r/{code}");
         (await RemindersAsync("Pending")).ShouldBe("12-01 11:30|-,12-02 09:30|same_day,12-02 11:30|-,12-03 09:30|same_day", "anahtar kapalı olsa da hatırlatmalar planlanır");
     }
 
