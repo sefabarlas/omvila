@@ -5,7 +5,7 @@
 | Veri | Nerede | Sınıf | Koruma |
 |---|---|---|---|
 | Telefon (müşteri, kullanıcı) | `customers.customers`, `identity.users` | Kişisel | Maskeli gösterim (Personel), günlükte yok |
-| Ad soyad | aynı | Kişisel | Günlükte yok |
+| Ad soyad | aynı (işletme sahibinde kayıt ekranındaki "Adınız soyadınız", T-130; ayrıca `tenancy.staff`) | Kişisel | Günlükte ve hata izinde yok; doğrulama hatası yalnız kod döner (değer dönmez); işletme kullanıcıları aydınlatma metninin kapsamında |
 | E-posta | aynı | Kişisel | Günlükte yok |
 | Doğum yılı, cinsiyet | `customers.customers` | Kişisel | İsteğe bağlı |
 | Salon notları | `brand_customers.notes` | Kişisel (serbest metin) | Sağlık verisi yazılmaz uyarısı; yalnız marka görür; günlükte yok |

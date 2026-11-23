@@ -88,12 +88,14 @@ Salon çalışanı veya OMVILA ekibi. Giriş yalnız telefon + SMS koduyla yapı
 | Alan | Tip | Not |
 |---|---|---|
 | PhoneE164 | string | UNIQUE |
-| FullName | string(120) | |
+| FullName | string(120)? | Görünen ad (kenar menü, hesap menüsü, avatar baş harfleri). İşletme sahibinde kaynak kayıt ekranındaki "Adınız soyadınız" (`ownerFullName`, zorunlu), personelde davetteki ad. Kurallar aşağıda. T-130'dan önce açılmış sahip hesaplarında boş olabilir (o zaman kenar menüde marka adı görünür) |
 | Email | string(160)? | |
 | LanguageCode | string(5) | `tr` |
 | PlatformRole | enum? | `PlatformAdmin`, `PlatformSupport`, `PlatformFinance`; doluysa platform kullanıcısıdır; aynı kullanıcı marka üyesi de olabilir, oturumlar ayrı audience'tır (T-128) |
 | IsActive | bool | |
 | LastLoginUtc | Instant? | |
+
+**Ad soyad kuralları (T-130, kayıt):** tek alan ve tek değerdir, ad ve soyad ayrı saklanmaz. Baştaki ve sondaki boşluk kırpılır, aradaki çoklu boşluk teke iner (NFC); sınırlar bu hâle uygulanır: 2–120 karakter; Latin harfleri (Türkçe harfler dahil), kesme işareti (`'`, `’`), tire ve boşluk; harfle başlar; rakam ve başka işaret kabul edilmez. Kural sözleşmede (`SignupRequest.ownerFullName`: `minLength`, `maxLength`, `pattern`), sunucuda (`PersonName`) ve panelde (`personNameError`) aynıdır. Ad, SMS kodu doğrulanana kadar yalnız kayıt formunda bekler (sunucuda bekleyen kayıt satırı yoktur; `signupToken` yalnız doğrulanmış telefonu taşır); hesap kayıt isteğiyle oluşurken aynı transaction'da `User.FullName`'e ve sahibin `Staff.FullName`'ine yazılır. Sonradan personel kaydından değişen ad `Staff.FullName`'dir; `User.FullName` kayıttaki değerde kalır. Ad kişisel veridir: günlüğe ve hata izine yazılmaz ([guvenlik-kvkk.md](../standartlar/guvenlik-kvkk.md)).
 
 ### Role, Permission, RolePermission
 - `Role`: sistem rolleri `Owner`, `BranchManager`, `Staff` (`IsSystem = true`, `BrandId = null`). v1'de markaya özel rol yoktur.

@@ -12,7 +12,7 @@ Bu klasör OMVILA HTTP API'sinin **tek doğru kaynağıdır** (ADR-0009). Önce 
 3. Kaynak oluşturan ve para kaydeden POST'lar `IdempotencyKey` parametresi alır. Düzenleme ve durum eylemleri `IfMatch` alır.
 4. Yeni hata kodu: `components/schemas/ErrorCode` enum'una **ve** `docs/sozlesme/api-kurallari.md` kataloğuna **ve** istemci mesaj dosyalarına (`packages/ui-web/src/errors/tr.ts`, `packages/omvila_ui/lib/errors/tr.dart`) eklenir.
 5. Alan adları `docs/alan/sozluk.md` ve `docs/alan/alan-modeli.md` ile uyumlu olmalı. Yeni kavram önce sözlüğe girer.
-6. Kırıcı değişiklik (alan silme, tip değiştirme, zorunlu yapma, yol değiştirme) yasaktır. Gerekirse kullanıcıya sorun.
+6. Kırıcı değişiklik (alan silme, tip değiştirme, zorunlu yapma, yol değiştirme) yasaktır. Gerekirse kullanıcıya sorun. Ürün sahibinin açıkça onayladığı kırıcı değişikliğin oasdiff bulguları, karar numarasıyla `oasdiff-err-ignore.txt`'ye satır satır yazılır (`--err-ignore`); `oasdiff-levels.txt` bu amaçla gevşetilmez.
 7. Örnekler gerçekçi olsun: tasarım ekranlarındaki adlar ve değerler (Kuaför Elif, Kadıköy, Selin Öztürk, 450 ₺ = `45000`).
 8. Telefon ve ad içeren örneklerde gerçek kişi verisi kullanmayın.
 

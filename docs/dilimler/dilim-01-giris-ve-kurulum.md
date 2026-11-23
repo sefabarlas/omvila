@@ -25,6 +25,7 @@ Giris, GirisKod, Kayit, KayitKurulum, GenelBakisBos (yalnız ilk hafta bağlant�
 
 ## Alan kuralları
 - Kayıt tek transaction: `Brand(Onboarding)` + `BrandSettings` (varsayılanlar `sureler-ve-ayarlar.md`) + `BookingPageSettings` + ilk `Branch` (ad "Merkez", saat dilimi `Europe/Istanbul`, haftalık saat boş) + `User` + `UserMembership(Owner, Active)` + `Staff` (sahibin kendisi, `IsBookableOnline=true`) + `Subscription(Trialing, TrialEndsOn = bugün + 14)` + kontör hediyesi (`CreditTransaction(Grant, [DENEME KONTÖRÜ])`, değer yapılandırmadan) + `TermsAcceptance` (kullanım koşulları ve aydınlatma metni, sürüm + zaman).
+- Kayıt formu alan sırası (T-130): Adınız soyadınız, İşletme adı, Ne tür bir işletme?, Cep telefonunuz, kullanım koşulları ve aydınlatma metni onayı. "Adınız soyadınız" zorunludur (`ownerFullName`); kuralları [alan-modeli.md § User](../alan/alan-modeli.md#user). Ad, kayıtta `User.FullName`'e ve sahibin `Staff.FullName`'ine yazılır. Girişten gelen doğrulanmış telefonla tek adımlı kayıtta da (kabul kriteri 3) sorulur.
 - Slug: işletme adından üretilir (Türkçe karakter dönüşümü: ç→c, ğ→g, ı→i, İ→i, ö→o, ş→s, ü→u), çakışırsa `-2`, `-3`. Ayrılmış adlar (`r`, `b`, `d`, `api`, `giris`, `kayit`, `admin`, `panel`, `www`…) kullanılamaz.
 - Kurulum adımı tamamlanma kuralları: WorkingHours = şubede en az bir gün aralığı var; Services = en az bir aktif hizmet; Staff = sahibin kendisi dışında en az bir personel **veya** sahip "tek başıma çalışıyorum" dedi (ayar: `onboarding.soloConfirmed`); ShareBookingLink = bağlantı kopyalandı veya QR indirildi (istemci `manageRecordOnboardingEvent` ile bildirir). Hepsi tamamlanınca `Brand.Status = Active`.
 - Personel saatleri: "İşletme saatleriyle aynı" seçilirse şube saatleri kopyalanır (bağ tutulmaz). Bir personelin iki şubedeki saatleri çakışamaz.
@@ -32,7 +33,7 @@ Giris, GirisKod, Kayit, KayitKurulum, GenelBakisBos (yalnız ilk hafta bağlant�
 - Plan sınırları (`Plan.StaffLimit`, `IncludedBranchCount`) personel ve şube eklerken kontrol edilir. Değerler veriden okunur (geliştirmede sınırsız seed).
 
 ## Kabul kriterleri
-1. **Kayıt:** Kayıtlı olmayan `0532 418 77 05` ile "İşletmenizi oluşturun" → kod → işletme adı "Kuaför Elif", tür "Kuaför" → panel açılır; `GET /manage/session` rol `Owner`, abonelik `Trialing`, deneme bitişi 14 gün sonra; kurulum ekranında 1/5 tamamlandı.
+1. **Kayıt:** Kayıtlı olmayan `0532 418 77 05` ile "İşletmenizi oluşturun" → ad soyad "Elif Kaya", işletme adı "Kuaför Elif", tür "Kuaför" → kod → panel açılır; kenar menüde ve personel listesinde "Elif Kaya"; `GET /manage/session` rol `Owner`, abonelik `Trialing`, deneme bitişi 14 gün sonra; kurulum ekranında 1/5 tamamlandı.
 2. **Giriş:** Kayıtlı numarayla giriş → kod → panel. Yanlış kod → `otp_invalid` + kalan deneme; 5. yanlışta `otp_attempts_exceeded` ve 5 dk bekleme; 60 sn dolmadan tekrar kod → `otp_resend_too_soon`.
 3. **Numara sızdırmaz:** Kayıtlı olmayan numarayla "Panele giriş" de 202 döner; doğrulamada `SignupRequired` gelir ve kayıt ekranına yönlendirilir.
 4. **Hatırla:** "Bu bilgisayarda 30 gün hatırla" işaretliyken tarayıcı kapanıp açılınca oturum sürer; işaretsizken düşer.
