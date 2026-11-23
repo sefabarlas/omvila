@@ -79,6 +79,7 @@ describe('giriş', () => {
 
     expect(await screen.findByText('0532 *** ** 05 numarası doğrulandı.')).toBeTruthy();
     expect(screen.queryByLabelText('Cep telefonunuz')).toBeNull();
+    await userEvent.type(screen.getByLabelText('Adınız soyadınız'), 'Elif Kaya');
     await userEvent.type(screen.getByLabelText('İşletme adı'), 'Kuaför Elif');
     await userEvent.click(
       screen.getByRole('checkbox', { name: 'Kullanım koşullarını ve aydınlatma metnini okudum' }),
@@ -90,6 +91,7 @@ describe('giriş', () => {
     ).toBeTruthy();
     expect(calls['/api/v1/manage/auth/signup']?.[0]).toEqual({
       signupToken: 'kayit-jetonu',
+      ownerFullName: 'Elif Kaya',
       businessName: 'Kuaför Elif',
       industryCode: 'hair_salon',
       acceptedTerms: true,
@@ -109,7 +111,11 @@ describe('kayıt', () => {
   it('işletme bilgileri → kod → işletme oluşur', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/kayit', { signedIn: false, verify: 'SignupRequired', calls });
-    await userEvent.type(await screen.findByLabelText('İşletme adı'), 'Berber Kaan');
+    await userEvent.type(
+      await screen.findByLabelText('Adınız soyadınız'),
+      '  Kaan   Öztürk-Şahin ',
+    );
+    await userEvent.type(screen.getByLabelText('İşletme adı'), 'Berber Kaan');
     await userEvent.selectOptions(screen.getByLabelText('Ne tür bir işletme?'), 'barber');
     await userEvent.type(screen.getByLabelText('Cep telefonunuz'), '0532 418 77 05');
     await userEvent.click(
@@ -131,6 +137,7 @@ describe('kayıt', () => {
       purpose: 'Signup',
     });
     expect(calls['/api/v1/manage/auth/signup']?.[0]).toMatchObject({
+      ownerFullName: 'Kaan Öztürk-Şahin',
       businessName: 'Berber Kaan',
       industryCode: 'barber',
     });
@@ -146,5 +153,102 @@ describe('kayıt', () => {
     expect(await screen.findByText('İşletme adı en az 2 harf olmalı.')).toBeTruthy();
     expect(screen.getByText('Devam etmek için koşulları onaylayın.')).toBeTruthy();
     expect(calls['/api/v1/manage/auth/otp/request']).toBeUndefined();
+  });
+
+  // Kural: T-130 (ürün sahibi kararı 2026-11-23): kayıt formunda "Adınız soyadınız" ilk alan ve zorunlu; kurallar
+  // sunucuyla aynı (ui-web personNameError).
+  const fillSignupExceptName = async () => {
+    await userEvent.type(screen.getByLabelText('İşletme adı'), 'Kuaför Elif');
+    await userEvent.type(screen.getByLabelText('Cep telefonunuz'), '0532 418 77 05');
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Kullanım koşullarını ve aydınlatma metnini okudum' }),
+    );
+  };
+
+  it('alan sırası: ad soyad, işletme adı, tür, telefon, onay; ad alanı autocomplete="name"', async () => {
+    renderApp('/kayit', { signedIn: false });
+    const name = await screen.findByLabelText('Adınız soyadınız');
+
+    expect(name.getAttribute('autocomplete')).toBe('name');
+    const controls = [
+      name,
+      screen.getByLabelText('İşletme adı'),
+      screen.getByLabelText('Ne tür bir işletme?'),
+      screen.getByLabelText('Cep telefonunuz'),
+      screen.getByRole('checkbox', { name: 'Kullanım koşullarını ve aydınlatma metnini okudum' }),
+      screen.getByRole('button', { name: 'SMS kodu gönder' }),
+    ];
+    controls.slice(1).forEach((control, index) => {
+      const previous = controls[index];
+      expect(
+        previous && previous.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+    expect(screen.getByText('Giriş ve doğrulama için')).toBeTruthy();
+  });
+
+  it.each([
+    ['boş', null],
+    ['yalnız boşluk', '   '],
+    ['tek harf', 'E'],
+  ])('ad soyad %s: hata gösterilir, kod istenmez', async (_case, value) => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/kayit', { signedIn: false, calls });
+    const name = await screen.findByLabelText('Adınız soyadınız');
+    if (value) {
+      await userEvent.type(name, value);
+    }
+
+    await fillSignupExceptName();
+    await userEvent.click(screen.getByRole('button', { name: 'SMS kodu gönder' }));
+
+    expect(await screen.findByText('Adınızı ve soyadınızı yazın.')).toBeTruthy();
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(calls['/api/v1/manage/auth/otp/request']).toBeUndefined();
+  });
+
+  it('ad soyad rakamlı veya 120 karakterden uzun: gönderilmez', async () => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/kayit', { signedIn: false, calls });
+    const name = await screen.findByLabelText('Adınız soyadınız');
+    await userEvent.type(name, 'Elif Kaya 2');
+    await fillSignupExceptName();
+    await userEvent.click(screen.getByRole('button', { name: 'SMS kodu gönder' }));
+    expect(
+      await screen.findByText(
+        'Adınızı ve soyadınızı yalnız harfle yazın; kesme işareti ve tire kullanabilirsiniz.',
+      ),
+    ).toBeTruthy();
+
+    await userEvent.clear(name);
+    await userEvent.click(name);
+    await userEvent.paste('a'.repeat(121));
+    await userEvent.click(screen.getByRole('button', { name: 'SMS kodu gönder' }));
+    expect(
+      await screen.findByText('Adınız soyadınız en fazla 120 karakter olabilir.'),
+    ).toBeTruthy();
+    expect(calls['/api/v1/manage/auth/otp/request']).toBeUndefined();
+  });
+
+  it('kod ekranından geri dönünce ad soyad ve diğer alanlar dolu kalır', async () => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/kayit', { signedIn: false, calls });
+    await userEvent.type(await screen.findByLabelText('Adınız soyadınız'), 'Çağrı Işık');
+    await fillSignupExceptName();
+    await userEvent.click(screen.getByRole('button', { name: 'SMS kodu gönder' }));
+    expect(await screen.findByText('2 / 2 · Telefon doğrulama')).toBeTruthy();
+    // Ad kod doğrulanana kadar yalnız formda bekler: kod isteğinde gitmez, hesap henüz yok.
+    expect(calls['/api/v1/manage/auth/otp/request']?.[0]).toEqual({
+      phone: '+905324187705',
+      purpose: 'Signup',
+    });
+    expect(calls['/api/v1/manage/auth/signup']).toBeUndefined();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Geri' }));
+
+    const name = await screen.findByLabelText<HTMLInputElement>('Adınız soyadınız');
+    expect(name.value).toBe('Çağrı Işık');
+    expect(screen.getByLabelText<HTMLInputElement>('İşletme adı').value).toBe('Kuaför Elif');
+    expect(screen.getByLabelText<HTMLInputElement>('Cep telefonunuz').value).toBe('0532 418 77 05');
   });
 });

@@ -1,5 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { parseMobilePhone } from '@omvila/ui-web/format';
+import {
+  normalizePersonName,
+  parseMobilePhone,
+  personNameError,
+  personNameMaxLength,
+} from '@omvila/ui-web/format';
+import type { PersonNameError } from '@omvila/ui-web/format';
 import {
   authStyles as styles,
   CodeStep,
@@ -23,8 +29,23 @@ import { signupHandoff } from './handoff';
 
 const industryCodes = industries.map((i) => i.value) as [IndustryCode, ...IndustryCode[]];
 
+// Sunucuyla aynı kurallar (T-130); boş ve tek harfte ürün sahibinin metni.
+const ownerNameMessages: Record<PersonNameError, string> = {
+  required: 'Adınızı ve soyadınızı yazın.',
+  too_short: 'Adınızı ve soyadınızı yazın.',
+  too_long: `Adınız soyadınız en fazla ${String(personNameMaxLength)} karakter olabilir.`,
+  invalid_format:
+    'Adınızı ve soyadınızı yalnız harfle yazın; kesme işareti ve tire kullanabilirsiniz.',
+};
+
 function schema(phoneVerified: boolean) {
   return z.object({
+    ownerFullName: z.string().superRefine((value, context) => {
+      const error = personNameError(value);
+      if (error) {
+        context.addIssue({ code: 'custom', message: ownerNameMessages[error] });
+      }
+    }),
     businessName: z
       .string()
       .trim()
@@ -45,7 +66,7 @@ function schema(phoneVerified: boolean) {
 
 type SignupForm = z.infer<ReturnType<typeof schema>>;
 
-/** salon-paneli/Kayit (kabul kriteri 1): 1/2 işletme bilgileri, 2/2 kod; girişten gelen doğrulanmış telefonla tek adım. */
+/** salon-paneli/Kayit (kabul kriteri 1, T-130): 1/2 ad soyad ve işletme bilgileri, 2/2 kod; girişten gelen doğrulanmış telefonla tek adım. */
 export function SignupScreen() {
   const authApi = useAuthApi();
   const [verified] = useState(() => signupHandoff.peek());
@@ -54,6 +75,7 @@ export function SignupScreen() {
   const form = useForm<SignupForm>({
     resolver: zodResolver(schema(verified !== null)),
     defaultValues: {
+      ownerFullName: '',
       businessName: '',
       industryCode: 'hair_salon',
       phone: '',
@@ -62,8 +84,13 @@ export function SignupScreen() {
   });
 
   const createBusiness = async (signupToken: string) => {
-    const { businessName, industryCode } = form.getValues();
-    const result = await authApi.signup(signupToken, businessName.trim(), industryCode);
+    const { ownerFullName, businessName, industryCode } = form.getValues();
+    const result = await authApi.signup(
+      signupToken,
+      normalizePersonName(ownerFullName),
+      businessName.trim(),
+      industryCode,
+    );
     signupHandoff.clear();
     await authApi.signedIn(result.accessToken, '/');
   };
@@ -138,6 +165,14 @@ export function SignupScreen() {
           ) : null}
         </div>
         {submitError ? <Banner tone="hata" title={submitError} /> : null}
+        <TextField
+          label="Adınız soyadınız"
+          placeholder="Elif Kaya"
+          autoComplete="name"
+          autoCapitalize="words"
+          error={errors.ownerFullName?.message}
+          {...form.register('ownerFullName')}
+        />
         <TextField
           label="İşletme adı"
           placeholder="Kuaför Elif"

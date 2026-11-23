@@ -7,4 +7,11 @@ export type { MoneyValue, PriceDisplay } from './money';
 export { formatPhone, maskPhone, parseMobilePhone } from './phone';
 export { withTimeSuffix } from './suffix';
 export type { TimeSuffix } from './suffix';
-export { initials } from './name';
+export {
+  initials,
+  normalizePersonName,
+  personNameError,
+  personNameMaxLength,
+  personNameMinLength,
+} from './name';
+export type { PersonNameError } from './name';

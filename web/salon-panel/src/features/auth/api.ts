@@ -35,11 +35,17 @@ export function useAuthApi() {
     },
     verifyOtp: (otpId: string, code: string, rememberDevice: boolean) =>
       unwrap(api.POST('/api/v1/manage/auth/otp/verify', { body: { otpId, code, rememberDevice } })),
-    signup: (signupToken: string, businessName: string, industryCode: IndustryCode) =>
+    signup: (
+      signupToken: string,
+      ownerFullName: string,
+      businessName: string,
+      industryCode: IndustryCode,
+    ) =>
       unwrap(
         api.POST('/api/v1/manage/auth/signup', {
           body: {
             signupToken,
+            ownerFullName,
             businessName,
             industryCode,
             acceptedTerms: true,

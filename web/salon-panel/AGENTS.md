@@ -29,6 +29,7 @@ Rota adları Türkçe URL'dir (`/takvim`, `/musteriler`, `/ayarlar/kapora`), bil
 - **Eşzamanlı düzenleme:** `412` → "Kayıt çakışması" şeridi + "Yenile". Sürükle-bırakta `409 slot_taken` → blok eski yerine döner + uyarı.
 - **Çalışma saati dışı:** `409 outside_working_hours` → onay iletişim kutusu → `allowOutsideWorkingHours: true` ile tekrar.
 - **Bento blokları:** her renkten en fazla bir blok; boşta `0` veya `—`.
+- **Kayıt formu (T-130):** alan sırası Adınız soyadınız (`autocomplete="name"`, zorunlu), İşletme adı, Ne tür bir işletme?, Cep telefonunuz, onay. Ad kuralları `@omvila/ui-web/format` `personNameError` / `normalizePersonName` (sunucudaki `PersonName` ile aynı); ad kod doğrulanana kadar formda bekler, `signup` isteğinde `ownerFullName` olarak gider. Kenar menü adı `session.user.fullName` (boşsa marka adı).
 - **Durum desenleri:** `design/ekranlar/salon-paneli/Durumlar.png` (kayıt çakışması, saat doldu, SMS kod sınırı, kontör az, 404, 403, ödeme gecikti, salt okunur, Google bağlantısı koptu, kapora alınamaz). Hepsi `Banner` veya `EmptyState` ile.
 
 ## Komutlar
