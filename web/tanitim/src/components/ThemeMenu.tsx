@@ -3,7 +3,7 @@
 import { Check, Monitor, Moon, Sun } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
-import { isDark, setThemePreference, useThemePreference } from '@/lib/theme';
+import { setThemePreference, useResolvedDark, useThemePreference } from '@/lib/theme';
 import type { ThemePreference } from '@/lib/theme';
 import styles from './ThemeMenu.module.css';
 
@@ -24,6 +24,7 @@ export const themeOptions: readonly {
 /** Üst bardaki tema düğmesi ve menüsü (tasarım TemaMenu). Esc ve dışarı tıklama kapatır; ok tuşları gezer. */
 export function ThemeMenu() {
   const preference = useThemePreference();
+  const dark = useResolvedDark();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -82,11 +83,7 @@ export function ThemeMenu() {
           setOpen((value) => !value);
         }}
       >
-        {isDark(preference) ? (
-          <Moon size={20} aria-hidden="true" />
-        ) : (
-          <Sun size={20} aria-hidden="true" />
-        )}
+        {dark ? <Moon size={20} aria-hidden="true" /> : <Sun size={20} aria-hidden="true" />}
       </button>
       {open ? (
         <div

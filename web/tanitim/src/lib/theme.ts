@@ -70,4 +70,27 @@ export function useThemePreference(): ThemePreference {
   return useSyncExternalStore(subscribe, snapshot, () => 'system');
 }
 
+function subscribeResolved(listener: () => void): () => void {
+  const unsubscribe = subscribe(listener);
+  if (typeof window.matchMedia !== 'function') {
+    return unsubscribe;
+  }
+
+  const media = window.matchMedia(darkQuery);
+  media.addEventListener('change', listener);
+  return () => {
+    unsubscribe();
+    media.removeEventListener('change', listener);
+  };
+}
+
+/** Etkin tema koyu mu; sunucu çiziminde ve hidrasyonda açık kabul edilir (çıktı uyuşsun diye). */
+export function useResolvedDark(): boolean {
+  return useSyncExternalStore(
+    subscribeResolved,
+    () => isDark(snapshot()),
+    () => false,
+  );
+}
+
 export const darkMediaQuery = darkQuery;
