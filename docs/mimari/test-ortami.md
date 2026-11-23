@@ -15,21 +15,21 @@
 
 | Adres | Ne | Erişim |
 |---|---|---|
-| `https://salon.test.omvila.com.tr` | Salon paneli | Basic auth, ardından telefon + SMS kodu |
-| `https://admin.test.omvila.com.tr` | Platform paneli (iç ekip) | Basic auth, ardından platform kullanıcısının telefonu + SMS kodu ([Platform kullanıcısı](#platform-kullanıcısı)) |
-| `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Basic auth |
-| `https://www.test.omvila.com.tr` | Tanıtım sitesi (statik; robots.txt ve meta robots ile de kapalı) | Basic auth |
+| `https://salon.test.omvila.com.tr` | Salon paneli | Telefon + SMS kodu |
+| `https://admin.test.omvila.com.tr` | Platform paneli (iç ekip) | Platform kullanıcısının telefonu + SMS kodu ([Platform kullanıcısı](#platform-kullanıcısı)) |
+| `https://randevu.test.omvila.com.tr` | Rezervasyon sayfası (demo: `/kuafor-elif`) | Açık |
+| `https://www.test.omvila.com.tr` | Tanıtım sitesi (statik; robots.txt ve meta robots ile de kapalı) | Açık |
 | `https://api.test.omvila.com.tr` | API | Açık (tarayıcı çapraz köken isteğinde basic auth göndermez); SMS günlüğü yolu bu adreste 404 |
 | `https://sms.test.omvila.com.tr` | Sahte SMS günlüğü (giriş kodları burada) | Basic auth |
 | `https://posta.test.omvila.com.tr` | Mailpit (e-posta altyapısı gelince) | Basic auth |
 
-Bütün yanıtlarda `X-Robots-Tag: noindex, nofollow` vardır. Basic auth kullanıcısı tektir; parolayı ürün sahibi ve geliştiriciler bilir, depoya girmez.
+Bütün yanıtlarda `X-Robots-Tag: noindex, nofollow` vardır. Basic auth yalnız geliştirici araçlarındadır (sms, posta: giriş kodları ve e-postalar); ürün yüzeyleri ürün sahibinin kararıyla açıktır (2026-11-23). Basic auth kullanıcısı tektir; parolayı ürün sahibi ve geliştiriciler bilir, depoya girmez.
 
 ## Yapı
 
 ```mermaid
 flowchart LR
-  U[Tarayıcı] -->|443| C[caddy<br/>TLS, basic auth, yönlendirme]
+  U[Tarayıcı] -->|443| C[caddy<br/>TLS, yönlendirme, araçlarda basic auth]
   C --> SP[salon-panel<br/>statik, :8080]
   C --> PP[platform-panel<br/>statik, :8080]
   C --> RZ[rezervasyon<br/>Next.js, :3000]
@@ -93,7 +93,7 @@ Test sunucusu 21 Kasım 2026'da bu adımlarla kuruldu. Yeniden kurmak veya ikinc
    ```
 5. **Demo verisi:** sunucuda, aşağıdaki `dc` kısaltmasıyla `dc --profile seed run --rm seed`.
 6. **Yedek zamanlayıcısı:** `pg-backup.sh` ve systemd `omvila-backup.service` + `omvila-backup.timer` (her gün 00:30 UTC).
-7. **Denetim:** `https://api.test.omvila.com.tr/health/ready` 200 dönmeli; `https://salon.test.omvila.com.tr`'de basic auth'tan sonra giriş ekranı açılmalı.
+7. **Denetim:** `https://api.test.omvila.com.tr/health/ready` 200 dönmeli; `https://salon.test.omvila.com.tr`'de giriş ekranı açılmalı.
 
 ## Demo verisi
 
