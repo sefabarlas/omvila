@@ -1,7 +1,9 @@
 import { cleanup, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { sessionFixture, staffPermissions } from '../test/fake-api';
 import { renderApp } from '../test/render-app';
+import { auth } from './auth';
 import { activeMenuKey, visibleMenu } from './menu';
 
 // Kural: salon-panel/AGENTS.md (menü izinle; şerit desenleri; 404/403), ADR-0007 (jeton bellekte, yenileme çereziyle),
@@ -13,6 +15,16 @@ describe('oturum', () => {
     const { router } = renderApp('/hizmetler', { signedIn: false });
     expect(await screen.findByRole('heading', { name: 'Panele giriş' })).toBeTruthy();
     expect(router.state.location.search).toEqual({ yonlendir: '/hizmetler' });
+  });
+
+  it('"Çıkış yap" oturumu kapatır ve girişe döner (Dilim 1: çıkış)', async () => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/', { calls });
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
+    expect(await screen.findByRole('heading', { name: 'Panele giriş' })).toBeTruthy();
+    expect(calls['/api/v1/manage/auth/logout']).toHaveLength(1);
+    expect(auth.getToken()).toBeNull();
   });
 
   it('sayfa yenilenince çerezle oturum açılır; sahibin menüsü açılmış bölümler', async () => {

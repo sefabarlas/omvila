@@ -1,7 +1,10 @@
 import { Sidebar } from '@omvila/ui-web/panel';
 import type { SidebarGroup } from '@omvila/ui-web/panel';
+import { useQueryClient } from '@tanstack/react-query';
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useApi } from './api-context';
+import { auth } from './auth';
 import { BranchContext } from './branch';
 import styles from './AppLayout.module.css';
 import { menuIcons } from './menu-icons';
@@ -18,8 +21,21 @@ const roleLabels: Record<string, string> = {
 export function AppLayout() {
   const { session, can } = useSession();
   const navigate = useNavigate();
+  const api = useApi();
+  const queryClient = useQueryClient();
   const { pathname } = useLocation();
   const entries = visibleMenu(can);
+  // Çıkış: sunucu yenileme çerezini siler ve zinciri iptal eder; istek başarısız olsa da yerel oturum kapanır.
+  const signOut = async () => {
+    try {
+      await api.POST('/api/v1/manage/auth/logout');
+    } catch {
+      // Ağ hatasında da yerel oturum kapanır.
+    }
+    auth.setToken(null);
+    queryClient.clear();
+    await navigate({ to: '/giris' });
+  };
   const personal = isPersonalView(can);
   const groups: SidebarGroup[] = (
     [
@@ -55,6 +71,7 @@ export function AppLayout() {
               name: session.user.fullName || session.brand.name,
               role: roleLabels[session.membership.role] ?? '',
             }}
+            onSignOut={() => void signOut()}
           />
         </div>
         <main id="icerik" className={styles.main}>

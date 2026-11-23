@@ -44,6 +44,29 @@ describe('Sidebar', () => {
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ key: 'hizmetler' }));
   });
 
+  it('"Çıkış yap" yalnız onSignOut verilince ve tıklanınca çağrılır', async () => {
+    const onSignOut = vi.fn();
+    const { unmount } = render(
+      <Sidebar
+        groups={groups}
+        active="genel"
+        user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Çıkış yap' })).toBeNull();
+    unmount();
+    render(
+      <Sidebar
+        groups={groups}
+        active="genel"
+        user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
+        onSignOut={onSignOut}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Çıkış yap' }));
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+  });
+
   it('şube seçici yalnız birden çok şubede', async () => {
     const onBranchChange = vi.fn();
     const { rerender } = render(

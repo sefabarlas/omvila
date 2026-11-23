@@ -46,6 +46,19 @@ describe('giriş ve oturum', () => {
     expect(localStorage.getItem('omvila.platform.yenileme')).toBeNull();
   });
 
+  it('"Çıkış yap" yenileme jetonunu sunucuda iptal eder, sekmeden siler ve girişe döner', async () => {
+    const calls: Record<string, unknown[]> = {};
+    renderApp('/', { calls });
+    const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
+    await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Platform paneline giriş' }),
+    ).toBeTruthy();
+    expect(calls['/api/v1/admin/auth/logout']?.[0]).toEqual({ refreshToken: 'yenileme-2' });
+    expect(auth.getToken()).toBeNull();
+    expect(sessionStorage.getItem('omvila.platform.yenileme')).toBeNull();
+  });
+
   it('hatalı kod kalan denemeyi yazar', async () => {
     renderApp('/giris', { signedIn: false, verify: 'otp_invalid' });
     await signIn();

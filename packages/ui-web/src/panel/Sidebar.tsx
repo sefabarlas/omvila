@@ -1,6 +1,6 @@
 import emblemUrl from '@omvila/design-tokens/assets/logos/omvila-amblem-ters.svg';
 import logoUrl from '@omvila/design-tokens/assets/logos/omvila-logo-yatay-ters.svg';
-import { ChevronDown, Store } from 'lucide-react';
+import { ChevronDown, LogOut, Store } from 'lucide-react';
 import { useId } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import { Avatar } from './Avatar';
@@ -37,6 +37,8 @@ export interface SidebarProps {
   branchId?: string;
   onBranchChange?: (branchId: string) => void;
   user?: { name: string; role: string };
+  /** Verilirse kullanıcı satırında "Çıkış yap" butonu çıkar. */
+  onSignOut?: () => void;
   /** Menü bölgesinin adı. */
   label?: string;
 }
@@ -50,6 +52,7 @@ export function Sidebar({
   branchId,
   onBranchChange,
   user,
+  onSignOut,
   label = 'Ana menü',
 }: SidebarProps) {
   const branchSelectId = useId();
@@ -121,13 +124,28 @@ export function Sidebar({
           </div>
         ))}
       </div>
-      {user ? (
+      {user || onSignOut ? (
         <div className={styles.user}>
-          <Avatar name={user.name} size="sm" />
-          <div className={styles.userText}>
-            <span className={styles.userName}>{user.name}</span>
-            <span className={styles.userRole}>{user.role}</span>
-          </div>
+          {user ? (
+            <>
+              <Avatar name={user.name} size="sm" />
+              <div className={styles.userText}>
+                <span className={styles.userName}>{user.name}</span>
+                <span className={styles.userRole}>{user.role}</span>
+              </div>
+            </>
+          ) : null}
+          {onSignOut ? (
+            <button
+              type="button"
+              className={styles.signOut}
+              aria-label="Çıkış yap"
+              title="Çıkış yap"
+              onClick={onSignOut}
+            >
+              <LogOut size={16} aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       ) : null}
     </nav>

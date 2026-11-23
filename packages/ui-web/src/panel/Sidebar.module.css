@@ -162,6 +162,31 @@
   font-size: var(--yazi-aciklama-boyut);
 }
 
+.signOut {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--bosluk-8);
+  height: var(--bosluk-8);
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--kose-md);
+  background: transparent;
+  color: var(--sidebar-metin);
+  cursor: pointer;
+}
+
+.signOut:hover {
+  color: var(--sidebar-metin-aktif);
+}
+
+.signOut:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 1px;
+}
+
 .visuallyHidden {
   position: absolute;
   width: 1px;
@@ -232,8 +257,13 @@
   }
 
   .user {
+    flex-direction: column;
     justify-content: center;
     padding: var(--bosluk-3) 0 0;
+  }
+
+  .signOut {
+    margin-left: 0;
   }
 }
 

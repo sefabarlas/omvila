@@ -283,6 +283,8 @@ export function fakeFetch({
               refreshToken: 'yenileme-1',
             })
           : problem(422, 'otp_invalid', { attemptsLeft: 4 });
+      case 'POST /api/v1/admin/auth/logout':
+        return new Response(null, { status: 204 });
       case 'POST /api/v1/admin/auth/refresh': {
         const body = (await request.clone().json()) as { refreshToken?: string };
         return body.refreshToken
