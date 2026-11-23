@@ -3,6 +3,7 @@ import { signInUrl, site } from '@/lib/site';
 import { legalPages } from './legal';
 import { Logo } from './Logo';
 import styles from './SiteFooter.module.css';
+import { ThemeSwitch } from './ThemeMenu';
 import ui from './ui.module.css';
 import { cx } from '@/lib/cx';
 
@@ -35,8 +36,9 @@ export function SiteFooter() {
           ))}
         </nav>
       </div>
-      <div className={ui.container}>
+      <div className={cx(ui.container, styles.bottom)}>
         <p className={styles.copyright}>© {site.copyrightYear} OMVILA</p>
+        <ThemeSwitch />
       </div>
     </footer>
   );

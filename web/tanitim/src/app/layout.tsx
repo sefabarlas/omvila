@@ -20,12 +20,13 @@ export const viewport: Viewport = {
   colorScheme: 'light dark',
 };
 
-// Koyu tema tokenları [data-theme='dark'] ile açılır (design-tokens). Site sistem temasını izler; ilk boyamadan
-// önce çalışsın diye <head>'de eşzamanlı satır içi betik (rezervasyon sayfasıyla aynı desen). Hidrasyondan
-// sonrasını ThemeSync üstlenir.
+// Koyu tema tokenları [data-theme='dark'] ile açılır (design-tokens). Kayıtlı tercih (Açık/Koyu; tema menüsü) yoksa
+// sistem teması izlenir; ilk boyamadan önce çalışsın diye <head>'de eşzamanlı satır içi betik. Hidrasyondan sonrasını
+// ThemeSync üstlenir.
 const themeScript =
-  'document.documentElement.dataset.theme=' +
-  'matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"';
+  'try{var p=localStorage.getItem("omvila.tema")}catch(e){}' +
+  'document.documentElement.dataset.theme=p==="dark"||(p!=="light"&&' +
+  'matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

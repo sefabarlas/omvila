@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import pricingJson from '@content/pricing.json';
 import { SiteFooter } from '@/components/SiteFooter';
@@ -124,5 +124,46 @@ describe('düzen', () => {
     expect(
       within(footer).getByRole('link', { name: 'KVKK aydınlatma metni' }).getAttribute('href'),
     ).toMatch(/^\/yasal\/kvkk\/?$/);
+  });
+});
+
+describe('tema (TemaMenu)', () => {
+  it('üst bar menüsü: Açık · Koyu · Sistem; seçim saklanır ve uygulanır, alt bilgi seçici eşlenir', () => {
+    localStorage.removeItem('omvila.tema');
+    render(
+      <>
+        <SiteHeader />
+        <SiteFooter />
+      </>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Tema: Sistem' });
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    fireEvent.click(trigger);
+    const menu = screen.getByRole('menu', { name: 'Tema' });
+    expect(
+      within(menu)
+        .getAllByRole('menuitemradio')
+        .map((o) => [o.textContent, o.getAttribute('aria-checked')]),
+    ).toEqual([
+      ['Açık', 'false'],
+      ['Koyu', 'false'],
+      ['Sistem', 'true'],
+    ]);
+    expect(within(menu).getByText('Sistem, cihazınızın ayarını izler.')).toBeTruthy();
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: 'Koyu' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('omvila.tema')).toBe('dark');
+    const footerGroup = screen.getByRole('group', { name: 'Tema' });
+    expect(
+      within(footerGroup).getByRole('button', { name: 'Koyu' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Tema: Koyu' }));
+
+    fireEvent.click(within(footerGroup).getByRole('button', { name: 'Sistem' }));
+    expect(localStorage.getItem('omvila.tema')).toBeNull();
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 });

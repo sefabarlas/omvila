@@ -17,12 +17,12 @@ describe('oturum', () => {
     expect(router.state.location.search).toEqual({ yonlendir: '/hizmetler' });
   });
 
-  it('"Çıkış yap" oturumu kapatır ve girişe döner (Dilim 1: çıkış)', async () => {
+  it('"Oturumu kapat" oturumu kapatır ve girişe döner (Dilim 1: çıkış)', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/', { calls });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
-    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
-    await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
+    await userEvent.click(within(nav).getByRole('button', { name: 'Profil menüsü' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Oturumu kapat' }));
     expect(await screen.findByRole('heading', { name: 'Panele giriş' })).toBeTruthy();
     expect(calls['/api/v1/manage/auth/logout']).toHaveLength(1);
     expect(auth.getToken()).toBeNull();
@@ -32,14 +32,14 @@ describe('oturum', () => {
     localStorage.removeItem('omvila.tema');
     renderApp('/');
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
-    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
-    await userEvent.click(within(nav).getByRole('radio', { name: 'Koyu' }));
+    await userEvent.click(within(nav).getByRole('button', { name: 'Profil menüsü' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Koyu' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(localStorage.getItem('omvila.tema')).toBe('dark');
-    await userEvent.click(within(nav).getByRole('radio', { name: 'Açık' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Açık' }));
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('omvila.tema')).toBe('light');
-    await userEvent.click(within(nav).getByRole('radio', { name: 'Sistem' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Sistem' }));
     expect(localStorage.getItem('omvila.tema')).toBeNull();
     expect(document.documentElement.dataset.theme).toBe('light');
   });

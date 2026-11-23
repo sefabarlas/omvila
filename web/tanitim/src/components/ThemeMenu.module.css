@@ -1,0 +1,125 @@
+/* tanitim-sitesi/TemaMenu: üst barda tema düğmesi ve menüsü, alt bilgide hap seçici. */
+.root {
+  position: relative;
+}
+
+.trigger {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: calc(var(--kose-md) + var(--bosluk-1) / 2);
+  background: var(--zemin-ikincil);
+  color: var(--metin);
+  cursor: pointer;
+}
+
+.trigger[aria-expanded='true'] {
+  background: var(--zemin-marka-yumusak);
+  color: var(--metin-marka);
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + var(--bosluk-2));
+  right: 0;
+  width: 240px;
+  padding: var(--bosluk-2);
+  border-radius: calc(var(--kose-lg) + var(--bosluk-1));
+  background: var(--zemin-yukseltilmis);
+  box-shadow:
+    var(--golge-lg),
+    0 0 0 1px var(--cizgi);
+}
+
+.label {
+  padding: calc(var(--bosluk-1) * 1.5) calc(var(--bosluk-2) + var(--bosluk-1) / 2) var(--bosluk-2);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  font-weight: 700;
+}
+
+.option {
+  display: flex;
+  gap: var(--bosluk-3);
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  padding: 0 calc(var(--bosluk-2) + var(--bosluk-1) / 2);
+  border: 0;
+  border-radius: var(--kose-md);
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--zemin-ikincil);
+}
+
+.option[aria-checked='true'] {
+  background: var(--zemin-marka-yumusak);
+  color: var(--metin-marka);
+}
+
+.optionLabel {
+  flex: 1;
+}
+
+.hint {
+  margin: var(--bosluk-2) calc(var(--bosluk-2) + var(--bosluk-1) / 2) var(--bosluk-1);
+  color: var(--metin-ikincil);
+  font-size: var(--yazi-aciklama-boyut);
+  line-height: var(--yazi-aciklama-satir);
+}
+
+.switch {
+  display: flex;
+  gap: var(--bosluk-1);
+  padding: var(--bosluk-1);
+  border-radius: var(--kose-tam);
+  background: color-mix(in srgb, var(--metin-ters) 8%, transparent);
+}
+
+.segment {
+  display: inline-flex;
+  gap: calc(var(--bosluk-1) * 1.5);
+  align-items: center;
+  height: 44px;
+  padding: 0 calc(var(--bosluk-3) + var(--bosluk-1) / 2);
+  border: 0;
+  border-radius: var(--kose-tam);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.85;
+  cursor: pointer;
+}
+
+.segment[aria-pressed='true'] {
+  background: var(--metin-ters);
+  color: var(--zemin-marka);
+  opacity: 1;
+}
+
+.trigger:focus-visible,
+.option:focus-visible,
+.segment:focus-visible {
+  outline: 2px solid var(--odak);
+  outline-offset: 2px;
+}
+
+@media (width < 900px) {
+  .root {
+    display: none;
+  }
+}
