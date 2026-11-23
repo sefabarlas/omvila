@@ -135,7 +135,10 @@ describe('Randevum (/r/[code])', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Bu randevu bulunamadı' }),
     ).toBeTruthy();
-    expect(document.title).toBe('Bu randevu bulunamadı');
+    // Sayfa başlığı başlık çizildikten sonra efektle atanır.
+    await waitFor(() => {
+      expect(document.title).toBe('Bu randevu bulunamadı');
+    });
   });
 
   it('süre geçmişse butonların yerine "Salonu ara" (kriter 10)', async () => {
