@@ -41,6 +41,8 @@ if ! compose up -d --remove-orphans --wait --wait-timeout 300; then
   echo "Yığın sağlıklı açılmadı. Günlük: cd $dir/app && docker compose -f deploy/staging/compose.yml --env-file ../staging.env logs migrate api worker" >&2
   exit 1
 fi
+# Caddyfile bağlama ile takılı; app dizini yer değiştirince çalışan caddy eski dosyayı görmeye devam eder.
+compose restart caddy >/dev/null
 docker image prune -f >/dev/null
 compose ps --format '{{.Service}} {{.Status}}'
 echo "Dağıtıldı: $short"
