@@ -65,13 +65,16 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<string>($"SELECT platform_role || ':' || count(*) OVER () FROM identity.users WHERE phone_e164 = '{SupportPhone}'"))
             .ShouldBe("PlatformFinance:1");
 
-        // Marka üyesi platform kullanıcısı olabilir (T-128); salonda görünen adı değişmez.
-        var elifName = await _api.ScalarAsync<string>($"SELECT coalesce(full_name, '') FROM identity.users WHERE phone_e164 = '{ElifPhone}'");
+        // Marka üyesi platform kullanıcısı olabilir (T-128); adı boşsa komuttaki ad yazılır, doluysa salonda görünen adı değişmez.
+        await _api.ScalarAsync<int>($"UPDATE identity.users SET full_name = NULL WHERE phone_e164 = '{ElifPhone}' RETURNING 1");
         var member = new StringWriter();
-        (await CreatePlatformUserAsync(ElifPhone, "Başka Ad", "PlatformAdmin", member)).ShouldBe(0);
+        (await CreatePlatformUserAsync(ElifPhone, "Elif Kaya", "PlatformAdmin", member)).ShouldBe(0);
         member.ToString().ShouldContain("güncellendi: 0532 *** ** 05 (PlatformAdmin)");
-        (await _api.ScalarAsync<string>($"SELECT coalesce(full_name, '') || ':' || platform_role FROM identity.users WHERE phone_e164 = '{ElifPhone}'"))
-            .ShouldBe($"{elifName}:PlatformAdmin");
+        (await _api.ScalarAsync<string>($"SELECT full_name || ':' || platform_role FROM identity.users WHERE phone_e164 = '{ElifPhone}'"))
+            .ShouldBe("Elif Kaya:PlatformAdmin");
+        (await CreatePlatformUserAsync(ElifPhone, "Başka Ad", "PlatformSupport")).ShouldBe(0);
+        (await _api.ScalarAsync<string>($"SELECT full_name || ':' || platform_role FROM identity.users WHERE phone_e164 = '{ElifPhone}'"))
+            .ShouldBe("Elif Kaya:PlatformSupport");
 
         (await CreatePlatformUserAsync("+905550009909", "Deniz Kara", "Owner")).ShouldBe(1);
         (await CreatePlatformUserAsync("02124445566", "Deniz Kara", "PlatformAdmin")).ShouldBe(1);

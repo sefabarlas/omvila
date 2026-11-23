@@ -162,7 +162,6 @@
   font-size: var(--yazi-aciklama-boyut);
 }
 
-
 .userMenu {
   position: relative;
 }
@@ -206,7 +205,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--bosluk-2);
-  min-width: 232px;
   padding: var(--bosluk-3);
   border: 1px solid var(--cizgi);
   border-radius: var(--kose-lg);
@@ -240,11 +238,13 @@
 .segment {
   position: relative;
   display: flex;
+  flex-direction: column;
   gap: var(--bosluk-1);
   align-items: center;
   justify-content: center;
+  min-width: 0;
   padding: var(--bosluk-2) var(--bosluk-1);
-  font-size: var(--yazi-etiket-boyut);
+  font-size: var(--yazi-aciklama-boyut);
   cursor: pointer;
 }
 
@@ -373,9 +373,13 @@
     display: none;
   }
 
+  /* Daralmış menüde kart sağa açılır; kapsayıcının kaydırması kesmesin diye ekrana göre konumlanır. */
   .menu {
-    bottom: 0;
-    left: calc(100% + var(--bosluk-2));
+    position: fixed;
+    right: auto;
+    bottom: var(--bosluk-4);
+    left: calc(72px + var(--bosluk-2));
+    width: 232px;
   }
 }
 
