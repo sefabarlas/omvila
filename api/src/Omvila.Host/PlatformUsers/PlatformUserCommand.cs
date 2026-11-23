@@ -57,9 +57,7 @@ internal static class PlatformUserCommand
 
         if (!result.IsSuccess)
         {
-            await output.WriteLineAsync(string.Equals(result.Error.Code, ErrorCodes.PhoneAlreadyExists, StringComparison.Ordinal)
-                ? $"{phone.Masked} bir markanın üyesi; platform kullanıcısı olamaz."
-                : "Platform rolü geçersiz veya ad çok uzun. " + Usage);
+            await output.WriteLineAsync("Platform rolü geçersiz veya ad çok uzun. " + Usage);
             return 1;
         }
 

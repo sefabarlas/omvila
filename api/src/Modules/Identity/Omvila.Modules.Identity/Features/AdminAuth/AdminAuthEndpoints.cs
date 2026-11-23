@@ -23,7 +23,7 @@ namespace Omvila.Modules.Identity.Features.AdminAuth;
 /// Platform paneli girişi ve oturumu (sözleşme admin-auth, adminGetSession; K2, ADR-0007 admin yüzeyi). Telefon + SMS kodu
 /// (amaç AdminLogin; salon veya müşteri kodu burada geçmez). Numara etkin bir platform kullanıcısına ait değilse istek yine 202
 /// döner ama SMS gitmez; doğrulama otp_invalid. Erişim jetonu aud=admin (sub + platform_role), yenileme jetonu gövdede
-/// (yüzeyi admin, sekme ömrü; Auth:RefreshTokenDaysSession). Marka üyesi olan numara platform kullanıcısı olamaz (PlatformUsers).
+/// (yüzeyi admin, sekme ömrü; Auth:RefreshTokenDaysSession). Aynı numara marka üyesi de olabilir; jetonlar ayrı audience'tır (T-128).
 /// </summary>
 internal static partial class AdminAuthEndpoints
 {

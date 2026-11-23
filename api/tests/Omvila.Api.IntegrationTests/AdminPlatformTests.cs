@@ -9,7 +9,7 @@ namespace Omvila.Api.IntegrationTests;
 // Kural: dilim-06 KK4 (Destek kontör ekleyemez, plan ve durum değiştiremez: 403; Yönetici ekler, denetime yazılır) ve KK5 (marka
 // detayının her açılışı AuditLog(View); telefonlar maskeli); K2 (platform girişi telefon + SMS kodu, kullanıcı komutla); K3 rol matrisi;
 // ADR-0007 (aud=admin jetonu başka yüzeyde geçmez, yenileme jetonu gövdede ve döner); alan-modeli.md § User.PlatformRole (marka
-// üyeliği olamaz); sözleşme admin-auth, admin-overview, admin-brands; T-116 (7), T-119. Saat: 2026-11-25 09:00Z (12:00 İstanbul).
+// üyesi de olabilir, T-128); sözleşme admin-auth, admin-overview, admin-brands; T-116 (7), T-119. Saat: 2026-11-25 09:00Z (12:00 İstanbul).
 [Trait("Category", "Integration")]
 [Collection(PostgresTests.Name)]
 public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
@@ -56,7 +56,7 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
     // ───────── Platform kullanıcısı komutu (K2) ─────────
 
     [Fact]
-    public async Task Command_IsIdempotent_UpdatesRole_AndRefusesBrandMemberOrBadInput()
+    public async Task Command_IsIdempotent_UpdatesRole_AcceptsBrandMember_AndRefusesBadInput()
     {
         var output = new StringWriter();
         (await CreatePlatformUserAsync(SupportPhone, "Ayşe Demir", "PlatformFinance", output)).ShouldBe(0);
@@ -65,14 +65,34 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<string>($"SELECT platform_role || ':' || count(*) OVER () FROM identity.users WHERE phone_e164 = '{SupportPhone}'"))
             .ShouldBe("PlatformFinance:1");
 
-        var refused = new StringWriter();
-        (await CreatePlatformUserAsync(ElifPhone, "Elif Kaya", "PlatformAdmin", refused)).ShouldBe(1);
-        refused.ToString().ShouldContain("bir markanın üyesi");
-        (await _api.ScalarAsync<long>($"SELECT count(*) FROM identity.users WHERE phone_e164 = '{ElifPhone}' AND platform_role IS NOT NULL")).ShouldBe(0);
+        // Marka üyesi platform kullanıcısı olabilir (T-128); salonda görünen adı değişmez.
+        var elifName = await _api.ScalarAsync<string>($"SELECT coalesce(full_name, '') FROM identity.users WHERE phone_e164 = '{ElifPhone}'");
+        var member = new StringWriter();
+        (await CreatePlatformUserAsync(ElifPhone, "Başka Ad", "PlatformAdmin", member)).ShouldBe(0);
+        member.ToString().ShouldContain("güncellendi: 0532 *** ** 05 (PlatformAdmin)");
+        (await _api.ScalarAsync<string>($"SELECT coalesce(full_name, '') || ':' || platform_role FROM identity.users WHERE phone_e164 = '{ElifPhone}'"))
+            .ShouldBe($"{elifName}:PlatformAdmin");
 
         (await CreatePlatformUserAsync("+905550009909", "Deniz Kara", "Owner")).ShouldBe(1);
         (await CreatePlatformUserAsync("02124445566", "Deniz Kara", "PlatformAdmin")).ShouldBe(1);
-        (await _api.ScalarAsync<long>("SELECT count(*) FROM identity.users WHERE platform_role IS NOT NULL")).ShouldBe(3);
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM identity.users WHERE platform_role IS NOT NULL")).ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task BrandOwnerWithPlatformRole_SignsInToBothPanels_WithSeparateTokens()
+    {
+        (await CreatePlatformUserAsync(ElifPhone, "Elif Kaya", "PlatformAdmin")).ShouldBe(0);
+
+        var salon = await _api.SignInAsync(ElifPhone);
+        salon.Status.ShouldBe(200, salon.Body.ToString());
+        salon.Body.GetProperty("result").GetString().ShouldBe("SignedIn");
+        var manageToken = salon.Body.GetProperty("accessToken").GetString()!;
+
+        var (adminToken, _) = await AdminSignInAsync(ElifPhone);
+        (await _api.GetAsync("/api/v1/admin/overview", adminToken)).Status.ShouldBe(200);
+        (await _api.GetAsync("/api/v1/admin/overview", manageToken)).Status.ShouldBe(401, "salon jetonu admin yüzeyinde geçmez");
+        (await _api.GetAsync("/api/v1/manage/branches", adminToken)).Status.ShouldBe(401, "admin jetonu salon yüzeyinde geçmez");
+        (await _api.GetAsync("/api/v1/manage/branches", manageToken)).Status.ShouldBe(200);
     }
 
     // ───────── Giriş (K2, ADR-0007) ─────────
@@ -122,7 +142,7 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task BrandMember_GetsNoAdminCode_AndPlatformUserCannotUseSalonPanel()
+    public async Task BrandMember_GetsNoAdminCode_AndPlatformUserWithoutMembershipNeedsSignup()
     {
         _factory.Clock.Advance(Duration.FromMinutes(2));
         var codesBefore = await OtpCodeCountAsync();
@@ -141,24 +161,10 @@ public sealed class AdminPlatformTests(PostgresFixture db) : IAsyncLifetime
         (await _api.SendAsync(HttpMethod.Post, "/api/v1/admin/auth/otp/verify", new { otpId = manageOtp.Body.GetProperty("otpId").GetGuid(), code = manageCode }))
             .Body.GetProperty("code").GetString().ShouldBe("otp_invalid");
 
-        // Platform kullanıcısı salon paneline giremez ve kayıtla marka açamaz.
+        // Marka üyeliği olmayan platform kullanıcısı salon girişinde kayıtsız numara gibi işlenir (T-128).
         var salon = await _api.SignInAsync(AdminPhone);
         salon.Status.ShouldBe(200);
         salon.Body.GetProperty("result").GetString().ShouldBe("SignupRequired");
-        var signup = await _api.SendAsync(
-            HttpMethod.Post,
-            "/api/v1/manage/auth/signup",
-            new
-            {
-                signupToken = salon.Body.GetProperty("signupToken").GetString(),
-                businessName = "Deniz Kuaför",
-                industryCode = "hair_salon",
-                acceptedTerms = true,
-                privacyNoticeVersion = "2026-11-01",
-            },
-            headers: Key());
-        signup.Status.ShouldBe(401);
-        (await _api.ScalarAsync<long>("SELECT count(*) FROM tenancy.brands")).ShouldBe(2);
     }
 
     // ───────── KK4: yetki ve denetim ─────────

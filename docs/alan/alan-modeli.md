@@ -91,7 +91,7 @@ Salon çalışanı veya OMVILA ekibi. Giriş yalnız telefon + SMS koduyla yapı
 | FullName | string(120) | |
 | Email | string(160)? | |
 | LanguageCode | string(5) | `tr` |
-| PlatformRole | enum? | `PlatformAdmin`, `PlatformSupport`, `PlatformFinance`; doluysa platform kullanıcısıdır ve marka üyeliği olamaz |
+| PlatformRole | enum? | `PlatformAdmin`, `PlatformSupport`, `PlatformFinance`; doluysa platform kullanıcısıdır; aynı kullanıcı marka üyesi de olabilir, oturumlar ayrı audience'tır (T-128) |
 | IsActive | bool | |
 | LastLoginUtc | Instant? | |
 
