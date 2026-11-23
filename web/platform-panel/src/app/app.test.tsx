@@ -46,12 +46,12 @@ describe('giriş ve oturum', () => {
     expect(localStorage.getItem('omvila.platform.yenileme')).toBeNull();
   });
 
-  it('"Çıkış yap" yenileme jetonunu sunucuda iptal eder, sekmeden siler ve girişe döner', async () => {
+  it('"Oturumu kapat" yenileme jetonunu sunucuda iptal eder, sekmeden siler ve girişe döner', async () => {
     const calls: Record<string, unknown[]> = {};
     renderApp('/', { calls });
     const nav = await screen.findByRole('navigation', { name: 'Ana menü' });
-    await userEvent.click(within(nav).getByRole('button', { name: /hesap menüsü/ }));
-    await userEvent.click(within(nav).getByRole('button', { name: 'Çıkış yap' }));
+    await userEvent.click(within(nav).getByRole('button', { name: 'Profil menüsü' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Oturumu kapat' }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Platform paneline giriş' }),
     ).toBeTruthy();

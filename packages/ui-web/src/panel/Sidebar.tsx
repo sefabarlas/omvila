@@ -1,8 +1,8 @@
 import emblemUrl from '@omvila/design-tokens/assets/logos/omvila-amblem-ters.svg';
 import logoUrl from '@omvila/design-tokens/assets/logos/omvila-logo-yatay-ters.svg';
-import { ChevronDown, ChevronUp, LogOut, Monitor, Moon, Store, Sun } from 'lucide-react';
+import { ChevronDown, ChevronsUpDown, LogOut, Monitor, Moon, Store, Sun } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { MouseEvent, ReactNode } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { Avatar } from './Avatar';
 import styles from './Sidebar.module.css';
 
@@ -28,10 +28,11 @@ export interface SidebarBranch {
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
+// Tasarım sistemi ProfileMenu: Açık · Koyu · Sistem.
 const themeOptions: readonly { value: ThemePreference; label: string; icon: ReactNode }[] = [
-  { value: 'system', label: 'Sistem', icon: <Monitor size={14} aria-hidden="true" /> },
-  { value: 'light', label: 'Açık', icon: <Sun size={14} aria-hidden="true" /> },
-  { value: 'dark', label: 'Koyu', icon: <Moon size={14} aria-hidden="true" /> },
+  { value: 'light', label: 'Açık', icon: <Sun size={18} aria-hidden="true" /> },
+  { value: 'dark', label: 'Koyu', icon: <Moon size={18} aria-hidden="true" /> },
+  { value: 'system', label: 'Sistem', icon: <Monitor size={18} aria-hidden="true" /> },
 ];
 
 export interface SidebarProps {
@@ -47,7 +48,7 @@ export interface SidebarProps {
   user?: { name: string; role: string };
   /** Verilirse kullanıcı satırında "Çıkış yap" butonu çıkar. */
   onSignOut?: () => void;
-  /** Verilirse kullanıcı menüsünde tema seçici çıkar (Sistem / Açık / Koyu). */
+  /** Verilirse profil menüsünde tema seçici çıkar (Açık / Koyu / Sistem). */
   theme?: { preference: ThemePreference; onChange: (preference: ThemePreference) => void };
   /** Menü bölgesinin adı. */
   label?: string;
@@ -148,13 +149,17 @@ interface UserMenuProps {
   theme?: SidebarProps['theme'];
 }
 
-/** Kullanıcı satırı; menü varsa tıklayınca tema seçici ve "Çıkış yap" açılır (Esc ve dışarı tıklama kapatır). */
+/**
+ * Kullanıcı satırı ve profil menüsü (tasarım sistemi ProfileMenu): kimlik, tema, "Oturumu kapat".
+ * Esc ve dışarı tıklama kapatır, odak açan düğmeye döner; ok tuşları öğeler arasında gezer.
+ */
 function UserMenu({ user, onSignOut, theme }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const themeName = useId();
+  const themeLabelId = useId();
   const hasMenu = onSignOut !== undefined || theme !== undefined;
 
   useEffect(() => {
@@ -162,6 +167,9 @@ function UserMenu({ user, onSignOut, theme }: UserMenuProps) {
       return;
     }
 
+    const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]');
+    const selected = menuRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]');
+    (selected ?? items?.[0])?.focus();
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
@@ -181,69 +189,116 @@ function UserMenu({ user, onSignOut, theme }: UserMenuProps) {
     };
   }, [open]);
 
-  const identity = (
-    <>
-      <Avatar name={user.name} size="sm" />
-      <span className={styles.userText}>
-        <span className={styles.userName}>{user.name}</span>
-        <span className={styles.userRole}>{user.role}</span>
-      </span>
-    </>
+  const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const keys: Record<string, number> = {
+      ArrowDown: 1,
+      ArrowRight: 1,
+      ArrowUp: -1,
+      ArrowLeft: -1,
+    };
+    const step = keys[event.key];
+    if (step === undefined || !menuRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const items = Array.from(
+      menuRef.current.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]'),
+    );
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    items[(index + step + items.length) % items.length]?.focus();
+  };
+
+  const avatar = <Avatar name={user.name} size="sm" />;
+  const text = (
+    <span className={styles.userText}>
+      <span className={styles.userName}>{user.name}</span>
+      <span className={styles.userRole}>{user.role}</span>
+    </span>
   );
 
   if (!hasMenu) {
-    return <div className={styles.user}>{identity}</div>;
+    return (
+      <div className={styles.user}>
+        {avatar}
+        {text}
+      </div>
+    );
   }
 
   return (
     <div className={styles.userMenu} ref={rootRef}>
       {open ? (
-        <div id={menuId} className={styles.menu} role="group" aria-label="Hesap">
+        <div
+          id={menuId}
+          ref={menuRef}
+          className={styles.menu}
+          role="menu"
+          aria-label="Profil menüsü"
+          tabIndex={-1}
+          onKeyDown={onMenuKeyDown}
+        >
+          <div className={styles.menuHead}>
+            <Avatar name={user.name} size="md" />
+            <span className={styles.menuId}>
+              <strong>{user.name}</strong>
+              {user.role ? <small>{user.role}</small> : null}
+            </span>
+          </div>
           {theme ? (
-            <fieldset className={styles.themeGroup}>
-              <legend className={styles.menuLabel}>Tema</legend>
-              <div className={styles.segmented}>
+            <>
+              <div className={styles.menuSep} role="separator" />
+              <div className={styles.menuLabel} id={themeLabelId}>
+                Tema
+              </div>
+              <div className={styles.themeGrid} role="group" aria-labelledby={themeLabelId}>
                 {themeOptions.map((option) => (
-                  <label key={option.value} className={styles.segment}>
-                    <input
-                      type="radio"
-                      name={themeName}
-                      value={option.value}
-                      checked={theme.preference === option.value}
-                      onChange={() => {
-                        theme.onChange(option.value);
-                      }}
-                    />
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={theme.preference === option.value}
+                    className={styles.themeOption}
+                    onClick={() => {
+                      theme.onChange(option.value);
+                    }}
+                  >
                     {option.icon}
                     <span>{option.label}</span>
-                  </label>
+                  </button>
                 ))}
               </div>
-            </fieldset>
+              <p className={styles.menuHint}>Sistem, cihazınızın ayarını izler.</p>
+            </>
           ) : null}
           {onSignOut ? (
-            <button type="button" className={styles.menuItem} onClick={onSignOut}>
-              <LogOut size={16} aria-hidden="true" />
-              Çıkış yap
-            </button>
+            <>
+              <div className={styles.menuSep} role="separator" />
+              <button type="button" role="menuitem" className={styles.menuItem} onClick={onSignOut}>
+                <LogOut size={18} aria-hidden="true" />
+                <span>Oturumu kapat</span>
+              </button>
+            </>
           ) : null}
         </div>
       ) : null}
       <button
         ref={triggerRef}
         type="button"
-        className={[styles.user, styles.userButton].join(' ')}
+        className={styles.userButton}
+        aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label={`${user.name}, hesap menüsü`}
+        aria-label="Profil menüsü"
         title={user.name}
         onClick={() => {
           setOpen((value) => !value);
         }}
       >
-        {identity}
+        {avatar}
+        {text}
         <span className={styles.userChevron} aria-hidden="true">
-          <ChevronUp size={16} />
+          <ChevronsUpDown size={16} />
         </span>
       </button>
     </div>

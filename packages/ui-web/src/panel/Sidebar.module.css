@@ -166,19 +166,42 @@
   position: relative;
 }
 
+/* Tasarım sistemi Sidebar kullanıcı satırı: buton; açıkken sidebar-secili zemin. */
 .userButton {
+  position: relative;
+  display: flex;
+  gap: calc(var(--bosluk-2) + var(--bosluk-0-5));
+  align-items: center;
   width: 100%;
-  margin: 0;
+  margin-top: var(--bosluk-1);
+  padding: calc(var(--bosluk-2) + var(--bosluk-0-5)) var(--bosluk-2);
   border: 0;
-  border-top: 1px solid var(--sidebar-cizgi);
-  background: transparent;
+  border-radius: var(--kose-md);
+  background: none;
+  color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.userButton:hover .userName {
-  text-decoration: underline;
+.userButton::before {
+  position: absolute;
+  top: calc(
+    (calc(var(--bosluk-2) + var(--bosluk-0-5)) - var(--bosluk-0-5) + var(--bosluk-0-5) / 2) * -1
+  );
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--sidebar-cizgi);
+  content: '';
+}
+
+.userButton:hover {
+  background: var(--sidebar-hover);
+}
+
+.userButton[aria-expanded='true'] {
+  background: var(--sidebar-secili);
 }
 
 .userButton:focus-visible {
@@ -186,101 +209,129 @@
   outline-offset: 2px;
 }
 
+.userButton .userText {
+  flex: 1;
+}
+
 .userChevron {
   display: inline-flex;
-  margin-left: auto;
+  flex: none;
   color: var(--sidebar-metin);
 }
 
-.userButton[aria-expanded='false'] .userChevron {
-  transform: rotate(180deg);
-}
-
+/* ProfileMenu: kullanıcı satırının hemen üstünde, kenar menüsüyle sol kenarı hizalı; kenar menüsünün kaydırma
+   kapsayıcısı kesmesin diye ekrana göre konumlanır. */
 .menu {
-  position: absolute;
+  position: fixed;
   z-index: 40;
-  right: 0;
-  bottom: calc(100% + var(--bosluk-2));
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--bosluk-2);
-  padding: var(--bosluk-3);
+  bottom: 76px;
+  left: var(--bosluk-3);
+  box-sizing: border-box;
+  width: 272px;
+  padding: var(--bosluk-2);
   border: 1px solid var(--cizgi);
   border-radius: var(--kose-lg);
   background: var(--zemin-yukseltilmis);
   color: var(--metin);
-  box-shadow: var(--golge-md);
+  box-shadow: var(--golge-lg);
 }
 
-.themeGroup {
-  min-inline-size: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.menuHead {
+  display: flex;
+  gap: calc(var(--bosluk-2) + var(--bosluk-0-5));
+  align-items: center;
+  padding: var(--bosluk-2);
+}
+
+.menuId {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menuId strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.menuId small {
+  color: var(--metin-ikincil);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.menuSep {
+  height: 1px;
+  margin: var(--bosluk-1-5) 0;
+  background: var(--cizgi);
 }
 
 .menuLabel {
-  margin-bottom: var(--bosluk-1-5);
-  padding: 0;
+  padding: var(--bosluk-1) var(--bosluk-2) var(--bosluk-1-5);
   color: var(--metin-ikincil);
-  font-size: var(--yazi-aciklama-boyut);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
 }
 
-.segmented {
+.themeGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--cizgi-guclu);
-  border-radius: var(--kose-md);
+  gap: var(--bosluk-1);
+  padding: 0 var(--bosluk-1);
 }
 
-.segment {
-  position: relative;
+.themeOption {
   display: flex;
   flex-direction: column;
   gap: var(--bosluk-1);
   align-items: center;
   justify-content: center;
-  min-width: 0;
-  padding: var(--bosluk-2) var(--bosluk-1);
-  font-size: var(--yazi-aciklama-boyut);
+  min-height: 56px;
+  padding: var(--bosluk-1-5) var(--bosluk-1);
+  border: 1px solid var(--cizgi);
+  border-radius: var(--kose-md);
+  background: none;
+  color: var(--metin);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
 }
 
-.segment + .segment {
-  border-left: 1px solid var(--cizgi-guclu);
+.themeOption:hover {
+  background: var(--zemin-hover);
 }
 
-.segment input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.segment:has(input:checked) {
-  background: var(--zemin-secili);
-  color: var(--metin-vurgu);
+.themeOption[aria-checked='true'] {
+  border-color: var(--marka);
+  background: var(--zemin-marka-yumusak);
+  color: var(--metin-marka);
   font-weight: 600;
 }
 
-.segment:has(input:focus-visible) {
-  outline: 2px solid var(--odak);
-  outline-offset: -2px;
+.menuHint {
+  margin: var(--bosluk-1-5) var(--bosluk-2) var(--bosluk-0-5);
+  color: var(--metin-ikincil);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .menuItem {
   display: flex;
-  gap: var(--bosluk-2);
+  gap: calc(var(--bosluk-2) + var(--bosluk-0-5));
   align-items: center;
-  padding: var(--bosluk-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--bosluk-2);
   border: 0;
-  border-top: 1px solid var(--cizgi);
-  border-radius: 0;
-  background: transparent;
+  border-radius: var(--kose-md);
+  background: none;
   color: var(--metin);
   font: inherit;
-  font-size: var(--yazi-etiket-boyut);
+  font-size: 13.5px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
@@ -289,9 +340,9 @@
   background: var(--zemin-hover);
 }
 
-.menuItem:focus-visible {
-  outline: 2px solid var(--odak);
-  outline-offset: -2px;
+.menu button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--odak);
 }
 
 .visuallyHidden {
@@ -364,22 +415,17 @@
   }
 
   .user {
-    flex-direction: column;
     justify-content: center;
     padding: var(--bosluk-3) 0 0;
   }
 
-  .userChevron {
-    display: none;
+  .userButton {
+    justify-content: center;
+    padding: calc(var(--bosluk-2) + var(--bosluk-0-5)) 0;
   }
 
-  /* Daralmış menüde kart sağa açılır; kapsayıcının kaydırması kesmesin diye ekrana göre konumlanır. */
-  .menu {
-    position: fixed;
-    right: auto;
-    bottom: var(--bosluk-4);
-    left: calc(72px + var(--bosluk-2));
-    width: 232px;
+  .userChevron {
+    display: none;
   }
 }
 

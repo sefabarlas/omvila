@@ -44,7 +44,7 @@ describe('Sidebar', () => {
     expect(onNavigate).toHaveBeenCalledWith(expect.objectContaining({ key: 'hizmetler' }));
   });
 
-  it('kullanıcı menüsü: tema seçici ve "Çıkış yap"; Esc kapatır ve odağı geri verir', async () => {
+  it('profil menüsü: kimlik, tema (Açık · Koyu · Sistem), "Oturumu kapat"; Esc kapatır ve odağı geri verir', async () => {
     const onSignOut = vi.fn();
     const onChange = vi.fn();
     render(
@@ -56,26 +56,33 @@ describe('Sidebar', () => {
         theme={{ preference: 'system', onChange }}
       />,
     );
-    const trigger = screen.getByRole('button', { name: 'Elif Kaya, hesap menüsü' });
+    const trigger = screen.getByRole('button', { name: 'Profil menüsü' });
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
-    expect(screen.queryByRole('button', { name: 'Çıkış yap' })).toBeNull();
 
     await userEvent.click(trigger);
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    const themeGroup = screen.getByRole('group', { name: 'Tema' });
-    expect(within(themeGroup).getByRole('radio', { name: 'Sistem' })).toHaveProperty(
-      'checked',
-      true,
-    );
-    await userEvent.click(within(themeGroup).getByRole('radio', { name: 'Koyu' }));
+    const menu = screen.getByRole('menu', { name: 'Profil menüsü' });
+    expect(within(menu).getByText('Elif Kaya')).toBeTruthy();
+    const options = within(menu)
+      .getAllByRole('menuitemradio')
+      .map((o) => [o.textContent, o.getAttribute('aria-checked')]);
+    expect(options).toEqual([
+      ['Açık', 'false'],
+      ['Koyu', 'false'],
+      ['Sistem', 'true'],
+    ]);
+    expect(document.activeElement?.textContent).toBe('Sistem');
+    await userEvent.keyboard('{ArrowDown}');
+    expect(document.activeElement?.textContent).toBe('Oturumu kapat');
+    await userEvent.click(within(menu).getByRole('menuitemradio', { name: 'Koyu' }));
     expect(onChange).toHaveBeenCalledWith('dark');
 
     await userEvent.keyboard('{Escape}');
-    expect(screen.queryByRole('group', { name: 'Tema' })).toBeNull();
+    expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     await userEvent.click(trigger);
-    await userEvent.click(screen.getByRole('button', { name: 'Çıkış yap' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Oturumu kapat' }));
     expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 
@@ -87,7 +94,7 @@ describe('Sidebar', () => {
         user={{ name: 'Elif Kaya', role: 'İşletme sahibi' }}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Elif Kaya, hesap menüsü' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Profil menüsü' })).toBeNull();
     expect(screen.getByText('Elif Kaya')).toBeTruthy();
   });
 

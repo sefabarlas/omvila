@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { signInUrl, signUpUrl } from '@/lib/site';
 import { Logo } from './Logo';
 import { MobileMenu } from './MobileMenu';
+import { ThemeMenu } from './ThemeMenu';
 import { navItems } from './nav';
 import styles from './SiteHeader.module.css';
 import ui from './ui.module.css';
@@ -21,6 +22,7 @@ export function SiteHeader() {
         ))}
       </nav>
       <div className={styles.actions}>
+        <ThemeMenu />
         <a href={signInUrl()} className={cx(ui.button, ui.ghost, styles.signIn)}>
           Giriş yap
         </a>

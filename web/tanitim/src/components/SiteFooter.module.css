@@ -47,9 +47,18 @@
   line-height: var(--yazi-etiket-satir);
 }
 
-.copyright {
-  padding-top: var(--bosluk-6);
+.bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bosluk-4);
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--bosluk-5);
   border-top: 1px solid color-mix(in srgb, var(--metin-ters) 16%, transparent);
+}
+
+.copyright {
+  margin: 0;
   color: color-mix(in srgb, var(--metin-ters) 75%, transparent);
   font-size: var(--yazi-aciklama-boyut);
   line-height: var(--yazi-aciklama-satir);
