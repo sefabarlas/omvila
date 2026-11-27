@@ -197,7 +197,7 @@ public sealed class ReportTests(PostgresFixture db) : IAsyncLifetime
         var rows = owner.Body.GetProperty("items").EnumerateArray().ToList();
         rows.Select(r => r.GetProperty("staffId").GetString()).ShouldBe([_elif, zeynep], "toplam prime göre azalan");
         var elif = rows[0];
-        elif.GetProperty("staffName").GetString().ShouldBe("Kuaför Elif");
+        elif.GetProperty("staffName").GetString().ShouldBe("Elif Kaya");
         elif.GetProperty("appointmentCount").GetInt32().ShouldBe(1);
         elif.GetProperty("serviceRevenueMinor").GetInt64().ShouldBe(45000);
         elif.GetProperty("serviceCommissionMinor").GetInt64().ShouldBe(10800 + 7200);

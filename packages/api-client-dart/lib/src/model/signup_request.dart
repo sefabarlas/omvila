@@ -73,6 +73,7 @@ class SignupRequest {
 
 
 
+      /// Kayıt ekranındaki \"Adınız soyadınız\": işletme sahibinin görünen adı (User.fullName ve sahip personel kaydı). Sunucu zorunlu tutar (T-130): eksik, boş veya kurala uymayan değer 400 validation_failed (errors.ownerFullName) döner. Şemada zorunlu işaretlenmez; sözleşme geriye uyumlu kalır. Tek değerdir, ad ve soyad ayrılmaz. 2-120 karakter; Latin harfleri (Türkçe harfler dahil), kesme işareti, tire ve boşluk; harfle başlar, rakam kabul edilmez. Sunucu baştaki ve sondaki boşluğu kırpar, aradaki çoklu boşluğu teke indirir; sınırlar bu hâle uygulanır. 
   @JsonKey(
     
     name: r'ownerFullName',

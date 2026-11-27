@@ -10,7 +10,7 @@ import { queuesDemo } from './queues-demo';
 import { myCommissionDemo, reportsDemo } from './reports-demo';
 import { reviewsDemo } from './reviews-demo';
 import { subscriptionDemo, subscriptionSession } from './subscription-demo';
-import { depositSetup } from './support';
+import { depositSetup, signedOut } from './support';
 
 // Görsel karşılaştırma (test-stratejisi.md): ekranların açık ve koyu ekran görüntüleri e2e-results/ekranlar altına
 // yazılır; tasarım görüntüleriyle (design/ekranlar/salon-paneli) yan yana insan gözüyle karşılaştırılır. Otomatik piksel
@@ -47,6 +47,23 @@ const customerTable = (page: Page) =>
   expect(page.getByRole('table', { name: 'Müşteriler' })).toBeVisible();
 
 const screens: ScreenCase[] = [
+  // T-130: kayıt formu "Adınız soyadınız" alanıyla; tasarımdaki değerlerle (Kayit, KayitKoyu).
+  {
+    path: '/kayit',
+    name: 'Kayit',
+    heading: 'İşletmenizi oluşturun',
+    setup: signedOut,
+    act: async (page) => {
+      await page.getByLabel('Adınız soyadınız').fill('Alya Kaya');
+      await page.getByLabel('İşletme adı').fill('Kuaför Alya');
+      await page.getByLabel('Ne tür bir işletme?').selectOption('hair_salon');
+      await page.getByLabel('Cep telefonunuz').fill('0532 418 77 05');
+      await page
+        .getByRole('checkbox', { name: 'Kullanım koşullarını ve aydınlatma metnini okudum' })
+        .check();
+      await page.getByRole('heading', { level: 1, name: 'İşletmenizi oluşturun' }).click();
+    },
+  },
   {
     path: '/',
     name: 'GenelBakis',

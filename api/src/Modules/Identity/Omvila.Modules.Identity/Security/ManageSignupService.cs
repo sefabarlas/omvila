@@ -53,6 +53,12 @@ internal sealed class ManageSignupService(
             user = User.Create(ids.New(), phone.Value, command.OwnerFullName, now);
             db.Users.Add(user);
         }
+        else
+        {
+            // Üyeliği olmayan var olan kullanıcı (ör. platform kullanıcısı, T-128): doğrulanmış telefonun sahibi adını
+            // kendisi yazdı; görünen ad odur (T-130).
+            user.Rename(command.OwnerFullName);
+        }
 
         user.RecordLogin(now);
         db.TermsAcceptances.Add(TermsAcceptance.Record(

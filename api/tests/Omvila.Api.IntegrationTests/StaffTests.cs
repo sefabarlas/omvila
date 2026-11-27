@@ -45,7 +45,7 @@ public sealed class StaffTests(PostgresFixture db) : IAsyncLifetime
         (await _api.ScalarAsync<string>($"SELECT payload->>'salon' FROM notifications.notification_outbox WHERE event_code = 'staff.invite' AND recipient_phone = '{Deniz}'"))
             .ShouldBe("Kuaför Elif");
         var list = (await _api.GetAsync("/api/v1/manage/staff", _token)).Body.GetProperty("items").EnumerateArray().ToList();
-        list.Select(s => s.GetProperty("fullName").GetString()).ShouldBe(["Kuaför Elif", "Deniz Kara"]);
+        list.Select(s => s.GetProperty("fullName").GetString()).ShouldBe(["Elif Kaya", "Deniz Kara"]);
         list[0].GetProperty("role").GetString().ShouldBe("Owner");
 
         var login = await _api.SignInAsync(Deniz);

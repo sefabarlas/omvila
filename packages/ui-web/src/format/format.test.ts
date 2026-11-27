@@ -9,7 +9,9 @@ import {
   formatPhone,
   formatTime,
   maskPhone,
+  normalizePersonName,
   parseMobilePhone,
+  personNameError,
 } from './index';
 
 // Kural: docs/urun/urun-kurallari.md § Biçimler — örnekler birebir.
@@ -139,5 +141,62 @@ describe('formatCount', () => {
 
   it('tamsayı olmayanı reddeder', () => {
     expect(() => formatCount(1.5)).toThrow(RangeError);
+  });
+});
+
+// Kural: alan-modeli.md § User (FullName; T-130), sözleşme SignupRequest.ownerFullName. Sunucudaki PersonName ile aynı.
+describe('personNameError', () => {
+  it.each(['', '   ', '\t \n'])('boş veya yalnız boşluk: zorunlu (%j)', (input) => {
+    expect(personNameError(input)).toBe('required');
+  });
+
+  it('tek harf kısa', () => {
+    expect(personNameError(' A ')).toBe('too_short');
+  });
+
+  it('120 karakter geçerli, 121 uzun', () => {
+    expect(personNameError('a'.repeat(120))).toBeNull();
+    expect(personNameError('a'.repeat(121))).toBe('too_long');
+  });
+
+  it('uzunluk boşluklar teke indikten sonra ölçülür', () => {
+    expect(personNameError(`  ${'a'.repeat(60)}    ${'b'.repeat(59)}  `)).toBeNull();
+  });
+
+  it.each([
+    'Alya Kaya 2',
+    '4lya Kaya',
+    'Alya_Kaya',
+    'Alya Kaya.',
+    'Alya, Kaya',
+    'Alya@Kaya',
+    '-Alya Kaya',
+    "'Alya Kaya",
+  ])('rakam ve başka işaret geçersiz: %s', (input) => {
+    expect(personNameError(input)).toBe('invalid_format');
+  });
+
+  it.each([
+    'Alya Kaya',
+    'Çağrı Öztürk Şahin',
+    'İpek Işık Güneş Ünal',
+    'Hâle Kâmil',
+    'Ayşe-Nur Yıldız',
+    "Dilek O'Brien",
+    'Dilek O’Brien',
+    'Su',
+  ])('Türkçe harf, kesme işareti ve tire geçerli: %s', (input) => {
+    expect(personNameError(input)).toBeNull();
+  });
+});
+
+describe('normalizePersonName', () => {
+  it.each([
+    ['  Alya   Kaya  ', 'Alya Kaya'],
+    ['Alya\t\tKaya', 'Alya Kaya'],
+    ['Ayşe  Nur \u00A0 Yıldız', 'Ayşe Nur Yıldız'],
+    ['C\u0327ag\u0306rı Kaya', 'Çağrı Kaya'],
+  ])('%j → %s', (input, expected) => {
+    expect(normalizePersonName(input)).toBe(expected);
   });
 });

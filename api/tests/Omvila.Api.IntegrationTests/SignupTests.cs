@@ -131,6 +131,87 @@ public sealed class SignupTests(PostgresFixture db) : IAsyncLifetime
         (await ScalarAsync<long>("SELECT count(*) FROM identity.users")).ShouldBe(0);
     }
 
+    // Kural: T-130 (kayıt ekranında "Adınız soyadınız" zorunlu; sözleşme SignupRequest.ownerFullName).
+    [Theory]
+    [InlineData(null, "required")]
+    [InlineData("   ", "required")]
+    [InlineData("A", "too_short")]
+    [InlineData("Elif Kaya 2", "invalid_format")]
+    public async Task Signup_WithInvalidOwnerName_Returns400_AndCreatesNothing(string? ownerFullName, string expected)
+    {
+        using var client = Client("web");
+        var token = await SignupTokenAsync(client);
+
+        var result = await SignupAsync(client, Body(token, ownerFullName: ownerFullName));
+
+        result.Status.ShouldBe(400);
+        result.Body.GetProperty("code").GetString().ShouldBe("validation_failed");
+        result.Body.GetProperty("errors").GetProperty("ownerFullName")[0].GetString().ShouldBe(expected);
+        (await ScalarAsync<long>("SELECT count(*) FROM identity.users")).ShouldBe(0);
+        (await ScalarAsync<long>("SELECT count(*) FROM tenancy.brands")).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Signup_WithoutOwnerNameProperty_Returns400()
+    {
+        using var client = Client("web");
+        var token = await SignupTokenAsync(client);
+
+        var result = await SignupAsync(client, new
+        {
+            signupToken = token,
+            businessName = "Kuaför Elif",
+            industryCode = "hair_salon",
+            acceptedTerms = true,
+            privacyNoticeVersion = "2026-11-01",
+        });
+
+        result.Status.ShouldBe(400);
+        result.Body.GetProperty("errors").GetProperty("ownerFullName")[0].GetString().ShouldBe("required");
+    }
+
+    // Kural: T-130. Ad kod doğrulamasından sonra (kayıt jetonuyla) hesaba yazılır: kullanıcı, sahip personeli, oturum
+    // özeti ve personel listesi aynı adı gösterir; boşluklar normalleşir.
+    [Fact]
+    public async Task Signup_WritesOwnerNameToUserStaffAndSession()
+    {
+        using var client = Client("web");
+        (await ScalarAsync<long>("SELECT count(*) FROM identity.users")).ShouldBe(0);
+        var token = await SignupTokenAsync(client);
+        (await ScalarAsync<long>("SELECT count(*) FROM identity.users")).ShouldBe(0, "hesap kod doğrulanıp kayıt tamamlanınca oluşur");
+
+        var result = await SignupAsync(client, Body(token, ownerFullName: "  Çağrı   Öztürk-Şahin  "));
+
+        result.Status.ShouldBe(201);
+        (await ScalarAsync<string>("SELECT full_name FROM identity.users")).ShouldBe("Çağrı Öztürk-Şahin");
+        (await ScalarAsync<string>("SELECT full_name FROM tenancy.staff")).ShouldBe("Çağrı Öztürk-Şahin");
+
+        var accessToken = result.Body.GetProperty("accessToken").GetString()!;
+        var session = await GetAsync(client, "/api/v1/manage/session", accessToken);
+        session.GetProperty("user").GetProperty("fullName").GetString().ShouldBe("Çağrı Öztürk-Şahin");
+        var staff = await GetAsync(client, "/api/v1/manage/staff", accessToken);
+        var owner = staff.GetProperty("items").EnumerateArray().ShouldHaveSingleItem();
+        owner.GetProperty("fullName").GetString().ShouldBe("Çağrı Öztürk-Şahin");
+    }
+
+    // Kural: T-130 (3). Üyeliği olmayan var olan kullanıcı (ör. platform kullanıcısı, T-128) kayıt olursa yazdığı ad
+    // görünen adı olur.
+    [Fact]
+    public async Task Signup_ByExistingUserWithoutMembership_UsesTypedName()
+    {
+        await ExecuteAsync($"""
+            INSERT INTO identity.users (id, phone_e164, full_name, language_code, is_active, platform_role, created_utc)
+              VALUES ('0193a8f0-0000-7000-8000-000000000001', '{Phone}', NULL, 'tr', true, 'PlatformSupport', now());
+            """);
+        using var client = Client("web");
+
+        var result = await SignupAsync(client, Body(await SignupTokenAsync(client)));
+
+        result.Status.ShouldBe(201);
+        (await ScalarAsync<string>("SELECT string_agg(full_name, ',') FROM identity.users")).ShouldBe("Elif Kaya");
+        (await ScalarAsync<string>("SELECT full_name FROM tenancy.staff")).ShouldBe("Elif Kaya");
+    }
+
     [Fact]
     public async Task Signup_WithoutIdempotencyKey_Returns400()
     {
@@ -139,12 +220,12 @@ public sealed class SignupTests(PostgresFixture db) : IAsyncLifetime
         (await SignupAsync(client, Body(await SignupTokenAsync(client)), idempotencyKey: null)).Status.ShouldBe(400);
     }
 
-    private static object Body(string token, string businessName = "Kuaför Elif") => new
+    private static object Body(string token, string businessName = "Kuaför Elif", string? ownerFullName = "Elif Kaya") => new
     {
         signupToken = token,
         businessName,
         industryCode = "hair_salon",
-        ownerFullName = "Elif Kaya",
+        ownerFullName,
         acceptedTerms = true,
         privacyNoticeVersion = "2026-11-01",
     };
@@ -182,6 +263,15 @@ public sealed class SignupTests(PostgresFixture db) : IAsyncLifetime
         using var response = await client.SendAsync(request, Ct);
         var text = await response.Content.ReadAsStringAsync(Ct);
         return ((int)response.StatusCode, text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone());
+    }
+
+    private static async Task<JsonElement> GetAsync(HttpClient client, string path, string accessToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, path);
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+        using var response = await client.SendAsync(request, Ct);
+        ((int)response.StatusCode).ShouldBe(200);
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)).RootElement.Clone();
     }
 
     private static JsonElement JwtPayload(string jwt)

@@ -53,15 +53,29 @@ test('kayıt → kurulum adımları → bağlantıyı kopyalama', async ({ page,
   await expect(
     page.getByRole('heading', { level: 1, name: 'İşletmenizi oluşturun' }),
   ).toBeVisible();
+  // T-130: "Adınız soyadınız" ilk alan ve zorunlu; boşken kod istenmez.
+  const ownerName = page.getByLabel('Adınız soyadınız');
+  await expect(ownerName).toHaveAttribute('autocomplete', 'name');
   await page.getByLabel('İşletme adı').fill('Kuaför Elif');
   await page.getByLabel('Ne tür bir işletme?').selectOption('hair_salon');
   await page.getByLabel('Cep telefonunuz').fill('0555 000 00 01');
   await page
     .getByRole('checkbox', { name: 'Kullanım koşullarını ve aydınlatma metnini okudum' })
     .check();
+  await page.getByRole('button', { name: 'SMS kodu gönder' }).click();
+  await expect(page.getByText('Adınızı ve soyadınızı yazın.')).toBeVisible();
+  await expect(page.getByText('2 / 2 · Telefon doğrulama')).toBeHidden();
+  await ownerName.fill('  Elif   Kaya ');
   const otp = await captureBody(page, '/auth/otp/request', 'POST');
   await page.getByRole('button', { name: 'SMS kodu gönder' }).click();
   expect(await otp()).toEqual({ phone: '+905550000001', purpose: 'Signup' });
+
+  // Kod ekranından geri dönünce alanlar dolu kalır; ad kod doğrulanınca kayıt isteğiyle gider.
+  await expect(page.getByText('2 / 2 · Telefon doğrulama')).toBeVisible();
+  await page.getByRole('button', { name: 'Geri' }).click();
+  await expect(page.getByLabel('Adınız soyadınız')).toHaveValue('  Elif   Kaya ');
+  await expect(page.getByLabel('İşletme adı')).toHaveValue('Kuaför Elif');
+  await page.getByRole('button', { name: 'SMS kodu gönder' }).click();
 
   await page.getByLabel('Doğrulama kodu, hane 1').click();
   await page.keyboard.type('482193');
@@ -69,6 +83,7 @@ test('kayıt → kurulum adımları → bağlantıyı kopyalama', async ({ page,
   await page.getByRole('button', { name: 'İşletmeyi oluştur' }).click();
   expect(await signup()).toMatchObject({
     signupToken: 'kayit-jetonu',
+    ownerFullName: 'Elif Kaya',
     businessName: 'Kuaför Elif',
     industryCode: 'hair_salon',
     acceptedTerms: true,

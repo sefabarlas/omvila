@@ -55,6 +55,7 @@ internal sealed class ManageApi(OmvilaApiFactory factory, PostgresFixture db)
                 signupToken = verified.Body.GetProperty("signupToken").GetString(),
                 businessName,
                 industryCode = "hair_salon",
+                ownerFullName = "Elif Kaya",
                 acceptedTerms = true,
                 privacyNoticeVersion = "2026-11-01",
             },

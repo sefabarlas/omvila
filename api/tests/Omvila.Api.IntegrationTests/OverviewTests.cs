@@ -93,7 +93,7 @@ public sealed class OverviewTests(PostgresFixture db) : IAsyncLifetime
         weekly.GetProperty("previousWeekPercent").GetInt32().ShouldBe(0);
         weekly.GetProperty("staff").EnumerateArray()
             .Select(s => $"{s.GetProperty("staffName").GetString()}/{s.GetProperty("percent").GetInt32()}/{s.GetProperty("calendarColor").GetString()}")
-            .ShouldBe(["Kuaför Elif/50/" + await ColorAsync(_elif), "Zeynep Aksoy/25/#2F5D8A"], "doluluğa göre azalan");
+            .ShouldBe(["Elif Kaya/50/" + await ColorAsync(_elif), "Zeynep Aksoy/25/#2F5D8A"], "doluluğa göre azalan");
     }
 
     [Fact]
