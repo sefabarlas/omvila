@@ -249,8 +249,16 @@ describe('salt okunur abonelik (kriter 17)', () => {
     expect((button as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText('Abonelik salt okunur; yeni randevu eklenemez.')).toBeTruthy();
     expect(button.getAttribute('aria-describedby')).toBeTruthy();
-    await screen.findByRole('region', { name: 'Günlük takvim' });
-    await userEvent.click(screen.getByRole('button', { name: 'Randevu ekle: Elif Kaya, 14:30' }));
+    const calendar = await screen.findByRole('region', { name: 'Günlük takvim' });
+    // T-125 (8): salt okunurda boş dilim buton olarak çizilmez (erişilebilirlik ağacında yok); hücreye tıklamak
+    // pencere açmaz.
+    expect(screen.queryByRole('button', { name: /^Randevu ekle: / })).toBeNull();
+    const cell = calendar.querySelector('[data-column] > div[class*="cell"]');
+    if (!cell) {
+      throw new Error('boş hücre bulunamadı');
+    }
+
+    await userEvent.click(cell);
     expect(screen.queryByRole('dialog', { name: 'Yeni randevu' })).toBeNull();
   });
 

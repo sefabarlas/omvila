@@ -103,6 +103,11 @@
   background-color: var(--zemin-hover);
 }
 
+.cell {
+  flex: none;
+  height: var(--ceyrek);
+}
+
 .slot {
   flex: none;
   height: var(--ceyrek);
