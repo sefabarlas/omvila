@@ -28,4 +28,5 @@ pnpm --filter @omvila/platform-panel e2e    # Playwright, Prism mock'a karşı (
 - Karar uçları (eşleştir, bulunamadı, reddet, SMS adı) If-Match ile; 412 ve 409 metinleri `features/approvals/decision-error.ts`. Sonuçlanan kayıt ekrandan kalktığından `mutateAsync` kullanılır.
 - Denetim kaydı satır metinleri (işlem adı, ayrıntı, kim) `features/audit/labels.ts`; marka detayı sekmesi de kullanır.
 - Testte PP2 uçları `src/test/fake-platform.ts`; e2e tasarım verisi `e2e/approvals-demo.ts` (tarayıcı saati ekran anına sabit).
+- e2e: `giris` (giriş, marka detayı), `eslestirme` (KK2), `karar-ve-yetki` (KK3 "Bulunamadı, markaya yaz", KK4 kilitli butonlar ve kontör ekleme), `ekranlar` (görüntüler; ProfilMenu dahil). Eşleme: [dilim-06-tasarim-karsilastirma.md](../../docs/dilimler/dilim-06-tasarim-karsilastirma.md).
 - Giriş bileşenleri (`AuthLayout`, `CodeStep`) ve filtre çipleri salon paneliyle ortak (`@omvila/ui-web/panel`).

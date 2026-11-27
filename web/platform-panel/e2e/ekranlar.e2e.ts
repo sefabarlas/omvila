@@ -172,6 +172,19 @@ const screens: ScreenCase[] = [
       await expect(page.getByRole('button', { name: 'Planı düzenle' })).toBeDisabled();
     },
   },
+  // T-129: kenar menüdeki kullanıcı satırından açılan profil menüsü (kimlik, tema, "Oturumu kapat").
+  {
+    path: '/',
+    name: 'ProfilMenu',
+    heading: 'Platform',
+    setup: overviewDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Profil menüsü' }).click();
+      const menu = page.getByRole('menu', { name: 'Profil menüsü' });
+      await expect(menu.getByRole('menuitem', { name: 'Oturumu kapat' })).toBeVisible();
+      await settle(page);
+    },
+  },
 ];
 
 /** Pencerenin açılış hareketi bitsin. */
