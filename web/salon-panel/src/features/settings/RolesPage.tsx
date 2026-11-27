@@ -91,6 +91,7 @@ export function RolesPage() {
           <Button
             size="sm"
             variant="ghost"
+            className={roles.addUser}
             onClick={() => {
               setAdding(true);
             }}
