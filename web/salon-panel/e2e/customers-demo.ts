@@ -339,6 +339,18 @@ async function customerRecordsDemo(page: Page) {
           ),
         ),
   );
+  // AyarlarKvkk tasarımında dışa aktarma satırı rozetsizdir: markada istek yok (204; Prism örneği "Gönderildi" döner).
+  await page.route(/\/api\/v1\/manage\/brand\/data-exports\/latest$/, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fallback()
+      : route.fulfill({
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': 'http://localhost:5180',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+        }),
+  );
   await page.route(/\/api\/v1\/manage\/customer-deletion-requests(\?.*)?$/, (route) =>
     route.request().method() === 'OPTIONS'
       ? route.fallback()
