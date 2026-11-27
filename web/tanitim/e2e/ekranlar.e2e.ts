@@ -35,3 +35,22 @@ for (const mobile of [false, true]) {
     }
   }
 }
+
+// T-129: üst bardaki tema düğmesi ve menüsü (Açık · Koyu · Sistem). Sistem tercihiyle açılır; görüntü üst bölümdür.
+for (const theme of ['light', 'dark'] as const) {
+  test(`TemaMenu${theme === 'dark' ? 'Koyu' : ''}`, async ({ page: tab }) => {
+    await tab.emulateMedia({ colorScheme: theme });
+    await tab.goto('/');
+    await tab.getByRole('button', { name: 'Tema: Sistem' }).click();
+    const menu = tab.getByRole('menu', { name: 'Tema' });
+    await expect(menu.getByRole('menuitemradio', { name: 'Sistem' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await expect(menu.getByText('Sistem, cihazınızın ayarını izler.')).toBeVisible();
+    await tab.screenshot({
+      path: `e2e-results/ekranlar/TemaMenu${theme === 'dark' ? 'Koyu' : ''}.png`,
+      animations: 'disabled',
+    });
+  });
+}
