@@ -15,6 +15,8 @@ abstract class _$DataExportRequestResultCWProxy {
 
   DataExportRequestResult emailMasked(String emailMasked);
 
+  DataExportRequestResult linkExpiresUtc(DateTime? linkExpiresUtc);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DataExportRequestResult(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -26,6 +28,7 @@ abstract class _$DataExportRequestResultCWProxy {
     DataExportRequestResultStatusEnum status,
     DateTime requestedUtc,
     String emailMasked,
+    DateTime? linkExpiresUtc,
   });
 }
 
@@ -52,6 +55,10 @@ class _$DataExportRequestResultCWProxyImpl
       this(emailMasked: emailMasked);
 
   @override
+  DataExportRequestResult linkExpiresUtc(DateTime? linkExpiresUtc) =>
+      this(linkExpiresUtc: linkExpiresUtc);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `DataExportRequestResult(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -63,6 +70,7 @@ class _$DataExportRequestResultCWProxyImpl
     Object? status = const $CopyWithPlaceholder(),
     Object? requestedUtc = const $CopyWithPlaceholder(),
     Object? emailMasked = const $CopyWithPlaceholder(),
+    Object? linkExpiresUtc = const $CopyWithPlaceholder(),
   }) {
     return DataExportRequestResult(
       exportId: exportId == const $CopyWithPlaceholder()
@@ -81,6 +89,10 @@ class _$DataExportRequestResultCWProxyImpl
           ? _value.emailMasked
           // ignore: cast_nullable_to_non_nullable
           : emailMasked as String,
+      linkExpiresUtc: linkExpiresUtc == const $CopyWithPlaceholder()
+          ? _value.linkExpiresUtc
+          // ignore: cast_nullable_to_non_nullable
+          : linkExpiresUtc as DateTime?,
     );
   }
 }
@@ -118,6 +130,10 @@ DataExportRequestResult _$DataExportRequestResultFromJson(
       (v) => DateTime.parse(v as String),
     ),
     emailMasked: $checkedConvert('emailMasked', (v) => v as String),
+    linkExpiresUtc: $checkedConvert(
+      'linkExpiresUtc',
+      (v) => v == null ? null : DateTime.parse(v as String),
+    ),
   );
   return val;
 });
@@ -129,6 +145,7 @@ Map<String, dynamic> _$DataExportRequestResultToJson(
   'status': _$DataExportRequestResultStatusEnumEnumMap[instance.status]!,
   'requestedUtc': instance.requestedUtc.toIso8601String(),
   'emailMasked': instance.emailMasked,
+  'linkExpiresUtc': ?instance.linkExpiresUtc?.toIso8601String(),
 };
 
 const _$DataExportRequestResultStatusEnumEnumMap = {

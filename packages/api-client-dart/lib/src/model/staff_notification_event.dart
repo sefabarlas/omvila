@@ -35,6 +35,10 @@ enum StaffNotificationEvent {
   ownerPeriodPaymentNoticeNotFound(r'owner.payment_notice_not_found'),
   @JsonValue(r'owner.payment_notice_rejected')
   ownerPeriodPaymentNoticeRejected(r'owner.payment_notice_rejected'),
+  @JsonValue(r'owner.sms_sender_approved')
+  ownerPeriodSmsSenderApproved(r'owner.sms_sender_approved'),
+  @JsonValue(r'owner.sms_sender_rejected')
+  ownerPeriodSmsSenderRejected(r'owner.sms_sender_rejected'),
   @JsonValue(r'unknown_default_open_api')
   unknownDefaultOpenApi(r'unknown_default_open_api');
 

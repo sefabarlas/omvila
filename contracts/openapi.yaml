@@ -77,6 +77,8 @@ tags:
     description: Bekleme listesine katılma ve bekleme teklifi bağlantısı (omvila.com/b/{code})
   - name: public-review
     description: Değerlendirme bağlantısı (omvila.com/d/{code})
+  - name: public-data-export
+    description: '"Tüm verileri dışa aktar" e-postasındaki indirme bağlantısı (Dilim 6)'
   - name: me-auth
     description: Müşteri uygulaması girişi (telefon + SMS kodu), jeton yenileme, çıkış
   - name: me-profile
@@ -4085,6 +4087,33 @@ paths:
         '422': { $ref: '#/components/responses/Unprocessable' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
+  /api/v1/manage/brand/data-exports/latest:
+    get:
+      tags: [manage-brand]
+      operationId: manageGetLatestDataExport
+      summary: Son dışa aktarma isteğinin durumu
+      description: |
+        AyarlarKvkk "Tüm verileri dışa aktar" satırındaki durum rozeti ("Hazırlanıyor", "Gönderildi") sayfa açılışında buradan okunur. Markanın en son
+        isteği döner (isteği markadaki hangi kullanıcı yaptıysa); bağlantı e-postayla gittiyse linkExpiresUtc bağlantının geçerlilik sonudur.
+        Markada hiç istek yoksa 204. İndirme bağlantısı bu yanıtta yoktur, yalnız e-postada gider. İzin: customer.export (yalnız Owner).
+      security: [ { manageBearer: [] } ]
+      responses:
+        '200':
+          description: Son istek
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExportRequestResult'
+              example:
+                exportId: 0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9d01
+                status: Sent
+                requestedUtc: '2026-11-22T10:00:00Z'
+                emailMasked: 'el***@ornek.com'
+                linkExpiresUtc: '2026-11-29T10:02:00Z'
+        '204': { description: Markada dışa aktarma isteği yok }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   # ───────────────────────────── manage-integrations (Dilim 6) ─────────────────────────────
   /api/v1/manage/integrations/google:
     get:
@@ -4801,6 +4830,34 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
         '422': { $ref: '#/components/responses/Unprocessable' }
+
+  # ───────────────────────────── public-data-export (Dilim 6) ─────────────────────────────
+  /api/v1/public/data-exports/{token}:
+    parameters:
+      - name: token
+        in: path
+        required: true
+        description: E-postadaki bağlantının imzalı ve süreli jetonu (base64url; marka, istek ve geçerlilik sonunu taşır)
+        schema: { type: string }
+    get:
+      tags: [public-data-export]
+      operationId: publicDownloadDataExport
+      summary: Dışa aktarma arşivini indir (e-postadaki bağlantı)
+      description: |
+        owner.data_export_ready e-postasındaki bağlantının açtığı yol ("Tüm verileri dışa aktar", manageRequestDataExport). Giriş istemez:
+        yetki jetonun imzası ve süresidir (DataExportLinkValidityDays). Yanıt musteriler.csv, randevular.csv ve odemeler.csv dosyalarını
+        taşıyan tek ZIP arşividir. Jeton bozuk, imzası geçersiz veya süresi dolmuşsa ya da arşiv silinmişse 404 not_found (neden ayrıştırılmaz).
+        Bağlantı süresi içinde yeniden açılabilir. Panel ve uygulamalar bu yolu çağırmaz; bağlantıyı tarayıcı açar.
+      responses:
+        '200':
+          description: ZIP arşivi (Content-Disposition attachment)
+          headers:
+            Content-Disposition:
+              schema: { type: string, example: 'attachment; filename="omvila-veriler-2026-11-22.zip"' }
+          content:
+            application/zip:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
 
   # ───────────────────────────── me-auth (müşteri uygulaması) ─────────────────────────────
   /api/v1/me/auth/otp/request:
@@ -8390,6 +8447,8 @@ components:
         - owner.payment_notice_matched
         - owner.payment_notice_not_found
         - owner.payment_notice_rejected
+        - owner.sms_sender_approved
+        - owner.sms_sender_rejected
     NotificationTarget:
       type: object
       description: Bildirime dokununca açılacak ekran
@@ -10776,6 +10835,10 @@ components:
         status: { type: string, enum: [Queued, Processing, Sent, Failed], description: İsteğin durumu }
         requestedUtc: { type: string, format: date-time, description: İstek anı }
         emailMasked: { type: string, description: Bağlantının gideceği maskeli adres, example: 'el***@ornek.com' }
+        linkExpiresUtc:
+          type: string
+          format: date-time
+          description: İndirme bağlantısının geçerlilik sonu; arşiv hazırlanıp bağlantı e-postayla gidince (status = Sent) dolar, öncesinde alan dönmez
 
     # ───────── Google Takvim (Dilim 6) ─────────
     GoogleCalendarConnection:

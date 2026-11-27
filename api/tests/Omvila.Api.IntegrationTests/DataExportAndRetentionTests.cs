@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
+using NodaTime.Text;
 using Omvila.Infrastructure.Email;
 using Omvila.TestKit;
 
@@ -55,6 +56,45 @@ public sealed class DataExportAndRetentionTests(PostgresFixture db) : IAsyncLife
 
         var manager = await _api.AddMemberAndSignInAsync(_token, "+905383333333", "BranchManager", _merkez);
         (await _api.SendAsync(HttpMethod.Post, Path, new { email = "deniz@ornek.com" }, manager, Key())).Status.ShouldBe(403);
+    }
+
+    // Kural: sözleşme manageGetLatestDataExport (son istek; istek yoksa 204; linkExpiresUtc yalnız Sent iken; customer.export
+    // yalnız Owner; başka markanın isteği görünmez), T-127 (2), T-132.
+    [Fact]
+    public async Task Latest_ReturnsNewestRequestOfThisBrand_NoContentWhenNone_OwnerOnly()
+    {
+        var none = await _api.GetAsync(Path + "/latest", _token);
+        none.Status.ShouldBe(204);
+
+        var other = await _api.SignupAsync("+905321112233", "Berber Ali");
+        (await _api.SendAsync(HttpMethod.Post, Path, new { email = "ali@ornek.com" }, other, Key())).Status.ShouldBe(202);
+        (await _api.GetAsync(Path + "/latest", _token)).Status.ShouldBe(204, "başka markanın isteği görünmez");
+
+        var requested = await _api.SendAsync(HttpMethod.Post, Path, new { email = "elif@ornek.com" }, _token, Key());
+        var queued = await _api.GetAsync(Path + "/latest", _token);
+        queued.Status.ShouldBe(200, queued.Body.ToString());
+        queued.Body.GetProperty("exportId").GetString().ShouldBe(requested.Body.GetProperty("exportId").GetString());
+        queued.Body.GetProperty("status").GetString().ShouldBe("Queued");
+        queued.Body.GetProperty("emailMasked").GetString().ShouldBe("el***@ornek.com");
+        queued.Body.GetProperty("requestedUtc").GetString().ShouldBe(requested.Body.GetProperty("requestedUtc").GetString());
+        queued.Body.TryGetProperty("linkExpiresUtc", out _).ShouldBeFalse("bağlantı henüz gönderilmedi");
+
+        await _api.RunJobAsync(ProcessDataExportsJob);
+        var sent = (await _api.GetAsync(Path + "/latest", _token)).Body;
+        sent.GetProperty("status").GetString().ShouldBe("Sent");
+        var expires = InstantPattern.ExtendedIso.Parse(sent.GetProperty("linkExpiresUtc").GetString()!).Value;
+        (expires - _factory.Clock.GetCurrentInstant()).ShouldBe(Duration.FromDays(7), "DataExportLinkValidityDays");
+        (await _api.GetAsync(Path + "/latest", other)).Body.GetProperty("emailMasked").GetString().ShouldBe("al***@ornek.com");
+
+        _factory.Clock.Advance(Duration.FromMinutes(5));
+        var newer = await _api.SendAsync(HttpMethod.Post, Path, new { email = "kaya@ornek.com" }, _token, Key());
+        var latest = (await _api.GetAsync(Path + "/latest", _token)).Body;
+        latest.GetProperty("exportId").GetString().ShouldBe(newer.Body.GetProperty("exportId").GetString(), "en son istek");
+        latest.GetProperty("status").GetString().ShouldBe("Queued");
+
+        var manager = await _api.AddMemberAndSignInAsync(_token, "+905383333333", "BranchManager", _merkez);
+        (await _api.GetAsync(Path + "/latest", manager)).Status.ShouldBe(403);
+        (await _api.SendAsync(HttpMethod.Get, Path + "/latest", null)).Status.ShouldBe(401);
     }
 
     [Fact]

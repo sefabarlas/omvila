@@ -334,6 +334,82 @@ _responseData = rawData == null ? null : deserialize<BrandSettings, BrandSetting
     );
   }
 
+  /// Son dışa aktarma isteğinin durumu
+  /// AyarlarKvkk \&quot;Tüm verileri dışa aktar\&quot; satırındaki durum rozeti (\&quot;Hazırlanıyor\&quot;, \&quot;Gönderildi\&quot;) sayfa açılışında buradan okunur. Markanın en son isteği döner (isteği markadaki hangi kullanıcı yaptıysa); bağlantı e-postayla gittiyse linkExpiresUtc bağlantının geçerlilik sonudur. Markada hiç istek yoksa 204. İndirme bağlantısı bu yanıtta yoktur, yalnız e-postada gider. İzin: customer.export (yalnız Owner). 
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [DataExportRequestResult] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<DataExportRequestResult>> manageGetLatestDataExport({ 
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/api/v1/manage/brand/data-exports/latest';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{
+        ...?headers,
+      },
+      extra: <String, dynamic>{
+        'secure': <Map<String, String>>[
+          {
+            'type': 'http',
+            'scheme': 'bearer',
+            'name': 'manageBearer',
+          },
+        ],
+        ...?extra,
+      },
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    DataExportRequestResult? _responseData;
+
+    try {
+final rawData = _response.data;
+_responseData = rawData == null ? null : deserialize<DataExportRequestResult, DataExportRequestResult>(rawData, 'DataExportRequestResult', growable: true);
+
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<DataExportRequestResult>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
   /// KVKK ve veri (aydınlatma metni, saklama süresi)
   /// AyarlarKvkk \&quot;Aydınlatma metni\&quot; (\&quot;OMVILA standart aydınlatma metni · Son güncelleme 1 Kasım 2026\&quot;, \&quot;Önizle\&quot;, \&quot;Kendi metnimi kullan\&quot;) ve \&quot;Veri saklama\&quot; (\&quot;İşlem kayıtlarını saklama süresi\&quot; 3 / 5 / 10 yıl). \&quot;Silme talepleri\&quot; manageListDeletionRequests ile gelir. Veri sorumlusu olarak işletme adı ve iletişim bilgisi metne sunucuda eklenir. İzin: settings.manage (Owner). 
   ///

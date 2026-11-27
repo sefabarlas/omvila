@@ -17,6 +17,7 @@ import { FileText } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useApi } from '@/app/api-context';
+import { useClock } from '@/app/clock';
 import { defaultTimeZone } from '@/app/config';
 import { useSession } from '@/app/session';
 import { ConflictBanner } from '@/shared/ConflictBanner';
@@ -24,6 +25,7 @@ import { DataExportModal } from './DataExportModal';
 import kvkk from './Kvkk.module.css';
 import {
   dataExportStatusLabels,
+  latestDataExportQuery,
   privacySettingsQuery,
   useUpdatePrivacySettings,
 } from './privacy-api';
@@ -238,26 +240,63 @@ function PrivacyForm({
   );
 }
 
-/** "Tüm verileri dışa aktar": istek alınınca durumu ve bağlantının gideceği maskeli adres satırda görünür. */
-function ExportRow() {
-  const [open, setOpen] = useState(false);
-  const [result, setResult] = useState<DataExportResult | null>(null);
-  return (
-    <SettingRow
-      id="disa-aktar"
-      title="Tüm verileri dışa aktar"
-      description={
-        result
-          ? `İndirme bağlantısı ${result.emailMasked} adresine gönderilecek. Bağlantı belirli bir süre geçerlidir.`
-          : 'Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir.'
+const exportDefaultText = 'Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir.';
+
+/**
+ * Son isteğin satırdaki görünümü: rozet ve açıklama. Bağlantısının süresi dolmuş istek gösterilmez (indirilecek bir şey
+ * kalmadı); durum okunamazsa da satır varsayılan hâliyle kalır.
+ */
+export function exportRowView(
+  result: DataExportResult | null | undefined,
+  now: Date,
+): { badge: { label: string; tone: 'bilgi' | 'basari' | 'hata' } | null; text: string } {
+  if (!result) {
+    return { badge: null, text: exportDefaultText };
+  }
+
+  const label = dataExportStatusLabels[result.status];
+  switch (result.status) {
+    case 'Failed':
+      return {
+        badge: { label, tone: 'hata' },
+        text: 'Dışa aktarma hazırlanamadı. Yeniden isteyin.',
+      };
+    case 'Sent': {
+      const expires = result.linkExpiresUtc ? new Date(result.linkExpiresUtc) : null;
+      if (expires && expires.getTime() <= now.getTime()) {
+        return { badge: null, text: exportDefaultText };
       }
-    >
+
+      const until = expires
+        ? ` Bağlantı ${longDay(toBranchDate(expires, defaultTimeZone))} tarihine kadar geçerli.`
+        : '';
+      return {
+        badge: { label, tone: 'basari' },
+        text: `İndirme bağlantısı ${result.emailMasked} adresine gönderildi.${until}`,
+      };
+    }
+    default:
+      return {
+        badge: { label, tone: 'bilgi' },
+        text: `İndirme bağlantısı ${result.emailMasked} adresine gönderilecek. Bağlantı belirli bir süre geçerlidir.`,
+      };
+  }
+}
+
+/**
+ * "Tüm verileri dışa aktar": markanın son isteğinin durumu ve bağlantının gideceği maskeli adres satırda görünür; sayfa
+ * açılışında sunucudan okunur (manageGetLatestDataExport).
+ */
+function ExportRow() {
+  const api = useApi();
+  const clock = useClock();
+  const [open, setOpen] = useState(false);
+  const latest = useQuery(latestDataExportQuery(api));
+  const view = exportRowView(latest.data, clock.now());
+  return (
+    <SettingRow id="disa-aktar" title="Tüm verileri dışa aktar" description={view.text}>
       <div className={kvkk.exportControl}>
-        {result ? (
-          <Badge tone={result.status === 'Failed' ? 'hata' : 'bilgi'}>
-            {dataExportStatusLabels[result.status]}
-          </Badge>
-        ) : null}
+        {view.badge ? <Badge tone={view.badge.tone}>{view.badge.label}</Badge> : null}
         <Button
           icon={<FileText size={16} aria-hidden="true" />}
           onClick={() => {
@@ -272,7 +311,6 @@ function ExportRow() {
           onClose={() => {
             setOpen(false);
           }}
-          onRequested={setResult}
         />
       ) : null}
     </SettingRow>

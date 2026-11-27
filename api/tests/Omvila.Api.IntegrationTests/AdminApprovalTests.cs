@@ -313,6 +313,21 @@ public sealed class AdminApprovalTests(PostgresFixture db) : IAsyncLifetime
         var email = Emails().Sent.Single(e => string.Equals(e.EventCode, "owner.sms_sender_approved", StringComparison.Ordinal));
         email.Subject.ShouldBe("SMS gönderen adınız onaylandı");
         Emails().Sent.ShouldNotContain(e => string.Equals(e.EventCode, "owner.sms_sender_rejected", StringComparison.Ordinal), "Berber Kaan'ın işletme e-postası yok");
+
+        // Bildirim paneli (T-132): karar markanın sahibine panel kaydı olarak da yazılır; e-postası olmayan marka da alır, push yok.
+        await ShouldHaveSmsSenderBellAsync(_elifToken, "owner.sms_sender_approved", "SMS gönderen adınız onaylandı", "SMS'leriniz bundan sonra KUAFORELIF adıyla gider.");
+        await ShouldHaveSmsSenderBellAsync(_kaanToken, "owner.sms_sender_rejected", "SMS gönderen adınız onaylanmadı", "BERBERKAAN onaylanmadı. Nedeni Ayarlar → Bildirimler ve SMS'te.");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.in_app_notifications WHERE event_code LIKE 'owner.sms_sender_%'")).ShouldBe(2L, "marka başına bir sahip");
+        (await _api.ScalarAsync<long>("SELECT count(*) FROM notifications.notification_outbox WHERE event_code LIKE 'owner.sms_sender_%'")).ShouldBe(0L, "işletme push'u yok");
+    }
+
+    private async Task ShouldHaveSmsSenderBellAsync(string token, string eventCode, string title, string body)
+    {
+        var bell = (await _api.GetAsync("/api/v1/manage/notifications", token)).Body.GetProperty("items").EnumerateArray()
+            .Single(n => string.Equals(n.GetProperty("event").GetString(), eventCode, StringComparison.Ordinal));
+        bell.GetProperty("title").GetString().ShouldBe(title);
+        bell.GetProperty("body").GetString().ShouldBe(body);
+        bell.GetProperty("target").GetProperty("type").GetString().ShouldBe("SmsCredits");
     }
 
     // ───────── Abonelikler ─────────

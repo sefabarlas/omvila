@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useRequestDataExport } from './privacy-api';
-import type { DataExportResult } from './privacy-api';
 import roles from './Roles.module.css';
 import { describeSaveError } from './save-error';
 
@@ -18,13 +17,7 @@ type FormValues = z.infer<typeof schema>;
  * "Tüm verileri dışa aktar": müşteriler, randevular ve ödemeler CSV olarak hazırlanır, indirme bağlantısı bu adrese
  * gider. Kullanıcı kaydında e-posta olmadığından adres her istekte sorulur (acik-sorular.md T-121 (3), T-127).
  */
-export function DataExportModal({
-  onClose,
-  onRequested,
-}: {
-  onClose: () => void;
-  onRequested: (result: DataExportResult) => void;
-}) {
+export function DataExportModal({ onClose }: { onClose: () => void }) {
   const toast = useToast();
   const request = useRequestDataExport();
   // Ağ hatasından sonra yeniden gönderim aynı anahtarla gider.
@@ -34,9 +27,8 @@ export function DataExportModal({
 
   const onSubmit = form.handleSubmit(async ({ email }) => {
     try {
-      const result = await request.mutateAsync({ key, email });
+      await request.mutateAsync({ key, email });
       toast.show({ tone: 'basari', title: 'Dışa aktarma isteğiniz alındı' });
-      onRequested(result);
       onClose();
     } catch (error) {
       const view = describeSaveError(error);

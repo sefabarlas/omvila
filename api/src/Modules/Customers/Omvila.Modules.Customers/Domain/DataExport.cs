@@ -76,9 +76,11 @@ internal sealed class DataExport
     public void Purge() => Content = null;
 
     /// <summary>Sözleşmedeki durum: arşiv hazır ama bağlantı henüz gönderilmediyse "Processing".</summary>
-    public string ContractStatus => Status switch
+    public string ContractStatus => ToContractStatus(Status);
+
+    public static string ToContractStatus(DataExportStatus status) => status switch
     {
         DataExportStatus.Ready => nameof(DataExportStatus.Processing),
-        _ => Status.ToString(),
+        _ => status.ToString(),
     };
 }

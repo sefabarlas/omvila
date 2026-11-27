@@ -35,6 +35,8 @@ public sealed class PushTemplatesTests
         [(NotificationEvents.OwnerPaymentNoticeMatched, PushTemplates.CreditsVariant)] = Values(("kontör", "20.000")),
         [(NotificationEvents.OwnerPaymentNoticeNotFound, null)] = Values(),
         [(NotificationEvents.OwnerPaymentNoticeRejected, null)] = Values(),
+        [(NotificationEvents.OwnerSmsSenderApproved, null)] = Values(("ad", "KUAFORELIF1")),
+        [(NotificationEvents.OwnerSmsSenderRejected, null)] = Values(("ad", "KUAFORELIF1")),
     };
 
     [Fact]
