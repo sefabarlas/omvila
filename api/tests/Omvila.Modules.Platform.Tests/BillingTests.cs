@@ -152,6 +152,15 @@ public sealed class BillingTests
         SimplePdf.Escape("€").ShouldBe("?");
     }
 
+    // Fatura PDF'i görüntüleyicide açılarak denetlendi (T-131): dönem aralığındaki "–" WinAnsi kodu olmadan "?" çıkıyordu.
+    [Fact]
+    public void SimplePdf_PeriodDashAndCurlyQuotes_UseWinAnsiCodes()
+    {
+        SimplePdf.Escape("09.12.2026 – 08.01.2027").ShouldBe("09.12.2026 \u0096 08.01.2027");
+        SimplePdf.Escape("Elif’in Salonu").ShouldBe("Elif\u0092in Salonu");
+        SimplePdf.Escape("“Nar” — güzellik…").ShouldBe("\u0093Nar\u0094 \u0097 g\u00fczellik\u0085");
+    }
+
     private static PaymentNotice Notice() =>
         PaymentNotice.ForSubscription(
             Guid.Parse("0193a8f0-0000-7000-8000-0000000000f6"), SubscriptionTests.Trial(), 120000, PaymentNoticeChannel.Panel, null, null, Now);

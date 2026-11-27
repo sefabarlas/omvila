@@ -27,6 +27,18 @@ internal sealed class SimplePdf
         ['İ'] = 0x9E,
     };
 
+    // WinAnsi'de olup Latin-1 aralığının dışında kalan noktalama (dönem aralığındaki "–", adlardaki kıvrık kesme işareti).
+    private static readonly Dictionary<char, byte> WinAnsiPunctuation = new()
+    {
+        ['…'] = 0x85,
+        ['‘'] = 0x91,
+        ['’'] = 0x92,
+        ['“'] = 0x93,
+        ['”'] = 0x94,
+        ['–'] = 0x96,
+        ['—'] = 0x97,
+    };
+
     private static readonly Encoding Latin1 = Encoding.Latin1;
 
     private readonly List<(double X, double Y, double Size, bool Bold, string Text)> _lines = [];
@@ -107,13 +119,13 @@ internal sealed class SimplePdf
         return output.ToArray();
     }
 
-    /// <summary>PDF dizesine çevirir: Türkçe harfler eşlenen koda, WinAnsi dışı kalanlar "?"; ( ) \ kaçırılır.</summary>
+    /// <summary>PDF dizesine çevirir: Türkçe harfler ve WinAnsi noktalaması eşlenen koda, WinAnsi dışı kalanlar "?"; ( ) \ kaçırılır.</summary>
     internal static string Escape(string text)
     {
         var builder = new StringBuilder(text.Length);
         foreach (var c in text)
         {
-            var code = TurkishCodes.TryGetValue(c, out var mapped) ? (char)mapped : c is >= ' ' and <= 'ÿ' ? c : '?';
+            var code = TurkishCodes.TryGetValue(c, out var mapped) || WinAnsiPunctuation.TryGetValue(c, out mapped) ? (char)mapped : c is >= ' ' and <= 'ÿ' ? c : '?';
             if (code is '(' or ')' or '\\')
             {
                 builder.Append('\\');
