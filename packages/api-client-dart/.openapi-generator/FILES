@@ -35,6 +35,7 @@ lib/src/api/me_profile_api.dart
 lib/src/api/me_wallet_api.dart
 lib/src/api/public_appointment_link_api.dart
 lib/src/api/public_booking_api.dart
+lib/src/api/public_data_export_api.dart
 lib/src/api/public_review_api.dart
 lib/src/api/public_waitlist_api.dart
 lib/src/api/webhooks_api.dart

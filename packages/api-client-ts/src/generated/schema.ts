@@ -2264,6 +2264,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/manage/brand/data-exports/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Son dışa aktarma isteğinin durumu
+         * @description AyarlarKvkk "Tüm verileri dışa aktar" satırındaki durum rozeti ("Hazırlanıyor", "Gönderildi") sayfa açılışında buradan okunur. Markanın en son
+         *     isteği döner (isteği markadaki hangi kullanıcı yaptıysa); bağlantı e-postayla gittiyse linkExpiresUtc bağlantının geçerlilik sonudur.
+         *     Markada hiç istek yoksa 204. İndirme bağlantısı bu yanıtta yoktur, yalnız e-postada gider. İzin: customer.export (yalnız Owner).
+         */
+        get: operations["manageGetLatestDataExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/manage/integrations/google": {
         parameters: {
             query?: never;
@@ -2769,6 +2791,32 @@ export interface paths {
          *     ReviewPublicThreshold'u geçince ve salon gösteriyorsa (showReviews) PublicBrand.rating ile döner.
          */
         post: operations["publicCreateReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/data-exports/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description E-postadaki bağlantının imzalı ve süreli jetonu (base64url; marka, istek ve geçerlilik sonunu taşır) */
+                token: string;
+            };
+            cookie?: never;
+        };
+        /**
+         * Dışa aktarma arşivini indir (e-postadaki bağlantı)
+         * @description owner.data_export_ready e-postasındaki bağlantının açtığı yol ("Tüm verileri dışa aktar", manageRequestDataExport). Giriş istemez:
+         *     yetki jetonun imzası ve süresidir (DataExportLinkValidityDays). Yanıt musteriler.csv, randevular.csv ve odemeler.csv dosyalarını
+         *     taşıyan tek ZIP arşividir. Jeton bozuk, imzası geçersiz veya süresi dolmuşsa ya da arşiv silinmişse 404 not_found (neden ayrıştırılmaz).
+         *     Bağlantı süresi içinde yeniden açılabilir. Panel ve uygulamalar bu yolu çağırmaz; bağlantıyı tarayıcı açar.
+         */
+        get: operations["publicDownloadDataExport"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5251,7 +5299,7 @@ export interface components {
          *     PascalCase'e çevrilmez; tek kaynak olay kataloğudur. İstemciler bilinmeyen değeri genel bildirim olarak gösterir.
          * @enum {string}
          */
-        StaffNotificationEvent: "staff.approval_needed" | "staff.appointment_created" | "staff.appointment_changed" | "staff.customer_checked_in" | "staff.deposit_reported" | "staff.review_received" | "staff.walkin_queue" | "staff.daily_summary" | "owner.credits_low" | "owner.subscription_payment_failed" | "owner.trial_ending" | "owner.payment_notice_matched" | "owner.payment_notice_not_found" | "owner.payment_notice_rejected";
+        StaffNotificationEvent: "staff.approval_needed" | "staff.appointment_created" | "staff.appointment_changed" | "staff.customer_checked_in" | "staff.deposit_reported" | "staff.review_received" | "staff.walkin_queue" | "staff.daily_summary" | "owner.credits_low" | "owner.subscription_payment_failed" | "owner.trial_ending" | "owner.payment_notice_matched" | "owner.payment_notice_not_found" | "owner.payment_notice_rejected" | "owner.sms_sender_approved" | "owner.sms_sender_rejected";
         /** @description Bildirime dokununca açılacak ekran */
         NotificationTarget: {
             /**
@@ -8422,6 +8470,11 @@ export interface components {
              * @example el***@ornek.com
              */
             emailMasked: string;
+            /**
+             * Format: date-time
+             * @description İndirme bağlantısının geçerlilik sonu; arşiv hazırlanıp bağlantı e-postayla gidince (status = Sent) dolar, öncesinde alan dönmez
+             */
+            linkExpiresUtc?: string;
         };
         /** @description Oturumdaki personelin Google Takvim bağlantısı (tek yönlü aktarım) */
         GoogleCalendarConnection: {
@@ -14490,6 +14543,44 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    manageGetLatestDataExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Son istek */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "exportId": "0193a1b2-7c4d-7e8f-9a0b-1c2d3e4f9d01",
+                     *       "status": "Sent",
+                     *       "requestedUtc": "2026-11-22T10:00:00Z",
+                     *       "emailMasked": "el***@ornek.com",
+                     *       "linkExpiresUtc": "2026-11-29T10:02:00Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DataExportRequestResult"];
+                };
+            };
+            /** @description Markada dışa aktarma isteği yok */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     manageGetGoogleCalendarStatus: {
         parameters: {
             query?: never;
@@ -15375,6 +15466,31 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
+        };
+    };
+    publicDownloadDataExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description E-postadaki bağlantının imzalı ve süreli jetonu (base64url; marka, istek ve geçerlilik sonunu taşır) */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description ZIP arşivi (Content-Disposition attachment) */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            404: components["responses"]["NotFound"];
         };
     };
     meRequestOtp: {

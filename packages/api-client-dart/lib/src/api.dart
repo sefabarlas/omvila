@@ -41,6 +41,7 @@ import 'package:omvila_api/src/api/me_profile_api.dart';
 import 'package:omvila_api/src/api/me_wallet_api.dart';
 import 'package:omvila_api/src/api/public_appointment_link_api.dart';
 import 'package:omvila_api/src/api/public_booking_api.dart';
+import 'package:omvila_api/src/api/public_data_export_api.dart';
 import 'package:omvila_api/src/api/public_review_api.dart';
 import 'package:omvila_api/src/api/public_waitlist_api.dart';
 import 'package:omvila_api/src/api/webhooks_api.dart';
@@ -338,6 +339,12 @@ class OmvilaApi {
   /// by doing that all interceptors will not be executed
   PublicBookingApi getPublicBookingApi() {
     return PublicBookingApi(dio);
+  }
+
+  /// Get PublicDataExportApi instance, base route and serializer can be overridden by a given but be careful,
+  /// by doing that all interceptors will not be executed
+  PublicDataExportApi getPublicDataExportApi() {
+    return PublicDataExportApi(dio);
   }
 
   /// Get PublicReviewApi instance, base route and serializer can be overridden by a given but be careful,
