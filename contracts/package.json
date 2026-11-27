@@ -5,7 +5,7 @@
   "description": "OMVILA HTTP API sözleşmesi (tek doğru kaynak)",
   "scripts": {
     "lint": "redocly lint openapi.yaml && spectral lint openapi.yaml --ruleset .spectral.yaml && python3 scripts/check_conventions.py openapi.yaml",
-    "breaking": "git show origin/main:contracts/openapi.yaml > /tmp/openapi.base.yaml && oasdiff breaking /tmp/openapi.base.yaml openapi.yaml --fail-on ERR --severity-levels oasdiff-levels.txt --err-ignore oasdiff-err-ignore.txt",
+    "breaking": "git show origin/main:contracts/openapi.yaml > /tmp/openapi.base.yaml && oasdiff breaking /tmp/openapi.base.yaml openapi.yaml --fail-on ERR --severity-levels oasdiff-levels.txt",
     "bundle": "redocly bundle openapi.yaml -o dist/openapi.json",
     "mock": "prism mock openapi.yaml --port 4010 --dynamic false",
     "generate": "pnpm generate:ts && pnpm generate:dart",

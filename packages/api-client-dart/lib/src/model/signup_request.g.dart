@@ -13,7 +13,7 @@ abstract class _$SignupRequestCWProxy {
 
   SignupRequest industryCode(IndustryCode industryCode);
 
-  SignupRequest ownerFullName(String ownerFullName);
+  SignupRequest ownerFullName(String? ownerFullName);
 
   SignupRequest acceptedTerms(bool acceptedTerms);
 
@@ -29,7 +29,7 @@ abstract class _$SignupRequestCWProxy {
     String signupToken,
     String businessName,
     IndustryCode industryCode,
-    String ownerFullName,
+    String? ownerFullName,
     bool acceptedTerms,
     String privacyNoticeVersion,
   });
@@ -54,7 +54,7 @@ class _$SignupRequestCWProxyImpl implements _$SignupRequestCWProxy {
       this(industryCode: industryCode);
 
   @override
-  SignupRequest ownerFullName(String ownerFullName) =>
+  SignupRequest ownerFullName(String? ownerFullName) =>
       this(ownerFullName: ownerFullName);
 
   @override
@@ -96,7 +96,7 @@ class _$SignupRequestCWProxyImpl implements _$SignupRequestCWProxy {
       ownerFullName: ownerFullName == const $CopyWithPlaceholder()
           ? _value.ownerFullName
           // ignore: cast_nullable_to_non_nullable
-          : ownerFullName as String,
+          : ownerFullName as String?,
       acceptedTerms: acceptedTerms == const $CopyWithPlaceholder()
           ? _value.acceptedTerms
           // ignore: cast_nullable_to_non_nullable
@@ -127,7 +127,6 @@ SignupRequest _$SignupRequestFromJson(Map<String, dynamic> json) =>
           'signupToken',
           'businessName',
           'industryCode',
-          'ownerFullName',
           'acceptedTerms',
           'privacyNoticeVersion',
         ],
@@ -143,7 +142,7 @@ SignupRequest _$SignupRequestFromJson(Map<String, dynamic> json) =>
             unknownValue: IndustryCode.unknownDefaultOpenApi,
           ),
         ),
-        ownerFullName: $checkedConvert('ownerFullName', (v) => v as String),
+        ownerFullName: $checkedConvert('ownerFullName', (v) => v as String?),
         acceptedTerms: $checkedConvert('acceptedTerms', (v) => v as bool),
         privacyNoticeVersion: $checkedConvert(
           'privacyNoticeVersion',
@@ -158,7 +157,7 @@ Map<String, dynamic> _$SignupRequestToJson(SignupRequest instance) =>
       'signupToken': instance.signupToken,
       'businessName': instance.businessName,
       'industryCode': _$IndustryCodeEnumMap[instance.industryCode]!,
-      'ownerFullName': instance.ownerFullName,
+      'ownerFullName': ?instance.ownerFullName,
       'acceptedTerms': instance.acceptedTerms,
       'privacyNoticeVersion': instance.privacyNoticeVersion,
     };

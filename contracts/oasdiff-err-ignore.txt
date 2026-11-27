@@ -1,6 +1,0 @@
-Onaylanmış kırıcı değişiklikler (oasdiff --err-ignore). Her satır: tarih, karar, yöntem + yol, oasdiff iletisi.
-Yalnız ürün sahibinin açıkça onayladığı değişiklik buraya yazılır (contracts/AGENTS.md kural 6); gerekçesi docs/acik-sorular.md'dedir.
-
-2026-11-23 T-130: POST /api/v1/manage/auth/signup the request property `ownerFullName` became required
-2026-11-23 T-130: POST /api/v1/manage/auth/signup the `ownerFullName` request property's minLength was set to `2`
-2026-11-23 T-130: POST /api/v1/manage/auth/signup added the pattern `^[A-Za-zÀ-ÖØ-öø-ɏ][A-Za-zÀ-ÖØ-öø-ɏ'’ -]*$` to the request property `ownerFullName`
