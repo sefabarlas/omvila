@@ -59,6 +59,10 @@ internal static partial class PushTemplates
         [Key(NotificationEvents.OwnerPaymentNoticeMatched, CreditsVariant)] = ("Havaleniz eşleşti", "{kontör} SMS kontörü hesabınıza eklendi."),
         [Key(NotificationEvents.OwnerPaymentNoticeNotFound, null)] = ("Havaleniz bulunamadı", "Bildirdiğiniz havale OMVILA hesabında görünmüyor. Kontrol edip yeniden bildirin."),
         [Key(NotificationEvents.OwnerPaymentNoticeRejected, null)] = ("Havale bildiriminiz reddedildi", "Bildirim yinelenen veya geçersiz bulundu. Nedeni e-postanızda."),
+
+        // SMS gönderen adı kararı (T-132): yalnız bildirim paneli metni, işletme push'u gönderilmez. Ret nedeni ayar ekranında ve e-postadadır.
+        [Key(NotificationEvents.OwnerSmsSenderApproved, null)] = ("SMS gönderen adınız onaylandı", "SMS'leriniz bundan sonra {ad} adıyla gider."),
+        [Key(NotificationEvents.OwnerSmsSenderRejected, null)] = ("SMS gönderen adınız onaylanmadı", "{ad} onaylanmadı. Nedeni Ayarlar → Bildirimler ve SMS'te."),
     };
 
     /// <summary>Tanımlı (olay kodu, çeşit) çiftleri.</summary>

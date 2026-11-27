@@ -111,10 +111,10 @@ public static class NotificationEvents
     /// <summary>İşletme push'u, bildirim paneli ve e-posta (Owner): "Havale bildiriminiz reddedildi" (T-124).</summary>
     public const string OwnerPaymentNoticeRejected = "owner.payment_notice_rejected";
 
-    /// <summary>İşletme e-postası (Owner): SMS gönderen adı onaylandı (T-124; panel olay kodu sözleşmede yok).</summary>
+    /// <summary>Bildirim paneli ve e-posta (Owner): "SMS gönderen adınız onaylandı" (T-124, T-132; push yok).</summary>
     public const string OwnerSmsSenderApproved = "owner.sms_sender_approved";
 
-    /// <summary>İşletme e-postası (Owner): SMS gönderen adı reddedildi (T-124).</summary>
+    /// <summary>Bildirim paneli ve e-posta (Owner): "SMS gönderen adınız onaylanmadı" (T-124, T-132; push yok).</summary>
     public const string OwnerSmsSenderRejected = "owner.sms_sender_rejected";
 
     /// <summary>İşletme e-postası (isteyen kullanıcı): "Verileriniz hazır" (Tüm verileri dışa aktar indirme bağlantısı; T-121).</summary>

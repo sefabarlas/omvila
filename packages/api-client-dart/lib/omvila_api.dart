@@ -43,6 +43,7 @@ export 'package:omvila_api/src/api/me_profile_api.dart';
 export 'package:omvila_api/src/api/me_wallet_api.dart';
 export 'package:omvila_api/src/api/public_appointment_link_api.dart';
 export 'package:omvila_api/src/api/public_booking_api.dart';
+export 'package:omvila_api/src/api/public_data_export_api.dart';
 export 'package:omvila_api/src/api/public_review_api.dart';
 export 'package:omvila_api/src/api/public_waitlist_api.dart';
 export 'package:omvila_api/src/api/webhooks_api.dart';

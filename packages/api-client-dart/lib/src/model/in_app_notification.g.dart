@@ -214,5 +214,9 @@ const _$StaffNotificationEventEnumMap = {
       'owner.payment_notice_not_found',
   StaffNotificationEvent.ownerPeriodPaymentNoticeRejected:
       'owner.payment_notice_rejected',
+  StaffNotificationEvent.ownerPeriodSmsSenderApproved:
+      'owner.sms_sender_approved',
+  StaffNotificationEvent.ownerPeriodSmsSenderRejected:
+      'owner.sms_sender_rejected',
   StaffNotificationEvent.unknownDefaultOpenApi: 'unknown_default_open_api',
 };

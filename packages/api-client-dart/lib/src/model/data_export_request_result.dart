@@ -29,6 +29,8 @@ class DataExportRequestResult {
     required  this.requestedUtc,
 
     required  this.emailMasked,
+
+     this.linkExpiresUtc,
   });
 
       /// İstek kimliği
@@ -84,6 +86,19 @@ class DataExportRequestResult {
 
 
 
+      /// İndirme bağlantısının geçerlilik sonu; arşiv hazırlanıp bağlantı e-postayla gidince (status = Sent) dolar, öncesinde alan dönmez
+  @JsonKey(
+    
+    name: r'linkExpiresUtc',
+    required: false,
+    includeIfNull: false,
+  )
+
+
+  final DateTime? linkExpiresUtc;
+
+
+
 
 
     @override
@@ -91,14 +106,16 @@ class DataExportRequestResult {
       other.exportId == exportId &&
       other.status == status &&
       other.requestedUtc == requestedUtc &&
-      other.emailMasked == emailMasked;
+      other.emailMasked == emailMasked &&
+      other.linkExpiresUtc == linkExpiresUtc;
 
     @override
     int get hashCode =>
         exportId.hashCode +
         status.hashCode +
         requestedUtc.hashCode +
-        emailMasked.hashCode;
+        emailMasked.hashCode +
+        linkExpiresUtc.hashCode;
 
   factory DataExportRequestResult.fromJson(Map<String, dynamic> json) => _$DataExportRequestResultFromJson(json);
 

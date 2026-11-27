@@ -75,6 +75,8 @@ export const queryKeys = {
   roleMatrix: () => ['role-matrix'] as const,
   /** Ayarlar → KVKK ve veri: aydınlatma metni ve saklama süresi (manageGetPrivacySettings). */
   privacySettings: () => ['privacy-settings'] as const,
+  /** Markanın son "Tüm verileri dışa aktar" isteği (manageGetLatestDataExport); istek yoksa null. */
+  latestDataExport: () => ['data-export', 'latest'] as const,
   /** Oturumdaki personelin Google Takvim bağlantısı (manageGetGoogleCalendarStatus). */
   googleCalendar: () => ['google-calendar'] as const,
   /** OMVILA aboneliği (manageGetSubscription); önek ['subscription'] faturaları da kapsar. */

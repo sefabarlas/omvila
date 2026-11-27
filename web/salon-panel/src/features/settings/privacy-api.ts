@@ -32,12 +32,32 @@ export function useUpdatePrivacySettings() {
   });
 }
 
+/** Hazırlanan isteğin durumu bu aralıkla yeniden okunur (rozet "Gönderildi"ye döner). */
+const exportRefreshMs = 30_000;
+
+const isPreparing = (result: DataExportResult | null | undefined) =>
+  result?.status === 'Queued' || result?.status === 'Processing';
+
+/**
+ * Markanın son dışa aktarma isteği (manageGetLatestDataExport; customer.export). İstek yoksa sunucu 204 döner: null.
+ * Sayfa yenilenince rozet buradan gelir (acik-sorular.md T-127 (2), T-132).
+ */
+export function latestDataExportQuery(api: Api) {
+  return queryOptions({
+    queryKey: queryKeys.latestDataExport(),
+    queryFn: async (): Promise<DataExportResult | null> =>
+      (await unwrap(api.GET('/api/v1/manage/brand/data-exports/latest'))) ?? null,
+    refetchInterval: (query) => (isPreparing(query.state.data) ? exportRefreshMs : false),
+  });
+}
+
 /**
  * "Dışa aktarma iste" (manageRequestDataExport; customer.export). Kuyruğa alınır (202); bağlantı e-postayla gider.
- * Hazırlanmakta olan istek varsa sunucu yeni istek açmaz, onu döner.
+ * Hazırlanmakta olan istek varsa sunucu yeni istek açmaz, onu döner. Yanıt son istek olarak yazılır ve yeniden okunur.
  */
 export function useRequestDataExport() {
   const api = useApi();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ key, email }: { key: string; email: string }) =>
       unwrap(
@@ -46,6 +66,10 @@ export function useRequestDataExport() {
           body: { email },
         }),
       ),
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.latestDataExport(), result);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.latestDataExport() });
+    },
   });
 }
 

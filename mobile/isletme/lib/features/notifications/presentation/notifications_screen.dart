@@ -226,6 +226,16 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       r.hataZemin,
       r.hata,
     ),
+    StaffNotificationEvent.ownerPeriodSmsSenderApproved => (
+      LucideIcons.messageSquare,
+      r.basariZemin,
+      r.basari,
+    ),
+    StaffNotificationEvent.ownerPeriodSmsSenderRejected => (
+      LucideIcons.messageSquare,
+      r.uyariZemin,
+      r.uyari,
+    ),
     _ => (LucideIcons.bell, r.zeminIkincil, r.metinIkincil),
   };
 }

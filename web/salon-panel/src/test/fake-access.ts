@@ -5,6 +5,7 @@ import type { components } from '@omvila/api-client-ts';
 type ManageUser = components['schemas']['ManageUser'];
 type PrivacySettings = components['schemas']['PrivacySettings'];
 type GoogleCalendarConnection = components['schemas']['GoogleCalendarConnection'];
+type DataExportResult = components['schemas']['DataExportRequestResult'];
 
 export interface AccessFakeOptions {
   /** Kullanıcı listesi boş. */
@@ -15,6 +16,10 @@ export interface AccessFakeOptions {
   updateError?: 'last_owner_required' | 'concurrency_conflict' | 'branch_required';
   /** KVKK ayarları ucu 500 döner. */
   privacyFails?: boolean;
+  /** Markanın son dışa aktarma isteği (manageGetLatestDataExport); verilmezse istek yok (204). */
+  latestExport?: DataExportResult;
+  /** Son dışa aktarma isteği ucu 500 döner. */
+  latestExportFails?: boolean;
   /** Kayıtlı aydınlatma metni modu. */
   noticeMode?: 'Standard' | 'Custom';
   /** Oturumdaki personelin Google Takvim durumu; 'missing' = personel kaydı yok (404). */
@@ -158,6 +163,7 @@ export function createAccessFake(options: AccessFakeOptions) {
   let users = options.noUsers ? [] : usersFixture();
   let privacy = privacyFixture(options.noticeMode ?? 'Standard');
   let google = options.google ?? 'NotConnected';
+  let latestExport = options.latestExport;
   return async (request: Request): Promise<Response | undefined> => {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -227,12 +233,21 @@ export function createAccessFake(options: AccessFakeOptions) {
     }
 
     if (path === '/api/v1/manage/brand/data-exports' && method === 'POST') {
-      return json(202, {
+      latestExport = {
         exportId: '0193a8f0-0000-7000-8000-000000009d01',
         status: 'Queued',
         requestedUtc: '2026-11-25T09:00:00Z',
         emailMasked: 'el***@ornek.com',
-      });
+      };
+      return json(202, latestExport);
+    }
+
+    if (path === '/api/v1/manage/brand/data-exports/latest' && method === 'GET') {
+      if (options.latestExportFails) {
+        return problem(500, 'internal_error');
+      }
+
+      return latestExport ? json(200, latestExport) : new Response(null, { status: 204 });
     }
 
     if (path === '/api/v1/manage/integrations/google') {

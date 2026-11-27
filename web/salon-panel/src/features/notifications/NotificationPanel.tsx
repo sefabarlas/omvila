@@ -14,6 +14,7 @@ import {
   Coins,
   CreditCard,
   Hourglass,
+  MessageSquare,
   Star,
   UserCheck,
   Users,
@@ -44,6 +45,8 @@ const looks: Record<string, { icon: LucideIcon; tone: Tone }> = {
   'owner.credits_low': { icon: Coins, tone: 'uyari' },
   'owner.subscription_payment_failed': { icon: CreditCard, tone: 'hata' },
   'owner.trial_ending': { icon: Hourglass, tone: 'bilgi' },
+  'owner.sms_sender_approved': { icon: MessageSquare, tone: 'bilgi' },
+  'owner.sms_sender_rejected': { icon: MessageSquare, tone: 'uyari' },
 };
 const fallbackLook = { icon: Bell, tone: 'notr' as Tone };
 

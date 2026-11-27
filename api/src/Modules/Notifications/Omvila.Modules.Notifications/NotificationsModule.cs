@@ -86,7 +86,7 @@ public static class NotificationsModule
         services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeMatched, NotifyOwnerAboutPaymentNotice>();
         services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeNotFound, NotifyOwnerAboutPaymentNotice>();
         services.AddIntegrationEventHandler<Platform.Contracts.PaymentNoticeRejected, NotifyOwnerAboutPaymentNotice>();
-        services.AddIntegrationEventHandler<SmsSenderDecided, EmailOwnerAboutSmsSender>();
+        services.AddIntegrationEventHandler<SmsSenderDecided, NotifyOwnerAboutSmsSender>();
     }
 
     public static IEndpointRouteBuilder MapNotificationsEndpoints(this IEndpointRouteBuilder app)

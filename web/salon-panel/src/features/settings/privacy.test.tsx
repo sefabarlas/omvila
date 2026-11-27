@@ -6,7 +6,8 @@ import { renderApp } from '../../test/render-app';
 
 // Kural: dilim-06 kapsam (Ayarlar → KVKK ve veri); sözleşme manageGetPrivacySettings / manageUpdatePrivacySettings
 // (Custom'da metin zorunlu, saklama 3/5/10 yıl, If-Match), manageRequestDataExport (202 Queued, maskeli adres,
-// Idempotency-Key); roller-yetkiler.md (settings.manage, customer.export yalnız Owner); salon-paneli/AyarlarKvkk.
+// Idempotency-Key), manageGetLatestDataExport (son istek sayfa açılışında okunur, istek yoksa 204; T-127 (2), T-132);
+// roller-yetkiler.md (settings.manage, customer.export yalnız Owner); salon-paneli/AyarlarKvkk.
 afterEach(cleanup);
 
 const path = '/api/v1/manage/brand/privacy';
@@ -77,6 +78,59 @@ describe('KVKK ve veri: aydınlatma metni, veri saklama, dışa aktarma', () => 
     expect(calls[`${exportPath} Idempotency-Key`]).toHaveLength(1);
     // KVKK formu dışa aktarma penceresinden gönderilmez.
     expect(calls[path]).toBeUndefined();
+  });
+
+  const exportFixture = {
+    exportId: '0193a8f0-0000-7000-8000-000000009d01',
+    requestedUtc: '2026-11-22T10:00:00Z',
+    emailMasked: 'el***@ornek.com',
+  };
+
+  it('hazırlanan istek sayfa açılışında okunur: rozet yenilemeden sonra da görünür', async () => {
+    renderApp('/ayarlar/kvkk', {
+      access: { latestExport: { ...exportFixture, status: 'Processing' } },
+    });
+    expect(await screen.findByText('Hazırlanıyor')).toBeTruthy();
+    expect(screen.getByText(/el\*\*\*@ornek\.com adresine gönderilecek/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dışa aktarma iste' })).toBeTruthy();
+  });
+
+  it('gönderilen istek: rozet ve bağlantının geçerlilik sonu', async () => {
+    renderApp('/ayarlar/kvkk', {
+      access: {
+        latestExport: { ...exportFixture, status: 'Sent', linkExpiresUtc: '2026-11-29T10:02:00Z' },
+      },
+    });
+    expect(await screen.findByText('Gönderildi')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'İndirme bağlantısı el***@ornek.com adresine gönderildi. Bağlantı 29 Kasım 2026 tarihine kadar geçerli.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('bağlantısının süresi dolmuş istek ve okunamayan durum rozetsiz kalır', async () => {
+    const defaultText = 'Müşteriler, randevular ve ödemeler CSV olarak e-postanıza gönderilir.';
+    renderApp('/ayarlar/kvkk', {
+      access: {
+        latestExport: { ...exportFixture, status: 'Sent', linkExpiresUtc: '2026-11-24T10:02:00Z' },
+      },
+    });
+    expect(await screen.findByText(defaultText)).toBeTruthy();
+    expect(screen.queryByText('Gönderildi')).toBeNull();
+    cleanup();
+
+    renderApp('/ayarlar/kvkk', { access: { latestExportFails: true } });
+    expect(await screen.findByText(defaultText)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dışa aktarma iste' })).toBeTruthy();
+  });
+
+  it('hazırlanamayan istek: hata rozeti ve yeniden isteme', async () => {
+    renderApp('/ayarlar/kvkk', {
+      access: { latestExport: { ...exportFixture, status: 'Failed' } },
+    });
+    expect(await screen.findByText('Hazırlanamadı')).toBeTruthy();
+    expect(screen.getByText('Dışa aktarma hazırlanamadı. Yeniden isteyin.')).toBeTruthy();
   });
 
   it('customer.export yoksa dışa aktarma satırı görünmez; aydınlatma metni ve saklama kalır', async () => {
