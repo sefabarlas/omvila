@@ -20,24 +20,43 @@ namespace Omvila.Modules.Customers.Features.DataExports;
 /// <summary>
 /// AyarlarKvkk "Tüm verileri dışa aktar" (sözleşme manageRequestDataExport; T-86 (7), T-121). İstek kuyruğa alınır (202);
 /// arşivi ProcessDataExports işi hazırlar. Markada açık istek varsa yenisi açılmaz. Kullanıcı modelinde e-posta olmadığından
-/// (alan-modeli.md § User) adres istekte zorunludur. İndirme yolu e-postadaki bağlantı içindir, API istemcisi çağırmaz:
-/// sözleşmede ve OpenAPI'de yoktur (sahte SMS günlüğü gibi).
+/// (alan-modeli.md § User) adres istekte zorunludur. Son isteğin durumu manageGetLatestDataExport ile okunur (rozet sayfa
+/// yenilenince kaybolmasın; T-127 (2), T-132). İndirme yolu (publicDownloadDataExport) e-postadaki bağlantı içindir; panel ve
+/// uygulamalar çağırmaz.
 /// </summary>
 internal static partial class DataExportEndpoints
 {
     public static void Map(IEndpointRouteBuilder app)
     {
-        app.MapApiGroup("/api/v1/manage/brand/data-exports", Audiences.Manage)
-            .MapPost(string.Empty, RequestAsync)
+        var group = app.MapApiGroup("/api/v1/manage/brand/data-exports", Audiences.Manage);
+        group.MapPost(string.Empty, RequestAsync)
             .WithName("manageRequestDataExport")
             .RequirePermission(Permissions.Customer.Export)
             .RequireIdempotencyKey();
+        group.MapGet("/latest", GetLatestAsync)
+            .WithName("manageGetLatestDataExport")
+            .RequirePermission(Permissions.Customer.Export);
 
         // Bağlantı e-postayla gider ve oturumsuz açılır: yetki jetonun imzası ve süresidir (DataExportLinks).
         app.MapApiGroup("/api/v1/public/data-exports")
             .MapGet("/{token}", DownloadAsync)
-            .AllowAnonymous()
-            .ExcludeFromDescription();
+            .WithName("publicDownloadDataExport")
+            .AllowAnonymous();
+    }
+
+    private static async Task<IResult> GetLatestAsync(ITenantContext tenant, CustomersDbContext db, CancellationToken ct)
+    {
+        var brandId = tenant.RequireBrandId();
+
+        // Arşiv (Content) yüklenmez: yalnız durum alanları okunur.
+        var latest = await db.DataExports.AsNoTracking()
+            .Where(e => e.BrandId == brandId)
+            .OrderByDescending(e => e.RequestedUtc).ThenByDescending(e => e.Id)
+            .Select(e => new { e.Id, e.Status, e.RequestedUtc, e.Email, e.ExpiresUtc })
+            .FirstOrDefaultAsync(ct);
+        return latest is null
+            ? TypedResults.NoContent()
+            : TypedResults.Ok(DataExportRequestResult.From(latest.Id, latest.Status, latest.RequestedUtc, latest.Email, latest.ExpiresUtc));
     }
 
     private static async Task<IResult> RequestAsync(
@@ -74,7 +93,8 @@ internal static partial class DataExportEndpoints
                 ["reusedOpenRequest"] = open is not null,
             }),
             ct);
-        return TypedResults.Accepted((string?)null, new DataExportRequestResult(export.Id, export.ContractStatus, export.RequestedUtc, MaskEmail(export.Email)));
+        return TypedResults.Accepted(
+            (string?)null, DataExportRequestResult.From(export.Id, export.Status, export.RequestedUtc, export.Email, export.ExpiresUtc));
     }
 
     private static async Task<IResult> DownloadAsync(
