@@ -38,6 +38,10 @@ public static class IntegrationsModule
         services.AddPeriodicJob<RefreshCalendarTokens, CalendarOptions>(o => Duration.FromSeconds(o.SyncIntervalSeconds));
         services.AddPeriodicJob<SyncCalendarEvents, CalendarOptions>(o => Duration.FromSeconds(o.SyncIntervalSeconds));
         // Demo verisi --reset (T-74): markanın bağlantıları ve aktarım kayıtları.
+        // Demo verisi (--role=seed; T-131): sahte Google Takvim bağlantısı.
+        services.AddScoped(sp => new DemoData.IntegrationsDemoData(
+            sp.GetRequiredService<IntegrationsDbContext>(), sp.GetRequiredService<CalendarTokenProtector>(), sp.GetRequiredService<SharedKernel.IIdGenerator>(),
+            sp.GetRequiredService<IOptions<CalendarOptions>>()));
         services.AddBrandDataEraser<IntegrationsDbContext>();
         return services;
     }

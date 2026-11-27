@@ -25,7 +25,7 @@ Rota adları Türkçe URL'dir (`/takvim`, `/musteriler`, `/ayarlar/kapora`), bil
 - **Menü ve butonlar izinle:** `useSession().can('appointment.approve')`. İzin listesi `GET /manage/session`'dan. Personel rolünde menü: Takvimim, Müşteriler, Kapıda sıra, Primim.
 - **Takvim:** kendi bileşenimiz (`ui-web/calendar`): 1 saat = 64 px, 15 dk = 16 px; blok rengi durumu anlatır (`durum-*` tokenları), personel rengi yalnız kolon başlığı avatar halkasında. Bekleme dilimi blok içinde taralı "Bekleme · müsait" şeridi. Şu anki saat mercan çizgi. Boş alana tıklama → o saatte yeni randevu. Bloğa tıklama → sağ yan panel.
 - **Saat dilimi:** takvim şubenin `timeZone`'u ile çizilir; tarayıcı saat dilimi kullanılmaz.
-- **Şerit desenleri:** deneme süresi (bilgi), ödeme gecikti (turuncu, "Kartı güncelle / Havale ile öde"), salt okunur (kırmızı; yeni randevu butonu pasif ve nedeni yazar). Kaynak: `session.subscription`.
+- **Şerit desenleri:** deneme süresi (bilgi), ödeme gecikti (turuncu, "Kartı güncelle / Havale ile öde"), salt okunur (kırmızı; yeni randevu butonu pasif ve nedeni yazar; takvime `onSlotClick` verilmez, boş dilimler buton olmaz). Kaynak: `session.subscription`.
 - **Eşzamanlı düzenleme:** `412` → "Kayıt çakışması" şeridi + "Yenile". Sürükle-bırakta `409 slot_taken` → blok eski yerine döner + uyarı.
 - **Çalışma saati dışı:** `409 outside_working_hours` → onay iletişim kutusu → `allowOutsideWorkingHours: true` ile tekrar.
 - **Bento blokları:** her renkten en fazla bir blok; boşta `0` veya `—`.

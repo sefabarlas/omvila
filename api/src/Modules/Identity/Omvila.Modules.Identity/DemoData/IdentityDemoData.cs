@@ -56,6 +56,13 @@ public sealed class IdentityDemoData
                       select (Guid?)m.BrandId).SingleOrDefaultAsync(ct);
     }
 
+    /// <summary>Numaranın kullanıcı kimliği; yoksa null (demo personelinin Google Takvim bağlantısı ve havale bildirimi için).</summary>
+    public async Task<Guid?> FindUserIdAsync(PhoneNumber phone, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(phone);
+        return await _db.Users.AsNoTracking().Where(u => u.PhoneE164 == phone.E164).Select(u => (Guid?)u.Id).SingleOrDefaultAsync(ct);
+    }
+
     /// <summary>
     /// Markayı sahibiyle kurar (kayıtla aynı). Numaranın başka bir üyeliği varsa <see cref="DomainException"/>: demo verisi
     /// başka bir hesaba dokunmaz. Dönüşte oturum yeni markanın kiracı bağlamındadır.

@@ -168,8 +168,16 @@ public sealed class TenancyDemoData
     /// Kurulumun son adımı (bağlantı paylaşıldı) kaydedilir ve adımlar değerlendirilir; hepsi tamamsa marka Active olur.
     /// Dönüş: marka Active mi.
     /// </summary>
-    public async Task<bool> CompleteOnboardingAsync(Guid brandId, CancellationToken ct)
+    /// <param name="brandId">Marka.</param>
+    /// <param name="ct">İptal belirteci.</param>
+    /// <param name="solo">Tek kişilik işletme: personel adımı "Tek çalışıyorum" ile tamamlanır.</param>
+    public async Task<bool> CompleteOnboardingAsync(Guid brandId, CancellationToken ct, bool solo = false)
     {
+        if (solo)
+        {
+            await _onboarding.RecordAsync(brandId, OnboardingEvent.SoloConfirmed, ct);
+        }
+
         await _onboarding.RecordAsync(brandId, OnboardingEvent.BookingLinkCopied, ct);
         return await _db.Brands.AnyAsync(b => b.Id == brandId && b.Status == BrandStatus.Active, ct);
     }

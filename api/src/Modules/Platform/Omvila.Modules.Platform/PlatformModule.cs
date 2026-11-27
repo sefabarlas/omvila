@@ -59,6 +59,10 @@ public static class PlatformModule
         services.AddUniqueConstraintError(PlatformBankTransactionConfiguration.ReferenceIndex, ErrorCodes.BankTransactionDuplicate);
         services.AddUniqueConstraintError(PlatformBankTransactionConfiguration.MatchedNoticeIndex, ErrorCodes.BankTransactionAlreadyMatched);
         // Demo verisi --reset (T-74): markanın aboneliği.
+        // Demo verisi (--role=seed; T-131): abonelik durumları, fatura, havale bildirimi, banka hareketi, denetim kaydı.
+        services.AddScoped(sp => new DemoData.PlatformDemoData(
+            sp.GetRequiredService<PlatformDbContext>(), sp.GetRequiredService<SubscriptionBilling>(), sp.GetRequiredService<InvoiceNumberAllocator>(),
+            sp.GetRequiredService<IIdGenerator>(), sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PlatformOptions>>()));
         services.AddBrandDataEraser<PlatformDbContext>();
         return services;
     }

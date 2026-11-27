@@ -326,18 +326,22 @@ export function TimeGrid({
                 activeItemId={active?.block.itemId ?? null}
                 target={target?.columnKey === column.key ? target : null}
                 hint={target?.columnKey === column.key ? describe(target) : null}
-                onSlotClick={(slot) => {
-                  setRovingSlot({ column: columnIndex, slot });
-                  onSlotClick?.({
-                    staffId: column.staffId,
-                    date: column.date,
-                    startUtc: slotStartUtc(
-                      column.date,
-                      range.startMinutes + slot * SLOT_MINUTES,
-                      timeZone,
-                    ),
-                  });
-                }}
+                onSlotClick={
+                  onSlotClick
+                    ? (slot) => {
+                        setRovingSlot({ column: columnIndex, slot });
+                        onSlotClick({
+                          staffId: column.staffId,
+                          date: column.date,
+                          startUtc: slotStartUtc(
+                            column.date,
+                            range.startMinutes + slot * SLOT_MINUTES,
+                            timeZone,
+                          ),
+                        });
+                      }
+                    : null
+                }
                 onSlotKeyDown={onSlotKeyDown}
                 onBlockClick={(block) => {
                   if (!justDragged.current) {
@@ -376,7 +380,8 @@ interface ColumnProps {
   activeItemId: string | null;
   target: ActiveTarget | null;
   hint: string | null;
-  onSlotClick: (slot: number) => void;
+  /** null: salt okunur ızgara; boş dilimler buton değil düz hücredir. */
+  onSlotClick: ((slot: number) => void) | null;
   onSlotKeyDown: (event: KeyboardEvent, column: number, slot: number) => void;
   onBlockClick: (block: CalendarBlock) => void;
 }
@@ -435,6 +440,9 @@ function Column({
       {Array.from({ length: slotCount }, (_, slot) => {
         const time = formatClock(range.startMinutes + slot * SLOT_MINUTES);
         const roving = rovingSlot.column === columnIndex && rovingSlot.slot === slot;
+        if (!onSlotClick) {
+          return <div key={time} className={styles.cell} />;
+        }
         return (
           <button
             key={time}

@@ -134,8 +134,35 @@ describe('CalendarGrid (gün)', () => {
     );
   });
 
+  it('tıklama işleyicisi yokken boş dilimler buton değil, düz hücredir', () => {
+    const { container } = render(<CalendarGrid {...day} onBlockClick={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /Randevu ekle/ })).toBeNull();
+    expect(container.querySelector('[data-slot]')).toBeNull();
+    expect(container.querySelector('[aria-label^="Randevu ekle"]')).toBeNull();
+    // Izgara ölçüsü değişmez: her kolonda 15 dakikalık hücreler durur.
+    const columns = container.querySelectorAll('[data-column]');
+    expect(columns).toHaveLength(4);
+    const cells = must(columns[0]).querySelectorAll('[class*="cell"]');
+    expect(cells.length).toBeGreaterThan(0);
+    for (const cell of cells) {
+      expect(cell.tagName).toBe('DIV');
+      expect(cell.getAttribute('role')).toBeNull();
+      expect(cell.getAttribute('tabindex')).toBeNull();
+    }
+    // Bloklar açılabilir kalır.
+    expect(screen.getByRole('button', { name: /^Okan Er/ })).toBeTruthy();
+  });
+
+  it('işleyici varken hücre sayısı salt okunur ızgarayla aynıdır', () => {
+    const readOnly = render(<CalendarGrid {...day} />);
+    const cellCount = readOnly.container.querySelectorAll('[class*="cell"]').length;
+    readOnly.unmount();
+    const { container } = render(<CalendarGrid {...day} onSlotClick={vi.fn()} />);
+    expect(container.querySelectorAll('[data-slot]')).toHaveLength(cellCount);
+  });
+
   it('boş alanlar tek sekme durağı, oklarla gezilir', async () => {
-    render(<CalendarGrid {...day} />);
+    render(<CalendarGrid {...day} onSlotClick={vi.fn()} />);
     const first = screen.getByRole('button', { name: 'Randevu ekle: Elif Kaya, 09:00' });
     expect(first.tabIndex).toBe(0);
     expect(screen.getByRole('button', { name: 'Randevu ekle: Elif Kaya, 09:15' }).tabIndex).toBe(
