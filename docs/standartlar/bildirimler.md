@@ -59,6 +59,8 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.payment_notice_matched` | Owner | `Havaleniz eşleşti` | Abonelik: `Abonelik ödemeniz alındı; aboneliğiniz aktif.` · Kontör: `{kontör} SMS kontörü hesabınıza eklendi.` | Panel · abonelik |
 | `owner.payment_notice_not_found` | Owner | `Havaleniz bulunamadı` | `Bildirdiğiniz havale OMVILA hesabında görünmüyor. Kontrol edip yeniden bildirin.` (platformun notu e-postada) | Panel · abonelik |
 | `owner.payment_notice_rejected` | Owner | `Havale bildiriminiz reddedildi` | `Bildirim yinelenen veya geçersiz bulundu. Nedeni e-postanızda.` (platformun notu e-postada) | Panel · abonelik |
+| `owner.sms_sender_approved` | Owner | `SMS gönderen adınız onaylandı` | `SMS'leriniz bundan sonra {ad} adıyla gider.` (yalnız bildirim paneli ve e-posta; işletme push'u yok, T-132) | Panel · Bildirimler ve SMS |
+| `owner.sms_sender_rejected` | Owner | `SMS gönderen adınız onaylanmadı` | `{ad} onaylanmadı. Nedeni Ayarlar → Bildirimler ve SMS'te.` (yalnız bildirim paneli ve e-posta; işletme push'u yok; ret nedeni ayar ekranında ve e-postada, T-132) | Panel · Bildirimler ve SMS |
 
 ### İşletme SMS'leri
 
@@ -76,7 +78,7 @@ Türkçe ek uyumu (`'da/'de`, `'te/'ta`) şablon motorunda `{salon|bulunma}` gib
 | `owner.payment_notice_matched` | Havale bildirimi eşleşti (push ile birlikte). Konu `Havaleniz eşleşti`; abonelikte "Aboneliğiniz aktif", kontörde eklenen SMS sayısı; buton `Aboneliği aç` (T-124) |
 | `owner.data_export_ready` | "Tüm verileri dışa aktar" arşivi hazır: indirme bağlantısı (`DataExportLinkValidityDays` geçerli; alıcı isteği yapanın verdiği adres; metin taslak, T-121) |
 | `owner.payment_notice_not_found` / `owner.payment_notice_rejected` | Havale bulunamadı / bildirim reddedildi (push ile birlikte). Konu `Havaleniz bulunamadı` / `Havale bildiriminiz reddedildi`; "OMVILA ekibinin notu: {not}"; buton `Yeniden bildir` / `Aboneliği aç` (T-124) |
-| `owner.sms_sender_approved` / `owner.sms_sender_rejected` | SMS gönderen adı onaylandı / onaylanmadı (yalnız e-posta; panel olay kodu sözleşmede yok, T-124). Konu `SMS gönderen adınız onaylandı` / `SMS gönderen adınız onaylanmadı`; retde "Neden: {neden}"; buton `Ayarları aç` |
+| `owner.sms_sender_approved` / `owner.sms_sender_rejected` | SMS gönderen adı onaylandı / onaylanmadı (bildirim paneli kaydıyla birlikte, push yok; T-124, T-132). Konu `SMS gönderen adınız onaylandı` / `SMS gönderen adınız onaylanmadı`; retde "Neden: {neden}"; buton `Ayarları aç` |
 
 Platform ekibine ayrı bildirim olayı yoktur: yeni havale bildirimi ve SMS adı başvurusu platform panelindeki "Onay kuyrukları" rozetinde (`AdminSession.pendingApprovalCount`) görünür (T-116).
 
