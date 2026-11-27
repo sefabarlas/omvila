@@ -733,6 +733,21 @@ const screens: ScreenCase[] = [
     act: async (page) => {
       await dayCalendar(page);
       await expect(page.getByRole('button', { name: 'Randevu ekle', exact: true })).toBeDisabled();
+      // T-125 (8): salt okunurda boş dilimler buton değildir.
+      await expect(page.getByRole('button', { name: /^Randevu ekle: / })).toHaveCount(0);
+    },
+  },
+  // T-129: kenar menüdeki kullanıcı satırından açılan profil menüsü (kimlik, tema, "Oturumu kapat").
+  {
+    path: '/',
+    name: 'ProfilMenu',
+    heading: 'İyi günler, Elif',
+    setup: overviewDemo,
+    act: async (page) => {
+      await page.getByRole('button', { name: 'Profil menüsü' }).click();
+      const menu = page.getByRole('menu', { name: 'Profil menüsü' });
+      await expect(menu.getByRole('menuitem', { name: 'Oturumu kapat' })).toBeVisible();
+      await settle(page);
     },
   },
 ];
