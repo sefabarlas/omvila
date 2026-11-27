@@ -2,8 +2,12 @@ using NodaTime;
 using Omvila.Infrastructure.Persistence;
 using Omvila.Modules.Catalog.DemoData;
 using Omvila.Modules.Customers.Contracts;
+using Omvila.Modules.Identity.Contracts;
 using Omvila.Modules.Identity.DemoData;
+using Omvila.Modules.Integrations.DemoData;
 using Omvila.Modules.Notifications.Contracts;
+using Omvila.Modules.Notifications.DemoData;
+using Omvila.Modules.Platform.DemoData;
 using Omvila.Modules.Reviews.DemoData;
 using Omvila.Modules.Sales.Contracts;
 using Omvila.Modules.Sales.DemoData;
@@ -20,9 +24,9 @@ namespace Omvila.Host.Seeding;
 /// <c>--reset</c>'te yalnız o markanın satırları her modülün <see cref="IBrandDataEraser"/>'ı ile silinip yeniden kurulur.
 /// Randevu tarihleri saate (IClock) göredir: son <see cref="DemoDataSet.DaysBack"/> ve gelecek <see cref="DemoDataSet.DaysAhead"/> gün.
 /// Geçmiş randevular tamamlanır (tahsilat, hizmet primi, paket seansı; T-114); paketler, kapatılmış kasa günü, değerlendirmeler,
-/// bekleme listesi ve bugünün kapıda sırası da yazılır. Bütün adımlar çağıranın tek transaction'ındadır.
+/// bekleme listesi ve bugünün kapıda sırası da yazılır. Dilim 6 verisi (T-131) <c>DemoSeeder.Dilim6.cs</c>'tedir. Bütün adımlar çağıranın tek transaction'ındadır.
 /// </summary>
-internal sealed class DemoSeeder(
+internal sealed partial class DemoSeeder(
     IDbSession session,
     IdentityDemoData identity,
     TenancyDemoData tenancy,
@@ -34,26 +38,22 @@ internal sealed class DemoSeeder(
     ICreditLedger credits,
     IPublicBookingQueries booking,
     IEnumerable<IBrandDataEraser> erasers,
-    IClock clock)
+    IClock clock,
+    PlatformDemoData platform,
+    NotificationsDemoData notifications,
+    IntegrationsDemoData integrations,
+    IPlatformUserProvisioning platformUsers,
+    IConfiguration configuration,
+    IHostEnvironment environment)
 {
     private const int FirstSlotOffsetMinutes = 30;
 
     public async Task<DemoSeedReport> RunAsync(bool reset, CancellationToken ct)
     {
         var bookingUrl = booking.BookingPageUrl(DemoDataSet.Slug);
-        var existing = await identity.FindOwnedBrandAsync(DemoDataSet.OwnerPhone, ct);
-        if (existing is { } existingId)
+        if (await FindOrEraseDemoBrandsAsync(reset, ct) is { } unchanged)
         {
-            if (!reset)
-            {
-                return DemoSeedReport.Unchanged(existingId, bookingUrl);
-            }
-
-            await session.SetTenantAsync(TenantScope.ForBrand(existingId), ct);
-            foreach (var eraser in erasers)
-            {
-                await eraser.EraseAsync(existingId, ct);
-            }
+            return DemoSeedReport.Unchanged(unchanged, bookingUrl);
         }
 
         var tenant = await identity.CreateBrandWithOwnerAsync(
@@ -85,6 +85,7 @@ internal sealed class DemoSeeder(
         }
 
         var (run, extras) = await AddActivityAsync(brandId, staff, services, cards, ct);
+        var dilim6 = await AddDilim6Async(tenant, staff[^1].BranchId, ct);
         return new DemoSeedReport(
             Created: true,
             brandId,
@@ -95,7 +96,8 @@ internal sealed class DemoSeeder(
             Customers: cards.Count,
             run.Outcomes,
             DemoDataSet.SmsCredits,
-            extras);
+            extras,
+            dilim6);
     }
 
     /// <summary>Paketler, randevular (tamamlananların tahsilatı ve primi), kasa günü, değerlendirmeler, bekleme listesi, kapıda sıra.</summary>

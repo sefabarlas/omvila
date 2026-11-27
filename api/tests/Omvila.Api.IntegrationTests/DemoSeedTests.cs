@@ -18,6 +18,7 @@ namespace Omvila.Api.IntegrationTests;
 public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
 {
     private const string Brand = "(SELECT id FROM tenancy.brands WHERE slug = 'kuafor-elif')";
+    private const string AuditTable = "platform.audit_logs";
     private OmvilaApiFactory _factory = null!;
     private ManageApi _api = null!;
 
@@ -42,8 +43,8 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
 
         (await CountAsync($"SELECT count(*) FROM tenancy.brands WHERE id = {Brand} AND status = 'Active'")).ShouldBe(1);
         (await CountAsync($"SELECT count(*) FROM tenancy.branches WHERE brand_id = {Brand} AND time_zone_id = 'Europe/Istanbul'")).ShouldBe(2);
-        (await CountAsync($"SELECT count(*) FROM tenancy.staff WHERE brand_id = {Brand}")).ShouldBe(4);
-        (await CountAsync($"SELECT count(*) FROM identity.user_memberships WHERE brand_id = {Brand}")).ShouldBe(4);
+        (await CountAsync($"SELECT count(*) FROM tenancy.staff WHERE brand_id = {Brand}")).ShouldBe(5);
+        (await CountAsync($"SELECT count(*) FROM identity.user_memberships WHERE brand_id = {Brand}")).ShouldBe(5);
         (await CountAsync($"SELECT count(*) FROM catalog.service_categories WHERE brand_id = {Brand}")).ShouldBe(4);
         (await CountAsync($"SELECT count(*) FROM catalog.services WHERE brand_id = {Brand} AND base_price_minor > 0")).ShouldBe(10);
         (await CountAsync($"SELECT count(*) FROM customers.brand_customers WHERE brand_id = {Brand}")).ShouldBe(15);
@@ -73,7 +74,7 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
         second.Code.ShouldBe(0);
         second.Output.ShouldContain("zaten var");
         (await RowsAsync(await BrandIdAsync())).ShouldBe(before);
-        (await CountAsync("SELECT count(*) FROM tenancy.brands")).ShouldBe(1);
+        (await CountAsync("SELECT count(*) FROM tenancy.brands")).ShouldBe(3, "Kuaför Elif ve iki küçük demo markası (T-131)");
     }
 
     [Fact]
@@ -274,11 +275,99 @@ public sealed class DemoSeedTests(PostgresFixture db) : IAsyncLifetime
 
         var newDemo = await BrandIdAsync();
         newDemo.ShouldNotBe(oldDemo);
-        (await RowsAsync(oldDemo)).Values.Sum().ShouldBe(0);
+        // Denetim kaydı silinmez (yalnız INSERT izni): eski markanın satırları kalır, diğer bütün tabloları boşalır.
+        var leftovers = await RowsAsync(oldDemo);
+        leftovers.Remove(AuditTable, out var oldAudits).ShouldBeTrue();
+        oldAudits.ShouldBe(demoBefore[AuditTable]);
+        leftovers.Values.Sum().ShouldBe(0);
         (await RowsAsync(newDemo)).ShouldBe(demoBefore);
         (await RowsAsync(other)).ShouldBe(otherBefore);
-        (await CountAsync("SELECT count(*) FROM tenancy.brands")).ShouldBe(2);
+        (await CountAsync("SELECT count(*) FROM tenancy.brands")).ShouldBe(4, "üç demo markası ve Berber Kaan");
+        (await CountAsync("SELECT count(*) FROM tenancy.brands WHERE name IN ('Berber Kemal', 'Nar Güzellik')")).ShouldBe(2);
+        (await CountAsync("SELECT count(*) FROM platform.bank_transactions")).ShouldBe(3, "önceki seed'in banka hareketleri silinir");
         (await _api.SignInAsync("+905550000001")).Status.ShouldBe(200);
+    }
+
+    // T-131: Dilim 6 verisi. Plan fiyatı tanımlı değil (S-14): fatura kesilmez, bildirimlerin beklenen tutarı boş.
+    [Fact]
+    public async Task Seed_AddsDilim6Data()
+    {
+        var seeded = await SeedAsync(reset: false);
+        seeded.Code.ShouldBe(0);
+        seeded.Output.ShouldContain("Berber Kemal PastDue");
+        seeded.Output.ShouldContain("Nar Güzellik Active");
+        seeded.Output.ShouldContain("0555 000 99 02");
+
+        // Abonelik durumları: Denemede, Gecikti (deneme 3 gün önce bitti; 7 günlük süre dolmadı), Aktif (dönem bugünü kapsar).
+        const string Kemal = "(SELECT id FROM tenancy.brands WHERE name = 'Berber Kemal')";
+        const string Nar = "(SELECT id FROM tenancy.brands WHERE name = 'Nar Güzellik')";
+        (await CountAsync($"SELECT count(*) FROM tenancy.brands WHERE id IN ({Kemal}, {Nar}) AND status = 'Active'")).ShouldBe(2);
+        (await CountAsync($"SELECT count(*) FROM platform.subscriptions WHERE brand_id = {Brand} AND status = 'Trialing'")).ShouldBe(1);
+        (await CountAsync(
+            $"SELECT count(*) FROM platform.subscriptions WHERE brand_id = {Kemal} AND status = 'PastDue' AND past_due_since = '2026-11-22' AND current_period_start = '2026-11-22'"))
+            .ShouldBe(1);
+        (await CountAsync(
+            $"SELECT count(*) FROM platform.subscriptions WHERE brand_id = {Nar} AND status = 'Active' AND payment_method = 'BankTransfer' AND trial_ends_on IS NULL "
+            + "AND current_period_start = '2026-11-15' AND current_period_end >= '2026-11-25'")).ShouldBe(1);
+        (await CountAsync("SELECT count(*) FROM platform.subscription_invoices")).ShouldBe(0, "plan fiyatı tanımlı değil: fatura uydurulmaz");
+
+        // Onay kuyruğu: bekleyen abonelik havalesi (kodu taşıyan ve taşımayan birer aday), kontör havalesi (paket varsa), SMS adı.
+        (await CountAsync($"SELECT count(*) FROM platform.payment_notices WHERE brand_id = {Kemal} AND purpose = 'Subscription' AND status = 'Pending' AND expected_amount_minor IS NULL"))
+            .ShouldBe(1);
+        (await CountAsync(
+            "SELECT count(*) FROM platform.bank_transactions t WHERE t.matched_notice_id IS NULL AND t.bank_reference LIKE 'DEMO-%' AND position("
+            + $"(SELECT transfer_code FROM platform.subscriptions WHERE brand_id = {Kemal}) in t.description) > 0")).ShouldBe(1, "kodu taşıyan aday");
+        (await CountAsync("SELECT count(*) FROM platform.bank_transactions WHERE matched_notice_id IS NULL")).ShouldBe(2);
+        (await CountAsync(
+            $"SELECT count(*) FROM platform.payment_notices n JOIN platform.bank_transactions t ON t.matched_notice_id = n.id WHERE n.brand_id = {Nar} AND n.status = 'Matched' "
+            + "AND n.matched_bank_transaction_id = t.id")).ShouldBe(1);
+        var packages = await CountAsync("SELECT count(*) FROM platform.credit_packages WHERE is_active");
+        (await CountAsync($"SELECT count(*) FROM platform.payment_notices WHERE brand_id = {Brand} AND purpose = 'Credits' AND status = 'Pending'")).ShouldBe(Math.Min(1, packages));
+        (await CountAsync($"SELECT count(*) FROM notifications.brand_sms_senders WHERE brand_id = {Brand} AND status = 'Pending' AND name = 'KUAFORELIF'")).ShouldBe(1);
+
+        // Platform kullanıcıları (üç rol), denetim kaydı (giriş, görüntüleme, eşleştirme), Google Takvim, yeni personel.
+        (await CountAsync("SELECT count(DISTINCT platform_role) FROM identity.users WHERE phone_e164 LIKE '+9055500099%'")).ShouldBe(3);
+        (await CountAsync("SELECT count(*) FROM platform.audit_logs")).ShouldBe(6);
+        (await CountAsync($"SELECT count(*) FROM platform.audit_logs WHERE brand_id = {Nar} AND action = 'Match' AND actor_type = 'PlatformUser'")).ShouldBe(1);
+        (await CountAsync("SELECT count(*) FROM platform.audit_logs WHERE action = 'View' AND entity_type = 'Brand' AND occurred_utc < '2026-11-25T09:00:00Z'")).ShouldBe(3);
+        (await CountAsync(
+            $"SELECT count(*) FROM integrations.calendar_links l JOIN tenancy.staff s ON s.id = l.staff_id WHERE l.brand_id = {Brand} AND l.status = 'Active' AND s.full_name = 'Elif Kaya'"))
+            .ShouldBe(1);
+        (await CountAsync(
+            "SELECT count(*) FROM identity.user_memberships m JOIN identity.users u ON u.id = m.user_id "
+            + $"WHERE m.brand_id = {Brand} AND u.phone_e164 = '+905550000005' AND m.role = 'Staff'")).ShouldBe(1);
+        (await CountAsync("SELECT count(*) FROM infra.outbox_events")).ShouldBe(0, "Dilim 6 verisi de olay yazmaz");
+
+        // Gecikti markasının sahibi girer; panel aboneliği ve bekleyen bildirimi okur. Platform kullanıcısı salon panelinde üye değildir.
+        var owner = await _api.SignInAsync("+905550000011");
+        owner.Status.ShouldBe(200);
+        var subscription = await _api.GetAsync("/api/v1/manage/subscription", owner.Body.GetProperty("accessToken").GetString()!);
+        subscription.Status.ShouldBe(200);
+        subscription.Body.GetProperty("status").GetString().ShouldBe("PastDue");
+    }
+
+    // T-131: plan fiyatı tanımlıysa dönem faturaları kesilir; kodu taşıyan hareket fatura tutarıyladır ("Kod tutuyor").
+    [Fact]
+    public async Task Seed_WithPlanPrice_IssuesInvoicesAndMatchingTransfer()
+    {
+        await ScalarAsync("UPDATE platform.plans SET monthly_price_minor = 100000 WHERE code = 'salon_plus'");
+        try
+        {
+            (await SeedAsync(reset: false)).Code.ShouldBe(0);
+
+            const string Invoices = "FROM platform.subscription_invoices i JOIN tenancy.brands b ON b.id = i.brand_id WHERE b.name = ";
+            (await CountAsync($"SELECT count(*) {Invoices}'Berber Kemal' AND i.status = 'Issued' AND i.period_start = '2026-11-22' AND i.due_on = '2026-11-22'")).ShouldBe(1);
+            (await CountAsync($"SELECT count(*) {Invoices}'Nar Güzellik' AND i.status = 'Paid' AND i.paid_via = 'BankTransfer' AND i.period_start = '2026-11-15'")).ShouldBe(1);
+            (await CountAsync("SELECT count(DISTINCT invoice_number) FROM platform.subscription_invoices WHERE invoice_number LIKE 'OMV-2026-%'")).ShouldBe(2);
+            (await CountAsync(
+                "SELECT count(*) FROM platform.payment_notices n JOIN platform.bank_transactions t ON t.amount_minor = n.expected_amount_minor "
+                + "AND position(n.transfer_code in t.description) > 0 WHERE n.status = 'Pending' AND n.purpose = 'Subscription' AND t.matched_notice_id IS NULL"))
+                .ShouldBe(1, "kod ve tutar tutan aday");
+        }
+        finally
+        {
+            await ScalarAsync("UPDATE platform.plans SET monthly_price_minor = NULL WHERE code = 'salon_plus'");
+        }
     }
 
     private async Task<(int Code, string Output)> SeedAsync(bool reset)

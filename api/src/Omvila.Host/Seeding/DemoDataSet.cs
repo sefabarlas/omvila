@@ -187,8 +187,63 @@ internal static class DemoDataSet
         new(null, Customer: 13, "Sakal ve kesim", "Mert Demir", CreatedAgo: Duration.FromMinutes(10)),
     ];
 
+    /// <summary>
+    /// Dilim 6 (T-131): abonelik durumu örnekleri için iki küçük marka (tek şube, sahibi tek personel, iki hizmet). Kuaför Elif
+    /// Denemede kalır; Berber Kemal'in denemesi 3 gün önce bitti (Gecikti, bekleyen havale bildirimi), Nar Güzellik'inki 10 gün
+    /// önce bitti ve havalesi eşleşti (Aktif). Telefonlar ayrılmış demo aralığında: +90 555 000 00 11 ve 21.
+    /// </summary>
+    public static readonly IReadOnlyList<BrandSeed> ExtraBrands =
+    [
+        new("Berber Kemal", "barber", "Kemal Aslan", "+905550000011", "Berber",
+            new DemoBranch("Merkez", "Osmanağa Mah. Söğütlü Çeşme Cad. No: 40", "Kadıköy", "İstanbul", Week(IsoDayOfWeek.Monday, IsoDayOfWeek.Saturday, 9, 20)),
+            [new("Saç kesimi", 30, 35000), new("Sakal", 20, 20000)], "PastDue", DaysSinceTrialEnd: 3),
+        new("Nar Güzellik", "beauty", "Nazlı Erdem", "+905550000021", "Güzellik uzmanı",
+            new DemoBranch("Merkez", "Kültür Mah. Plevne Bulv. No: 15", "Konak", "İzmir", Week(IsoDayOfWeek.Tuesday, IsoDayOfWeek.Sunday, 10, 19)),
+            [new("Cilt bakımı", 60, 90000), new("Kaş tasarımı", 30, 30000)], "Active", DaysSinceTrialEnd: 10),
+    ];
+
+    /// <summary>Küçük markaların hizmet kategorisi.</summary>
+    public const string ExtraBrandCategory = "Hizmetler";
+
+    /// <summary>
+    /// Platform paneli demo kullanıcıları (K2 rolleri; KK4: Destek'te kilitli butonlar). Telefonlar +90 555 000 99 0x.
+    /// </summary>
+    public static readonly IReadOnlyList<PlatformUserSeed> PlatformUsers =
+    [
+        new("Deniz Yılmaz", "PlatformAdmin", "+905550009901"),
+        new("Burak Şen", "PlatformSupport", "+905550009902"),
+        new("İpek Doğan", "PlatformFinance", "+905550009903"),
+    ];
+
+    /// <summary>Nişantaşı'na sonradan eklenen, randevusu olmayan personel (Ayarlar → Roller: şube ve rol çeşitliliği).</summary>
+    public static readonly StaffSeed LateStaff =
+        new("Seda Aydın", "Kuaför", "Staff", "+905550000005", "#5B7F5B", IsBookableOnline: false, Branch.Nisantasi, Week(IsoDayOfWeek.Tuesday, IsoDayOfWeek.Saturday, 10, 19));
+
+    /// <summary>Bekleyen SMS gönderen adı başvurusu (Kuaför Elif; 3–11 büyük harf).</summary>
+    public const string SmsSenderName = "KUAFORELIF";
+
+    /// <summary>Sahte Google Takvim bağlantısının maskeli hesabı (Elif Kaya; uydurma adres).</summary>
+    public const string CalendarAccountMasked = "el***@ornek.com";
+
+    /// <summary>
+    /// Plan fiyatı tanımlı değilken (S-14) demo banka hareketinin tutarı (kuruş). Fiyat değildir: beklenen tutar yokken hareket
+    /// "Kontrol edin" görünür; fiyat tanımlıysa kodu taşıyan hareket fatura tutarıyla yazılır ("Kod tutuyor").
+    /// </summary>
+    public const long BankTransferFallbackMinor = 100000;
+
+    /// <summary>Kodu taşımayan aday hareketin tutar farkı (kuruş).</summary>
+    public const long BankTransferMismatchMinor = -5000;
+
+    /// <summary>Bekleyen havale bildirimlerinin yaşı.</summary>
+    public static readonly Duration SubscriptionNoticeAge = Duration.FromHours(20);
+    public static readonly Duration CreditNoticeAge = Duration.FromHours(3);
+    public static readonly Duration SmsSenderAge = Duration.FromDays(2);
+
     /// <summary>Demo müşterisinin telefonu: +90 555 001 00xx (sıra 1'den).</summary>
     public static PhoneNumber CustomerPhone(int index) => PhoneNumber.Parse($"+9055500100{index + 1:00}");
+
+    /// <summary>Demo markalarının sahip telefonları (ilk sıra Kuaför Elif); seed markaları bunlarla tanır.</summary>
+    public static IEnumerable<PhoneNumber> OwnerPhones() => [OwnerPhone, .. ExtraBrands.Select(b => PhoneNumber.Parse(b.OwnerPhone))];
 
     private static List<DemoHours> Week(IsoDayOfWeek from, IsoDayOfWeek to, int startHour, int endHour) =>
         [.. Enumerable.Range((int)from, to - from + 1).Select(d => new DemoHours((IsoDayOfWeek)d, new LocalTime(startHour, 0), new LocalTime(endHour, 0)))];
@@ -201,6 +256,14 @@ internal static class DemoDataSet
 
     internal sealed record StaffSeed(
         string FullName, string Title, string Role, string Phone, string CalendarColor, bool IsBookableOnline, Branch Branch, IReadOnlyList<DemoHours> Hours);
+
+    internal sealed record BrandSeed(
+        string BusinessName, string IndustryCode, string OwnerName, string OwnerPhone, string OwnerTitle, DemoBranch Branch,
+        IReadOnlyList<SimpleServiceSeed> Services, string Subscription, int DaysSinceTrialEnd);
+
+    internal sealed record SimpleServiceSeed(string Name, int DurationMinutes, long PriceMinor);
+
+    internal sealed record PlatformUserSeed(string FullName, string Role, string Phone);
 
     internal sealed record PackageSeed(string Name, string Service, int SessionCount, long PriceMinor, int ValidityDays, decimal? SaleCommissionPercent);
 

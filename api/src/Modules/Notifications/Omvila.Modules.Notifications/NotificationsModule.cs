@@ -45,7 +45,7 @@ public static class NotificationsModule
         services.AddScoped<ICustomerAppDataEraser, CustomerAppDataEraser>();
         services.AddScoped<SmsUsage>();
         // Demo verisi --reset (T-74): markanın bildirim kuyruğu, kontör defteri, cihazları ve panel bildirimleri.
-        services.AddBrandDataEraser<NotificationsDbContext>();
+        services.AddDemoData();
         services.AddIntegrationEventHandler<BranchDailySummaryReady, NotifyDailySummary>();
         services.AddIntegrationEventHandler<SmsCreditsLow, NotifyCreditsLow>();
         services.AddIntegrationEventHandler<SmsCreditsInsufficient, NotifyCreditsLow>();
@@ -99,5 +99,12 @@ public static class NotificationsModule
         MeNotificationEndpoints.Map(app);
         SmsEndpoints.Map(app);
         return app;
+    }
+
+    /// <summary>Demo verisi (--role=seed; T-131: bekleyen SMS gönderen adı başvurusu) ve --reset silicisi (T-74).</summary>
+    private static void AddDemoData(this IServiceCollection services)
+    {
+        services.AddScoped(sp => new DemoData.NotificationsDemoData(sp.GetRequiredService<NotificationsDbContext>()));
+        services.AddBrandDataEraser<NotificationsDbContext>();
     }
 }
