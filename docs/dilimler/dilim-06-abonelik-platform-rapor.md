@@ -1,5 +1,8 @@
 # Dilim 6: Abonelik + platform paneli + raporlar
 
+## Durum
+Uygulandı. Backend (abonelik durum makinesi ve faturalar, havale bildirimi ve eşleştirme, platform paneli uçları, raporlar ve Genel bakış, kullanıcılar ve roller, KVKK ayarları ve veri dışa aktarma, Google Takvim), salon paneli (Abonelik ve fatura, şeritler, Raporlar ve prim, Roller ve yetkiler, KVKK ve veri, profil menüsü), platform paneli ve tanıtım sitesi main'de ve test ortamında; kabul kriterlerinin test eşlemesi, uçtan uca akışlar, tasarım karşılaştırması ve açık kalanlar: [dilim-06-tasarim-karsilastirma.md](dilim-06-tasarim-karsilastirma.md). Demo verisi Dilim 6 kayıtlarını içerir (T-131). Kapanış için ürün sahibi demosu ve `docs/acik-sorular.md`'deki varsayımların (T-116…T-132) onayı bekleniyor. Kart akışı T-06'ya, fiyat ve OMVILA banka hesabı S-14'e bağlıdır: karar gelene kadar ödeme yolu yalnız havaledir, fatura kesilmez ve tutarlar boş döner. Sıradaki iş canlıya çıkış hazırlığıdır.
+
 ## Amaç
 Salonun OMVILA'ya ödemesi (kart veya havale/EFT), abonelik durumlarının otomatik ilerlemesi (deneme → aktif → gecikti → salt okunur), iç ekibin platform paneli ve salonun raporları. Tanıtım sitesi yayına hazır hâle gelir.
 

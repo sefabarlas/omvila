@@ -116,7 +116,7 @@ Ortak farklar (aşağıda yinelenmez): üst bar araması "Marka, telefon veya ba
 
 - **Kart akışı (T-06):** "Kartla öde", "Kart ekle", "Kartı güncelle", "Ödeme yöntemini kaydet" ve tanıtım sitesindeki "kartla" ifadesi sağlayıcı seçilene kadar yok; AyarlarAbonelik ve GenelBakisGecikti bu yüzden ≈.
 - **Fiyat ve OMVILA hesabı (S-14):** değerler tanımsız; ekranlar "tanımlı değil / belirlenmedi / yakında açıklanacak" yazar. "Dolu" görüntülerdeki alıcı, IBAN ve tutarlar kurgusaldır.
-- **Sözleşmede olmayanlar:** Raporlar, Markalar ve Abonelikler'de "Dışa aktar"; Genel bakış "hedefin %72'si"; prim tablosunda personel takvim rengi; KVKK dışa aktarma isteğinin durumunu okuyan uç; başka personele "Bağlantı linki gönder" (T-122 (4), T-123 (4), T-126 (6), T-127 (2), (3)).
+- **Sözleşmede olmayanlar:** Raporlar, Markalar ve Abonelikler'de "Dışa aktar"; Genel bakış "hedefin %72'si"; prim tablosunda personel takvim rengi; başka personele "Bağlantı linki gönder" (T-122 (4), T-123 (4), T-126 (6), T-127 (3)). KVKK dışa aktarma isteğinin durumunu okuyan uç ve SMS gönderen adı kararının panel bildirimi ayrı sözleşme PR'ında eklendi (T-132).
 - **Tasarımı olmayan ekranlar:** Banka hareketleri, marka detayının Abonelik ve fatura / Kontör / Ödemeler / Denetim kaydı sekmeleri, POnaySms, Primim (web), HavaleBildir ve KontorAl pencereleri, Google Takvim bağlantısı, yasal sayfalar. Mevcut desenlerle kuruldu; tasarım gelince karşılaştırılmalı.
 - **ProfilMenu ve TemaMenu tasarım görüntüleri** `design/ekranlar/` altında yok; karşılaştırma T-129'daki tarifle yapıldı. Görüntüler depoya eklenince yan yana bakılmalı.
 - **Genel bakışta "Randevu ekle"** (GenelBakisGecikti tasarımında var) hâlâ yok (T-125 (9)).
@@ -124,4 +124,5 @@ Ortak farklar (aşağıda yinelenmez): üst bar araması "Marka, telefon veya ba
 - **POnayBos görüntüsünde rozet:** oturum örneğindeki `pendingApprovalCount` (7) boş kuyrukla çelişir; yalnız e2e verisi.
 - **E-postalar ve MainSaltOkunur:** tasarımla yan yana görüntü karşılaştırması bu çalışmada yapılmadı; kapsam testlerdedir.
 - **Uçtan uca birleşik koşu:** salon bildirimi → platform eşleştirmesi → salon şeridinin kalkması tek testte ve gerçek backend'le koşmuyor (T-72); parçalar ayrı ayrı sınanır.
-- **Ürün sahibi demosu** ve T-116…T-131 varsayımlarının onayı.
+- **Demo verisinde salt okunur marka yok:** Gecikti markası seed'den 4 gün sonra kendiliğinden salt okunur olur (T-131 (2)).
+- **Ürün sahibi demosu** ve T-116…T-132 varsayımlarının onayı.

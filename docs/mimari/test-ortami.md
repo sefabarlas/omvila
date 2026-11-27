@@ -97,14 +97,17 @@ Test sunucusu 21 Kasım 2026'da bu adımlarla kuruldu. Yeniden kurmak veya ikinc
 
 ## Demo verisi
 
-`--role=seed` "Kuaför Elif" markasını kurar (`kuafor-elif`; Kadıköy ve Nişantaşı şubeleri, 10 hizmet, 15 müşteri, son ve gelecek iki haftanın randevuları, kapora hesabı, 1000 kontör). Kişiler uydurmadır.
+`--role=seed` "Kuaför Elif" markasını ve abonelik durumu örneği iki küçük markayı (Berber Kemal, Nar Güzellik; Dilim 6) kurar. Kuaför Elif: (`kuafor-elif`; Kadıköy ve Nişantaşı şubeleri, 10 hizmet, 15 müşteri, son ve gelecek iki haftanın randevuları, kapora hesabı, 1000 kontör). Kişiler uydurmadır.
 
 | Telefon | Kişi | Rol |
 |---|---|---|
 | 0555 000 00 01 | Elif Kaya | Sahip |
 | 0555 000 00 02 | Mert Demir | Personel |
 | 0555 000 00 03 | Can Yücel | Personel |
-| 0555 000 00 04 | Zeynep Aksoy | Şube yöneticisi |
+| 0555 000 00 04 | Zeynep Aksoy | Şube yöneticisi (Nişantaşı) |
+| 0555 000 00 05 | Seda Aydın | Personel (Nişantaşı; randevusu yok) |
+| 0555 000 00 11 | Kemal Aslan | Sahip, Berber Kemal (ödeme gecikti) |
+| 0555 000 00 21 | Nazlı Erdem | Sahip, Nar Güzellik (aktif) |
 
 Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com.tr`'den okuyun (en yeni üstte; `?telefon=05550000001` ile süzülür).
 
@@ -115,8 +118,24 @@ Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com
 
 **Dilim 5 (T-114):** geçmişte biten randevular tamamlanmıştır (Nakit, Kart, Havale tahsilatları; Elif Kaya'ya %24 hizmet primi). Paketler: "Fön paketi" (10 seans, satış primi %10) ve "Saç bakımı paketi"; Selin Öztürk'ün paketinde 2 seans kaldı, Derya Şahin'in paketi 10 gün içinde biter, Melis Tunç'a dün paket satıldı. Kasa'da Kadıköy'ün son nakitli günü (genellikle dün) kapatılmıştır, sayılan beklenenden 50 ₺ az. Değerlendirmeler'de altı kayıt (biri yanıtlı, 2 puanlı biri yanıt bekliyor), bekleme listesinde 2 kişi, kapıda sırada bugün 2 bilet (Kadıköy). Şu an süren randevu Geldi'dir: "Tamamla ve ödeme al" onunla denenir. Personel bildirim tercihleri varsayılandır.
 
-- Komut idempotenttir: marka varsa bir şey yazmaz.
-- **Demodan önce sıfırlama:** randevu tarihleri çalıştırma anına göre yazıldığından demodan önce yenileyin. `--reset` yalnız demo markasını silip yeniden kurar; başka markalara dokunmaz:
+**Dilim 6 (T-131):** üç abonelik durumu ve platform panelinin kuyrukları.
+
+| Marka | Abonelik | Ne görülür |
+|---|---|---|
+| Kuaför Elif | Denemede | Bekleyen kontör havalesi (en küçük paket, `KNT-` kodu), bekleyen SMS gönderen adı başvurusu (`KUAFORELIF`), Elif Kaya'da Google Takvim bağlı (sahte sağlayıcı), Ayarlar → Roller'de beş kullanıcı |
+| Berber Kemal | Ödeme gecikti (deneme 3 gün önce bitti; 4 gün sonra salt okunur) | Turuncu şerit; bekleyen abonelik havalesi ve iki aday banka hareketi: açıklamasında `ABN-` kodu olan ve olmayan (tutarı 50 ₺ eksik) |
+| Nar Güzellik | Aktif (havalesi eşleşti) | Eşleşmiş bildirim ve banka hareketi, denetim kaydında eşleştirme |
+
+Platform paneli girişi (`admin.test.omvila.com.tr`; kod yine SMS günlüğünde): 0555 000 99 01 Deniz Yılmaz (Yönetici), 0555 000 99 02 Burak Şen (Destek), 0555 000 99 03 İpek Doğan (Finans). Denetim kaydında altı örnek satır vardır (giriş, marka görüntüleme, eşleştirme).
+
+- **KK1'i denemek:** Berber Kemal ile girin (turuncu şerit, "N. gün"). Durum `AdvanceSubscriptionStatuses` işiyle (saatlik) gerçek günlerle ilerler: seed'den 4 gün sonra marka salt okunur olur (kırmızı şerit, yeni randevu pasif, rezervasyon sayfası kapalı). Salt okunuru hemen göstermek için demo verisinde hazır marka yoktur; uçtan uca testler ve ekran görüntüleri kapsar.
+- **KK2'yi denemek:** Finans veya Destek ile Onay kuyrukları → Berber Kemal bildirimi → kodu taşıyan hareketi seçip eşleştirin; marka Aktif olur. KK4: Destek ile bir markanın detayında "Kontör ekle" ve "Planı değiştir" kilitlidir.
+- **Fiyat ve OMVILA hesabı (S-14):** değer tanımlı değildir ve seed uydurmaz: fatura kesilmez, tutarlar boş döner, kodu taşıyan hareket de "Kontrol edin" görünür (tutar karşılaştırılamaz). Faturaları ve "Kod tutuyor" rozetini görmek için önce Yönetici ile Planlar ve fiyat'tan Salon Plus'a bir deneme fiyatı girin, sonra `--reset` çalıştırın: Berber Kemal'e Kesildi, Nar Güzellik'e Ödendi fatura yazılır (PDF iner). "Havaleyi bildir" butonu OMVILA hesabı (`Platform__OmvilaBankAccount__*`) tanımlanınca görünür.
+- Google Takvim bağlantısı yalnız `CALENDAR_TOKEN_KEY` tanımlıyken ve sahte sağlayıcıyla yazılır (compose'da ikisi de var).
+- Banka hareketleri markaya bağlı değildir; demo hareketlerinin referansı `DEMO-` ile başlar ve `--reset` yalnız bunları siler. Denetim kaydı silinmez: `--reset` sonrasında eski demo markasının satırları listede kalır.
+
+- Komut idempotenttir: demo markalarından biri varsa bir şey yazmaz. Dilim 6'dan önce kurulmuş ortamda yeni kayıtlar için `--reset` gerekir.
+- **Demodan önce sıfırlama:** randevu tarihleri çalıştırma anına göre yazıldığından demodan önce yenileyin. `--reset` yalnız demo markalarını (üçü) silip yeniden kurar; başka markalara dokunmaz:
   ```bash
   dc --profile seed run --rm seed --role=seed --reset
   ```
@@ -124,7 +143,7 @@ Giriş: salon panelinde telefonu yazın, gelen kodu `https://sms.test.omvila.com
 
 ## Platform kullanıcısı
 
-Platform paneli (iç ekip) hesapları web'den açılmaz; sunucuda komutla oluşturulur (K2, T-119). Komut idempotenttir: numara zaten platform kullanıcısıysa rolü ve adı güncellenir. Numara bir markanın üyesiyse de platform kullanıcısı olur; salon ve platform oturumları ayrıdır, salonda görünen adı değişmez (T-128). Rol: `PlatformAdmin` (Yönetici), `PlatformSupport` (Destek) veya `PlatformFinance` (Finans).
+Platform paneli (iç ekip) hesapları web'den açılmaz; sunucuda komutla oluşturulur (K2, T-119). Demo verisi üç platform kullanıcısını kendisi açar (yukarıda); başka hesap için komut kullanılır. Komut idempotenttir: numara zaten platform kullanıcısıysa rolü ve adı güncellenir. Numara bir markanın üyesiyse de platform kullanıcısı olur; salon ve platform oturumları ayrıdır, salonda görünen adı değişmez (T-128). Rol: `PlatformAdmin` (Yönetici), `PlatformSupport` (Destek) veya `PlatformFinance` (Finans).
 
 ```bash
 dc --profile seed run --rm seed --role=platform-user --platform-phone=05550009901 --platform-name="Deniz Yılmaz" --platform-role=PlatformAdmin
